@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="SimpleGit11.Dialogs.TagCreateDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:SimpleGit11.Models"
+    x:Uid="TagCreateDialog"
+    DefaultButton="Primary"
+    IsPrimaryButtonEnabled="{x:Bind ViewModel.CanCreate, Mode=OneWay}"
+    Style="{StaticResource DefaultContentDialogStyle}">
+
+    <StackPanel
+        MinWidth="460"
+        Spacing="12">
+        <TextBox
+            x:Uid="TagCreateNameTextBox"
+            Text="{x:Bind ViewModel.TagName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBlock
+            AutomationProperties.LiveSetting="Polite"
+            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            Text="{x:Bind ViewModel.TagNameError, Mode=OneWay}"
+            TextWrapping="WrapWholeWords"
+            Visibility="{x:Bind ViewModel.HasTagNameError, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+        <ComboBox
+            x:Uid="TagCreateStartPointComboBox"
+            HorizontalAlignment="Stretch"
+            ItemsSource="{x:Bind ViewModel.Commits, Mode=OneWay}"
+            SelectedItem="{x:Bind ViewModel.SelectedCommit, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="models:GitCommit">
+                    <StackPanel Spacing="2">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            MaxLines="1"
+                            Text="{x:Bind DisplaySummary, Mode=OneTime}"
+                            TextTrimming="CharacterEllipsis" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            MaxLines="1"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Text="{x:Bind DisplayAuthor, Mode=OneTime}"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+        <TextBlock
+            AutomationProperties.LiveSetting="Polite"
+            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            Text="{x:Bind ViewModel.SelectedCommitError, Mode=OneWay}"
+            TextWrapping="WrapWholeWords"
+            Visibility="{x:Bind ViewModel.HasSelectedCommitError, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+        <ToggleSwitch
+            x:Uid="TagCreateAnnotatedToggleSwitch"
+            IsOn="{x:Bind ViewModel.IsAnnotated, Mode=TwoWay}" />
+
+        <TextBox
+            x:Uid="TagCreateMessageTextBox"
+            AcceptsReturn="True"
+            Height="96"
+            IsEnabled="{x:Bind ViewModel.IsAnnotated, Mode=OneWay}"
+            Text="{x:Bind ViewModel.Message, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            TextWrapping="Wrap"
+            ScrollViewer.VerticalScrollBarVisibility="Auto" />
+        <TextBlock
+            AutomationProperties.LiveSetting="Polite"
+            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            Text="{x:Bind ViewModel.MessageError, Mode=OneWay}"
+            TextWrapping="WrapWholeWords"
+            Visibility="{x:Bind ViewModel.HasMessageError, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+    </StackPanel>
+</ContentDialog>

@@ -1,0 +1,3364 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="RepositoryNavigationItem.Content" xml:space="preserve">
+    <value>Репозиторий</value>
+  </data>
+  <data name="ChangesNavigationItem.Content" xml:space="preserve">
+    <value>Изменения</value>
+  </data>
+  <data name="HistoryNavigationItem.Content" xml:space="preserve">
+    <value>История</value>
+  </data>
+  <data name="BranchesNavigationItem.Content" xml:space="preserve">
+    <value>Ветки</value>
+  </data>
+  <data name="SynchronizationNavigationItem.Content" xml:space="preserve">
+    <value>Синхронизация</value>
+  </data>
+  <data name="RecentRepositoriesTextBlock.Text" xml:space="preserve">
+    <value>Последние репозитории</value>
+  </data>
+  <data name="RepositoryTitleTextBlock.Text" xml:space="preserve">
+    <value>Репозиторий</value>
+  </data>
+  <data name="RepositoryDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Просматривайте сведения и управляйте репозиторием и его рабочими деревьями.</value>
+  </data>
+  <data name="ChangesTitleTextBlock.Text" xml:space="preserve">
+    <value>Изменения</value>
+  </data>
+  <data name="ChangesDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Просматривайте изменения, создавайте коммиты и управляйте отложенными изменениями.</value>
+  </data>
+  <data name="ConflictStatusIndicatorTextBlock.AutomationProperties.Name" xml:space="preserve">
+    <value>Конфликт слияния</value>
+  </data>
+  <data name="RefreshStatusAppBarButton.Label" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="MarkResolvedAppBarButton.Label" xml:space="preserve">
+    <value>Пометить решенным</value>
+  </data>
+  <data name="CommitDialogTitle" xml:space="preserve">
+    <value>Сохранение подготовленных изменений</value>
+  </data>
+  <data name="CommitMessageDialogHeader" xml:space="preserve">
+    <value>Сообщение коммита</value>
+  </data>
+  <data name="CommitMessageDialogPlaceholder" xml:space="preserve">
+    <value>Опишите подготовленные изменения. Введите @, чтобы вставить имя измененного файла</value>
+  </data>
+  <data name="CommitMessageDialogHelpText" xml:space="preserve">
+    <value>Введите @ для поиска измененных файлов и вставки имени файла</value>
+  </data>
+  <data name="CommitFileSuggestionsListView.AutomationProperties.Name" xml:space="preserve">
+    <value>Подсказки измененных файлов</value>
+  </data>
+  <data name="ConflictedChangesTitleTextBlock.Text" xml:space="preserve">
+    <value>Конфликты</value>
+  </data>
+  <data name="NoChangesInfoBar.Title" xml:space="preserve">
+    <value>Изменений нет</value>
+  </data>
+  <data name="NoChangesInfoBar.Message" xml:space="preserve">
+    <value>Рабочее дерево чистое.</value>
+  </data>
+  <data name="MergeOperationInfoBar.Title" xml:space="preserve">
+    <value>Слияние не завершено</value>
+  </data>
+  <data name="MergeOperationInfoBar.Message" xml:space="preserve">
+    <value>Разрешите конфликты и создайте merge-коммит, чтобы завершить слияние, или отмените операцию.</value>
+  </data>
+  <data name="RebaseOperationInfoBar.Title" xml:space="preserve">
+    <value>Rebase не завершён</value>
+  </data>
+  <data name="RebaseOperationInfoBar.Message" xml:space="preserve">
+    <value>Продолжите rebase, пропустите текущий коммит или отмените операцию.</value>
+  </data>
+  <data name="CherryPickOperationInfoBar.Title" xml:space="preserve">
+    <value>Cherry-pick не завершён</value>
+  </data>
+  <data name="CherryPickOperationInfoBar.Message" xml:space="preserve">
+    <value>Продолжите cherry-pick, пропустите текущий коммит или отмените операцию.</value>
+  </data>
+  <data name="RevertOperationInfoBar.Title" xml:space="preserve">
+    <value>Revert не завершён</value>
+  </data>
+  <data name="RevertOperationInfoBar.Message" xml:space="preserve">
+    <value>Продолжите revert, пропустите текущий коммит или отмените операцию.</value>
+  </data>
+  <data name="SettingsTitleTextBlock.Text" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="SettingsDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Настраивайте внешний вид, язык и параметры Git.</value>
+  </data>
+  <data name="AppearanceTitleTextBlock.Text" xml:space="preserve">
+    <value>Внешний вид</value>
+  </data>
+  <data name="ThemeSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Тема</value>
+  </data>
+  <data name="LanguageSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Язык интерфейса</value>
+  </data>
+  <data name="EditorFontSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Шрифт редактора</value>
+  </data>
+  <data name="EditorFontSettingsCardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Используется в diff, при редактировании файлов и разрешении конфликтов.</value>
+  </data>
+  <data name="EditorFontFamilyComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Гарнитура шрифта редактора</value>
+  </data>
+  <data name="EditorFontSizeNumberBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Размер шрифта редактора</value>
+  </data>
+  <data name="EditorLineSpacingSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Межстрочный интервал</value>
+  </data>
+  <data name="EditorLineSpacingSettingsCardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Дополнительное вертикальное расстояние между строками редактора.</value>
+  </data>
+  <data name="EditorLineSpacingNumberBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Межстрочный интервал редактора</value>
+  </data>
+  <data name="LanguageRestartInfoBar.Title" xml:space="preserve">
+    <value>Нужен перезапуск</value>
+  </data>
+  <data name="LanguageRestartInfoBar.Message" xml:space="preserve">
+    <value>Новый язык будет применен после перезапуска приложения.</value>
+  </data>
+  <data name="NoRepositoryOpen" xml:space="preserve">
+    <value>Откройте репозиторий</value>
+  </data>
+  <data name="RepositoryPathUnavailable" xml:space="preserve">
+    <value>Путь к репозиторию недоступен</value>
+  </data>
+  <data name="NoBranch" xml:space="preserve">
+    <value>Нет ветки</value>
+  </data>
+  <data name="SelectedFolderNotGitRepository" xml:space="preserve">
+    <value>Выбранная папка не находится внутри Git-репозитория.</value>
+  </data>
+  <data name="RecentRepositoryCannotBeOpened" xml:space="preserve">
+    <value>Не удалось открыть последний репозиторий. Возможно, папка была перемещена или удалена.</value>
+  </data>
+  <data name="OpenRepositoryBeforeStatus" xml:space="preserve">
+    <value>Откройте репозиторий перед обновлением статуса Git.</value>
+  </data>
+  <data name="GitExecutableNotFound" xml:space="preserve">
+    <value>Git не найден. Установите Git или добавьте его в PATH.</value>
+  </data>
+  <data name="RepositoryFolderNotFound" xml:space="preserve">
+    <value>Папка репозитория не найдена.</value>
+  </data>
+  <data name="GitStatusCommandFailed" xml:space="preserve">
+    <value>Не удалось получить состояние репозитория.</value>
+  </data>
+  <data name="GitDiffCommandFailed" xml:space="preserve">
+    <value>Не удалось загрузить изменения файла.</value>
+  </data>
+  <data name="GitStageCommandFailed" xml:space="preserve">
+    <value>Не удалось подготовить изменения.</value>
+  </data>
+  <data name="ConflictMarkersRemain" xml:space="preserve">
+    <value>В файле остались маркеры конфликта. Разрешите конфликт перед отметкой.</value>
+  </data>
+  <data name="NoResolvedConflictsToStage" xml:space="preserve">
+    <value>Нет разрешенных конфликтных файлов для подготовки.</value>
+  </data>
+  <data name="GitCommitCommandFailed" xml:space="preserve">
+    <value>Операция с коммитом завершилась с ошибкой.</value>
+  </data>
+  <data name="CommitRequiresStagedChanges" xml:space="preserve">
+    <value>Подготовьте хотя бы один файл перед созданием коммита.</value>
+  </data>
+  <data name="CommitRequiresMessage" xml:space="preserve">
+    <value>Введите сообщение перед сохранением.</value>
+  </data>
+  <data name="CommitCreated" xml:space="preserve">
+    <value>Изменения зафиксированы.</value>
+  </data>
+  <data name="SelectFileToViewDiff" xml:space="preserve">
+    <value>Выберите измененный файл, чтобы посмотреть сравнение.</value>
+  </data>
+  <data name="NewFileDiffUnavailable" xml:space="preserve">
+    <value>Сравнение будет доступно после добавления нового файла в staged.</value>
+  </data>
+  <data name="BinaryDiffUnavailable" xml:space="preserve">
+    <value>Отличия бинарного файла нельзя отобразить.</value>
+  </data>
+  <data name="NoTextDiffAvailable" xml:space="preserve">
+    <value>Для этого файла нет текстового сравнения.</value>
+  </data>
+  <data name="ShowFullFileMenuFlyoutItemText" xml:space="preserve">
+    <value>Показать полный файл</value>
+  </data>
+  <data name="ShowDiffMenuFlyoutItemText" xml:space="preserve">
+    <value>Показать Diff</value>
+  </data>
+  <data name="CopyDiffSelectionMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="CopyDiffAllMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать всё</value>
+  </data>
+  <data name="CommitRequiresSynchronizationIcon.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Требуется синхронизация с удалённым репозиторием</value>
+  </data>
+  <data name="MergeCommitIcon.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Коммит слияния</value>
+  </data>
+  <data name="MergeCommitParentCountTextBlock.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Количество родителей</value>
+  </data>
+  <data name="SyntaxHighlightingAuto" xml:space="preserve">
+    <value>Авто</value>
+  </data>
+  <data name="SyntaxHighlightingNone" xml:space="preserve">
+    <value>Без подсветки</value>
+  </data>
+  <data name="SyntaxHighlightingCStyle" xml:space="preserve">
+    <value>Семейство C</value>
+  </data>
+  <data name="SyntaxHighlightingHash" xml:space="preserve">
+    <value>Python / конфиги</value>
+  </data>
+  <data name="SyntaxHighlightingDash" xml:space="preserve">
+    <value>SQL / Lua</value>
+  </data>
+  <data name="SyntaxHighlightingHtml" xml:space="preserve">
+    <value>Разметка</value>
+  </data>
+  <data name="RevertChangeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Отменить изменение</value>
+  </data>
+  <data name="RevertChangeSucceeded" xml:space="preserve">
+    <value>Изменение отменено.</value>
+  </data>
+  <data name="ConflictFileUnavailable" xml:space="preserve">
+    <value>Конфликтный файл недоступен в рабочем дереве.</value>
+  </data>
+  <data name="SaveConflictFileAppBarButton.Label" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="ConflictFileSaved" xml:space="preserve">
+    <value>Конфликтный файл сохранен.</value>
+  </data>
+  <data name="ConflictMarkedResolved" xml:space="preserve">
+    <value>Файл '{0}' помечен как решенный.</value>
+  </data>
+  <data name="LanguageSystem" xml:space="preserve">
+    <value>Как в системе</value>
+  </data>
+  <data name="LanguageEnglish" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="LanguageRussian" xml:space="preserve">
+    <value>Русский</value>
+  </data>
+  <data name="NoFileSelected" xml:space="preserve">
+    <value>Файл не выбран</value>
+  </data>
+  <data name="ThemeNameSystem" xml:space="preserve">
+    <value>Как в системе</value>
+  </data>
+  <data name="ThemeNameDark" xml:space="preserve">
+    <value>Тёмная</value>
+  </data>
+  <data name="ThemeNameLight" xml:space="preserve">
+    <value>Светлая</value>
+  </data>
+  <data name="HistoryTitleTextBlock.Text" xml:space="preserve">
+    <value>История</value>
+  </data>
+  <data name="HistoryDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Просматривайте коммиты текущей ветки, измененные файлы и разницу между версиями.</value>
+  </data>
+  <data name="HistorySearchTextBox.PlaceholderText" xml:space="preserve">
+    <value>Поиск</value>
+  </data>
+  <data name="RefreshHistoryAppBarButton.Label" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="NoCommitsInfoBar.Title" xml:space="preserve">
+    <value>Фиксаций нет</value>
+  </data>
+  <data name="NoCommitsInfoBar.Message" xml:space="preserve">
+    <value>Нет коммитов для текущего репозитория или поиска.</value>
+  </data>
+  <data name="LoadMoreCommitsButtonText" xml:space="preserve">
+    <value>Загрузить ещё {0}</value>
+  </data>
+  <data name="LoadingMoreHistoryProgress" xml:space="preserve">
+    <value>Загрузка более ранних коммитов…</value>
+  </data>
+  <data name="ChangeCountOne" xml:space="preserve">
+    <value>изменение</value>
+  </data>
+  <data name="ChangeCountFew" xml:space="preserve">
+    <value>изменения</value>
+  </data>
+  <data name="ChangeCountMany" xml:space="preserve">
+    <value>изменений</value>
+  </data>
+  <data name="CommitDetailsTitleTextBlock.Text" xml:space="preserve">
+    <value>Сведения о коммите</value>
+  </data>
+  <data name="CommitParentMainline" xml:space="preserve">
+    <value>Основная линия</value>
+  </data>
+  <data name="CommitParentMergedHistory" xml:space="preserve">
+    <value>Влитая история</value>
+  </data>
+  <data name="CommitParentUnavailable" xml:space="preserve">
+    <value>Не загружен в историю</value>
+  </data>
+  <data name="CommitParentTooltipTitle" xml:space="preserve">
+    <value>Родительский коммит</value>
+  </data>
+  <data name="ParentCommitNotLoaded" xml:space="preserve">
+    <value>Родительский коммит {0} находится за пределами загруженной истории.</value>
+  </data>
+  <data name="ShowCommitDetailsBlockAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Показать сведения о коммите</value>
+  </data>
+  <data name="ShowCommitFilesBlockAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Показать измененные файлы</value>
+  </data>
+  <data name="EditCommitMessageAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Изменить сообщение коммита</value>
+  </data>
+  <data name="EditCommitMessageDialogTitle" xml:space="preserve">
+    <value>Изменить сообщение коммита</value>
+  </data>
+  <data name="EditCommitMessageDialogHeader" xml:space="preserve">
+    <value>Сообщение коммита</value>
+  </data>
+  <data name="EditCommitMessageDialogPrimaryButton" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="EditCommitMessageDialogPlaceholder" xml:space="preserve">
+    <value>Опишите коммит. Введите @, чтобы вставить имя измененного файла</value>
+  </data>
+  <data name="AmendingCommitMessageProgress" xml:space="preserve">
+    <value>Обновление сообщения коммита...</value>
+  </data>
+  <data name="CommitMessageAmended" xml:space="preserve">
+    <value>Сообщение коммита обновлено.</value>
+  </data>
+  <data name="CopyCommitDateMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="CopyCommitAuthorMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="CopyCommitHashMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="OpenRepositoryBeforeHistory" xml:space="preserve">
+    <value>Откройте репозиторий перед обновлением истории.</value>
+  </data>
+  <data name="GitLogCommandFailed" xml:space="preserve">
+    <value>Не удалось загрузить историю коммитов.</value>
+  </data>
+  <data name="RepositoryMissingObjectHistoryError" xml:space="preserve">
+    <value>В локальном репозитории не хватает одного или нескольких Git-объектов, которые нужны для обхода истории коммитов. Обычно это означает, что локальная копия неполная или повреждена. SimpleGit11 может попробовать загрузить недостающие объекты из всех настроенных удалённых репозиториев.
+
+{0}</value>
+  </data>
+  <data name="RepositoryHistoryIncompleteTitle" xml:space="preserve">
+    <value>История коммитов неполная.</value>
+  </data>
+  <data name="RepairRepositoryActionText" xml:space="preserve">
+    <value>Исправить</value>
+  </data>
+  <data name="RefreshingHistoryProgress" xml:space="preserve">
+    <value>Обновление истории...</value>
+  </data>
+  <data name="RepairingRepositoryProgress" xml:space="preserve">
+    <value>Загрузка объектов репозитория из удалённых репозиториев...</value>
+  </data>
+  <data name="RepositoryRepairNoRemotes" xml:space="preserve">
+    <value>Для этого репозитория не настроены удалённые репозитории. Клонируйте репозиторий заново или восстановите недостающие объекты из другой рабочей копии.</value>
+  </data>
+  <data name="RepositoryRepairSucceeded" xml:space="preserve">
+    <value>Объекты репозитория загружены, история обновлена.</value>
+  </data>
+  <data name="RepositoryRepairFailed" xml:space="preserve">
+    <value>Не удалось восстановить репозиторий.</value>
+  </data>
+  <data name="RepositoryRepairFailedMissingObject" xml:space="preserve">
+    <value>SimpleGit11 загрузил данные из всех удалённых репозиториев, но Git всё ещё не может обойти историю. Возможно, недостающего объекта нет в настроенных удалённых репозиториях; клонируйте репозиторий заново или восстановите его из другой рабочей копии.
+
+{0}</value>
+  </data>
+  <data name="RepositoryRepairIncompleteTitle" xml:space="preserve">
+    <value>Репозиторий восстановлен не полностью.</value>
+  </data>
+  <data name="GitShowCommandFailed" xml:space="preserve">
+    <value>Не удалось загрузить данные коммита.</value>
+  </data>
+  <data name="SelectCommitToViewDiff" xml:space="preserve">
+    <value>Выберите коммит, чтобы посмотреть сравнение.</value>
+  </data>
+  <data name="SelectCommitFileToViewDiff" xml:space="preserve">
+    <value>Выберите измененный файл или просмотрите полное сравнение.</value>
+  </data>
+  <data name="NoCommitDiffAvailable" xml:space="preserve">
+    <value>Для этого коммита нет текстового сравнения.</value>
+  </data>
+  <data name="BranchesDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Управляйте локальными и удалёнными ветками, тегами и рабочими деревьями.</value>
+  </data>
+  <data name="RefreshBranchesAppBarButton.Label" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="CheckoutBranchAppBarButton.Label" xml:space="preserve">
+    <value>Переключиться</value>
+  </data>
+  <data name="NoBranchesInfoBar.Title" xml:space="preserve">
+    <value>Веток нет</value>
+  </data>
+  <data name="NoBranchesInfoBar.Message" xml:space="preserve">
+    <value>В этом репозитории не найдены локальные ветки.</value>
+  </data>
+  <data name="NoTagsInfoBar.Title" xml:space="preserve">
+    <value>Тегов нет</value>
+  </data>
+  <data name="NoTagsInfoBar.Message" xml:space="preserve">
+    <value>В этом репозитории не найдены локальные теги.</value>
+  </data>
+  <data name="NoFilteredBranchesInfoBar.Title" xml:space="preserve">
+    <value>Веток для отображения нет</value>
+  </data>
+  <data name="NoFilteredBranchesInfoBar.Message" xml:space="preserve">
+    <value>Нет веток, соответствующих выбранному виду и фильтру.</value>
+  </data>
+  <data name="NoFilteredTagsInfoBar.Title" xml:space="preserve">
+    <value>Тегов для отображения нет</value>
+  </data>
+  <data name="NoFilteredTagsInfoBar.Message" xml:space="preserve">
+    <value>Нет тегов, соответствующих выбранному виду и фильтру.</value>
+  </data>
+  <data name="BranchSearchTextBox.PlaceholderText" xml:space="preserve">
+    <value>Поиск веток и тегов</value>
+  </data>
+  <data name="BranchesHeaderTextBlock.Text" xml:space="preserve">
+    <value>Ветки</value>
+  </data>
+  <data name="BranchesAndTagsHeaderTextBlock.Text" xml:space="preserve">
+    <value>и</value>
+  </data>
+  <data name="TagsHeaderTextBlock.Text" xml:space="preserve">
+    <value>теги</value>
+  </data>
+  <data name="LocalBranchScopeSelectorBarItem.Text" xml:space="preserve">
+    <value>Локальные</value>
+  </data>
+  <data name="RemoteBranchScopeSelectorBarItem.Text" xml:space="preserve">
+    <value>Удаленные</value>
+  </data>
+  <data name="AllBranchScopeSelectorBarItem.Text" xml:space="preserve">
+    <value>Все</value>
+  </data>
+  <data name="BranchScopeLocalTitle" xml:space="preserve">
+    <value>Локальные ветки</value>
+  </data>
+  <data name="BranchScopeRemoteTitle" xml:space="preserve">
+    <value>Удаленные ветки</value>
+  </data>
+  <data name="BranchScopeAllTitle" xml:space="preserve">
+    <value>Все ветки</value>
+  </data>
+  <data name="TagScopeLocalTitle" xml:space="preserve">
+    <value>Локальные теги</value>
+  </data>
+  <data name="TagScopeRemoteTitle" xml:space="preserve">
+    <value>Удаленные теги</value>
+  </data>
+  <data name="TagScopeAllTitle" xml:space="preserve">
+    <value>Все теги</value>
+  </data>
+  <data name="OpenRepositoryBeforeBranches" xml:space="preserve">
+    <value>Откройте репозиторий перед управлением ветками.</value>
+  </data>
+  <data name="GitBranchCommandFailed" xml:space="preserve">
+    <value>Операция с веткой завершилась с ошибкой.</value>
+  </data>
+  <data name="GitTagCommandFailed" xml:space="preserve">
+    <value>Операция с тегом завершилась с ошибкой.</value>
+  </data>
+  <data name="NoCommitsForTagCreation" xml:space="preserve">
+    <value>Нет коммитов, от которых можно создать тег.</value>
+  </data>
+  <data name="CreateTagAppBarButton.Label" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="CheckoutTagAppBarButton.Label" xml:space="preserve">
+    <value>Переключиться</value>
+  </data>
+  <data name="DeleteTagAppBarButton.Label" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="CreateBranchFromTagMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Создать ветку от тега</value>
+  </data>
+  <data name="CheckoutTagMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Переключиться</value>
+  </data>
+  <data name="DeleteTagMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="CopyTagNameMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать имя тега</value>
+  </data>
+  <data name="CopyTagHashMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать хэш коммита</value>
+  </data>
+  <data name="TagCreateDialog.Title" xml:space="preserve">
+    <value>Новый тег</value>
+  </data>
+  <data name="TagCreateDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="TagCreateDialog.CloseButtonText" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="TagCreateNameTextBox.Header" xml:space="preserve">
+    <value>Имя тега</value>
+  </data>
+  <data name="TagCreateNameTextBox.PlaceholderText" xml:space="preserve">
+    <value>v1.0.0</value>
+  </data>
+  <data name="TagCreateStartPointComboBox.Header" xml:space="preserve">
+    <value>Начальная точка</value>
+  </data>
+  <data name="TagCreateStartPointComboBox.PlaceholderText" xml:space="preserve">
+    <value>Выберите коммит</value>
+  </data>
+  <data name="TagCreateAnnotatedToggleSwitch.Header" xml:space="preserve">
+    <value>Аннотированный тег</value>
+  </data>
+  <data name="TagCreateAnnotatedToggleSwitch.OnContent" xml:space="preserve">
+    <value>Аннотированный</value>
+  </data>
+  <data name="TagCreateAnnotatedToggleSwitch.OffContent" xml:space="preserve">
+    <value>Легковесный</value>
+  </data>
+  <data name="TagCreateMessageTextBox.Header" xml:space="preserve">
+    <value>Сообщение тега</value>
+  </data>
+  <data name="TagCreateMessageTextBox.PlaceholderText" xml:space="preserve">
+    <value>Опишите этот тег</value>
+  </data>
+  <data name="TagCreateSucceeded" xml:space="preserve">
+    <value>Создан тег '{0}'.</value>
+  </data>
+  <data name="TagDeleteSucceeded" xml:space="preserve">
+    <value>Удален тег '{0}'.</value>
+  </data>
+  <data name="TagCreateProgressMessage" xml:space="preserve">
+    <value>Создание тега '{0}'</value>
+  </data>
+  <data name="TagDeleteProgressMessage" xml:space="preserve">
+    <value>Удаление тега '{0}'</value>
+  </data>
+  <data name="TagCheckoutProgressMessage" xml:space="preserve">
+    <value>Переключение на тег '{0}'</value>
+  </data>
+  <data name="TagCheckoutSucceeded" xml:space="preserve">
+    <value>Выполнено переключение на тег '{0}' в режиме detached HEAD.</value>
+  </data>
+  <data name="TagDeleteTitle" xml:space="preserve">
+    <value>Удалить тег?</value>
+  </data>
+  <data name="TagDeleteMessage" xml:space="preserve">
+    <value>Удалить локальный тег '{0}'?</value>
+  </data>
+  <data name="RemoteTagDeleteMessage" xml:space="preserve">
+    <value>Удалить удаленный тег '{0}' из удаленного репозитория?</value>
+  </data>
+  <data name="TagDeletePrimaryButtonText" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="CreateBranchFromTagDialogTitle" xml:space="preserve">
+    <value>Создать ветку от тега</value>
+  </data>
+  <data name="CreateBranchFromTagDialogTextBoxHeader" xml:space="preserve">
+    <value>Имя ветки</value>
+  </data>
+  <data name="CreateBranchFromTagDialogPlaceholder" xml:space="preserve">
+    <value>release/v1.0.0</value>
+  </data>
+  <data name="CreateBranchFromTagDialogPrimaryButton" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="CreateBranchFromTagDialogCloseButton" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="BranchCreateFromTagSucceeded" xml:space="preserve">
+    <value>Создана ветка '{0}' от тега '{1}'.</value>
+  </data>
+  <data name="RemoteTagDeleteSucceeded" xml:space="preserve">
+    <value>Удален удаленный тег '{0}'.</value>
+  </data>
+  <data name="BranchCheckoutSucceeded" xml:space="preserve">
+    <value>Выполнено переключение на ветку '{0}'.</value>
+  </data>
+  <data name="BranchCreateSucceeded" xml:space="preserve">
+    <value>Создана ветка '{0}'.</value>
+  </data>
+  <data name="OrphanBranchCreateSucceeded" xml:space="preserve">
+    <value>Orphan-ветка '{0}' создана с начальным пустым коммитом. Текущая рабочая копия не переключалась.</value>
+  </data>
+  <data name="OrphanBranchCheckoutSucceeded" xml:space="preserve">
+    <value>Выполнено переключение на orphan-ветку '{0}'. Она появится в списках после первого коммита.</value>
+  </data>
+  <data name="OrphanBranchSnapshotCreateSucceeded" xml:space="preserve">
+    <value>Orphan-ветка '{0}' создана со снимком файлов выбранного коммита и без предыдущей истории. Текущая рабочая копия не переключалась.</value>
+  </data>
+  <data name="OrphanBranchSnapshotCheckoutSucceeded" xml:space="preserve">
+    <value>Orphan-ветка '{0}' создана со снимком файлов выбранного коммита и без предыдущей истории; выполнено переключение на неё.</value>
+  </data>
+  <data name="BranchDeleteSucceeded" xml:space="preserve">
+    <value>Удалена ветка '{0}'</value>
+  </data>
+  <data name="BranchRenameSucceeded" xml:space="preserve">
+    <value>Ветка '{0}' переименована в '{1}'.</value>
+  </data>
+  <data name="BranchCreateDialog.Title" xml:space="preserve">
+    <value>Новая ветка</value>
+  </data>
+  <data name="BranchCreateDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="BranchCreateDialog.CloseButtonText" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="BranchCreateOrphanCheckBox.Content" xml:space="preserve">
+    <value>Создать ветку без родителей</value>
+  </data>
+  <data name="BranchCreateOrphanContentRadioButtons.Header" xml:space="preserve">
+    <value>Начальное содержимое</value>
+  </data>
+  <data name="BranchCreateOrphanEmptyContent" xml:space="preserve">
+    <value>Пустая ветка</value>
+  </data>
+  <data name="BranchCreateOrphanSnapshotContent" xml:space="preserve">
+    <value>Взять за основу файлы выбранной начальной точки</value>
+  </data>
+  <data name="BranchCreateAndCheckoutToggleSwitch.Header" xml:space="preserve">
+    <value>После создания</value>
+  </data>
+  <data name="BranchCreateAndCheckoutToggleSwitch.OnContent" xml:space="preserve">
+    <value>Переключить эту рабочую копию</value>
+  </data>
+  <data name="BranchCreateAndCheckoutToggleSwitch.OffContent" xml:space="preserve">
+    <value>Оставить текущую рабочую копию</value>
+  </data>
+  <data name="BranchCreateCheckoutOrphanInfoBar.Title" xml:space="preserve">
+    <value>Текущая рабочая копия будет переключена</value>
+  </data>
+  <data name="BranchCreateCheckoutOrphanInfoBar.Message" xml:space="preserve">
+    <value>Git переключит эту рабочую копию. Для пустой orphan-ветки отслеживаемые файлы будут удалены, а для ветки со снимком — обновлены до выбранного коммита. Локальные изменения могут помешать переключению.</value>
+  </data>
+  <data name="BranchCreateOrphanWithoutCheckoutInfoBar.Title" xml:space="preserve">
+    <value>Будет создан начальный корневой коммит</value>
+  </data>
+  <data name="BranchCreateOrphanWithoutCheckoutInfoBar.Message" xml:space="preserve">
+    <value>Чтобы ветка существовала без переключения на неё, ей нужен коммит. Git создаст корневой коммит без родителей с выбранным начальным содержимым; текущая ветка и рабочие файлы не изменятся.</value>
+  </data>
+  <data name="BranchCreateNameTextBox.Header" xml:space="preserve">
+    <value>Имя ветки</value>
+  </data>
+  <data name="BranchCreateNameTextBox.PlaceholderText" xml:space="preserve">
+    <value>feature/new-branch</value>
+  </data>
+  <data name="BranchCreateSourceComboBox.Header" xml:space="preserve">
+    <value>Тип начальной точки</value>
+  </data>
+  <data name="BranchCreateSourceComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Тип начальной точки ветки</value>
+  </data>
+  <data name="BranchCreateStartPointAutoSuggestBox.Header" xml:space="preserve">
+    <value>Начальная точка</value>
+  </data>
+  <data name="BranchCreateStartPointAutoSuggestBox.PlaceholderText" xml:space="preserve">
+    <value>Хэш коммита, имя ветки или имя тега</value>
+  </data>
+  <data name="BranchCreateStartPointAutoSuggestBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Начальная точка ветки</value>
+  </data>
+  <data name="BranchCreateLoadingRevisionsTextBlock.Text" xml:space="preserve">
+    <value>Загрузка начальных точек…</value>
+  </data>
+  <data name="BranchDeleteTitle" xml:space="preserve">
+    <value>Удаление</value>
+  </data>
+  <data name="BranchDeletePrimaryButtonText" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="BranchDeleteMessage" xml:space="preserve">
+    <value>Удалить ветку '{0}'?</value>
+  </data>
+  <data name="BranchForceDeleteTitle" xml:space="preserve">
+    <value>Принудительное удаление ветки</value>
+  </data>
+  <data name="BranchForceDeletePrimaryButtonText" xml:space="preserve">
+    <value>Удалить принудительно</value>
+  </data>
+  <data name="BranchForceDeleteMessage" xml:space="preserve">
+    <value>Ветка '{0}' не полностью слита. Удалить ее принудительно? Коммиты, доступные только из этой ветки, будет сложнее восстановить.</value>
+  </data>
+  <data name="CreateBranchSplitButtonTextBlock.Text" xml:space="preserve">
+    <value>Ветка</value>
+  </data>
+  <data name="RenameBranchMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Переименовать</value>
+  </data>
+  <data name="DeleteBranchMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="MergeBranchSplitButtonTextBlock.Text" xml:space="preserve">
+    <value>Merge</value>
+  </data>
+  <data name="SquashMergeBranchMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Слить только изменения</value>
+  </data>
+  <data name="RebaseBranchMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Перебазировать текущую ветку</value>
+  </data>
+  <data name="AbortMergeAppBarButton.Label" xml:space="preserve">
+    <value>Отменить слияние</value>
+  </data>
+  <data name="ContinueOperationSplitButtonTextBlock.Text" xml:space="preserve">
+    <value>Продолжить</value>
+  </data>
+  <data name="ContinueOperationSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Продолжить текущую операцию Git</value>
+  </data>
+  <data name="SkipOperationMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Пропустить текущий коммит</value>
+  </data>
+  <data name="AbortOperationMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Отменить операцию</value>
+  </data>
+  <data name="MergeCommitDialogTitle" xml:space="preserve">
+    <value>Завершение слияния</value>
+  </data>
+  <data name="RemoteBranchCheckoutSucceeded" xml:space="preserve">
+    <value>Удаленная ветка '{0}' переключена как локальная '{1}'.</value>
+  </data>
+  <data name="MergeBranchDialogTitle" xml:space="preserve">
+    <value>Выполнить merge?</value>
+  </data>
+  <data name="MergeBranchDialogMessage" xml:space="preserve">
+    <value>Влить '{0}' в текущую ветку? При конфликтах потребуется ручное разрешение.</value>
+  </data>
+  <data name="MergeBranchDialogPrimaryButton" xml:space="preserve">
+    <value>Merge</value>
+  </data>
+  <data name="SquashMergeBranchDialogTitle" xml:space="preserve">
+    <value>Выполнить squash merge?</value>
+  </data>
+  <data name="SquashMergeBranchDialogMessage" xml:space="preserve">
+    <value>Влить '{0}' в текущую ветку через squash? Изменения будут подготовлены для отдельного коммита.</value>
+  </data>
+  <data name="SquashMergeBranchDialogPrimaryButton" xml:space="preserve">
+    <value>Squash merge</value>
+  </data>
+  <data name="RebaseBranchDialogTitle" xml:space="preserve">
+    <value>Выполнить rebase?</value>
+  </data>
+  <data name="RebaseBranchDialogMessage" xml:space="preserve">
+    <value>Перебазировать текущую ветку на '{0}'? Это переписывает локальную историю коммитов.</value>
+  </data>
+  <data name="RebaseBranchDialogPrimaryButton" xml:space="preserve">
+    <value>Rebase</value>
+  </data>
+  <data name="AbortMergeDialogTitle" xml:space="preserve">
+    <value>Отменить merge?</value>
+  </data>
+  <data name="AbortMergeDialogMessage" xml:space="preserve">
+    <value>Отменить текущий merge и вернуть рабочее дерево в состояние до merge?</value>
+  </data>
+  <data name="AbortMergeDialogPrimaryButton" xml:space="preserve">
+    <value>Отменить merge</value>
+  </data>
+  <data name="SkipOperationDialogTitle" xml:space="preserve">
+    <value>Пропустить текущий коммит?</value>
+  </data>
+  <data name="SkipOperationDialogMessage" xml:space="preserve">
+    <value>Пропустить текущий коммит и продолжить операцию? Его изменения не войдут в историю.</value>
+  </data>
+  <data name="SkipOperationDialogPrimaryButton" xml:space="preserve">
+    <value>Пропустить коммит</value>
+  </data>
+  <data name="MergeBranchSucceeded" xml:space="preserve">
+    <value>Ветка '{0}' влита в текущую ветку.</value>
+  </data>
+  <data name="SquashMergeBranchSucceeded" xml:space="preserve">
+    <value>Выполнен squash merge '{0}'. Проверьте и закоммитьте подготовленные изменения.</value>
+  </data>
+  <data name="RebaseBranchSucceeded" xml:space="preserve">
+    <value>Текущая ветка перебазирована на '{0}'.</value>
+  </data>
+  <data name="RebaseBranchAlreadyUpToDate" xml:space="preserve">
+    <value>Текущая ветка уже основана на '{0}'. Коммиты не изменены.</value>
+  </data>
+  <data name="AbortMergeSucceeded" xml:space="preserve">
+    <value>Merge отменен.</value>
+  </data>
+  <data name="AbortOperationDialogTitle" xml:space="preserve">
+    <value>Отменить операцию?</value>
+  </data>
+  <data name="AbortOperationDialogMessage" xml:space="preserve">
+    <value>Отменить текущую операцию Git и вернуть репозиторий в предыдущее состояние?</value>
+  </data>
+  <data name="AbortOperationDialogPrimaryButton" xml:space="preserve">
+    <value>Отменить операцию</value>
+  </data>
+  <data name="ContinueOperationSucceeded" xml:space="preserve">
+    <value>Операция продолжена.</value>
+  </data>
+  <data name="ResolveConflictsBeforeContinueOperation" xml:space="preserve">
+    <value>Перед продолжением операции разрешите и проиндексируйте все конфликты.</value>
+  </data>
+  <data name="SkipOperationSucceeded" xml:space="preserve">
+    <value>Текущий коммит пропущен.</value>
+  </data>
+  <data name="AbortOperationSucceeded" xml:space="preserve">
+    <value>Операция отменена.</value>
+  </data>
+  <data name="GitOperationCommandFailed" xml:space="preserve">
+    <value>Не удалось выполнить операцию Git.</value>
+  </data>
+  <data name="SynchronizationTitleTextBlock.Text" xml:space="preserve">
+    <value>Синхронизация</value>
+  </data>
+  <data name="SynchronizationDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Проверка, вытягивание, отправка изменений в удаленный репозиторий.</value>
+  </data>
+  <data name="RefreshSynchronizationAppBarButton.Label" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="AddRemoteButton.Content" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="PullAppBarButton.Label" xml:space="preserve">
+    <value>Вытянуть</value>
+  </data>
+  <data name="PushSplitButtonTextBlock.Text" xml:space="preserve">
+    <value>Отправить</value>
+  </data>
+  <data name="PushSplitButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Отправить все изменения</value>
+  </data>
+  <data name="PushSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отправить все локальные изменения. Откройте меню для атомарной отправки.</value>
+  </data>
+  <data name="AtomicPushMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Отправить атомарно</value>
+  </data>
+  <data name="AtomicPushMenuFlyoutItem.AutomationProperties.HelpText" xml:space="preserve">
+    <value>Все ссылки каждого удалённого репозитория обновятся вместе либо не изменятся.</value>
+  </data>
+  <data name="RefreshSynchronizationTooltip.Content" xml:space="preserve">
+    <value>Получить актуальное состояние удаленного репозитория</value>
+  </data>
+  <data name="PullSynchronizationTooltip.Content" xml:space="preserve">
+    <value>Вытянуть входящие изменения в текущую ветку</value>
+  </data>
+  <data name="CancelSynchronizationOperationButton.Content" xml:space="preserve">
+    <value>Отменить</value>
+  </data>
+  <data name="CancelSynchronizationOperationButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Отменить удаленную операцию</value>
+  </data>
+  <data name="SynchronizationOperationCanceled" xml:space="preserve">
+    <value>Удаленная операция отменена.</value>
+  </data>
+  <data name="OpenRepositoryBeforeSynchronization" xml:space="preserve">
+    <value>Откройте репозиторий перед управлением удаленными ветками.</value>
+  </data>
+  <data name="GitRemoteCommandFailed" xml:space="preserve">
+    <value>Операция с удалённым репозиторием завершилась с ошибкой.</value>
+  </data>
+  <data name="RefreshingSynchronizationProgress" xml:space="preserve">
+    <value>Обновление удаленного репозитория...</value>
+  </data>
+  <data name="PullingProgress" xml:space="preserve">
+    <value>Выполняется вытягивание изменений текущей ветки...</value>
+  </data>
+  <data name="PullSucceeded" xml:space="preserve">
+    <value>Вытягивание изменений завершено.</value>
+  </data>
+  <data name="RemoteAuthenticationFailed" xml:space="preserve">
+    <value>Ошибка авторизации. Проверьте учетные данные или Git Credential Manager.</value>
+  </data>
+  <data name="RemoteOperationConflicts" xml:space="preserve">
+    <value>Git сообщил о конфликтах. Разрешите конфликты перед продолжением.</value>
+  </data>
+  <data name="RemoteOperationNonFastForward" xml:space="preserve">
+    <value>Отправка отклонена: в удаленном репозитории есть коммиты, которых нет локально. Выполните проверку или вытягивание.</value>
+  </data>
+  <data name="RemoteAtomicPushNotSupported" xml:space="preserve">
+    <value>Удалённый репозиторий не поддерживает атомарную отправку. Используйте обычную команду «Отправить».</value>
+  </data>
+  <data name="RepositorySettingsTitleTextBlock.Text" xml:space="preserve">
+    <value>Настройки текущего репозитория</value>
+  </data>
+  <data name="RepositoryDefaultsTitleTextBlock.Text" xml:space="preserve">
+    <value>Параметры Git</value>
+  </data>
+  <data name="InitialBranchNameSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Начальная ветка по умолчанию</value>
+  </data>
+  <data name="InitialBranchNameSettingsTextBox.PlaceholderText" xml:space="preserve">
+    <value>main</value>
+  </data>
+  <data name="RepositoryUserNameSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Имя пользователя</value>
+  </data>
+  <data name="RepositoryUserNameSettingsTextBox.PlaceholderText" xml:space="preserve">
+    <value>Иван Иванов</value>
+  </data>
+  <data name="RepositoryEmailSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Почта</value>
+  </data>
+  <data name="RepositoryEmailSettingsTextBox.PlaceholderText" xml:space="preserve">
+    <value>name@example.com</value>
+  </data>
+  <data name="SaveRepositorySettingsButton.Content" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="SaveGitSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Сохранить параметры Git</value>
+  </data>
+  <data name="RepositorySettingsSaved" xml:space="preserve">
+    <value>Параметры Git сохранены.</value>
+  </data>
+  <data name="GitConfigReadFailed" xml:space="preserve">
+    <value>Не удалось прочитать параметры Git.</value>
+  </data>
+  <data name="GitConfigSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить параметры Git.</value>
+  </data>
+  <data name="CredentialHelperSetupDialogTitle" xml:space="preserve">
+    <value>Требуется Git Credential Manager</value>
+  </data>
+  <data name="CredentialHelperSetupDialogMessage" xml:space="preserve">
+    <value>Удаленные функции SimpleGit11 работают только когда Git credential.helper настроен как manager. Применить эту глобальную настройку Git для clone, fetch, pull и push?</value>
+  </data>
+  <data name="CredentialHelperSetupDialogPrimaryButton" xml:space="preserve">
+    <value>Применить</value>
+  </data>
+  <data name="GlobalRepositorySettingsTitleTextBlock.Text" xml:space="preserve">
+    <value>Глобальные настройки Git</value>
+  </data>
+  <data name="CommitDialogPrimaryButton" xml:space="preserve">
+    <value>Ок</value>
+  </data>
+  <data name="CommitSplitButtonTextBlock.Text" xml:space="preserve">
+    <value>Коммит</value>
+  </data>
+  <data name="AmendCommitMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Исправить</value>
+  </data>
+  <data name="AmendMessageCheckBox.Content" xml:space="preserve">
+    <value>Редактировать сообщение</value>
+  </data>
+  <data name="AmendDialogTitle" xml:space="preserve">
+    <value>Исправление предыдущего коммита</value>
+  </data>
+  <data name="DiscardSelectedSplitButtonTextBlock.Text" xml:space="preserve">
+    <value>Отменить</value>
+  </data>
+  <data name="CleanUntrackedMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Clean</value>
+  </data>
+  <data name="RevertCommitAppBarButton.Label" xml:space="preserve">
+    <value>Отменить</value>
+  </data>
+  <data name="RevertCommitMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Отменить</value>
+  </data>
+  <data name="ResetSplitButtonTextBlock.Text" xml:space="preserve">
+    <value>Сброс</value>
+  </data>
+  <data name="ResetCommitSplitMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Сброс</value>
+  </data>
+  <data name="ResetSoftMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Мягкий</value>
+  </data>
+  <data name="ResetMixedMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Смешанный</value>
+  </data>
+  <data name="ResetHardMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Жесткий</value>
+  </data>
+  <data name="ConfirmationDialogCancelButton" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="DiscardFileDialogTitle" xml:space="preserve">
+    <value>Отменить изменения файла?</value>
+  </data>
+  <data name="DiscardFileDialogMessage" xml:space="preserve">
+    <value>Локальные изменения в файле '{0}' будут безвозвратно отменены. Это действие нельзя откатить из SimpleGit11.</value>
+  </data>
+  <data name="DiscardFileDialogPrimaryButton" xml:space="preserve">
+    <value>Выполнить</value>
+  </data>
+  <data name="DiscardSelectedFilesDialogTitle" xml:space="preserve">
+    <value>Отменить изменения выбранных файлов?</value>
+  </data>
+  <data name="DiscardSelectedFilesDialogMessage" xml:space="preserve">
+    <value>Будут безвозвратно отменены локальные изменения в выбранных файлах. Количество файлов: {0}. Это действие нельзя отменить из SimpleGit11.</value>
+  </data>
+  <data name="DiscardSelectedFilesDialogPrimaryButton" xml:space="preserve">
+    <value>Отменить выбранные</value>
+  </data>
+  <data name="CleanUntrackedDialogTitle" xml:space="preserve">
+    <value>Удалить untracked-файлы?</value>
+  </data>
+  <data name="CleanUntrackedDialogMessage" xml:space="preserve">
+    <value>Все untracked-файлы и папки в репозитории будут безвозвратно удалены.</value>
+  </data>
+  <data name="CleanUntrackedDialogPrimaryButton" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="ApplyStashDialogTitle" xml:space="preserve">
+    <value>Применить спрятанные изменения?</value>
+  </data>
+  <data name="ApplyStashDialogMessage" xml:space="preserve">
+    <value>Применить '{0}' к рабочему дереву? Возможны конфликты с локальными изменениями.</value>
+  </data>
+  <data name="ApplyStashDialogPrimaryButton" xml:space="preserve">
+    <value>Применить</value>
+  </data>
+  <data name="PopStashDialogTitle" xml:space="preserve">
+    <value>Вытащить?</value>
+  </data>
+  <data name="PopStashDialogMessage" xml:space="preserve">
+    <value>Достать и применить '{0}'? Возможны конфликты с локальными изменениями.</value>
+  </data>
+  <data name="PopStashDialogPrimaryButton" xml:space="preserve">
+    <value>Ок</value>
+  </data>
+  <data name="DropStashDialogTitle" xml:space="preserve">
+    <value>Удалить заначку?</value>
+  </data>
+  <data name="DropStashDialogMessage" xml:space="preserve">
+    <value>Безвозвратно удалить '{0}' из заначек?</value>
+  </data>
+  <data name="DropStashDialogPrimaryButton" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="DropAllStashesDialogTitle" xml:space="preserve">
+    <value>Удалить все заначки?</value>
+  </data>
+  <data name="DropAllStashesDialogMessage" xml:space="preserve">
+    <value>Безвозвратно удалить все заначки? Количество заначек: {0}. Это действие нельзя отменить.</value>
+  </data>
+  <data name="DropAllStashesDialogPrimaryButton" xml:space="preserve">
+    <value>Удалить все</value>
+  </data>
+  <data name="RevertCommitDialogTitle" xml:space="preserve">
+    <value>Отменить коммит?</value>
+  </data>
+  <data name="RevertCommitDialogMessage" xml:space="preserve">
+    <value>Создать новый коммит, который отменяет {0}: {1}?</value>
+  </data>
+  <data name="RevertCommitDialogPrimaryButton" xml:space="preserve">
+    <value>Да</value>
+  </data>
+  <data name="ResetSoftDialogTitle" xml:space="preserve">
+    <value>Мягкий сброс?</value>
+  </data>
+  <data name="ResetSoftDialogMessage" xml:space="preserve">
+    <value>Переместить HEAD на {0}: {1}, сохранив изменения staged?</value>
+  </data>
+  <data name="ResetSoftDialogPrimaryButton" xml:space="preserve">
+    <value>Мягкий сброс</value>
+  </data>
+  <data name="ResetMixedDialogTitle" xml:space="preserve">
+    <value>Смешанный сброс?</value>
+  </data>
+  <data name="ResetMixedDialogMessage" xml:space="preserve">
+    <value>Переместить HEAD на {0}: {1}, сохранив изменения в working tree как unstaged?</value>
+  </data>
+  <data name="ResetMixedDialogPrimaryButton" xml:space="preserve">
+    <value>Смешанный сброс</value>
+  </data>
+  <data name="ResetHardDialogTitle" xml:space="preserve">
+    <value>Жесткий сброс?</value>
+  </data>
+  <data name="ResetHardDialogMessage" xml:space="preserve">
+    <value>Переместить HEAD на {0}: {1} и безвозвратно удалить локальные изменения?</value>
+  </data>
+  <data name="ResetHardDialogPrimaryButton" xml:space="preserve">
+    <value>Жесткий сброс</value>
+  </data>
+  <data name="DiscardFileSucceeded" xml:space="preserve">
+    <value>Изменения в '{0}' отменены.</value>
+  </data>
+  <data name="DiscardSelectedFilesSucceeded" xml:space="preserve">
+    <value>Изменения в выбранных файлах отменены. Количество файлов: {0}.</value>
+  </data>
+  <data name="CleanUntrackedSucceeded" xml:space="preserve">
+    <value>Untracked-файлы удалены.</value>
+  </data>
+  <data name="CreateStashSucceeded" xml:space="preserve">
+    <value>Заначка создана.</value>
+  </data>
+  <data name="ApplyStashSucceeded" xml:space="preserve">
+    <value>Заначка {0} применена.</value>
+  </data>
+  <data name="PopStashSucceeded" xml:space="preserve">
+    <value>Заначка {0} вытащена.</value>
+  </data>
+  <data name="DropStashSucceeded" xml:space="preserve">
+    <value>Заначка {0} удалена.</value>
+  </data>
+  <data name="DropAllStashesSucceeded" xml:space="preserve">
+    <value>Все заначки удалены.</value>
+  </data>
+  <data name="RevertCommitSucceeded" xml:space="preserve">
+    <value>Выполнен revert для {0}.</value>
+  </data>
+  <data name="ResetSucceeded" xml:space="preserve">
+    <value>Выполнен {0} reset на {1}.</value>
+  </data>
+  <data name="SelectStashBeforeOperation" xml:space="preserve">
+    <value>Выберите заначку перед выполнением операции.</value>
+  </data>
+  <data name="GitDangerousOperationFailed" xml:space="preserve">
+    <value>Git-операция завершилась с ошибкой.</value>
+  </data>
+  <data name="StageSplitButtonTextBlock.Text" xml:space="preserve">
+    <value>Подготовка</value>
+  </data>
+  <data name="StageMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Подготовить выбранное</value>
+  </data>
+  <data name="UnstageSelectedMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Отменить выбранное</value>
+  </data>
+  <data name="UnstageAllMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Отменить все</value>
+  </data>
+  <data name="OpenStashDialogAppBarButton.Label" xml:space="preserve">
+    <value>Заначки</value>
+  </data>
+  <data name="DiscardAllUnstagedMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Отменить всё</value>
+  </data>
+  <data name="DiscardAllUnstagedDialogTitle" xml:space="preserve">
+    <value>Отменить все unstaged изменения?</value>
+  </data>
+  <data name="DiscardAllUnstagedDialogMessage" xml:space="preserve">
+    <value>Будут отменены все unstaged изменения файлов и удалены untracked файлы. Staged изменения останутся подготовленными.</value>
+  </data>
+  <data name="DiscardAllUnstagedDialogPrimaryButton" xml:space="preserve">
+    <value>Отменить всё</value>
+  </data>
+  <data name="DiscardAllUnstagedSucceeded" xml:space="preserve">
+    <value>Все unstaged изменения отменены.</value>
+  </data>
+  <data name="StashDialogTitleTextBlock.Text" xml:space="preserve">
+    <value>Заначки</value>
+  </data>
+  <data name="CreateStashAppBarButton.Label" xml:space="preserve">
+    <value>Спрятать</value>
+  </data>
+  <data name="ApplyStashAppBarButton.Label" xml:space="preserve">
+    <value>Применить</value>
+  </data>
+  <data name="PopStashAppBarButton.Label" xml:space="preserve">
+    <value>Вытащить</value>
+  </data>
+  <data name="DropStashSplitButtonTextBlock.Text" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="DropAllStashesMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Удалить все</value>
+  </data>
+  <data name="StashListDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Спрятанные изменения</value>
+  </data>
+  <data name="BranchDeleteFailed" xml:space="preserve">
+    <value>Удаление ветки '{0}' завершилось с ошибкой</value>
+  </data>
+  <data name="RemoteNotFound" xml:space="preserve">
+    <value>Удаленный репозиторий {0} не найден</value>
+  </data>
+  <data name="BranchDeleteProgressMessage" xml:space="preserve">
+    <value>Удаление ветки '{0}'</value>
+  </data>
+  <data name="BranchCheckoutProgressMessage" xml:space="preserve">
+    <value>Переключение на ветку '{0}'</value>
+  </data>
+  <data name="BranchCreateProgressMessage" xml:space="preserve">
+    <value>Создание ветки '{0}'</value>
+  </data>
+  <data name="OrphanBranchCreateProgressMessage" xml:space="preserve">
+    <value>Создание orphan-ветки '{0}' с начальным пустым коммитом</value>
+  </data>
+  <data name="OrphanBranchCheckoutProgressMessage" xml:space="preserve">
+    <value>Создание и переключение на orphan-ветку '{0}'</value>
+  </data>
+  <data name="OrphanBranchInitialCommitMessage" xml:space="preserve">
+    <value>Начальный пустой коммит</value>
+  </data>
+  <data name="OrphanBranchSnapshotCreateProgressMessage" xml:space="preserve">
+    <value>Создание orphan-ветки '{0}' из снимка файлов выбранного коммита</value>
+  </data>
+  <data name="OrphanBranchSnapshotCheckoutProgressMessage" xml:space="preserve">
+    <value>Создание orphan-ветки '{0}' из снимка файлов выбранного коммита и переключение на неё</value>
+  </data>
+  <data name="OrphanBranchSnapshotCommitMessage" xml:space="preserve">
+    <value>Начальный снимок</value>
+  </data>
+  <data name="BranchRenameProgressMessage" xml:space="preserve">
+    <value>Переименование ветки '{0}' в '{1}'</value>
+  </data>
+  <data name="MergeBranchProgressMessage" xml:space="preserve">
+    <value>Слияние '{0}' с текущей веткой</value>
+  </data>
+  <data name="RebaseBranchProgressMessage" xml:space="preserve">
+    <value>Выполняется перебазирование текущей ветки на '{0}'</value>
+  </data>
+  <data name="AbortMergeProgressMessage" xml:space="preserve">
+    <value>Выполняется отмена merge</value>
+  </data>
+  <data name="SyntaxHighlightingTooltip.Content" xml:space="preserve">
+    <value>Подсветка синтаксиса</value>
+  </data>
+  <data name="CopyRepositoryPathMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать путь</value>
+  </data>
+  <data name="CopyRepositoryInfoMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="OpenFoundRepositoryMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="CopyFoundRepositoryPathMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать путь</value>
+  </data>
+  <data name="CopyFoundRepositoryNameMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать название</value>
+  </data>
+  <data name="OpenRepositoryAppBarButton.Label" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="CreateRepositoryAppBarButton.Label" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="CloneRepositoryAppBarButton.Label" xml:space="preserve">
+    <value>Клонировать</value>
+  </data>
+  <data name="CloneRepositoryUrlTextBox.Header" xml:space="preserve">
+    <value>URL для клонирования</value>
+  </data>
+  <data name="CloneRepositoryUrlTextBox.PlaceholderText" xml:space="preserve">
+    <value>https://github.com/org/repository.git</value>
+  </data>
+  <data name="CloneRepositoryFlyoutButton.Content" xml:space="preserve">
+    <value>Клонировать</value>
+  </data>
+  <data name="RefreshRepositoryAppBarButton.Label" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="CloseRepositoryAppBarButton.Label" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="CopyInfoBarMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="RepositoryStatusSectionTitleTextBlock.Text" xml:space="preserve">
+    <value>Текущее состояние</value>
+  </data>
+  <data name="RepositoryStatusSectionDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Состояние репозитория, последний коммит и upstream</value>
+  </data>
+  <data name="WorkingTreeCardTitleTextBlock.Text" xml:space="preserve">
+    <value>Рабочее дерево</value>
+  </data>
+  <data name="StagedCountLabelTextBlock.Text" xml:space="preserve">
+    <value>В индексе</value>
+  </data>
+  <data name="UnstagedCountLabelTextBlock.Text" xml:space="preserve">
+    <value>Не в индексе</value>
+  </data>
+  <data name="ConflictCountLabelTextBlock.Text" xml:space="preserve">
+    <value>Конфликты</value>
+  </data>
+  <data name="SynchronizationCardTitleTextBlock.Text" xml:space="preserve">
+    <value>Синхронизация</value>
+  </data>
+  <data name="AheadCountLabelTextBlock.Text" xml:space="preserve">
+    <value>Впереди</value>
+  </data>
+  <data name="BehindCountLabelTextBlock.Text" xml:space="preserve">
+    <value>Позади</value>
+  </data>
+  <data name="RemoteCountLabelTextBlock.Text" xml:space="preserve">
+    <value>Remotes</value>
+  </data>
+  <data name="RepositorySearchTitleTextBlock.Text" xml:space="preserve">
+    <value>Другие репозитории</value>
+  </data>
+  <data name="RepositorySearchDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Репозитории, найденные в выбранной папке</value>
+  </data>
+  <data name="FoundRepositoryFilterTextBox.PlaceholderText" xml:space="preserve">
+    <value>Найти</value>
+  </data>
+  <data name="BrowseRepositorySearchStartPathAppBarButton.Label" xml:space="preserve">
+    <value>Выбрать</value>
+  </data>
+  <data name="BrowseRepositorySearchStartPathAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Выбрать начальную папку</value>
+  </data>
+  <data name="BrowseRepositorySearchStartPathAppBarButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Выбрать начальную папку</value>
+  </data>
+  <data name="RefreshRepositorySearchButton.Content" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="NoFoundRepositoriesInfoBar.Title" xml:space="preserve">
+    <value>Нет репозиториев</value>
+  </data>
+  <data name="NoFoundRepositoriesInfoBar.Message" xml:space="preserve">
+    <value>Для текущего пути нет сохраненных или найденных репозиториев.</value>
+  </data>
+  <data name="NoFilteredFoundRepositoriesInfoBar.Title" xml:space="preserve">
+    <value>Нет подходящих репозиториев</value>
+  </data>
+  <data name="NoFilteredFoundRepositoriesInfoBar.Message" xml:space="preserve">
+    <value>Попробуйте изменить фильтр.</value>
+  </data>
+  <data name="SearchingRepositoriesProgress" xml:space="preserve">
+    <value>Выполняется поиск репозиториев...</value>
+  </data>
+  <data name="CreatingRepositoryProgress" xml:space="preserve">
+    <value>Создается репозиторий...</value>
+  </data>
+  <data name="RepositoryCreated" xml:space="preserve">
+    <value>Репозиторий '{0}' создан.</value>
+  </data>
+  <data name="GitInitCommandFailed" xml:space="preserve">
+    <value>Не удалось создать репозиторий.</value>
+  </data>
+  <data name="CloningRepositoryProgress" xml:space="preserve">
+    <value>Выполняется клонирование репозитория...</value>
+  </data>
+  <data name="RepositoryCloned" xml:space="preserve">
+    <value>Репозиторий '{0}' клонирован.</value>
+  </data>
+  <data name="GitCloneCommandFailed" xml:space="preserve">
+    <value>Не удалось клонировать репозиторий.</value>
+  </data>
+  <data name="RepositorySearchFolderNotFound" xml:space="preserve">
+    <value>Начальная папка поиска репозиториев не найдена.</value>
+  </data>
+  <data name="RepositoryStateConflicts" xml:space="preserve">
+    <value>Конфликты: {0}</value>
+  </data>
+  <data name="RepositoryStateClean" xml:space="preserve">
+    <value>Рабочее дерево чистое</value>
+  </data>
+  <data name="RepositoryStateChanged" xml:space="preserve">
+    <value>В индексе: {0}, не в индексе: {1}</value>
+  </data>
+  <data name="NoCommitsYet" xml:space="preserve">
+    <value>Commit'ов пока нет</value>
+  </data>
+  <data name="NoUpstreamConfigured" xml:space="preserve">
+    <value>Upstream не настроен</value>
+  </data>
+  <data name="RepositoryRemoteBranchSummary" xml:space="preserve">
+    <value>{0} - впереди {1}, позади {2}</value>
+  </data>
+  <data name="RepositoryRemoteBranchNotPublished" xml:space="preserve">
+    <value>{0} - не опубликована</value>
+  </data>
+  <data name="RepositoryPushDetailsTitleTextBlock.Text" xml:space="preserve">
+    <value>Отправка изменений:</value>
+  </data>
+  <data name="RepositoryStateEmpty" xml:space="preserve">
+    <value>Откройте или создайте репозиторий</value>
+  </data>
+  <data name="NoCommitSelected" xml:space="preserve">
+    <value>Commit не выбран</value>
+  </data>
+  <data name="StageChangeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Подготовить</value>
+  </data>
+  <data name="UnstageChangeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Отменить подготовку</value>
+  </data>
+  <data name="DiscardChangeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Отменить изменения</value>
+  </data>
+  <data name="CheckoutBranchMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Переключиться</value>
+  </data>
+  <data name="CopyRemoteUrlMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="EditRemoteUrlMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
+  <data name="TextInputDialogCancelButton" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="BranchNameDialogTitle" xml:space="preserve">
+    <value>Переименовать ветку</value>
+  </data>
+  <data name="BranchNameDialogTextBoxHeader" xml:space="preserve">
+    <value>Имя ветки</value>
+  </data>
+  <data name="BranchNameDialogTextBoxPlaceholder" xml:space="preserve">
+    <value>feature/new-name</value>
+  </data>
+  <data name="BranchNameDialogPrimaryButton" xml:space="preserve">
+    <value>Переименовать</value>
+  </data>
+  <data name="BranchNameDialogCloseButton" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="EditRemoteUrlDialogTitle" xml:space="preserve">
+    <value>Изменить URL {0}</value>
+  </data>
+  <data name="EditRemoteUrlDialogTextBoxHeader" xml:space="preserve">
+    <value>URL удаленного репозитория</value>
+  </data>
+  <data name="EditRemoteUrlDialogPrimaryButton" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="AddRemoteUrlDialogTitle" xml:space="preserve">
+    <value>Добавить {0}</value>
+  </data>
+  <data name="AddRemoteUrlDialogTextBoxHeader" xml:space="preserve">
+    <value>URL удаленного репозитория</value>
+  </data>
+  <data name="AddRemoteUrlDialogPrimaryButton" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="AddRemoteSelectionItemText" xml:space="preserve">
+    <value>Добавить новый</value>
+  </data>
+  <data name="AddRemoteNameDialogTitle" xml:space="preserve">
+    <value>Имя удаленного репозитория</value>
+  </data>
+  <data name="AddRemoteNameDialogTextBoxHeader" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="AddRemoteNameDialogPrimaryButton" xml:space="preserve">
+    <value>Продолжить</value>
+  </data>
+  <data name="AddRemoteNameDialogPlaceholder" xml:space="preserve">
+    <value>upstream</value>
+  </data>
+  <data name="RemoteNameInvalid" xml:space="preserve">
+    <value>Введите корректное имя удаленного репозитория.</value>
+  </data>
+  <data name="RemoteAlreadyExists" xml:space="preserve">
+    <value>Удаленный репозиторий '{0}' уже существует.</value>
+  </data>
+  <data name="RemoteUrlPlaceholder" xml:space="preserve">
+    <value>https://username@github.com/org/repository.git</value>
+  </data>
+  <data name="AddRemoteProgress" xml:space="preserve">
+    <value>Добавление удаленного репозитория '{0}'...</value>
+  </data>
+  <data name="RemoteAdded" xml:space="preserve">
+    <value>Удаленный репозиторий '{0}' добавлен.</value>
+  </data>
+  <data name="RemoveRemoteDialogTitle" xml:space="preserve">
+    <value>Отвязать {0}</value>
+  </data>
+  <data name="RemoveRemoteDialogMessage" xml:space="preserve">
+    <value>Отвязать удаленный репозиторий '{0}' от этого локального репозитория? Сам репозиторий на сервере не будет удален.</value>
+  </data>
+  <data name="RemoveRemoteDialogPrimaryButton" xml:space="preserve">
+    <value>Отвязать</value>
+  </data>
+  <data name="RemoveRemoteProgress" xml:space="preserve">
+    <value>Отвязка удаленного репозитория '{0}'...</value>
+  </data>
+  <data name="RemoteRemoved" xml:space="preserve">
+    <value>Удаленный репозиторий '{0}' отвязан.</value>
+  </data>
+  <data name="EditRemoteUrlProgress" xml:space="preserve">
+    <value>Обновление URL {0}...</value>
+  </data>
+  <data name="RemoteUrlUpdated" xml:space="preserve">
+    <value>URL удаленного репозитория '{0}' обновлен.</value>
+  </data>
+  <data name="RemoveRecentRepositoryMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Убрать</value>
+  </data>
+  <data name="CredentialHelperSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Учетные данные удаленных операций</value>
+  </data>
+  <data name="CredentialHelperStatusEnabled" xml:space="preserve">
+    <value>Удаленные операции будут использовать Git Credential Manager</value>
+  </data>
+  <data name="CredentialHelperStatusDisabled" xml:space="preserve">
+    <value>Удаленные операции могут перестать работать, потому что credential.helper не будет manager</value>
+  </data>
+  <data name="CredentialHelperToggleSwitch.OnContent" xml:space="preserve">
+    <value>Вкл.</value>
+  </data>
+  <data name="CredentialHelperToggleSwitch.OffContent" xml:space="preserve">
+    <value>Выкл.</value>
+  </data>
+  <data name="InitialBranchNameSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Как Git называет ветку после первого сохранения в новом репозитории</value>
+  </data>
+  <data name="RepositoryUserNameSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Как подписывается коммит (поле Author)</value>
+  </data>
+  <data name="RepositoryEmailSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Какой email указывается в коммите (поле Author)</value>
+  </data>
+  <data name="RepositorySettingsTitleDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Переопределяют глобальные для данного репозитория</value>
+  </data>
+  <data name="GlobalRepositorySettingsTitleDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Настройки, общие для всех репозиториев</value>
+  </data>
+  <data name="CommitRangePageTitle" xml:space="preserve">
+    <value>Коммиты</value>
+  </data>
+  <data name="IncomingCommitRangeTitle" xml:space="preserve">
+    <value>Входящие коммиты: {0}</value>
+  </data>
+  <data name="IncomingCommitRangeDescription" xml:space="preserve">
+    <value>Коммиты из {0}, которых ещё нет в локальной ветке {1}.</value>
+  </data>
+  <data name="OutgoingCommitRangeTitle" xml:space="preserve">
+    <value>Исходящие коммиты: {0}</value>
+  </data>
+  <data name="OutgoingCommitRangeDescription" xml:space="preserve">
+    <value>Коммиты локальной ветки {0}, которых ещё нет в {1}.</value>
+  </data>
+  <data name="UnpublishedCommitRangeDescription" xml:space="preserve">
+    <value>Коммиты неопубликованной локальной ветки {0}, которых нет ни в одной ветке на {1}.</value>
+  </data>
+  <data name="LoadingCommitRange" xml:space="preserve">
+    <value>Загрузка коммитов...</value>
+  </data>
+  <data name="NavigateToParentCommitMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Перейти к родительскому коммиту</value>
+  </data>
+  <data name="ShowMergedCommitsMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Показать влитые коммиты</value>
+  </data>
+  <data name="MergedCommitRangeTitle" xml:space="preserve">
+    <value>Влитые коммиты: {0}</value>
+  </data>
+  <data name="MergedCommitRangeDescription" xml:space="preserve">
+    <value>Коммиты второго родителя, которых нет в первом родителе.</value>
+  </data>
+  <data name="NoMergedCommits" xml:space="preserve">
+    <value>В истории второго родителя нет уникальных коммитов.</value>
+  </data>
+  <data name="NoIncomingCommits" xml:space="preserve">
+    <value>Для этой ветки нет входящих коммитов.</value>
+  </data>
+  <data name="NoOutgoingCommits" xml:space="preserve">
+    <value>Для этой ветки нет исходящих коммитов.</value>
+  </data>
+  <data name="CommitRangeNavigationError" xml:space="preserve">
+    <value>Не переданы данные о диапазоне коммитов. Вернитесь на страницу синхронизации и снова выберите ветку.</value>
+  </data>
+  <data name="CommitRangeEmptyInfoBar.Title" xml:space="preserve">
+    <value>Нет коммитов</value>
+  </data>
+  <data name="CommitRangeCommitsTitleTextBlock.Text" xml:space="preserve">
+    <value>Коммиты</value>
+  </data>
+  <data name="SynchronizationFetchNotPerformed" xml:space="preserve">
+    <value>Fetch ещё не выполнялся.</value>
+  </data>
+  <data name="SynchronizationLastFetch" xml:space="preserve">
+    <value>Последний успешный fetch: {0}</value>
+  </data>
+  <data name="SynchronizationNoRemotesInfoBar.Title" xml:space="preserve">
+    <value>Нет удалённых репозиториев</value>
+  </data>
+  <data name="SynchronizationNoRemotesInfoBar.Message" xml:space="preserve">
+    <value>Этот репозиторий используется только локально. Добавьте удалённый репозиторий, когда понадобится синхронизация.</value>
+  </data>
+  <data name="SynchronizationUpToDateInfoBar.Title" xml:space="preserve">
+    <value>Всё синхронизировано</value>
+  </data>
+  <data name="SynchronizationUpToDateInfoBar.Message" xml:space="preserve">
+    <value>Нет локальных или удалённых изменений, требующих синхронизации.</value>
+  </data>
+  <data name="SynchronizationLocalChangesTitleTextBlock.Text" xml:space="preserve">
+    <value>Локальные изменения</value>
+  </data>
+  <data name="SynchronizationLocalChangesDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Ветки и теги, которые ещё не полностью опубликованы в выбранном удалённом репозитории.</value>
+  </data>
+  <data name="SynchronizationBranchesExpanderTitleTextBlock.Text" xml:space="preserve">
+    <value>Ветки</value>
+  </data>
+  <data name="SynchronizationBranchesExpanderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Новые ветки, ветки без upstream и ветки с исходящими коммитами.</value>
+  </data>
+  <data name="SynchronizationPushAllBranchesButton.Content" xml:space="preserve">
+    <value>Отправить все</value>
+  </data>
+  <data name="SynchronizationPushBranchButton.Content" xml:space="preserve">
+    <value>Отправить</value>
+  </data>
+  <data name="SynchronizationTagsExpanderTitleTextBlock.Text" xml:space="preserve">
+    <value>Теги</value>
+  </data>
+  <data name="SynchronizationTagsExpanderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Новые локальные теги и теги, локальные и удалённые цели которых различаются.</value>
+  </data>
+  <data name="SynchronizationPushAllTagsButton.Content" xml:space="preserve">
+    <value>Отправить все</value>
+  </data>
+  <data name="SynchronizationPushTagButton.Content" xml:space="preserve">
+    <value>Отправить</value>
+  </data>
+  <data name="SynchronizationTagConflictTextBlock.Text" xml:space="preserve">
+    <value>Конфликт</value>
+  </data>
+  <data name="SynchronizationRemoteChangesTitleTextBlock.Text" xml:space="preserve">
+    <value>Удалённые изменения</value>
+  </data>
+  <data name="SynchronizationRemoteChangesDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Коммиты, доступные в удалённом репозитории, но отсутствующие в соответствующих локальных ветках.</value>
+  </data>
+  <data name="SynchronizationIncomingExpanderTitleTextBlock.Text" xml:space="preserve">
+    <value>Входящие коммиты</value>
+  </data>
+  <data name="SynchronizationIncomingExpanderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Откройте ветку для просмотра коммитов. Pull доступен для текущей ветки.</value>
+  </data>
+  <data name="SynchronizationPullBranchButton.Content" xml:space="preserve">
+    <value>Получить</value>
+  </data>
+  <data name="SynchronizationBranchDivergedDescription" xml:space="preserve">
+    <value>Ветки разошлись: исходящие — {0}, входящие — {1}. Просмотрите оба направления перед синхронизацией.</value>
+  </data>
+  <data name="SynchronizationBranchIncomingDescription" xml:space="preserve">
+    <value>Входящие из {1}: {0}.</value>
+  </data>
+  <data name="SynchronizationTagConflictDescription" xml:space="preserve">
+    <value>Локальный и удалённый теги указывают на разные объекты. Автоматическая замена отключена.</value>
+  </data>
+  <data name="SynchronizationTagUnpublishedDescription" xml:space="preserve">
+    <value>Локальный тег ещё не опубликован в {0}.</value>
+  </data>
+  <data name="SynchronizationPushingAllProgress" xml:space="preserve">
+    <value>Отправка всех локальных изменений...</value>
+  </data>
+  <data name="SynchronizationPushingAllAtomicallyProgress" xml:space="preserve">
+    <value>Атомарная отправка всех локальных изменений...</value>
+  </data>
+  <data name="SynchronizationPushingBranchesProgress" xml:space="preserve">
+    <value>Отправка всех веток...</value>
+  </data>
+  <data name="SynchronizationPushingTagsProgress" xml:space="preserve">
+    <value>Отправка всех тегов...</value>
+  </data>
+  <data name="SynchronizationPushingBranchProgress" xml:space="preserve">
+    <value>Отправка ветки «{0}»...</value>
+  </data>
+  <data name="SynchronizationPushingTagProgress" xml:space="preserve">
+    <value>Отправка тега «{0}»...</value>
+  </data>
+  <data name="SynchronizationPushAllSucceeded" xml:space="preserve">
+    <value>Все локальные изменения отправлены в «{0}».</value>
+  </data>
+  <data name="SynchronizationAtomicPushAllSucceeded" xml:space="preserve">
+    <value>Все локальные изменения атомарно отправлены в «{0}».</value>
+  </data>
+  <data name="SynchronizationPushBranchesSucceeded" xml:space="preserve">
+    <value>Все ветки отправлены в «{0}».</value>
+  </data>
+  <data name="SynchronizationPushTagsSucceeded" xml:space="preserve">
+    <value>Все теги отправлены в «{0}».</value>
+  </data>
+  <data name="SynchronizationPushBranchSucceeded" xml:space="preserve">
+    <value>Ветка «{0}» отправлена в «{1}».</value>
+  </data>
+  <data name="SynchronizationPushTagSucceeded" xml:space="preserve">
+    <value>Тег «{0}» отправлен в «{1}».</value>
+  </data>
+  <data name="ForcePushDialogTitle" xml:space="preserve">
+    <value>Перезаписать удалённые коммиты?</value>
+  </data>
+  <data name="ForcePushDialogMessage" xml:space="preserve">
+    <value>В ветках {0} удалённого репозитория «{1}» есть невытянутые коммиты. Принудительная отправка удалит их с сервера и заменит удалённую историю локальной. Для защиты от новых изменений будет использован --force-with-lease.</value>
+  </data>
+  <data name="ForcePushDialogPrimaryButton" xml:space="preserve">
+    <value>Перезаписать и отправить</value>
+  </data>
+  <data name="CommitCountOne" xml:space="preserve">
+    <value>коммит</value>
+  </data>
+  <data name="CommitCountFew" xml:space="preserve">
+    <value>коммита</value>
+  </data>
+  <data name="CommitCountMany" xml:space="preserve">
+    <value>коммитов</value>
+  </data>
+  <data name="SynchronizationRemoteComboBoxText.Text" xml:space="preserve">
+    <value>Удалённый репозиторий</value>
+  </data>
+  <data name="SynchronizationRemoteUsageHintTextBlock.Text" xml:space="preserve">
+    <value>* Выбор влияет на отображение, получение и отправку изменений тегов, а так же веток, у которых не настроен свой удаленный репозиторий. </value>
+  </data>
+  <data name="NoUser" xml:space="preserve">
+    <value>Настройте пользователя</value>
+  </data>
+  <data name="RepositoryPaneHeaderButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Переключить репозиторий или рабочее дерево</value>
+  </data>
+  <data name="RepositoryPaneHeaderButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переключиться на другое рабочее дерево или найденный репозиторий</value>
+  </data>
+  <data name="WorktreeMenuItemToolTip" xml:space="preserve">
+    <value>Рабочее дерево: {0}</value>
+  </data>
+  <data name="RepositoryMenuItemToolTip" xml:space="preserve">
+    <value>Репозиторий: {0}</value>
+  </data>
+  <data name="BranchPaneHeaderButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Переключить локальную ветку</value>
+  </data>
+  <data name="BranchPaneHeaderButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переключиться на локальную ветку</value>
+  </data>
+  <data name="GlobalGitUserWarningTextBlock.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Имя пользователя взято из глобальной конфигурации Git</value>
+  </data>
+  <data name="PaneHeaderOpenRepositoryMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="PaneHeaderCloseRepositoryMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="CreateStashAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Спрятать изменения</value>
+  </data>
+  <data name="ApplyStashAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Применить выбранную заначку</value>
+  </data>
+  <data name="PopStashAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Применить и удалить выбранную заначку</value>
+  </data>
+  <data name="DropStashSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Удалить выбранную заначку</value>
+  </data>
+  <data name="RefreshBranchesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Обновить ветки и теги</value>
+  </data>
+  <data name="CheckoutBranchAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переключиться на выбранную ветку</value>
+  </data>
+  <data name="CreateBranchSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать ветку</value>
+  </data>
+  <data name="CheckoutTagAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переключиться на выбранный тег</value>
+  </data>
+  <data name="CreateTagAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать тег</value>
+  </data>
+  <data name="DeleteTagAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Удалить выбранный тег</value>
+  </data>
+  <data name="MergeBranchSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Слить выбранную ветку</value>
+  </data>
+  <data name="RefreshRepositoryAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Обновить сведения о репозитории</value>
+  </data>
+  <data name="OpenRepositoryAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Открыть существующий репозиторий</value>
+  </data>
+  <data name="CreateRepositoryAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать репозиторий</value>
+  </data>
+  <data name="AddRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Добавить удалённый репозиторий</value>
+  </data>
+  <data name="CloneRepositoryAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Клонировать удалённый репозиторий</value>
+  </data>
+  <data name="CloseRepositoryAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Закрыть текущий репозиторий</value>
+  </data>
+  <data name="RefreshStatusAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Обновить состояние рабочей копии</value>
+  </data>
+  <data name="StageSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Подготовить все изменения</value>
+  </data>
+  <data name="CommitSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать коммит</value>
+  </data>
+  <data name="DiscardSelectedSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отменить выбранные изменения</value>
+  </data>
+  <data name="OpenStashDialogAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Открыть заначки</value>
+  </data>
+  <data name="RefreshHistoryAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Обновить историю коммитов</value>
+  </data>
+  <data name="RevertCommitAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отменить выбранный коммит</value>
+  </data>
+  <data name="ResetSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Сбросить текущую ветку</value>
+  </data>
+  <data name="SaveConflictFileAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Сохранить выбранный конфликтующий файл</value>
+  </data>
+  <data name="MarkResolvedAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Пометить выбранный файл как разрешённый</value>
+  </data>
+  <data name="ChangeOverviewBar.AutomationProperties.Name" xml:space="preserve">
+    <value>Обзор изменений</value>
+  </data>
+  <data name="ChangeOverviewBar.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Обзор изменений файла. Щёлкните или перетащите для навигации.</value>
+  </data>
+  <data name="IgnoreWhitespaceToggleSwitch.OnContent" xml:space="preserve">
+    <value>Пробелы игнорируются</value>
+  </data>
+  <data name="IgnoreWhitespaceToggleSwitch.OffContent" xml:space="preserve">
+    <value>Пробелы учитываются</value>
+  </data>
+  <data name="IgnoreWhitespaceToggleSwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Игнорировать пробелы в сравнении</value>
+  </data>
+  <data name="IgnoreWhitespaceToggleSwitch.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Не учитывать пробелы и табуляцию при сравнении файлов</value>
+  </data>
+  <data name="EditDiffFileButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Редактировать файл</value>
+  </data>
+  <data name="EditDiffFileButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Редактировать выбранный файл в окне сравнения</value>
+  </data>
+  <data name="DiffViewerSyntaxHighlightingComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Подсветка синтаксиса</value>
+  </data>
+  <data name="DiffEditorModifiedStatusTextBlock.Text" xml:space="preserve">
+    <value>Изменён</value>
+  </data>
+  <data name="DiffEditorSaveButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Сохранить файл</value>
+  </data>
+  <data name="DiffEditorCancelButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отменить редактирование</value>
+  </data>
+  <data name="FileEditorModifiedStatus" xml:space="preserve">
+    <value>Изменён</value>
+  </data>
+  <data name="FileEditorOpenFailed" xml:space="preserve">
+    <value>Не удалось открыть файл для редактирования.</value>
+  </data>
+  <data name="FileEditorSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить файл.</value>
+  </data>
+  <data name="FileEditorUnsavedDialogTitle" xml:space="preserve">
+    <value>Сохранить изменения?</value>
+  </data>
+  <data name="FileEditorUnsavedDialogMessage" xml:space="preserve">
+    <value>В файле «{0}» есть несохранённые изменения.</value>
+  </data>
+  <data name="FileEditorUnsavedDialogDiscardButton" xml:space="preserve">
+    <value>Не сохранять</value>
+  </data>
+  <data name="ConflictEditorTextControl.AutomationProperties.Name" xml:space="preserve">
+    <value>Содержимое файла с конфликтом</value>
+  </data>
+  <data name="UndoConflictEditAppBarButton.Label" xml:space="preserve">
+    <value>Отменить</value>
+  </data>
+  <data name="RedoConflictEditAppBarButton.Label" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
+  <data name="ReloadConflictFileAppBarButton.Label" xml:space="preserve">
+    <value>Перезагрузить</value>
+  </data>
+  <data name="ConflictEditorSyntaxHighlightingComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Подсветка синтаксиса</value>
+  </data>
+  <data name="DeleteConflictLinesMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Удалить строку</value>
+  </data>
+  <data name="InsertConflictLineAboveMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Вставить строку выше</value>
+  </data>
+  <data name="InsertConflictLineBelowMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Вставить строку ниже</value>
+  </data>
+  <data name="AcceptCurrentConflictBlockMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Принять текущие изменения</value>
+  </data>
+  <data name="AcceptIncomingConflictBlockMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Принять входящие изменения</value>
+  </data>
+  <data name="AcceptBothConflictBlockMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Принять оба варианта</value>
+  </data>
+  <data name="ConflictBinaryFileUnsupported" xml:space="preserve">
+    <value>Бинарные конфликтные файлы нельзя редактировать здесь.</value>
+  </data>
+  <data name="ConflictResolutionRequiredOnChangesPage" xml:space="preserve">
+    <value>Операция создала конфликты. Разрешите их на странице «Изменения».</value>
+  </data>
+  <data name="EditConflictLineMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Редактировать строку</value>
+  </data>
+  <data name="AcceptConflictSplitButton.Content" xml:space="preserve">
+    <value>Принять текущие</value>
+  </data>
+  <data name="AcceptConflictSplitButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Принять изменения конфликта</value>
+  </data>
+  <data name="ConflictOverviewBar.AutomationProperties.Name" xml:space="preserve">
+    <value>Обзор конфликтов</value>
+  </data>
+  <data name="ConflictOverviewBar.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Расположение конфликтов. Нажмите или перетащите для перехода.</value>
+  </data>
+  <data name="CreateReferenceAppBarButton.Label" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="CreateReferenceAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать ветку или тег</value>
+  </data>
+  <data name="MergeBranchMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Слить в текущую ветку</value>
+  </data>
+  <data name="FetchTagMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Получить тег</value>
+  </data>
+  <data name="CreateTagWorktreeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Создать ветку и рабочее дерево…</value>
+  </data>
+  <data name="MergeIntoCurrentSplitButtonText.Text" xml:space="preserve">
+    <value>Слить в текущую</value>
+  </data>
+  <data name="RenameSelectedBranchAppBarButton.Label" xml:space="preserve">
+    <value>Переименовать</value>
+  </data>
+  <data name="RebaseSelectedBranchAppBarButton.Label" xml:space="preserve">
+    <value>Перебазировать текущую</value>
+  </data>
+  <data name="DeleteSelectedBranchAppBarButton.Label" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="BranchSynchronizationCardTitle.Text" xml:space="preserve">
+    <value>Состояние в выбранном remote</value>
+  </data>
+  <data name="LastCommitExpanderTitle.Text" xml:space="preserve">
+    <value>Последний коммит</value>
+  </data>
+  <data name="BranchComparisonExpanderTitle.Text" xml:space="preserve">
+    <value>Сравнение с текущей веткой</value>
+  </data>
+  <data name="OpenBranchChangesButton.Content" xml:space="preserve">
+    <value>Изменения</value>
+  </data>
+  <data name="ShowBranchCommitsButton.Content" xml:space="preserve">
+    <value>Коммиты</value>
+  </data>
+  <data name="CompareBranchButton.Content" xml:space="preserve">
+    <value>Все коммиты</value>
+  </data>
+  <data name="WorktreeExpanderTitle.Text" xml:space="preserve">
+    <value>Рабочее дерево</value>
+  </data>
+  <data name="OpenWorktreeButton.Content" xml:space="preserve">
+    <value>Открыть рабочее дерево</value>
+  </data>
+  <data name="FetchTagButton.Content" xml:space="preserve">
+    <value>Получить</value>
+  </data>
+  <data name="TagInformationExpanderTitle.Text" xml:space="preserve">
+    <value>Информация о теге</value>
+  </data>
+  <data name="TagTargetObjectLabel.Text" xml:space="preserve">
+    <value>Целевой объект</value>
+  </data>
+  <data name="TagBranchActionsExpanderTitle.Text" xml:space="preserve">
+    <value>Создание веток</value>
+  </data>
+  <data name="CreateBranchFromTagCardTitle.Text" xml:space="preserve">
+    <value>Создать локальную ветку на коммите этого тега</value>
+  </data>
+  <data name="CreateBranchFromTagButton.Content" xml:space="preserve">
+    <value>Создать…</value>
+  </data>
+  <data name="CreateBranchWorktreeFromTagCardTitle.Text" xml:space="preserve">
+    <value>Создать ветку и отдельное рабочее дерево</value>
+  </data>
+  <data name="CreateBranchWorktreeFromTagButton.Content" xml:space="preserve">
+    <value>Создать…</value>
+  </data>
+  <data name="TagWorktreesExpanderTitle.Text" xml:space="preserve">
+    <value>Рабочие деревья на коммите тега</value>
+  </data>
+  <data name="OpenExistingTagWorktreeCardTitle.Text" xml:space="preserve">
+    <value>Открыть существующее рабочее дерево</value>
+  </data>
+  <data name="OpenExistingTagWorktreeButton.Content" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="CreateDetachedTagWorktreeCardTitle.Text" xml:space="preserve">
+    <value>Создать рабочее дерево без ветки</value>
+  </data>
+  <data name="CreateDetachedTagWorktreeButton.Content" xml:space="preserve">
+    <value>Создать…</value>
+  </data>
+  <data name="OpenWorktreeButtonText" xml:space="preserve">
+    <value>Открыть рабочее дерево</value>
+  </data>
+  <data name="CheckoutBranchButtonText" xml:space="preserve">
+    <value>Переключиться</value>
+  </data>
+  <data name="LocalReferenceLabel" xml:space="preserve">
+    <value>Локальная</value>
+  </data>
+  <data name="RemoteReferenceLabel" xml:space="preserve">
+    <value>Удалённая</value>
+  </data>
+  <data name="AnnotatedTagLabel" xml:space="preserve">
+    <value>Аннотированный</value>
+  </data>
+  <data name="LightweightTagLabel" xml:space="preserve">
+    <value>Легковесный</value>
+  </data>
+  <data name="BranchSynchronizationUnavailable" xml:space="preserve">
+    <value>Сведения о выбранном remote пока недоступны.</value>
+  </data>
+  <data name="RemoteBranchHasNoLocalCopy" xml:space="preserve">
+    <value>Локальная ветка «{0}» ещё не создана.</value>
+  </data>
+  <data name="FetchBranchButton.Content" xml:space="preserve">
+    <value>Получить</value>
+  </data>
+  <data name="FetchBranchProgressMessage" xml:space="preserve">
+    <value>Получение ветки «{0}»…</value>
+  </data>
+  <data name="FetchBranchSucceeded" xml:space="preserve">
+    <value>Локальная ветка «{0}» создана из «{1}».</value>
+  </data>
+  <data name="BranchNotPublishedToRemote" xml:space="preserve">
+    <value>Ветка отсутствует в {0}.</value>
+  </data>
+  <data name="BranchDivergedSummary" xml:space="preserve">
+    <value>Ветки разошлись: исходящих — {0}, входящих — {1}.</value>
+  </data>
+  <data name="BranchAheadSummary" xml:space="preserve">
+    <value>Исходящих коммитов: {0}. Сравнение с {1}.</value>
+  </data>
+  <data name="BranchBehindSummary" xml:space="preserve">
+    <value>Входящих коммитов: {0}. Сравнение с {1}.</value>
+  </data>
+  <data name="BranchSynchronizedSummary" xml:space="preserve">
+    <value>Синхронизирована с {0}.</value>
+  </data>
+  <data name="BranchMergedIntoCurrentSummary" xml:space="preserve">
+    <value>В выбранной ветке нет уникальных коммитов; текущая ветка впереди на {0}.</value>
+  </data>
+  <data name="SelectedBranchIsCurrentSummary" xml:space="preserve">
+    <value>Это текущая ветка.</value>
+  </data>
+  <data name="BranchesPointToSameCommitSummary" xml:space="preserve">
+    <value>Ветки указывают на один коммит.</value>
+  </data>
+  <data name="BranchComparisonNotLoadedSummary" xml:space="preserve">
+    <value>Сравнение выбранной ветки с текущей.</value>
+  </data>
+  <data name="BranchWorktreeNotLoadedSummary" xml:space="preserve">
+    <value>Рабочие деревья, связанные с выбранной веткой.</value>
+  </data>
+  <data name="TagWorktreeNotLoadedSummary" xml:space="preserve">
+    <value>Рабочие деревья на коммите выбранного тега.</value>
+  </data>
+  <data name="NoBranchWorktreesSummary" xml:space="preserve">
+    <value>Ветка не открыта в другом рабочем дереве.</value>
+  </data>
+  <data name="BranchRelationSummary" xml:space="preserve">
+    <value>Только в выбранной: {0}; только в текущей: {1}.</value>
+  </data>
+  <data name="BranchDiffSummary" xml:space="preserve">
+    <value>Различия файлов между вершинами веток: файлов — {0}, добавлено строк — {1}, удалено — {2}.</value>
+  </data>
+  <data name="NoTagWorktreesSummary" xml:space="preserve">
+    <value>Ни одно рабочее дерево, включая текущее, не открыто на коммите этого тега.</value>
+  </data>
+  <data name="RemoteOperationCanceled" xml:space="preserve">
+    <value>Удалённая операция отменена.</value>
+  </data>
+  <data name="TagCheckoutDetachedDialogTitle" xml:space="preserve">
+    <value>Переключиться на тег?</value>
+  </data>
+  <data name="TagCheckoutDetachedDialogMessage" xml:space="preserve">
+    <value>Рабочее дерево будет переключено на «{0}» без создания ветки. Новые коммиты не будут принадлежать ветке.</value>
+  </data>
+  <data name="TagCheckoutDetachedDialogPrimaryButton" xml:space="preserve">
+    <value>Переключиться</value>
+  </data>
+  <data name="RemoteTagConflictDialogTitle" xml:space="preserve">
+    <value>Конфликт тега</value>
+  </data>
+  <data name="RemoteTagConflictDialogMessage" xml:space="preserve">
+    <value>Тег «{0}» различается. Локальный объект: {1}. Объект в {2}: {3}.</value>
+  </data>
+  <data name="RemoteTagConflictReplaceButton" xml:space="preserve">
+    <value>Заменить локальный</value>
+  </data>
+  <data name="RemoteTagConflictTemporaryButton" xml:space="preserve">
+    <value>Открыть временно</value>
+  </data>
+  <data name="RemoteTagFetchConflictMessage" xml:space="preserve">
+    <value>Тег «{0}» уже существует локально и указывает на {1}. В {2} он указывает на {3}. Заменить локальный тег?</value>
+  </data>
+  <data name="RemoteTagAlreadyLocal" xml:space="preserve">
+    <value>Этот тег уже существует локально.</value>
+  </data>
+  <data name="FetchTagProgressMessage" xml:space="preserve">
+    <value>Получение тега «{0}» из {1}…</value>
+  </data>
+  <data name="FetchTagSucceeded" xml:space="preserve">
+    <value>Тег «{0}» получен.</value>
+  </data>
+  <data name="CompareBranchRangeTitle" xml:space="preserve">
+    <value>Сравнение {0} и {1}</value>
+  </data>
+  <data name="CompareBranchRangeDescription" xml:space="preserve">
+    <value>Коммиты по обе стороны истории веток {0} и {1}.</value>
+  </data>
+  <data name="BranchCommitRangeTitle" xml:space="preserve">
+    <value>Коммиты ветки {0}</value>
+  </data>
+  <data name="BranchCommitRangeDescription" xml:space="preserve">
+    <value>Коммиты ветки {0}, отсутствующие в {1}.</value>
+  </data>
+  <data name="NoBranchRangeCommits" xml:space="preserve">
+    <value>В выбранном диапазоне нет коммитов.</value>
+  </data>
+  <data name="BranchDiffRangeTitle" xml:space="preserve">
+    <value>Изменения файлов: {0} → {1}</value>
+  </data>
+  <data name="BranchDiffRangeDescription" xml:space="preserve">
+    <value>Итоговые различия файлов между вершинами веток {0} и {1}.</value>
+  </data>
+  <data name="NoBranchFileChanges" xml:space="preserve">
+    <value>Между вершинами веток нет различий файлов.</value>
+  </data>
+  <data name="TagRemoteStatusCardTitle.Text" xml:space="preserve">
+    <value>Состояние в выбранном remote</value>
+  </data>
+  <data name="TagRemoteStatusUnavailable" xml:space="preserve">
+    <value>Нажмите «Обновить», чтобы получить сведения о теге.</value>
+  </data>
+  <data name="TagOnlyInRemote" xml:space="preserve">
+    <value>Тег существует только в {0}.</value>
+  </data>
+  <data name="TagOnlyLocal" xml:space="preserve">
+    <value>Тег отсутствует в {0}.</value>
+  </data>
+  <data name="TagMatchesRemote" xml:space="preserve">
+    <value>Локальный тег совпадает с тегом в {0}.</value>
+  </data>
+  <data name="TagConflictsWithRemote" xml:space="preserve">
+    <value>Локальный тег отличается от тега в {0}.</value>
+  </data>
+  <data name="TagTargetUnavailable" xml:space="preserve">
+    <value>Недоступен до получения тега</value>
+  </data>
+  <data name="ShowBranchCommitsButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Коммиты выбранной ветки, отсутствующие в текущей</value>
+  </data>
+  <data name="OpenBranchChangesButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Итоговый diff файлов между вершинами веток</value>
+  </data>
+  <data name="CompareBranchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Уникальные коммиты обеих веток с меткой принадлежности к ветке</value>
+  </data>
+  <data name="LoadingBranchesOverviewProgress" xml:space="preserve">
+    <value>Загрузка веток…</value>
+  </data>
+  <data name="LoadingLocalTagsProgress" xml:space="preserve">
+    <value>Загрузка локальных тегов…</value>
+  </data>
+  <data name="LoadingBranchCommitProgress" xml:space="preserve">
+    <value>Загрузка последнего коммита ветки «{0}»…</value>
+  </data>
+  <data name="LoadingBranchComparisonProgress" xml:space="preserve">
+    <value>Сравнение ветки «{0}» с текущей…</value>
+  </data>
+  <data name="LoadingBranchWorktreesProgress" xml:space="preserve">
+    <value>Загрузка рабочих деревьев ветки «{0}»…</value>
+  </data>
+  <data name="LoadingTagDetailsProgress" xml:space="preserve">
+    <value>Загрузка сведений о теге «{0}»…</value>
+  </data>
+  <data name="LoadingTagWorktreesProgress" xml:space="preserve">
+    <value>Загрузка рабочих деревьев тега «{0}»…</value>
+  </data>
+  <data name="LoadingBranchSynchronizationProgress" xml:space="preserve">
+    <value>Расчёт состояния веток в {0}…</value>
+  </data>
+  <data name="StateInRemoteTitle" xml:space="preserve">
+    <value>Состояние в {0}</value>
+  </data>
+  <data name="CompareWithLocalBranchTitle" xml:space="preserve">
+    <value>Сравнение с локальной веткой</value>
+  </data>
+  <data name="CompareWithLocalTagTitle" xml:space="preserve">
+    <value>Сравнение с локальным тегом</value>
+  </data>
+  <data name="SelectedRemoteFallbackName" xml:space="preserve">
+    <value>выбранном remote</value>
+  </data>
+  <data name="RepositoryLastFetch" xml:space="preserve">
+    <value>Последний fetch в репозитории: {0}</value>
+  </data>
+  <data name="RepositoryFetchNotPerformed" xml:space="preserve">
+    <value>Fetch в репозитории ещё не выполнялся.</value>
+  </data>
+  <data name="RemoteBranchDivergedFromLocalSummary" xml:space="preserve">
+    <value>Ветки разошлись: только в удалённой — {0}, только в локальной — {1}.</value>
+  </data>
+  <data name="RemoteBranchAheadOfLocalSummary" xml:space="preserve">
+    <value>Удалённая ветка опережает локальную «{1}» на {0} коммитов.</value>
+  </data>
+  <data name="RemoteBranchBehindLocalSummary" xml:space="preserve">
+    <value>Удалённая ветка отстаёт от локальной «{1}» на {0} коммитов.</value>
+  </data>
+  <data name="RemoteBranchMatchesLocalSummary" xml:space="preserve">
+    <value>Совпадает с локальной веткой «{0}».</value>
+  </data>
+  <data name="LocalTagMissing" xml:space="preserve">
+    <value>Локальный тег «{0}» отсутствует.</value>
+  </data>
+  <data name="RemoteTagMatchesLocal" xml:space="preserve">
+    <value>Совпадает с локальным тегом «{0}».</value>
+  </data>
+  <data name="RemoteTagConflictsWithLocal" xml:space="preserve">
+    <value>Отличается от локального тега «{0}».</value>
+  </data>
+  <data name="RemotePaneHeaderButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Выбранный удалённый репозиторий</value>
+  </data>
+  <data name="RemotePaneHeaderButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Выбрать удалённый репозиторий</value>
+  </data>
+  <data name="BranchUpstreamAndRemoteStateTitle" xml:space="preserve">
+    <value>Связь с удалённой веткой</value>
+  </data>
+  <data name="BranchPullRemoteLabel.Text" xml:space="preserve">
+    <value>Удалённый репозиторий:</value>
+  </data>
+  <data name="BranchUpstreamRemoteComboBox.PlaceholderText" xml:space="preserve">
+    <value>Выберите репозиторий</value>
+  </data>
+  <data name="BranchUpstreamRemoteComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Репозиторий для получения изменений</value>
+  </data>
+  <data name="BranchPushRemoteLabel.Text" xml:space="preserve">
+    <value>Удалённый репозиторий:</value>
+  </data>
+  <data name="BranchPushRemoteComboBox.PlaceholderText" xml:space="preserve">
+    <value>Выберите репозиторий</value>
+  </data>
+  <data name="BranchPushRemoteComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Репозиторий для отправки изменений</value>
+  </data>
+  <data name="SettingBranchPushRemoteProgress" xml:space="preserve">
+    <value>Настройка отправки ветки «{0}»...</value>
+  </data>
+  <data name="BranchPushRemoteSetSucceeded" xml:space="preserve">
+    <value>Ветка «{0}» будет отправляться в «{1}».</value>
+  </data>
+  <data name="BranchPushRemoteResetSucceeded" xml:space="preserve">
+    <value>Для ветки «{0}» восстановлен автоматический выбор репозитория.</value>
+  </data>
+  <data name="SettingBranchUpstreamProgress" xml:space="preserve">
+    <value>Настройка получения для ветки «{0}»...</value>
+  </data>
+  <data name="BranchUpstreamSetSucceeded" xml:space="preserve">
+    <value>Ветка «{0}» получает изменения из «{1}».</value>
+  </data>
+  <data name="PushUsesConfiguredRemoteDialogTitle" xml:space="preserve">
+    <value>Отправить в настроенные remote?</value>
+  </data>
+  <data name="PushUsesConfiguredRemoteDialogMessage" xml:space="preserve">
+    <value>Сейчас выбран remote «{0}», но в настройках Git указаны следующие направления push:
+
+{1}
+
+Push будет выполнен в настроенные направления, а не в выбранный remote.</value>
+  </data>
+  <data name="PushUsesConfiguredRemoteDialogPrimaryButton" xml:space="preserve">
+    <value>Отправить</value>
+  </data>
+  <data name="BranchPushRemoteUnavailable" xml:space="preserve">
+    <value>Git не определил remote для push ветки «{0}». Настройте upstream или push remote и повторите операцию.</value>
+  </data>
+  <data name="SynchronizationPushMultipleRemotesSucceeded" xml:space="preserve">
+    <value>Push завершён. Направления: {0}.</value>
+  </data>
+  <data name="SynchronizationAtomicPushMultipleRemotesSucceeded" xml:space="preserve">
+    <value>Изменения отправлены атомарно внутри каждого удалённого репозитория: {0}.</value>
+  </data>
+  <data name="SynchronizationBranchConfiguredPushOutgoingDescription" xml:space="preserve">
+    <value>Исходящие для «{1}» - {0}.</value>
+  </data>
+  <data name="SynchronizationBranchConfiguredPushDivergedDescription" xml:space="preserve">
+    <value>Ветки разошлись: исходящие — {0}, входящие — {1}. Репозиторий: «{2}».</value>
+  </data>
+  <data name="SynchronizationBranchConfiguredPushUnpublishedDescription" xml:space="preserve">
+    <value>Ветка ещё не опубликована в «{0}».</value>
+  </data>
+  <data name="BranchesHeaderToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Показать локальные или удалённые ветки</value>
+  </data>
+  <data name="TagsHeaderToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Показать локальные или удалённые теги</value>
+  </data>
+  <data name="BranchPrimaryAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переключиться на выбранную ветку или открыть её рабочее дерево, если ветка используется в другом рабочем дереве</value>
+  </data>
+  <data name="RenameSelectedBranchAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переименовать выбранную локальную ветку</value>
+  </data>
+  <data name="MergeIntoCurrentSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Слить выбранную ветку в текущую; дополнительные варианты доступны в меню</value>
+  </data>
+  <data name="RebaseSelectedBranchAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Перенести коммиты текущей ветки поверх выбранной ветки</value>
+  </data>
+  <data name="DeleteSelectedBranchAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Удалить выбранную локальную или удалённую ветку</value>
+  </data>
+  <data name="FetchBranchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать локальную ветку из выбранной удалённой ветки</value>
+  </data>
+  <data name="OpenWorktreeButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Открыть рабочее дерево, в котором используется выбранная ветка</value>
+  </data>
+  <data name="FetchTagButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать локальный тег из выбранного удалённого тега без переключения HEAD</value>
+  </data>
+  <data name="CreateBranchFromTagButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать локальную ветку на коммите выбранного тега</value>
+  </data>
+  <data name="CreateBranchWorktreeFromTagButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать ветку от выбранного тега и отдельное рабочее дерево для неё</value>
+  </data>
+  <data name="OpenExistingTagWorktreeButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Открыть существующее рабочее дерево на коммите выбранного тега</value>
+  </data>
+  <data name="CreateDetachedTagWorktreeButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать отдельное рабочее дерево в состоянии detached HEAD на коммите выбранного тега</value>
+  </data>
+  <data name="NoRemote" xml:space="preserve">
+    <value>Нет remote</value>
+  </data>
+  <data name="AddBranchDescriptionMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Добавить описание</value>
+  </data>
+  <data name="EditBranchDescriptionMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Изменить описание</value>
+  </data>
+  <data name="DeleteBranchDescriptionMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Удалить описание</value>
+  </data>
+  <data name="BranchDescriptionDeleteDialogTitle" xml:space="preserve">
+    <value>Удалить описание ветки?</value>
+  </data>
+  <data name="BranchDescriptionDeleteDialogMessage" xml:space="preserve">
+    <value>Описание ветки «{0}» будет удалено из настроек локального репозитория.</value>
+  </data>
+  <data name="BranchDescriptionDeleteDialogPrimaryButton" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="BranchDescriptionDeleteProgressMessage" xml:space="preserve">
+    <value>Удаление описания ветки «{0}»…</value>
+  </data>
+  <data name="BranchDescriptionDeleted" xml:space="preserve">
+    <value>Описание ветки удалено.</value>
+  </data>
+  <data name="BranchHistoryExpanderTitle.Text" xml:space="preserve">
+    <value>История ветки</value>
+  </data>
+  <data name="BranchHistoryNotLoadedSummary" xml:space="preserve">
+    <value>Разверните раздел, чтобы загрузить локальную историю ветки.</value>
+  </data>
+  <data name="BranchHistoryEmptySummary" xml:space="preserve">
+    <value>Для этой ветки нет доступных записей reflog.</value>
+  </data>
+  <data name="BranchHistoryLatestSummary" xml:space="preserve">
+    <value>Последнее перемещение: {0} — {1}</value>
+  </data>
+  <data name="BranchHistoryNoAvailableEntries" xml:space="preserve">
+    <value>Сохранившиеся записи отсутствуют.</value>
+  </data>
+  <data name="BranchHistoryPossibleCreation" xml:space="preserve">
+    <value>Предполагаемое создание ветки: {0}</value>
+  </data>
+  <data name="BranchHistoryEarliestAvailable" xml:space="preserve">
+    <value>Самая ранняя доступная запись: {0}</value>
+  </data>
+  <data name="BranchHistoryLocalNotice.Text" xml:space="preserve">
+    <value>Reflog хранится только в этом локальном репозитории и может быть очищен Git. Переключения между ветками обычно записываются в reflog HEAD и не отображаются здесь, если указатель ветки не перемещался.</value>
+  </data>
+  <data name="BranchHistoryEntriesCardTitle.Text" xml:space="preserve">
+    <value>Сохранившиеся перемещения</value>
+  </data>
+  <data name="ShowAllBranchHistoryButtonText" xml:space="preserve">
+    <value>Показать все ({0})</value>
+  </data>
+  <data name="CollapseBranchHistoryButtonText" xml:space="preserve">
+    <value>Свернуть список</value>
+  </data>
+  <data name="ToggleBranchHistoryButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Показать всю доступную историю или оставить только последние записи</value>
+  </data>
+  <data name="LoadingBranchHistoryProgress" xml:space="preserve">
+    <value>Загрузка истории ветки «{0}»…</value>
+  </data>
+  <data name="ReflogPreviousHashUnknown" xml:space="preserve">
+    <value>неизвестно</value>
+  </data>
+  <data name="ReflogActionCommit" xml:space="preserve">
+    <value>Коммит</value>
+  </data>
+  <data name="ReflogActionReset" xml:space="preserve">
+    <value>Сброс ветки</value>
+  </data>
+  <data name="ReflogActionRebase" xml:space="preserve">
+    <value>Перебазирование</value>
+  </data>
+  <data name="ReflogActionMerge" xml:space="preserve">
+    <value>Слияние</value>
+  </data>
+  <data name="ReflogActionBranch" xml:space="preserve">
+    <value>Создание или перемещение ветки</value>
+  </data>
+  <data name="ReflogActionPull" xml:space="preserve">
+    <value>Получение и объединение изменений</value>
+  </data>
+  <data name="ReflogActionCherryPick" xml:space="preserve">
+    <value>Перенос коммита</value>
+  </data>
+  <data name="ReflogActionRevert" xml:space="preserve">
+    <value>Отмена коммита</value>
+  </data>
+  <data name="ReflogActionOther" xml:space="preserve">
+    <value>Изменение указателя ветки</value>
+  </data>
+  <data name="TagSignatureExpanderTitle.Text" xml:space="preserve">
+    <value>Криптографическая подпись</value>
+  </data>
+  <data name="TagSignatureNotLoadedSummary" xml:space="preserve">
+    <value>Разверните раздел, чтобы проверить подпись тега.</value>
+  </data>
+  <data name="TagSignatureNotSignedSummary" xml:space="preserve">
+    <value>Аннотированный тег не подписан.</value>
+  </data>
+  <data name="TagSignatureValidSummary" xml:space="preserve">
+    <value>Подпись действительна.</value>
+  </data>
+  <data name="TagSignatureInvalidSummary" xml:space="preserve">
+    <value>Подпись недействительна.</value>
+  </data>
+  <data name="TagSignatureUnknownKeySummary" xml:space="preserve">
+    <value>Подпись найдена, но ключ отсутствует.</value>
+  </data>
+  <data name="TagSignatureUnavailableSummary" xml:space="preserve">
+    <value>Подпись не удалось проверить.</value>
+  </data>
+  <data name="TagSignatureObjectUnavailable" xml:space="preserve">
+    <value>Объект аннотированного тега недоступен локально. Для удалённого тега сначала выполните «Получить».</value>
+  </data>
+  <data name="TagSignatureNotSignedDetails" xml:space="preserve">
+    <value>В объекте тега нет блока подписи PGP, SSH или X.509.</value>
+  </data>
+  <data name="TagSignatureTypeLine" xml:space="preserve">
+    <value>Тип: {0}</value>
+  </data>
+  <data name="TagSignatureSignerLine" xml:space="preserve">
+    <value>Подписал: {0}</value>
+  </data>
+  <data name="TagSignatureKeyLine" xml:space="preserve">
+    <value>Ключ: {0}</value>
+  </data>
+  <data name="TagSignatureFingerprintLine" xml:space="preserve">
+    <value>Отпечаток: {0}</value>
+  </data>
+  <data name="TagSignatureDiagnosticLine" xml:space="preserve">
+    <value>Git: {0}</value>
+  </data>
+  <data name="TagSignatureTypeOpenPgp" xml:space="preserve">
+    <value>OpenPGP</value>
+  </data>
+  <data name="TagSignatureTypeSsh" xml:space="preserve">
+    <value>SSH</value>
+  </data>
+  <data name="TagSignatureTypeX509" xml:space="preserve">
+    <value>X.509</value>
+  </data>
+  <data name="TagSignatureTypeUnknown" xml:space="preserve">
+    <value>неизвестный</value>
+  </data>
+  <data name="TagSignatureTrustNotice.Text" xml:space="preserve">
+    <value>Результат зависит от доступных в системе ключей и локальных настроек доверия. Действительная подпись сама по себе не подтверждает личность владельца ключа.</value>
+  </data>
+  <data name="LoadingTagSignatureProgress" xml:space="preserve">
+    <value>Проверка подписи тега «{0}»…</value>
+  </data>
+  <data name="BranchDescriptionDialogTitle" xml:space="preserve">
+    <value>Описание ветки</value>
+  </data>
+  <data name="BranchDescriptionDialogTextBoxHeader" xml:space="preserve">
+    <value>Описание</value>
+  </data>
+  <data name="BranchDescriptionDialogPrimaryButton" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="BranchDescriptionDialogCloseButton" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="BranchDescriptionDialogPlaceholder" xml:space="preserve">
+    <value>Кратко опишите назначение ветки</value>
+  </data>
+  <data name="BranchDescriptionProgressMessage" xml:space="preserve">
+    <value>Сохранение описания ветки «{0}»…</value>
+  </data>
+  <data name="BranchDescriptionSaved" xml:space="preserve">
+    <value>Описание ветки сохранено.</value>
+  </data>
+  <data name="BranchCommonCommitCardTitle.Text" xml:space="preserve">
+    <value>Последний общий коммит</value>
+  </data>
+  <data name="BranchMergeCapabilityCardTitle.Text" xml:space="preserve">
+    <value>Возможность слияния</value>
+  </data>
+  <data name="CommonCommitUnavailable" xml:space="preserve">
+    <value>Общий коммит не найден.</value>
+  </data>
+  <data name="CommonCommitSummary" xml:space="preserve">
+    <value>{0} · {1}
+{2} · {3}</value>
+  </data>
+  <data name="BranchMergeSameCommit" xml:space="preserve">
+    <value>Ветки указывают на один коммит, слияние не требуется.</value>
+  </data>
+  <data name="BranchMergeAlreadyContained" xml:space="preserve">
+    <value>Выбранная ветка уже входит в текущую.</value>
+  </data>
+  <data name="BranchMergeFastForwardAvailable" xml:space="preserve">
+    <value>Текущую ветку можно переместить вперёд без merge-коммита (fast-forward).</value>
+  </data>
+  <data name="BranchMergeCommitRequired" xml:space="preserve">
+    <value>Истории разошлись — для обычного слияния потребуется merge-коммит.</value>
+  </data>
+  <data name="BranchMergeUnrelatedHistories" xml:space="preserve">
+    <value>У веток нет общего предка. Обычное слияние недоступно без разрешения несвязанных историй.</value>
+  </data>
+  <data name="TagTargetCommitUnavailable" xml:space="preserve">
+    <value>Сведения о целевом коммите недоступны. Для удалённого тега может потребоваться сначала получить тег.</value>
+  </data>
+  <data name="TagTargetCommitSummary" xml:space="preserve">
+    <value>{0} · {1}
+{2} · {3}</value>
+  </data>
+  <data name="TagRelationExpanderTitle.Text" xml:space="preserve">
+    <value>Положение относительно текущей ветки</value>
+  </data>
+  <data name="TagRelationNotLoadedSummary" xml:space="preserve">
+    <value>Разверните раздел, чтобы определить положение тега.</value>
+  </data>
+  <data name="TagRelationUnavailable" xml:space="preserve">
+    <value>Положение определить не удалось. Объект удалённого тега может отсутствовать в локальном репозитории.</value>
+  </data>
+  <data name="HeadExactlyAtTag" xml:space="preserve">
+    <value>HEAD находится точно на коммите этого тега.</value>
+  </data>
+  <data name="HeadAheadOfTag" xml:space="preserve">
+    <value>Текущая ветка впереди тега на {0} коммитов.</value>
+  </data>
+  <data name="TagAheadOfHead" xml:space="preserve">
+    <value>Тег впереди текущей ветки на {0} коммитов.</value>
+  </data>
+  <data name="TagHistoryDiverged" xml:space="preserve">
+    <value>Истории разошлись: только в текущей ветке — {0}, только со стороны тега — {1}.</value>
+  </data>
+  <data name="TagHistoryUnrelated" xml:space="preserve">
+    <value>Тег и текущая ветка находятся в несвязанных историях.</value>
+  </data>
+  <data name="TagCommonCommitCardTitle.Text" xml:space="preserve">
+    <value>Последний общий коммит</value>
+  </data>
+  <data name="TagContainingBranchesCardTitle.Text" xml:space="preserve">
+    <value>Локальные ветки, содержащие коммит тега</value>
+  </data>
+  <data name="TagContainingBranchesUnavailable" xml:space="preserve">
+    <value>Список веток недоступен.</value>
+  </data>
+  <data name="NoLocalBranchesContainTag" xml:space="preserve">
+    <value>Ни одна локальная ветка не содержит коммит этого тега.</value>
+  </data>
+  <data name="ShowTagCommitsButton.Content" xml:space="preserve">
+    <value>Показать коммиты</value>
+  </data>
+  <data name="ShowTagCommitsButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Показать уникальные коммиты текущей ветки и выбранного тега</value>
+  </data>
+  <data name="LoadingTagRelationProgress" xml:space="preserve">
+    <value>Определение положения тега «{0}»…</value>
+  </data>
+  <data name="CompareTagRangeTitle" xml:space="preserve">
+    <value>Сравнение тега {0} и ветки {1}</value>
+  </data>
+  <data name="CompareTagRangeDescription" xml:space="preserve">
+    <value>Уникальные коммиты со стороны тега {0} и текущей ветки {1}.</value>
+  </data>
+  <data name="NoTagRangeCommits" xml:space="preserve">
+    <value>Тег и текущая ветка указывают на один коммит.</value>
+  </data>
+  <data name="OpenLastCommitChangesCard.AutomationProperties.Name" xml:space="preserve">
+    <value>Открыть изменения последнего коммита</value>
+  </data>
+  <data name="LastCommitBranchChangesTitle" xml:space="preserve">
+    <value>Последний коммит {0}</value>
+  </data>
+  <data name="LastCommitBranchChangesDescription" xml:space="preserve">
+    <value>Изменения в коммите {0}: {1}</value>
+  </data>
+  <data name="CopyFileNameMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать имя</value>
+  </data>
+  <data name="FileFilterModeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Фильтр по файлу</value>
+  </data>
+  <data name="WorktreeCreateDialog.Title" xml:space="preserve">
+    <value>Создание рабочего дерева</value>
+  </data>
+  <data name="WorktreeCreateDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="WorktreeCreateDialog.CloseButtonText" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="WorktreePathTextBox.Header" xml:space="preserve">
+    <value>Путь рабочего дерева</value>
+  </data>
+  <data name="WorktreeSourceComboBox.Header" xml:space="preserve">
+    <value>Тип начальной точки</value>
+  </data>
+  <data name="WorktreeSourceComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Тип начальной точки рабочего дерева</value>
+  </data>
+  <data name="WorktreeStartPointAutoSuggestBox.Header" xml:space="preserve">
+    <value>Начальная точка</value>
+  </data>
+  <data name="WorktreeStartPointAutoSuggestBox.PlaceholderText" xml:space="preserve">
+    <value>Хэш коммита, имя ветки или имя тега</value>
+  </data>
+  <data name="WorktreeStartPointAutoSuggestBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Начальная точка рабочего дерева</value>
+  </data>
+  <data name="WorktreeLoadingRevisionsTextBlock.Text" xml:space="preserve">
+    <value>Загрузка начальных точек…</value>
+  </data>
+  <data name="WorktreeNewBranchTextBox.Header" xml:space="preserve">
+    <value>Новая ветка (необязательно)</value>
+  </data>
+  <data name="WorktreeCreationModeRadioButtons.Header" xml:space="preserve">
+    <value>Режим создания</value>
+  </data>
+  <data name="ExistingBranchWorktreeModeTextBlock.Text" xml:space="preserve">
+    <value>Существующая ветка</value>
+  </data>
+  <data name="NewBranchWorktreeModeTextBlock.Text" xml:space="preserve">
+    <value>Новая ветка</value>
+  </data>
+  <data name="DetachedWorktreeModeTextBlock.Text" xml:space="preserve">
+    <value>Отделённый HEAD</value>
+  </data>
+  <data name="WorktreeCreationModeDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Одна ветка может быть открыта только в одном рабочем дереве. Если ветка уже открыта, используйте новую ветку или отделённый HEAD.</value>
+  </data>
+  <data name="WorktreeBranchAlreadyCheckedOut" xml:space="preserve">
+    <value>Эта ветка уже открыта в другом рабочем дереве.</value>
+  </data>
+  <data name="WorktreeLockCheckBox.Content" xml:space="preserve">
+    <value>Заблокировать после создания</value>
+  </data>
+  <data name="WorktreesCardTitleTextBlock.Text" xml:space="preserve">
+    <value>Рабочие деревья</value>
+  </data>
+  <data name="WorktreesCardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Создание и управление рабочими деревьями репозитория</value>
+  </data>
+  <data name="MainWorktreeType" xml:space="preserve">
+    <value>Основное рабочее дерево</value>
+  </data>
+  <data name="LocalWorktreeType" xml:space="preserve">
+    <value>Локальное рабочее дерево</value>
+  </data>
+  <data name="CreateWorktreeButton.Content" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="CreateWorktreeButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Создать новое рабочее дерево</value>
+  </data>
+  <data name="RepairWorktreesAppBarButton.Label" xml:space="preserve">
+    <value>Восстановить</value>
+  </data>
+  <data name="PruneWorktreesAppBarButton.Label" xml:space="preserve">
+    <value>Очистить</value>
+  </data>
+  <data name="NoWorktreesInfoBar.Title" xml:space="preserve">
+    <value>Рабочие деревья не найдены</value>
+  </data>
+  <data name="MoveWorktreeAppBarButton.Label" xml:space="preserve">
+    <value>Переместить</value>
+  </data>
+  <data name="LockWorktreeAppBarButton.Label" xml:space="preserve">
+    <value>Заблокировать</value>
+  </data>
+  <data name="UnlockWorktreeAppBarButton.Label" xml:space="preserve">
+    <value>Разблокировать</value>
+  </data>
+  <data name="RemoveWorktreeAppBarButton.Label" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="CreateBranchWorktreeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Создать рабочее дерево…</value>
+  </data>
+  <data name="OpenBranchWorktreeCardTitle.Text" xml:space="preserve">
+    <value>Открыть рабочее дерево, в котором выбрана эта ветка</value>
+  </data>
+  <data name="CreateBranchWorktreeCardTitle.Text" xml:space="preserve">
+    <value>Создать отдельное рабочее дерево для этой ветки</value>
+  </data>
+  <data name="CreateBranchWorktreeButton.Content" xml:space="preserve">
+    <value>Создать рабочее дерево</value>
+  </data>
+  <data name="WorktreeDetachedHead" xml:space="preserve">
+    <value>Отделённый HEAD на {0}</value>
+  </data>
+  <data name="WorktreeCurrentStatus" xml:space="preserve">
+    <value>Текущее</value>
+  </data>
+  <data name="WorktreeLockedStatus" xml:space="preserve">
+    <value>Заблокировано</value>
+  </data>
+  <data name="WorktreePrunableStatus" xml:space="preserve">
+    <value>Отсутствует</value>
+  </data>
+  <data name="WorktreeListFailed" xml:space="preserve">
+    <value>Не удалось загрузить рабочие деревья.</value>
+  </data>
+  <data name="CreatingWorktreeProgress" xml:space="preserve">
+    <value>Создание рабочего дерева…</value>
+  </data>
+  <data name="WorktreeCreated" xml:space="preserve">
+    <value>Рабочее дерево создано в {0}.</value>
+  </data>
+  <data name="WorktreeOpened" xml:space="preserve">
+    <value>Открыто рабочее дерево: {0}.</value>
+  </data>
+  <data name="MoveWorktreeDialogTitle" xml:space="preserve">
+    <value>Перемещение рабочего дерева</value>
+  </data>
+  <data name="MoveWorktreePathHeader" xml:space="preserve">
+    <value>Новый путь</value>
+  </data>
+  <data name="MoveWorktreeButton" xml:space="preserve">
+    <value>Переместить</value>
+  </data>
+  <data name="MovingWorktreeProgress" xml:space="preserve">
+    <value>Перемещение рабочего дерева…</value>
+  </data>
+  <data name="WorktreeMoved" xml:space="preserve">
+    <value>Рабочее дерево перемещено.</value>
+  </data>
+  <data name="RemoveWorktreeDialogTitle" xml:space="preserve">
+    <value>Удалить рабочее дерево?</value>
+  </data>
+  <data name="RemoveWorktreeDialogMessage" xml:space="preserve">
+    <value>Будет удалена папка рабочего дерева: {0}</value>
+  </data>
+  <data name="RemoveWorktreeButton" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="RemovingWorktreeProgress" xml:space="preserve">
+    <value>Удаление рабочего дерева…</value>
+  </data>
+  <data name="WorktreeRemoved" xml:space="preserve">
+    <value>Рабочее дерево удалено.</value>
+  </data>
+  <data name="LockingWorktreeProgress" xml:space="preserve">
+    <value>Блокировка рабочего дерева…</value>
+  </data>
+  <data name="UnlockingWorktreeProgress" xml:space="preserve">
+    <value>Разблокировка рабочего дерева…</value>
+  </data>
+  <data name="WorktreeLocked" xml:space="preserve">
+    <value>Рабочее дерево заблокировано.</value>
+  </data>
+  <data name="WorktreeUnlocked" xml:space="preserve">
+    <value>Рабочее дерево разблокировано.</value>
+  </data>
+  <data name="WorktreePruneFailed" xml:space="preserve">
+    <value>Не удалось проверить устаревшие рабочие деревья.</value>
+  </data>
+  <data name="NoWorktreesToPrune" xml:space="preserve">
+    <value>Устаревших записей рабочих деревьев нет.</value>
+  </data>
+  <data name="PruneWorktreesDialogTitle" xml:space="preserve">
+    <value>Очистить устаревшие записи рабочих деревьев?</value>
+  </data>
+  <data name="PruneWorktreesButton" xml:space="preserve">
+    <value>Очистить</value>
+  </data>
+  <data name="PruningWorktreesProgress" xml:space="preserve">
+    <value>Очистка рабочих деревьев…</value>
+  </data>
+  <data name="WorktreesPruned" xml:space="preserve">
+    <value>Устаревшие записи рабочих деревьев удалены.</value>
+  </data>
+  <data name="RepairingWorktreesProgress" xml:space="preserve">
+    <value>Восстановление связей рабочих деревьев…</value>
+  </data>
+  <data name="WorktreesRepaired" xml:space="preserve">
+    <value>Связи рабочих деревьев восстановлены.</value>
+  </data>
+  <data name="WorktreeOperationFailed" xml:space="preserve">
+    <value>Не удалось выполнить операцию с рабочим деревом.</value>
+  </data>
+  <data name="WorktreeFolderOpenFailed" xml:space="preserve">
+    <value>Не удалось открыть папку рабочего дерева.</value>
+  </data>
+  <data name="OpenWorktreeFolderAppBarButton.Label" xml:space="preserve">
+    <value>Расположение</value>
+  </data>
+  <data name="OpenWorktreeFolderAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Открыть папку рабочего дерева в Проводнике</value>
+  </data>
+  <data name="CloseApplicationConfirmation" xml:space="preserve">
+    <value>Вы действительно хотите закрыть приложение?</value>
+  </data>
+  <data name="CloseApplicationYesButton" xml:space="preserve">
+    <value>Да</value>
+  </data>
+  <data name="CloseApplicationNoButton" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="ArchiveRepositoryAppBarButton.Label" xml:space="preserve">
+    <value>Архивировать</value>
+  </data>
+  <data name="ArchiveRepositoryAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Архивировать зафиксированную ревизию репозитория</value>
+  </data>
+  <data name="ArchiveDialog.Title" xml:space="preserve">
+    <value>Архивировать ревизию</value>
+  </data>
+  <data name="ArchiveDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Архивировать</value>
+  </data>
+  <data name="ArchiveDialog.CloseButtonText" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="ArchiveDialogDescriptionTextBlock.Text" xml:space="preserve">
+    <value>В архив попадут файлы из выбранной зафиксированной ревизии. Изменения рабочего дерева не включаются.</value>
+  </data>
+  <data name="ArchiveSourceComboBox.Header" xml:space="preserve">
+    <value>Источник</value>
+  </data>
+  <data name="ArchiveSourceComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Источник архива</value>
+  </data>
+  <data name="ArchiveStartPointAutoSuggestBox.Header" xml:space="preserve">
+    <value>Начальная точка</value>
+  </data>
+  <data name="ArchiveStartPointAutoSuggestBox.PlaceholderText" xml:space="preserve">
+    <value>Хэш коммита, имя ветки или имя тега</value>
+  </data>
+  <data name="ArchiveStartPointAutoSuggestBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Начальная точка архива</value>
+  </data>
+  <data name="ArchiveFormatComboBox.Header" xml:space="preserve">
+    <value>Формат</value>
+  </data>
+  <data name="ArchiveFormatComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Формат архива</value>
+  </data>
+  <data name="ArchiveIncludeRootDirectoryCheckBox.Content" xml:space="preserve">
+    <value>Создать корневую папку в архиве</value>
+  </data>
+  <data name="ArchiveLoadingStartPointsTextBlock.Text" xml:space="preserve">
+    <value>Загрузка начальных точек…</value>
+  </data>
+  <data name="RevisionSourceHead" xml:space="preserve">
+    <value>Текущий HEAD</value>
+  </data>
+  <data name="RevisionSourceBranch" xml:space="preserve">
+    <value>Ветка</value>
+  </data>
+  <data name="RevisionSourceTag" xml:space="preserve">
+    <value>Тег</value>
+  </data>
+  <data name="RevisionSourceCommit" xml:space="preserve">
+    <value>Коммит</value>
+  </data>
+  <data name="RevisionCurrentHeadDescription" xml:space="preserve">
+    <value>Текущий HEAD: {0}</value>
+  </data>
+  <data name="RevisionNoSuggestions" xml:space="preserve">
+    <value>Для выбранного источника нет доступных начальных точек. Значение можно ввести вручную.</value>
+  </data>
+  <data name="GitRevisionSuggestionsFailed" xml:space="preserve">
+    <value>Не удалось загрузить начальные точки. Значение можно ввести вручную.</value>
+  </data>
+  <data name="GitRevisionInvalid" xml:space="preserve">
+    <value>Не удалось найти коммит для указанной начальной точки.</value>
+  </data>
+  <data name="OpenRepositoryBeforeArchive" xml:space="preserve">
+    <value>Откройте репозиторий перед созданием архива.</value>
+  </data>
+  <data name="ArchiveFileSelectionFailed" xml:space="preserve">
+    <value>Не удалось выбрать файл архива.</value>
+  </data>
+  <data name="CreatingArchiveProgress" xml:space="preserve">
+    <value>Создание архива…</value>
+  </data>
+  <data name="ArchiveCreated" xml:space="preserve">
+    <value>Архив создан.</value>
+  </data>
+  <data name="GitArchiveCommandFailed" xml:space="preserve">
+    <value>Не удалось создать Git-архив.</value>
+  </data>
+  <data name="ArchiveFileWriteFailed" xml:space="preserve">
+    <value>Не удалось записать файл архива.</value>
+  </data>
+  <data name="BranchIncomingStatusCardTitle.Text" xml:space="preserve">
+    <value>Получение изменений</value>
+  </data>
+  <data name="BranchOutgoingStatusCardTitle.Text" xml:space="preserve">
+    <value>Отправка изменений</value>
+  </data>
+  <data name="BranchIncomingReferenceMissing" xml:space="preserve">
+    <value>Удалённая ветка «{0}» не найдена.</value>
+  </data>
+  <data name="BranchIncomingDiverged" xml:space="preserve">
+    <value>Ветки разошлись относительно «{0}»: локально — {1}, удалённо — {2}.</value>
+  </data>
+  <data name="BranchIncomingAvailable" xml:space="preserve">
+    <value>Из «{0}» доступно коммитов: {1}.</value>
+  </data>
+  <data name="BranchIncomingLocalAhead" xml:space="preserve">
+    <value>Локальная ветка опережает «{0}» на {1} коммитов.</value>
+  </data>
+  <data name="BranchIncomingSynchronized" xml:space="preserve">
+    <value>Локальная ветка совпадает с «{0}».</value>
+  </data>
+  <data name="BranchOutgoingNotPublished" xml:space="preserve">
+    <value>Ветка ещё не опубликована в «{0}».</value>
+  </data>
+  <data name="BranchOutgoingDiverged" xml:space="preserve">
+    <value>Ветки разошлись относительно «{0}»: локально — {1}, удалённо — {2}.</value>
+  </data>
+  <data name="BranchOutgoingAvailable" xml:space="preserve">
+    <value>Для отправки в «{0}» доступно коммитов: {1}.</value>
+  </data>
+  <data name="BranchOutgoingRemoteAhead" xml:space="preserve">
+    <value>В «{0}» есть новых коммитов: {1}. Отправка не требуется.</value>
+  </data>
+  <data name="BranchOutgoingSynchronized" xml:space="preserve">
+    <value>Локальная ветка совпадает с «{0}».</value>
+  </data>
+  <data name="BranchRemoteAutomaticOption" xml:space="preserve">
+    <value>Автоматически</value>
+  </data>
+  <data name="BranchRemoteMissingOption" xml:space="preserve">
+    <value>{0} (не найден)</value>
+  </data>
+  <data name="BranchUpstreamResetSucceeded" xml:space="preserve">
+    <value>Для ветки «{0}» восстановлен автоматический выбор источника.</value>
+  </data>
+  <data name="TagStateAcrossRemotesTitle" xml:space="preserve">
+    <value>Состояние в удаленных репозиториях</value>
+  </data>
+  <data name="TagOnlyLocalAcrossRemotes" xml:space="preserve">
+    <value>Тег есть только локально.</value>
+  </data>
+  <data name="TagMatchesRemotes" xml:space="preserve">
+    <value>Тег совпадает в репозиториях: {0}.</value>
+  </data>
+  <data name="TagConflictsWithRemotes" xml:space="preserve">
+    <value>Тег отличается в репозиториях: {0}.</value>
+  </data>
+  <data name="TagMixedRemoteState" xml:space="preserve">
+    <value>Совпадает: {0}. Отличается: {1}.</value>
+  </data>
+  <data name="LoadingAllRemoteTagsProgress" xml:space="preserve">
+    <value>Получение тегов из всех репозиториев…</value>
+  </data>
+  <data name="RemoteTagsPartialFailure" xml:space="preserve">
+    <value>Не удалось получить теги из: {0}. Остальные результаты сохранены.</value>
+  </data>
+  <data name="RefreshingAllRemotesProgress" xml:space="preserve">
+    <value>Обновление всех удалённых репозиториев…</value>
+  </data>
+  <data name="RemoteRefreshPartialFailure" xml:space="preserve">
+    <value>Не удалось полностью обновить: {0}. Остальные результаты сохранены.</value>
+  </data>
+  <data name="GlobalPushDefaultRemoteSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Репозиторий для отправки по умолчанию</value>
+  </data>
+  <data name="GlobalPushDefaultRemoteSettingsTextBox.PlaceholderText" xml:space="preserve">
+    <value>origin</value>
+  </data>
+  <data name="GlobalPushDefaultRemoteSettingsTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Глобальный репозиторий для отправки по умолчанию</value>
+  </data>
+  <data name="RepositoryPushDefaultRemoteSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Репозиторий для отправки по умолчанию</value>
+  </data>
+  <data name="RepositoryPushDefaultRemoteSettingsTextBox.PlaceholderText" xml:space="preserve">
+    <value>origin</value>
+  </data>
+  <data name="RepositoryPushDefaultRemoteSettingsTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Репозиторий для отправки по умолчанию в текущем репозитории</value>
+  </data>
+  <data name="GlobalPushDefaultRemoteSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Используется для Push, если нет локального переопределения</value>
+  </data>
+  <data name="RepositoryPushDefaultRemoteSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Переопределяет глобальную настройку для текущего репозитория</value>
+  </data>
+  <data name="BranchCreateAndCheckoutProgressMessage" xml:space="preserve">
+    <value>Создание и переключение на ветку '{0}'</value>
+  </data>
+  <data name="BranchCreateAndCheckoutSucceeded" xml:space="preserve">
+    <value>Создана ветка '{0}' и выполнено переключение на нее</value>
+  </data>
+  <data name="OperationInProgressMessage" xml:space="preserve">
+    <value>Выполняется операция…</value>
+  </data>
+  <data name="ValidationRequiredField" xml:space="preserve">
+    <value>Заполните это поле.</value>
+  </data>
+  <data name="ValidationSelectionRequired" xml:space="preserve">
+    <value>Выберите значение.</value>
+  </data>
+  <data name="OpenWorktreeAppBarButton.Label" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="OpenWorktreeItemButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Открыть рабочее дерево</value>
+  </data>
+  <data name="OpenFoundRepositoryAppBarButton.Label" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="RemotesCardTitleTextBlock.Text" xml:space="preserve">
+    <value>Удаленные репозитории</value>
+  </data>
+  <data name="RemotesCardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Добавление и управление удаленными репозиториями</value>
+  </data>
+  <data name="RemoveRemoteAppBarButton.Label" xml:space="preserve">
+    <value>Отвязать</value>
+  </data>
+  <data name="RemoteCurrentStatus" xml:space="preserve">
+    <value>Текущий</value>
+  </data>
+  <data name="EditRemoteUrlAppBarButton.Label" xml:space="preserve">
+    <value>Изменить URL</value>
+  </data>
+  <data name="SelectRemoteAppBarButton.Label" xml:space="preserve">
+    <value>Выбрать</value>
+  </data>
+  <data name="SelectRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Сделать репозиторий выбранным по-умолчанию при отправке и получении изменений</value>
+  </data>
+  <data name="EditRemoteUrlAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Изменить URL удаленного репозитория</value>
+  </data>
+  <data name="RemoveRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отвязать удаленный репозиторий от локального</value>
+  </data>
+  <data name="AddRemoteButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Связать локальный репозиторий с новым удаленным репозиторием</value>
+  </data>
+  <data name="MergeBranchWithoutCommitMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Слить без коммита</value>
+  </data>
+  <data name="MergeBranchWithoutCommitDialogMessage" xml:space="preserve">
+    <value>Влить '{0}' в текущую ветку без создания коммита слияния? После выполнения операции потребуется сделать коммит вручную.</value>
+  </data>
+  <data name="MergeBranchWithoutCommitSucceeded" xml:space="preserve">
+    <value>Ветка '{0}' влита в текущую ветку. Проверьте и закоммитьте подготовленные изменения.</value>
+  </data>
+  <data name="CherryPickAppBarButtonLabel" xml:space="preserve">
+    <value>Перенести</value>
+  </data>
+  <data name="CherryPickSplitButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Применить выбранные коммиты к текущей ветке</value>
+  </data>
+  <data name="CherryPickSelectedCount" xml:space="preserve">
+    <value>Перенести ({0})</value>
+  </data>
+  <data name="CherryPickWithSourceMenuFlyoutItem.Text" xml:space="preserve">
+    <value>С указанием источника</value>
+  </data>
+  <data name="CherryPickWithSourceMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Добавить хеш исходного коммита в сообщение каждого нового коммита</value>
+  </data>
+  <data name="CherryPickWithSignOffMenuFlyoutItem.Text" xml:space="preserve">
+    <value>С подписью</value>
+  </data>
+  <data name="CherryPickWithSignOffMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Добавить строку Signed-off-by с вашими данными в каждый коммит</value>
+  </data>
+  <data name="CherryPickWithoutCommitMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Только изменения</value>
+  </data>
+  <data name="CherryPickWithoutCommitMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Применить изменения к индексу без создания коммитов</value>
+  </data>
+  <data name="CherryPickConfirmationDialogTitle" xml:space="preserve">
+    <value>Перенос коммитов</value>
+  </data>
+  <data name="CherryPickConfirmationDialogSingleMessage" xml:space="preserve">
+    <value>Применить этот коммит к ветке {1}?</value>
+  </data>
+  <data name="CherryPickConfirmationDialogMultipleMessage" xml:space="preserve">
+    <value>Применить коммиты ({0}) к ветке {1} от старых к новым?</value>
+  </data>
+  <data name="CherryPickConfirmationDialogPrimaryButton" xml:space="preserve">
+    <value>Применить</value>
+  </data>
+  <data name="CherryPickNoCommitConfirmationNotice" xml:space="preserve">
+    <value>Коммиты созданы не будут. Объединённые изменения будут добавлены в индекс.</value>
+  </data>
+  <data name="CherryPickSourceConfirmationNotice" xml:space="preserve">
+    <value>Хеш исходного коммита будет добавлен в сообщение каждого нового коммита.</value>
+  </data>
+  <data name="CherryPickSignOffConfirmationNotice" xml:space="preserve">
+    <value>В каждый коммит будет добавлена строка Signed-off-by с вашими данными.</value>
+  </data>
+  <data name="CherryPickMainlineConfirmationNotice" xml:space="preserve">
+    <value>Главный родитель: {0}.</value>
+  </data>
+  <data name="CherryPickMainlineDialogTitle" xml:space="preserve">
+    <value>Выбор главного родителя</value>
+  </data>
+  <data name="CherryPickMainlineDialogMessage" xml:space="preserve">
+    <value>Merge-коммит {0} «{1}» имеет несколько родителей. Выберите родителя, представляющего основную линию истории.</value>
+  </data>
+  <data name="CherryPickMainlineDialogHeader" xml:space="preserve">
+    <value>Главный родитель</value>
+  </data>
+  <data name="CherryPickMainlineParentOption" xml:space="preserve">
+    <value>Родитель {0}: {1} — {2}</value>
+  </data>
+  <data name="CherryPickMainlineDialogPrimaryButton" xml:space="preserve">
+    <value>Продолжить</value>
+  </data>
+  <data name="CherryPickProgressMessage" xml:space="preserve">
+    <value>Применение выбранных коммитов...</value>
+  </data>
+  <data name="CherryPickSingleSucceeded" xml:space="preserve">
+    <value>Коммит {0} применён к ветке {1}.</value>
+  </data>
+  <data name="CherryPickMultipleSucceeded" xml:space="preserve">
+    <value>Коммиты ({0}) применены к ветке {1}.</value>
+  </data>
+  <data name="CherryPickWithoutCommitSucceeded" xml:space="preserve">
+    <value>Выбранные изменения применены без создания коммитов.</value>
+  </data>
+  <data name="CherryPickConflictResolutionRequired" xml:space="preserve">
+    <value>Для продолжения cherry-pick необходимо разрешить конфликты.</value>
+  </data>
+  <data name="CherryPickFailed" xml:space="preserve">
+    <value>Не удалось выполнить cherry-pick.</value>
+  </data>
+  <data name="CherryPickUnavailable" xml:space="preserve">
+    <value>Cherry-pick недоступен. Убедитесь, что рабочее дерево чистое и другая операция Git не выполняется.</value>
+  </data>
+  <data name="EditorZoomButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Масштаб документа</value>
+  </data>
+  <data name="EditorZoomFlyoutHeaderTextBlock.Text" xml:space="preserve">
+    <value>Масштаб документа</value>
+  </data>
+  <data name="EditorZoomSlider.AutomationProperties.Name" xml:space="preserve">
+    <value>Процент масштаба документа</value>
+  </data>
+  <data name="ResetEditorZoomButton.Content" xml:space="preserve">
+    <value>Сбросить до 100%</value>
+  </data>
+  <data name="RenameRemoteDialogTitle" xml:space="preserve">
+    <value>Переименовать {0}</value>
+  </data>
+  <data name="RenameRemoteDialogTextBoxHeader" xml:space="preserve">
+    <value>Имя удаленного репозитория</value>
+  </data>
+  <data name="RenameRemoteDialogPrimaryButton" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="RemoteNamePlaceholder" xml:space="preserve">
+    <value>origin</value>
+  </data>
+  <data name="RenameRemoteProgress" xml:space="preserve">
+    <value>Изменение имени '{0}' на '{1}'</value>
+  </data>
+  <data name="RemoteNameUpdated" xml:space="preserve">
+    <value>Имя удаленного репозитория '{0}' изменено на '{1}'</value>
+  </data>
+  <data name="RenameRemoteAppBarButton.Label" xml:space="preserve">
+    <value>Переименовать</value>
+  </data>
+  <data name="RenameRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Изменить имя удаленного репозитория</value>
+  </data>
+</root>

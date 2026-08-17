@@ -1,0 +1,50 @@
+name: Release validation
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-release-tag:
+    name: Validate release tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout release history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag and main ancestry
+        shell: pwsh
+        run: |
+          $releaseTag = $env:GITHUB_REF_NAME
+          $releaseTagPattern = '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:preview|rc)\.(0|[1-9]\d*))?$'
+
+          if ($releaseTag -notmatch $releaseTagPattern) {
+            throw "Release tag '$releaseTag' must use vMAJOR.MINOR.PATCH, vMAJOR.MINOR.PATCH-preview.N, or vMAJOR.MINOR.PATCH-rc.N."
+          }
+
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to fetch the public main branch."
+          }
+
+          git merge-base --is-ancestor HEAD refs/remotes/origin/main
+          if ($LASTEXITCODE -ne 0) {
+            throw "Release tag '$releaseTag' must point to a commit contained in main."
+          }
+
+          Write-Host "Validated release tag: $releaseTag"
+
+  build-and-test:
+    name: Build and test release
+    needs: validate-release-tag
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml

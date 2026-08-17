@@ -1,0 +1,64 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>SimpleGit11</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishProfile>win-x64.pubxml</PublishProfile>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+    <MinVerAutoIncrement>patch</MinVerAutoIncrement>
+    <MinVerDefaultPreReleaseIdentifiers>dev.0</MinVerDefaultPreReleaseIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ApplicationIconSource Include="$(MSBuildProjectDirectory)\Assets\Square44x44Logo.targetsize-16.png" />
+    <_ApplicationIconSource Include="$(MSBuildProjectDirectory)\Assets\Square44x44Logo.targetsize-24.png" />
+    <_ApplicationIconSource Include="$(MSBuildProjectDirectory)\Assets\Square44x44Logo.targetsize-32.png" />
+    <_ApplicationIconSource Include="$(MSBuildProjectDirectory)\Assets\Square44x44Logo.targetsize-48.png" />
+    <_ApplicationIconSource Include="$(MSBuildProjectDirectory)\Assets\Square44x44Logo.targetsize-256.png" />
+    <_ApplicationIconGenerator Include="$(MSBuildProjectDirectory)\Build\GenerateAppIcon.ps1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
+    <PackageReference Include="CommunityToolkit.WinUI.Triggers" Version="8.2.251219" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2270" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.2.0" />
+    <PackageReference Include="MinVer" Version="7.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="TextControlBox.WinUI.slow-spec85" Version="2.0.0-preview.1" />
+  </ItemGroup>
+
+  <!-- Publish Properties -->
+  <PropertyGroup>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
+    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
+    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">False</PublishTrimmed>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <Target Name="GenerateApplicationIcon" BeforeTargets="PrepareForBuild" Inputs="@(_ApplicationIconSource);@(_ApplicationIconGenerator)" Outputs="$(MSBuildProjectDirectory)\$(ApplicationIcon)">
+    <Exec Command="powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\Build\GenerateAppIcon.ps1&quot; -OutputPath &quot;$(MSBuildProjectDirectory)\$(ApplicationIcon)&quot;" />
+  </Target>
+</Project>

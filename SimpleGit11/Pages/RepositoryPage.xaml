@@ -1,0 +1,747 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SimpleGit11.Pages.RepositoryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:dialogs="using:SimpleGit11.Dialogs"
+    xmlns:controls="using:SimpleGit11.Controls"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
+    xmlns:viewmodels="using:SimpleGit11.ViewModels"
+    NavigationCacheMode="Required">
+    <Grid
+        Padding="0,32,0,0"
+        DataContext="{x:Bind ViewModel, Mode=OneWay}"
+        RowSpacing="20">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutStates">
+                <VisualState x:Name="NarrowLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="CommandBarRow.Height" Value="Auto" />
+                        <Setter Target="RepositoryCommands.(Grid.Row)" Value="1" />
+                        <Setter Target="RepositoryCommands.(Grid.Column)" Value="0" />
+                        <Setter Target="RepositoryCommands.Margin" Value="0,12,0,0" />
+                        <Setter Target="RepositoryCommandsColumn.Width" Value="0" />
+                        <Setter Target="RepositoryIdentityPanel.(Grid.Row)" Value="1" />
+                        <Setter Target="RepositoryIdentityPanel.(Grid.Column)" Value="0" />
+                        <Setter Target="RepositoryIdentityPanel.HorizontalAlignment" Value="Left" />
+                        <Setter Target="RepositoryIdentityPanel.Margin" Value="0,20,0,0" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1060" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid ColumnSpacing="16"
+              Padding="32,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="RepositoryCommandsColumn" MaxWidth="800" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition x:Name="CommandBarRow" Height="0" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Spacing="8">
+                <TextBlock
+                    x:Uid="RepositoryTitleTextBlock"
+                    MaxLines="1"
+                    Style="{ThemeResource TitleTextBlockStyle}"
+                    TextWrapping="WrapWholeWords" />
+                <TextBlock
+                    x:Uid="RepositoryDescriptionTextBlock"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    MaxLines="2"
+                    TextWrapping="WrapWholeWords" />
+            </StackPanel>
+
+            <CommandBar
+                x:Name="RepositoryCommands"
+                Grid.Column="1"
+                Background="Transparent"
+                DefaultLabelPosition="Right">
+                <AppBarButton
+                    x:Uid="RefreshRepositoryAppBarButton"
+                    Command="{x:Bind ViewModel.RefreshRepositoryCommand, Mode=OneWay}"
+                    Icon="Refresh" />
+                <AppBarButton
+                    x:Uid="OpenRepositoryAppBarButton"
+                    Command="{x:Bind ViewModel.OpenRepositoryCommand, Mode=OneWay}"
+                    Icon="OpenFile" />
+                <AppBarButton
+                    x:Uid="CreateRepositoryAppBarButton"
+                    Command="{x:Bind ViewModel.CreateRepositoryCommand, Mode=OneWay}"
+                    Icon="Add" />
+                <AppBarButton
+                    x:Name="CloneRepositoryAppBarButton"
+                    x:Uid="CloneRepositoryAppBarButton"
+                    Icon="Download">
+                    <AppBarButton.Flyout>
+                        <dialogs:CloneRepositoryDialog />
+                    </AppBarButton.Flyout>
+                </AppBarButton>
+                <AppBarButton
+                    x:Uid="ArchiveRepositoryAppBarButton"
+                    Command="{x:Bind ViewModel.ArchiveCommand, Mode=OneWay}"
+                    Icon="Save" />
+                <AppBarButton
+                    x:Uid="CloseRepositoryAppBarButton"
+                    Command="{x:Bind ViewModel.CloseRepositoryCommand, Mode=OneWay}"
+                    Icon="Cancel" />
+            </CommandBar>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1"
+                      Padding="32,0">
+            <Grid>
+                <StackPanel Spacing="16" MaxWidth="1000">
+                    <Grid
+                        Padding="0,8,0,0"
+                        ColumnSpacing="48">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Spacing="4" VerticalAlignment="Center">
+                            <TextBlock
+                                MaxLines="1"
+                                Style="{ThemeResource TitleTextBlockStyle}"
+                                Text="{x:Bind ViewModel.RepositoryName, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis">
+                                <TextBlock.ContextFlyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem
+                                            x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                            CommandParameter="{x:Bind ViewModel.RepositoryName, Mode=OneWay}"
+                                            Icon="Copy" />
+                                    </MenuFlyout>
+                                </TextBlock.ContextFlyout>
+                            </TextBlock>
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                MaxLines="1"
+                                Text="{x:Bind ViewModel.RepositoryPathDisplayText, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.RepositoryPathDisplayText, Mode=OneWay}">
+                                <TextBlock.ContextFlyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem
+                                            x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.CopyRepositoryPathCommand, Mode=OneWay}"
+                                            Icon="Copy" />
+                                    </MenuFlyout>
+                                </TextBlock.ContextFlyout>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <Grid
+                            x:Name="RepositoryIdentityPanel"
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <FontIcon
+                                FontSize="28"
+                                Glyph="&#xE77B;"
+                                VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBlock
+                                    FontWeight="SemiBold"
+                                    MaxLines="1"
+                                    Text="{x:Bind ViewModel.CurrentUser, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis">
+                                    <TextBlock.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem
+                                                x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                                Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                                CommandParameter="{x:Bind ViewModel.CurrentUser, Mode=OneWay}"
+                                                Icon="Copy" />
+                                        </MenuFlyout>
+                                    </TextBlock.ContextFlyout>
+                                </TextBlock>
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    MaxLines="1"
+                                    Text="{x:Bind ViewModel.CurrentEmail, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis">
+                                    <TextBlock.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem
+                                                x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                                Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                                CommandParameter="{x:Bind ViewModel.CurrentEmail, Mode=OneWay}"
+                                                Icon="Copy" />
+                                        </MenuFlyout>
+                                    </TextBlock.ContextFlyout>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+
+                    <Border
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel Spacing="0">
+                            <toolkit:SettingsCard
+                                Background="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="0"
+                                Padding="16,26">
+                                <toolkit:SettingsCard.HeaderIcon>
+                                    <SymbolIcon Symbol="PreviewLink" />
+                                </toolkit:SettingsCard.HeaderIcon>
+                                <toolkit:SettingsCard.Header>
+                                    <StackPanel VerticalAlignment="Center" Spacing="4">
+                                        <TextBlock
+                                            x:Uid="RepositoryStatusSectionTitleTextBlock"
+                                            MaxLines="1"
+                                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                                            TextWrapping="WrapWholeWords" />
+                                        <TextBlock
+                                            x:Uid="RepositoryStatusSectionDescriptionTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            MaxLines="1"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </toolkit:SettingsCard.Header>
+                            </toolkit:SettingsCard>
+
+                            <toolkit:SettingsCard
+                                AllowFocusOnInteraction="False"
+                                AutomationProperties.AutomationId="RemoteStatusSettingsCard"
+                                Background="Transparent"
+                                BorderThickness="0,1,0,0" 
+                                BorderBrush="{ThemeResource CardBorderColorDefaultBrush}"
+                                Click="RepositoryStateSettingsCard_Click"
+                                CornerRadius="0"
+                                IsClickEnabled="True"
+                                Padding="60,0,16,0">
+                                <toolkit:SettingsCard.Header>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock
+                                            Text="{x:Bind ViewModel.RepositoryState, Mode=OneWay}"
+                                            TextWrapping="WrapWholeWords" />
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            Text="{x:Bind ViewModel.CurrentBranch, Mode=OneWay}" />
+                                    </StackPanel>
+                                </toolkit:SettingsCard.Header>
+                            </toolkit:SettingsCard>
+                            <toolkit:SettingsCard
+                                AllowFocusOnInteraction="False"
+                                Background="Transparent"
+                                BorderThickness="0,1,0,0" BorderBrush="{ThemeResource CardBorderColorDefaultBrush}"
+                                Click="LastCommitSettingsCard_Click"
+                                CornerRadius="0"
+                                IsClickEnabled="True"
+                                Padding="60,0,16,0">
+                                <toolkit:SettingsCard.Header>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock
+                                            MaxLines="2"
+                                            Text="{x:Bind ViewModel.LastCommitSummary, Mode=OneWay}"
+                                            TextWrapping="WrapWholeWords">
+                                            <TextBlock.ContextFlyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem
+                                                        x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                                        Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                                        CommandParameter="{x:Bind ViewModel.LastCommitSummary, Mode=OneWay}"
+                                                        Icon="Copy" />
+                                                </MenuFlyout>
+                                            </TextBlock.ContextFlyout>
+                                        </TextBlock>
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            MaxLines="1"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            Text="{x:Bind ViewModel.LastCommitDetails, Mode=OneWay}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </toolkit:SettingsCard.Header>
+                            </toolkit:SettingsCard>
+                            <toolkit:SettingsCard
+                                AllowFocusOnInteraction="False"
+                                Background="Transparent"
+                                BorderThickness="0,1,0,0" BorderBrush="{ThemeResource CardBorderColorDefaultBrush}"
+                                Click="RemoteStatusSettingsCard_Click"
+                                CornerRadius="0,0,4,4"
+                                IsClickEnabled="True"
+                                Padding="60,8,16,8">
+                                <toolkit:SettingsCard.Header>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock
+                                            Text="{x:Bind ViewModel.TrackingSummary, Mode=OneWay}"
+                                            TextWrapping="WrapWholeWords" />
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            MaxLines="1"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            Text="{x:Bind ViewModel.TrackingUrl, Mode=OneWay}"
+                                            TextTrimming="CharacterEllipsis"
+                                            ToolTipService.ToolTip="{x:Bind ViewModel.TrackingUrl, Mode=OneWay}">
+                                            <TextBlock.ContextFlyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem
+                                                        x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                                        Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                                        CommandParameter="{x:Bind ViewModel.TrackingUrl, Mode=OneWay}"
+                                                        Icon="Copy" />
+                                                </MenuFlyout>
+                                            </TextBlock.ContextFlyout>
+                                        </TextBlock>
+                                        <StackPanel
+                                            Margin="0,8,0,0"
+                                            Spacing="4"
+                                            Visibility="{x:Bind ViewModel.HasPushTarget, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                            <TextBlock
+                                                x:Uid="RepositoryPushDetailsTitleTextBlock"
+                                                Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <TextBlock
+                                                Text="{x:Bind ViewModel.PushSummary, Mode=OneWay}"
+                                                TextWrapping="WrapWholeWords" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                MaxLines="1"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Text="{x:Bind ViewModel.PushUrl, Mode=OneWay}"
+                                                TextTrimming="CharacterEllipsis"
+                                                ToolTipService.ToolTip="{x:Bind ViewModel.PushUrl, Mode=OneWay}">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem
+                                                            x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                                            Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                                            CommandParameter="{x:Bind ViewModel.PushUrl, Mode=OneWay}"
+                                                            Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </toolkit:SettingsCard.Header>
+                            </toolkit:SettingsCard>
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel Spacing="0">
+                            <toolkit:SettingsCard
+                                Background="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="0"
+                                Padding="16,26">
+                                <toolkit:SettingsCard.HeaderIcon>
+                                    <SymbolIcon Symbol="Globe" />
+                                </toolkit:SettingsCard.HeaderIcon>
+                                <toolkit:SettingsCard.Header>
+                                    <StackPanel VerticalAlignment="Center" Spacing="4">
+                                        <TextBlock
+                                            x:Uid="RemotesCardTitleTextBlock"
+                                            MaxLines="1"
+                                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                                            TextWrapping="WrapWholeWords" />
+                                        <TextBlock
+                                            x:Uid="RemotesCardDescriptionTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            MaxLines="1"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </toolkit:SettingsCard.Header>
+                                <toolkit:SettingsCard.Content>
+                                    <Button
+                                        x:Uid="AddRemoteButton"
+                                        Width="140"
+                                        VerticalAlignment="Center"
+                                        Command="{x:Bind ViewModel.AddRemoteCommand, Mode=OneWay}" />
+                                </toolkit:SettingsCard.Content>
+                            </toolkit:SettingsCard>
+
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.RemoteViewItems, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:RemoteViewItem">
+                                        <toolkit:SettingsCard
+                                            Background="Transparent"
+                                            BorderThickness="0,1,0,0"
+                                            BorderBrush="{ThemeResource CardBorderColorDefaultBrush}"
+                                            CornerRadius="0"
+                                            Padding="60,10,16,10">
+                                            <toolkit:SettingsCard.Header>
+                                                <StackPanel Spacing="2" ToolTipService.ToolTip="{x:Bind ReferenceText, Mode=OneTime}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                        <TextBlock
+                                                            Text="{x:Bind Name, Mode=OneTime}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="·"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{x:Bind CurrentStatusVisibility, Mode=OneTime}" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind CurrentStatusText, Mode=OneTime}"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{x:Bind CurrentStatusVisibility, Mode=OneTime}" />
+                                                    </StackPanel>
+                                                    <TextBlock
+                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                        Style="{ThemeResource CaptionTextBlockStyle}"
+                                                        Text="{x:Bind ReferenceText, Mode=OneTime}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </toolkit:SettingsCard.Header>
+                                            <toolkit:SettingsCard.Content>
+                                                <CommandBar
+                                                    Background="Transparent"
+                                                    DefaultLabelPosition="Right"
+                                                    IsDynamicOverflowEnabled="False"
+                                                    VerticalAlignment="Center"
+                                                    Margin="0,0,28,0">
+                                                    <CommandBar.SecondaryCommands>
+                                                        <AppBarButton
+                                                            x:Uid="SelectRemoteAppBarButton"
+                                                            Command="{x:Bind SelectCommand}" />
+                                                        <AppBarSeparator/>
+                                                        <AppBarButton
+                                                            x:Uid="RenameRemoteAppBarButton"
+                                                            Command="{x:Bind RenameCommand, Mode=OneWay}" />
+                                                        <AppBarButton
+                                                            x:Uid="EditRemoteUrlAppBarButton"
+                                                            Command="{x:Bind EditCommand, Mode=OneWay}" />
+                                                        <AppBarButton
+                                                            x:Uid="RemoveRemoteAppBarButton"
+                                                            Command="{x:Bind RemoveCommand, Mode=OneWay}" />
+                                                    </CommandBar.SecondaryCommands>
+                                                </CommandBar>
+                                            </toolkit:SettingsCard.Content>
+                                        </toolkit:SettingsCard>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel Spacing="0">
+                            <toolkit:SettingsCard
+                                Background="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="0"
+                                Padding="16,26">
+                                <toolkit:SettingsCard.HeaderIcon>
+                                    <SymbolIcon Symbol="SyncFolder" />
+                                </toolkit:SettingsCard.HeaderIcon>                                
+                                <toolkit:SettingsCard.Header>
+                                    <StackPanel VerticalAlignment="Center" Spacing="4">
+                                        <TextBlock
+                                            x:Uid="WorktreesCardTitleTextBlock"
+                                            MaxLines="1"
+                                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                                            TextWrapping="WrapWholeWords" />
+                                        <TextBlock
+                                            x:Uid="WorktreesCardDescriptionTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            MaxLines="1"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </toolkit:SettingsCard.Header>
+                                <toolkit:SettingsCard.Content>
+                                    <CommandBar
+                                        Background="Transparent"
+                                        DefaultLabelPosition="Right"
+                                        IsDynamicOverflowEnabled="False"
+                                        VerticalAlignment="Center">
+                                        <AppBarElementContainer VerticalContentAlignment="Center">
+                                            <Button
+                                                x:Uid="CreateWorktreeButton"
+                                                Width="140"
+                                                Margin="0,0,8,0"
+                                                VerticalAlignment="Center"
+                                                Command="{x:Bind ViewModel.CreateWorktreeCommand, Mode=OneWay}" />
+                                        </AppBarElementContainer>
+                                        <CommandBar.SecondaryCommands>
+                                            <AppBarButton
+                                                x:Uid="RepairWorktreesAppBarButton"
+                                                Command="{x:Bind ViewModel.RepairWorktreesCommand, Mode=OneWay}" />
+                                            <AppBarButton
+                                                x:Uid="PruneWorktreesAppBarButton"
+                                                Command="{x:Bind ViewModel.PruneWorktreesCommand, Mode=OneWay}" />
+                                        </CommandBar.SecondaryCommands>
+                                    </CommandBar>
+                                </toolkit:SettingsCard.Content>
+
+                            </toolkit:SettingsCard>
+
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.Worktrees, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:WorktreeViewItem">
+                                        <toolkit:SettingsCard
+                                            Background="Transparent"
+                                            BorderThickness="0,1,0,0"
+                                            BorderBrush="{ThemeResource CardBorderColorDefaultBrush}"
+                                            CornerRadius="0"
+                                            Padding="60,10,16,10">
+                                            <toolkit:SettingsCard.Header>
+                                                <StackPanel Spacing="2" ToolTipService.ToolTip="{x:Bind Path, Mode=OneTime}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                        <TextBlock
+                                                            Text="{x:Bind Name, Mode=OneTime}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="·"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind ReferenceText, Mode=OneTime}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="·"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind TypeText, Mode=OneTime}"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="·"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{x:Bind CurrentStatusVisibility, Mode=OneTime}" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind CurrentStatusText, Mode=OneTime}"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{x:Bind CurrentStatusVisibility, Mode=OneTime}" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="·"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{x:Bind AuxiliaryStatusVisibility, Mode=OneTime}" />
+                                                        <TextBlock
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind AuxiliaryStatusText, Mode=OneTime}"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{x:Bind AuxiliaryStatusVisibility, Mode=OneTime}" />
+                                                    </StackPanel>
+                                                    <TextBlock
+                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                        Style="{ThemeResource CaptionTextBlockStyle}"
+                                                        Text="{x:Bind Path, Mode=OneTime}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </toolkit:SettingsCard.Header>
+                                            <toolkit:SettingsCard.Content>
+                                                <CommandBar
+                                                    Background="Transparent"
+                                                    DefaultLabelPosition="Right"
+                                                    IsDynamicOverflowEnabled="False"
+                                                    VerticalAlignment="Center"
+                                                    Margin="0,0,28,0">
+                                                    <CommandBar.SecondaryCommands>
+                                                        <AppBarButton
+                                                            x:Uid="OpenWorktreeAppBarButton"
+                                                            Command="{x:Bind OpenCommand, Mode=OneTime}" />
+                                                        <AppBarButton
+                                                            x:Uid="OpenWorktreeFolderAppBarButton"
+                                                            Command="{x:Bind OpenFolderCommand, Mode=OneTime}" />
+                                                        <AppBarSeparator />
+                                                        <AppBarButton
+                                                            x:Uid="MoveWorktreeAppBarButton"
+                                                            Command="{x:Bind MoveCommand, Mode=OneTime}" />
+                                                        <AppBarButton
+                                                            x:Uid="LockWorktreeAppBarButton"
+                                                            Command="{x:Bind ToggleLockCommand, Mode=OneTime}"
+                                                            Visibility="{x:Bind LockVisibility, Mode=OneTime}" />
+                                                        <AppBarButton
+                                                            x:Uid="UnlockWorktreeAppBarButton"
+                                                            Command="{x:Bind ToggleLockCommand, Mode=OneTime}"
+                                                            Visibility="{x:Bind UnlockVisibility, Mode=OneTime}" />
+                                                        <AppBarSeparator />
+                                                        <AppBarButton
+                                                            x:Uid="RemoveWorktreeAppBarButton"
+                                                            Command="{x:Bind RemoveCommand, Mode=OneTime}" />
+                                                    </CommandBar.SecondaryCommands>
+                                                </CommandBar>
+                                            </toolkit:SettingsCard.Content>
+                                        </toolkit:SettingsCard>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <toolkit:SettingsExpander
+                        x:Name="RepositorySearchPane"
+                        HorizontalContentAlignment="Stretch"
+                        IsExpanded="True"
+                        ItemsSource="{x:Bind ViewModel.FilteredFoundRepositories, Mode=OneWay}">
+                        <toolkit:SettingsExpander.HeaderIcon>
+                            <SymbolIcon Symbol="Folder" />
+                        </toolkit:SettingsExpander.HeaderIcon>
+                        <toolkit:SettingsExpander.Header>
+                            <StackPanel Padding="0,10" Spacing="4">
+                                <TextBlock
+                                    x:Uid="RepositorySearchTitleTextBlock"
+                                    MaxLines="1"
+                                    Style="{ThemeResource SubtitleTextBlockStyle}"
+                                    TextWrapping="WrapWholeWords" />
+                                <TextBlock
+                                    x:Uid="RepositorySearchDescriptionTextBlock"
+                                    MaxLines="2"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                    TextWrapping="WrapWholeWords" />
+                            </StackPanel>
+                        </toolkit:SettingsExpander.Header>
+
+                        <toolkit:SettingsExpander.Content>
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox
+                                    x:Uid="FoundRepositoryFilterTextBox"
+                                    Height="32"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind ViewModel.FoundRepositoryFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <CommandBar
+                                    Grid.Column="1"
+                                    Background="Transparent"
+                                    DefaultLabelPosition="Right"
+                                    IsDynamicOverflowEnabled="False"
+                                    VerticalAlignment="Center">
+                                    <AppBarElementContainer VerticalContentAlignment="Center">
+                                        <Button
+                                            x:Uid="RefreshRepositorySearchButton"
+                                            Width="140"
+                                            Margin="0,0,8,0"
+                                            VerticalAlignment="Center"
+                                            Command="{x:Bind ViewModel.SearchRepositoriesCommand, Mode=OneWay}" />
+                                    </AppBarElementContainer>
+                                    <CommandBar.SecondaryCommands>
+                                        <AppBarButton
+                                            x:Uid="BrowseRepositorySearchStartPathAppBarButton"
+                                            Command="{x:Bind ViewModel.BrowseRepositorySearchStartPathCommand, Mode=OneWay}" />
+                                    </CommandBar.SecondaryCommands>
+                                </CommandBar>
+                            </Grid>
+                        </toolkit:SettingsExpander.Content>
+
+                        <toolkit:SettingsExpander.ItemsHeader>
+                            <Grid>
+                                <InfoBar
+                                    x:Uid="NoFoundRepositoriesInfoBar"
+                                    IsOpen="{x:Bind ViewModel.HasNoFoundRepositories, Mode=OneWay}"
+                                    Severity="Informational"
+                                    Visibility="{x:Bind ViewModel.HasNoFoundRepositories, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                <InfoBar
+                                    x:Uid="NoFilteredFoundRepositoriesInfoBar"
+                                    IsOpen="{x:Bind ViewModel.HasNoFilteredFoundRepositories, Mode=OneWay}"
+                                    Severity="Informational"
+                                    Visibility="{x:Bind ViewModel.HasNoFilteredFoundRepositories, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                            </Grid>
+                        </toolkit:SettingsExpander.ItemsHeader>
+
+                        <toolkit:SettingsExpander.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:FoundRepositoryViewItem">
+                                <toolkit:SettingsCard Padding="60,10,16,10">
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="2">
+                                            <StackPanel.ContextFlyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem
+                                                        x:Uid="OpenFoundRepositoryMenuFlyoutItem"
+                                                        Command="{x:Bind OpenCommand, Mode=OneTime}"
+                                                        Icon="OpenFile" />
+                                                    <MenuFlyoutItem
+                                                        x:Uid="CopyFoundRepositoryNameMenuFlyoutItem"
+                                                        Command="{x:Bind CopyNameCommand, Mode=OneTime}"
+                                                        Icon="Copy" />
+                                                    <MenuFlyoutItem
+                                                        x:Uid="CopyFoundRepositoryPathMenuFlyoutItem"
+                                                        Command="{x:Bind CopyPathCommand, Mode=OneTime}"
+                                                        Icon="Copy" />
+                                                </MenuFlyout>
+                                            </StackPanel.ContextFlyout>
+                                            <TextBlock
+                                                MaxLines="1"
+                                                Text="{x:Bind Name, Mode=OneTime}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                MaxLines="1"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Text="{x:Bind Path, Mode=OneTime}"
+                                                TextTrimming="CharacterEllipsis"
+                                                ToolTipService.ToolTip="{x:Bind Path, Mode=OneTime}" />
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                    <toolkit:SettingsCard.Content>
+                                        <CommandBar
+                                            Grid.Column="1"
+                                            Background="Transparent"
+                                            DefaultLabelPosition="Right"
+                                            IsDynamicOverflowEnabled="False"
+                                            VerticalAlignment="Center"
+                                            Margin="0,0,28,0">
+                                              <CommandBar.SecondaryCommands>
+                                                <AppBarButton
+                                                    x:Uid="OpenFoundRepositoryAppBarButton"
+                                                    Command="{x:Bind OpenCommand, Mode=OneTime}" />
+                                            </CommandBar.SecondaryCommands>
+                                        </CommandBar>
+                                    </toolkit:SettingsCard.Content>
+                                </toolkit:SettingsCard>
+                            </DataTemplate>
+                        </toolkit:SettingsExpander.ItemTemplate>
+                    </toolkit:SettingsExpander>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Page>

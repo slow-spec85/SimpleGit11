@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="SimpleGit11.Controls.ConflictEditor"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SimpleGit11.Controls"
+    AutomationProperties.AutomationId="ConflictEditorRoot">
+
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator
+            Key="Z"
+            Modifiers="Control"
+            Invoked="UndoKeyboardAccelerator_Invoked" />
+        <KeyboardAccelerator
+            Key="Y"
+            Modifiers="Control"
+            Invoked="RedoKeyboardAccelerator_Invoked" />
+        <KeyboardAccelerator
+            Key="Z"
+            Modifiers="Control,Shift"
+            Invoked="RedoKeyboardAccelerator_Invoked" />
+    </UserControl.KeyboardAccelerators>
+
+    <Grid
+        x:Name="EditorLayoutRoot"
+        RowSpacing="12">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="EditorLayoutStates">
+                <VisualState x:Name="NarrowEditorLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="EditorHeaderCommandsColumn.Width" Value="0" />
+                        <Setter Target="EditorHeaderCommandsRow.Height" Value="Auto" />
+                        <Setter Target="ConflictEditorCommandBar.(Grid.Row)" Value="1" />
+                        <Setter Target="ConflictEditorCommandBar.(Grid.Column)" Value="0" />
+                        <Setter Target="ConflictEditorCommandBar.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="ConflictEditorCommandBar.Margin" Value="0,8,0,0" />
+                        <Setter Target="SaveConflictFileButton.LabelPosition" Value="Collapsed" />
+                        <Setter Target="MarkResolvedButton.LabelPosition" Value="Collapsed" />
+                        <Setter Target="SyntaxHighlightingContainer.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideEditorLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="760" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid
+            x:Name="EditorHeaderGrid"
+            ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="EditorHeaderCommandsColumn" Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition x:Name="EditorHeaderCommandsRow" Height="0" />
+            </Grid.RowDefinitions>
+
+            <StackPanel
+                VerticalAlignment="Center"
+                Spacing="2">
+                <StackPanel
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontWeight="SemiBold"
+                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                        Text="{x:Bind ViewModel.FileName, Mode=OneWay}" />
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                        Style="{ThemeResource CaptionTextBlockStyle}"
+                        Text="{x:Bind ViewModel.ModifiedStatus, Mode=OneWay}" />
+                </StackPanel>
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    MaxLines="1"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Text="{x:Bind ViewModel.RelativePath, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
+            <CommandBar
+                x:Name="ConflictEditorCommandBar"
+                Grid.Column="1"
+                Background="Transparent"
+                DefaultLabelPosition="Right"
+                IsDynamicOverflowEnabled="True"
+                VerticalAlignment="Center">
+                <AppBarButton
+                    x:Name="SaveConflictFileButton"
+                    x:Uid="SaveConflictFileAppBarButton"
+                    AutomationProperties.AutomationId="ConflictEditorSaveButton"
+                    Command="{x:Bind ViewModel.SaveCommand, Mode=OneWay}"
+                    Icon="Save" />
+                <AppBarButton
+                    x:Name="MarkResolvedButton"
+                    x:Uid="MarkResolvedAppBarButton"
+                    AutomationProperties.AutomationId="ConflictEditorMarkResolvedButton"
+                    Command="{x:Bind ViewModel.MarkResolvedCommand, Mode=OneWay}"
+                    Icon="Accept" />
+                <AppBarElementContainer VerticalContentAlignment="Center">
+                    <SplitButton
+                        x:Uid="AcceptConflictSplitButton"
+                        AutomationProperties.AutomationId="ConflictEditorAcceptAllButton"
+                        Click="AcceptAllCurrentSplitButton_Click"
+                        IsEnabled="{x:Bind ViewModel.CanAcceptAll, Mode=OneWay}">
+                        <SplitButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem
+                                    x:Uid="AcceptCurrentConflictBlockMenuFlyoutItem"
+                                    AutomationProperties.AutomationId="ConflictEditorAcceptCurrentMenuItem"
+                                    Click="AcceptAllCurrentMenuFlyoutItem_Click"
+                                    Icon="Accept" />
+                                <MenuFlyoutItem
+                                    x:Uid="AcceptIncomingConflictBlockMenuFlyoutItem"
+                                    AutomationProperties.AutomationId="ConflictEditorAcceptIncomingMenuItem"
+                                    Click="AcceptAllIncomingMenuFlyoutItem_Click"
+                                    Icon="Accept" />
+                                <MenuFlyoutItem
+                                    x:Uid="AcceptBothConflictBlockMenuFlyoutItem"
+                                    AutomationProperties.AutomationId="ConflictEditorAcceptBothMenuItem"
+                                    Click="AcceptAllBothMenuFlyoutItem_Click"
+                                    Icon="Accept" />
+                            </MenuFlyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+                </AppBarElementContainer>
+                <AppBarSeparator />
+                <AppBarButton
+                    x:Name="UndoEditButton"
+                    x:Uid="UndoConflictEditAppBarButton"
+                    Width="48"
+                    Height="48"
+                    AutomationProperties.AutomationId="ConflictEditorUndoButton"
+                    Click="UndoEditButton_Click"
+                    Icon="Undo"
+                    LabelPosition="Collapsed"
+                    MinWidth="48" />
+                <AppBarButton
+                    x:Name="RedoEditButton"
+                    x:Uid="RedoConflictEditAppBarButton"
+                    Width="48"
+                    Height="48"
+                    AutomationProperties.AutomationId="ConflictEditorRedoButton"
+                    Click="RedoEditButton_Click"
+                    Icon="Redo"
+                    LabelPosition="Collapsed"
+                    MinWidth="48" />
+                <AppBarButton
+                    x:Uid="ReloadConflictFileAppBarButton"
+                    Width="48"
+                    Height="48"
+                    AutomationProperties.AutomationId="ConflictEditorReloadButton"
+                    Command="{x:Bind ViewModel.ReloadCommand, Mode=OneWay}"
+                    Icon="Refresh"
+                    LabelPosition="Collapsed" />
+                <AppBarElementContainer
+                    x:Name="SyntaxHighlightingContainer"
+                    VerticalContentAlignment="Center">
+                    <ComboBox
+                        x:Uid="ConflictEditorSyntaxHighlightingComboBox"
+                        Width="160"
+                        AutomationProperties.AutomationId="ConflictEditorSyntaxSelector"
+                        DisplayMemberPath="DisplayName"
+                        ItemsSource="{x:Bind ViewModel.SyntaxHighlightingOptions, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedSyntaxHighlightingOption, Mode=TwoWay}" />
+                </AppBarElementContainer>
+                <AppBarElementContainer VerticalContentAlignment="Center">
+                    <controls:RepositoryEditorZoomControl
+                        EditorSurface="{x:Bind EditorSurface}" />
+                </AppBarElementContainer>
+            </CommandBar>
+        </Grid>
+
+        <Grid Grid.Row="2">
+
+            <controls:RepositoryEditorSurface
+                x:Name="EditorSurface"
+                x:Uid="ConflictEditorTextControl"
+                AutomationProperties.AutomationId="ConflictEditorTextControl"
+                EnableSyntaxHighlighting="True"
+                IsReadOnly="True"
+                ShowCurrentLine="True"
+                ShowLineGutter="False"
+                ShowLineNumbers="True">
+                <controls:RepositoryEditorSurface.RightGutterContent>
+                    <Border
+                        x:Name="ConflictOverviewBar"
+                        x:Uid="ConflictOverviewBar"
+                        Width="12"
+                        AutomationProperties.AutomationId="ConflictEditorOverviewBar"
+                        Background="{ThemeResource ControlFillColorDefaultBrush}"
+                        CornerRadius="{ThemeResource ControlCornerRadius}"
+                        PointerCanceled="ConflictOverviewBar_PointerReleased"
+                        PointerMoved="ConflictOverviewBar_PointerMoved"
+                        PointerPressed="ConflictOverviewBar_PointerPressed"
+                        PointerReleased="ConflictOverviewBar_PointerReleased"
+                        SizeChanged="ConflictOverviewBar_SizeChanged">
+                        <Canvas
+                            x:Name="ConflictMarkersCanvas"
+                            IsHitTestVisible="False" />
+                    </Border>
+                </controls:RepositoryEditorSurface.RightGutterContent>
+            </controls:RepositoryEditorSurface>
+        </Grid>
+    </Grid>
+</UserControl>

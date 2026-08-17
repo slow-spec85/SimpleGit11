@@ -1,0 +1,456 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SimpleGit11.Pages.SynchronizationPage"
+    x:Name="PageRoot"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SimpleGit11.Controls"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
+    xmlns:viewmodels="using:SimpleGit11.ViewModels"
+    NavigationCacheMode="Required">
+
+    <Grid
+        x:Name="RootLayout"
+        DataContext="{x:Bind ViewModel, Mode=OneWay}"
+        Padding="0,32,0,0"
+        RowSpacing="20">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutStates">
+                <VisualState x:Name="NarrowLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="PageContentGrid.Padding" Value="24,20" />
+                        <Setter Target="HeaderCommands.(Grid.Row)" Value="1" />
+                        <Setter Target="HeaderCommands.(Grid.Column)" Value="0" />
+                        <Setter Target="HeaderCommands.HorizontalAlignment" Value="Left" />
+                        <Setter Target="HeaderCommands.DefaultLabelPosition" Value="Collapsed" />
+                        <Setter Target="RemoteSelectorColumn.Width" Value="*" />
+                        <Setter Target="RemoteUrlColumn.Width" Value="0" />
+                        <Setter Target="RemoteUrlTextBlock.(Grid.Row)" Value="2" />
+                        <Setter Target="RemoteUrlTextBlock.(Grid.Column)" Value="0" />
+                        <Setter Target="RemoteUrlTextBlock.Margin" Value="0,8,0,0" />
+                        <Setter Target="RemoteUrlTextBlock.MaxLines" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1060" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Padding="32,0"
+              ColumnSpacing="16" 
+              RowSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Spacing="6">
+                <TextBlock
+                    x:Uid="SynchronizationTitleTextBlock"
+                    Style="{ThemeResource TitleTextBlockStyle}" />
+                <TextBlock
+                    x:Uid="SynchronizationDescriptionTextBlock"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    TextWrapping="WrapWholeWords" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Text="{x:Bind ViewModel.LastSuccessfulFetchText, Mode=OneWay}" />
+            </StackPanel>
+
+            <CommandBar
+                x:Name="HeaderCommands"
+                Grid.Column="1"
+                Background="Transparent"
+                DefaultLabelPosition="Right">
+                <AppBarButton
+                    x:Uid="RefreshSynchronizationAppBarButton"
+                    AutomationProperties.AutomationId="RefreshSynchronizationButton"
+                    Command="{x:Bind ViewModel.RefreshSynchronizationCommand, Mode=OneWay}"
+                    Icon="Refresh">
+                    <ToolTipService.ToolTip>
+                        <ToolTip x:Uid="RefreshSynchronizationTooltip" />
+                    </ToolTipService.ToolTip>
+                </AppBarButton>
+                <AppBarButton
+                    x:Uid="PullAppBarButton"
+                    AutomationProperties.AutomationId="PullCurrentBranchButton"
+                    Command="{x:Bind ViewModel.PullCommand, Mode=OneWay}"
+                    Icon="Download">
+                    <ToolTipService.ToolTip>
+                        <ToolTip x:Uid="PullSynchronizationTooltip" />
+                    </ToolTipService.ToolTip>
+                </AppBarButton>
+                <AppBarElementContainer VerticalContentAlignment="Center">
+                    <SplitButton
+                        x:Uid="PushSplitButton"
+                        AutomationProperties.AutomationId="PushAllButton"
+                        Command="{x:Bind ViewModel.PushCommand, Mode=OneWay}"
+                        Style="{StaticResource SplitButtonCommandBarStyle}">
+                        <SplitButton.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <SymbolIcon Symbol="Upload" />
+                                <TextBlock
+                                    x:Uid="PushSplitButtonTextBlock"
+                                    Margin="8,0,0,0" />
+                            </StackPanel>
+                        </SplitButton.Content>
+                        <SplitButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem
+                                    x:Uid="AtomicPushMenuFlyoutItem"
+                                    AutomationProperties.AutomationId="AtomicPushAllButton"
+                                    Command="{x:Bind ViewModel.AtomicPushCommand, Mode=OneWay}"
+                                    Icon="Upload" />
+                            </MenuFlyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+                </AppBarElementContainer>
+            </CommandBar>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1"
+                      Padding="32,0"
+                      VerticalScrollBarVisibility="Auto">
+            <Grid
+                x:Name="PageContentGrid">
+                <StackPanel Spacing="24">
+
+                    <StackPanel Spacing="2">
+                        <Grid ColumnSpacing="16" RowSpacing="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition x:Name="RemoteSelectorColumn" Width="260" />
+                                <ColumnDefinition x:Name="RemoteUrlColumn" Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock
+                                x:Uid="SynchronizationRemoteComboBoxText"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <ComboBox
+                                Grid.Row="1"
+                                x:Uid="SynchronizationRemoteComboBox"
+                                AutomationProperties.AutomationId="SynchronizationRemoteSelector"
+                                IsEnabled="{x:Bind ViewModel.CanUseRemoteSelector, Mode=OneWay}"
+                                ItemsSource="{x:Bind ViewModel.RemoteOptions, Mode=OneWay}"
+                                SelectedItem="{x:Bind ViewModel.SelectedRemoteOption, Mode=TwoWay}"
+                                VerticalAlignment="Center"
+                                Width="260">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:RemoteSelectionItem">
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <SymbolIcon
+                                                Symbol="Add"
+                                                Visibility="{x:Bind IsAddNew, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                Text="{x:Bind Name, Mode=OneTime}"
+                                                TextTrimming="CharacterEllipsis" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock
+                                x:Name="RemoteUrlTextBlock"
+                                Grid.Column="1"
+                                Grid.Row="1"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                MaxLines="1"
+                                Text="{x:Bind ViewModel.SelectedRemote.DisplayUrl, Mode=OneWay, FallbackValue=''}"
+                                TextTrimming="CharacterEllipsis"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.SelectedRemote.DisplayUrl, Mode=OneWay, FallbackValue=''}">
+                                <TextBlock.ContextFlyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem
+                                            x:Uid="CopyRemoteUrlMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                            CommandParameter="{x:Bind ViewModel.SelectedRemote.DisplayUrl, Mode=OneWay, FallbackValue=''}"
+                                            Icon="Copy" />
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem
+                                            x:Uid="EditRemoteUrlMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.EditRemoteUrlCommand, Mode=OneWay}"
+                                            Icon="Edit" />
+                                        <MenuFlyoutItem
+                                            x:Uid="RemoveRemoteMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.RemoveRemoteCommand, Mode=OneWay}"
+                                            Icon="Remove" />
+                                    </MenuFlyout>
+                                </TextBlock.ContextFlyout>
+                            </TextBlock>
+                        </Grid>
+                        <TextBlock
+                            x:Name="RemoteUsageHintTextBlock"
+                            x:Uid="SynchronizationRemoteUsageHintTextBlock"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="24">
+                        <InfoBar
+                            Grid.Row="2"
+                            x:Uid="SynchronizationNoRemotesInfoBar"
+                            IsOpen="True"
+                            Severity="Informational"
+                            Visibility="{x:Bind ViewModel.HasNoRemotes, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                        <InfoBar
+                            x:Uid="SynchronizationUpToDateInfoBar"
+                            IsOpen="True"
+                            Severity="Informational"
+                            Visibility="{x:Bind ViewModel.IsSynchronized, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                    </StackPanel>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MaxWidth="920" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel
+                                x:Name="SynchronizationChangesContent"
+                                x:Load="{x:Bind ViewModel.HasSynchronizationContent, Mode=OneWay}"
+                                Spacing="28"
+                                Visibility="{x:Bind ViewModel.HasSynchronizationContent, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                <StackPanel
+                                    x:Name="LocalChangesContent"
+                                    x:Load="{x:Bind ViewModel.HasLocalChanges, Mode=OneWay}"
+                                    Spacing="12"
+                                    Visibility="{x:Bind ViewModel.HasLocalChanges, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                    <StackPanel Margin="2,0,0,0" Spacing="3">
+                                        <TextBlock
+                                            x:Uid="SynchronizationLocalChangesTitleTextBlock"
+                                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                        <TextBlock
+                                            x:Uid="SynchronizationLocalChangesDescriptionTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+
+                                    <toolkit:SettingsExpander
+                                        x:Name="BranchChangesExpander"
+                                        x:Load="{x:Bind ViewModel.HasBranchChanges, Mode=OneWay}"
+                                        IsExpanded="False"
+                                        ItemsSource="{x:Bind ViewModel.LocalBranches, Mode=OneWay}"
+                                        Visibility="{x:Bind ViewModel.HasBranchChanges, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                        <toolkit:SettingsExpander.HeaderIcon>
+                                            <controls:BranchIcon />
+                                        </toolkit:SettingsExpander.HeaderIcon>
+                                        <toolkit:SettingsExpander.Header>
+                                            <StackPanel Spacing="3">
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Uid="SynchronizationBranchesExpanderTitleTextBlock" />
+                                                    <InfoBadge
+                                                        Grid.Column="1"
+                                                        Value="{x:Bind ViewModel.BranchChangesCount, Mode=OneWay}" />
+                                                </Grid>
+                                                <TextBlock
+                                                    x:Uid="SynchronizationBranchesExpanderDescriptionTextBlock"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                                    TextWrapping="WrapWholeWords" />
+                                            </StackPanel>
+                                        </toolkit:SettingsExpander.Header>
+                                        <Button
+                                            x:Uid="SynchronizationPushAllBranchesButton"
+                                            Command="{x:Bind ViewModel.PushAllBranchesCommand, Mode=OneWay}" />
+                                        <toolkit:SettingsExpander.ItemTemplate>
+                                            <DataTemplate x:DataType="viewmodels:BranchSynchronizationViewItem">
+                                            <toolkit:SettingsCard
+                                                Click="OutgoingBranchCard_Click"
+                                                IsClickEnabled="{x:Bind CanViewOutgoingCommits, Mode=OneTime}"
+                                                Tag="{x:Bind}">
+                                                <toolkit:SettingsCard.Header>
+                                                    <Grid ColumnSpacing="10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="28" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border
+                                                            Width="28"
+                                                            Height="28"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                                            CornerRadius="{ThemeResource ControlCornerRadius}">
+                                                            <TextBlock
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                FontWeight="SemiBold"
+                                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                                Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" Spacing="3">
+                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneTime}" />
+                                                            <TextBlock
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                                Text="{x:Bind Description, Mode=OneTime}"
+                                                                TextWrapping="WrapWholeWords" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </toolkit:SettingsCard.Header>
+                                                    <Button
+                                                        x:Uid="SynchronizationPushBranchButton"
+                                                        Command="{Binding DataContext.PushBranchCommand, ElementName=BranchChangesExpander}"
+                                                        CommandParameter="{x:Bind}" />
+                                                </toolkit:SettingsCard>
+                                            </DataTemplate>
+                                        </toolkit:SettingsExpander.ItemTemplate>
+                                    </toolkit:SettingsExpander>
+
+                                    <toolkit:SettingsExpander
+                                        x:Name="TagChangesExpander"
+                                        x:Load="{x:Bind ViewModel.HasTagChanges, Mode=OneWay}"
+                                        IsExpanded="False"
+                                        ItemsSource="{x:Bind ViewModel.Tags, Mode=OneWay}"
+                                        Visibility="{x:Bind ViewModel.HasTagChanges, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                        <toolkit:SettingsExpander.HeaderIcon>
+                                            <FontIcon Glyph="&#xE8EC;" />
+                                    </toolkit:SettingsExpander.HeaderIcon>
+                                    <toolkit:SettingsExpander.Header>
+                                        <StackPanel Spacing="3">
+                                            <Grid ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock x:Uid="SynchronizationTagsExpanderTitleTextBlock" />
+                                                <InfoBadge
+                                                    Grid.Column="1"
+                                                    Value="{x:Bind ViewModel.TagChangesCount, Mode=OneWay}" />
+                                            </Grid>
+                                            <TextBlock
+                                                    x:Uid="SynchronizationTagsExpanderDescriptionTextBlock"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                                    TextWrapping="WrapWholeWords" />
+                                            </StackPanel>
+                                        </toolkit:SettingsExpander.Header>
+                                        <Button
+                                            x:Uid="SynchronizationPushAllTagsButton"
+                                            Command="{x:Bind ViewModel.PushAllTagsCommand, Mode=OneWay}" />
+                                        <toolkit:SettingsExpander.ItemTemplate>
+                                            <DataTemplate x:DataType="viewmodels:TagSynchronizationViewItem">
+                                                <toolkit:SettingsCard>
+                                                    <toolkit:SettingsCard.Header>
+                                                        <StackPanel Spacing="3">
+                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneTime}" />
+                                                            <TextBlock
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                                Text="{x:Bind Description, Mode=OneTime}"
+                                                                TextWrapping="WrapWholeWords" />
+                                                        </StackPanel>
+                                                    </toolkit:SettingsCard.Header>
+                                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                                        <TextBlock
+                                                            x:Uid="SynchronizationTagConflictTextBlock"
+                                                            VerticalAlignment="Center"
+                                                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                                            Visibility="{x:Bind HasConflict, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                        <Button
+                                                            x:Uid="SynchronizationPushTagButton"
+                                                            Command="{Binding DataContext.PushTagCommand, ElementName=TagChangesExpander}"
+                                                            CommandParameter="{x:Bind}"
+                                                            Visibility="{x:Bind CanPush, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                    </StackPanel>
+                                                </toolkit:SettingsCard>
+                                            </DataTemplate>
+                                        </toolkit:SettingsExpander.ItemTemplate>
+                                    </toolkit:SettingsExpander>
+                                </StackPanel>
+
+                                <StackPanel
+                                    x:Name="RemoteChangesContent"
+                                    x:Load="{x:Bind ViewModel.HasRemoteChanges, Mode=OneWay}"
+                                    Spacing="12"
+                                    Visibility="{x:Bind ViewModel.HasRemoteChanges, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                    <StackPanel Margin="2,0,0,0" Spacing="3">
+                                        <TextBlock
+                                            x:Uid="SynchronizationRemoteChangesTitleTextBlock"
+                                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                        <TextBlock
+                                            x:Uid="SynchronizationRemoteChangesDescriptionTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+
+                                    <toolkit:SettingsExpander
+                                        x:Name="IncomingChangesExpander"
+                                        IsExpanded="False"
+                                        ItemsSource="{x:Bind ViewModel.IncomingBranches, Mode=OneWay}">
+                                        <toolkit:SettingsExpander.HeaderIcon>
+                                            <FontIcon Glyph="&#xE896;" />
+                                        </toolkit:SettingsExpander.HeaderIcon>
+                                        <toolkit:SettingsExpander.Header>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock x:Uid="SynchronizationIncomingExpanderTitleTextBlock" />
+                                                <TextBlock
+                                                    x:Uid="SynchronizationIncomingExpanderDescriptionTextBlock"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                                    TextWrapping="WrapWholeWords" />
+                                            </StackPanel>
+                                        </toolkit:SettingsExpander.Header>
+                                        <toolkit:SettingsExpander.ItemTemplate>
+                                            <DataTemplate x:DataType="viewmodels:BranchSynchronizationViewItem">
+                                                <toolkit:SettingsCard
+                                                    Click="IncomingBranchCard_Click"
+                                                    IsClickEnabled="True"
+                                                    Tag="{x:Bind}">
+                                                    <toolkit:SettingsCard.Header>
+                                                        <StackPanel Spacing="3">
+                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneTime}" />
+                                                            <TextBlock
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                                Text="{x:Bind Description, Mode=OneTime}"
+                                                                TextWrapping="WrapWholeWords" />
+                                                        </StackPanel>
+                                                    </toolkit:SettingsCard.Header>
+                                                    <Button
+                                                        x:Uid="SynchronizationPullBranchButton"
+                                                        Command="{Binding DataContext.PullCommand, ElementName=IncomingChangesExpander}"
+                                                        Visibility="{x:Bind IsCurrentBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                </toolkit:SettingsCard>
+                                            </DataTemplate>
+                                        </toolkit:SettingsExpander.ItemTemplate>
+                                    </toolkit:SettingsExpander>
+                                </StackPanel>
+                            </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+
+    </Grid>
+</Page>

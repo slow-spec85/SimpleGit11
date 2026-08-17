@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="SimpleGit11.Dialogs.WorktreeCreateDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:SimpleGit11.Models"
+    x:Uid="WorktreeCreateDialog"
+    DataContext="{x:Bind ViewModel, Mode=OneWay}"
+    DefaultButton="Primary"
+    IsPrimaryButtonEnabled="{x:Bind ViewModel.CanCreate, Mode=OneWay}"
+    PrimaryButtonClick="WorktreeCreateDialog_PrimaryButtonClick"
+    Style="{StaticResource DefaultContentDialogStyle}">
+
+    <StackPanel MinWidth="460" Spacing="12">
+        <RadioButtons
+            x:Uid="WorktreeCreationModeRadioButtons"
+            SelectedIndex="{x:Bind ViewModel.SelectedModeIndex, Mode=TwoWay}">
+            <RadioButton IsEnabled="{x:Bind ViewModel.CanUseExistingBranch, Mode=OneWay}">
+                <TextBlock x:Uid="ExistingBranchWorktreeModeTextBlock" />
+            </RadioButton>
+            <RadioButton>
+                <TextBlock x:Uid="NewBranchWorktreeModeTextBlock" />
+            </RadioButton>
+            <RadioButton>
+                <TextBlock x:Uid="DetachedWorktreeModeTextBlock" />
+            </RadioButton>
+        </RadioButtons>
+        <TextBlock
+            x:Uid="WorktreeCreationModeDescriptionTextBlock"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            TextWrapping="WrapWholeWords" />
+        <TextBox
+            x:Uid="WorktreePathTextBox"
+            Text="{x:Bind ViewModel.Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBlock
+            AutomationProperties.LiveSetting="Polite"
+            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            Text="{x:Bind ViewModel.PathError, Mode=OneWay}"
+            TextWrapping="WrapWholeWords"
+            Visibility="{x:Bind ViewModel.HasPathError, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+        <ComboBox
+            x:Name="SourceComboBox"
+            x:Uid="WorktreeSourceComboBox"
+            HorizontalAlignment="Stretch"
+            DisplayMemberPath="DisplayName"
+            ItemsSource="{x:Bind ViewModel.RevisionSelector.SourceOptions, Mode=OneWay}"
+            SelectedItem="{x:Bind ViewModel.RevisionSelector.SelectedSourceOption, Mode=TwoWay}"
+            SelectionChanged="SourceComboBox_SelectionChanged" />
+        <AutoSuggestBox
+            x:Name="StartPointAutoSuggestBox"
+            x:Uid="WorktreeStartPointAutoSuggestBox"
+            HorizontalAlignment="Stretch"
+            IsEnabled="{x:Bind ViewModel.RevisionSelector.IsStartPointEnabled, Mode=OneWay}"
+            ItemsSource="{x:Bind ViewModel.RevisionSelector.FilteredSuggestions, Mode=OneWay}"
+            SuggestionChosen="StartPointAutoSuggestBox_SuggestionChosen"
+            Text="{x:Bind ViewModel.RevisionSelector.StartPoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            TextMemberPath="Value"
+            TextChanged="StartPointAutoSuggestBox_TextChanged">
+            <AutoSuggestBox.ItemTemplate>
+                <DataTemplate x:DataType="models:GitRevisionSuggestion">
+                    <StackPanel Spacing="2">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            MaxLines="1"
+                            Text="{x:Bind DisplayName, Mode=OneTime}"
+                            TextTrimming="CharacterEllipsis" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            MaxLines="1"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Text="{x:Bind Description, Mode=OneTime}"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DataTemplate>
+            </AutoSuggestBox.ItemTemplate>
+        </AutoSuggestBox>
+        <TextBlock
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            Text="{x:Bind ViewModel.RevisionSelector.Description, Mode=OneWay}"
+            TextWrapping="WrapWholeWords" />
+        <TextBlock
+            AutomationProperties.LiveSetting="Polite"
+            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            Text="{x:Bind ViewModel.StartPointError, Mode=OneWay}"
+            TextWrapping="WrapWholeWords"
+            Visibility="{x:Bind ViewModel.HasStartPointError, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+        <StackPanel
+            Orientation="Horizontal"
+            Spacing="8"
+            Visibility="{x:Bind ViewModel.RevisionSelector.IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+            <ProgressRing
+                Width="16"
+                Height="16"
+                IsActive="{x:Bind ViewModel.RevisionSelector.IsLoading, Mode=OneWay}" />
+            <TextBlock
+                x:Uid="WorktreeLoadingRevisionsTextBlock"
+                VerticalAlignment="Center"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Style="{ThemeResource CaptionTextBlockStyle}" />
+        </StackPanel>
+        <InfoBar
+            IsClosable="False"
+            IsOpen="{x:Bind ViewModel.RevisionSelector.HasStatusMessage, Mode=OneWay}"
+            Message="{x:Bind ViewModel.RevisionSelector.StatusMessage, Mode=OneWay}"
+            Severity="Error" />
+        <TextBox
+            x:Uid="WorktreeNewBranchTextBox"
+            IsEnabled="{x:Bind ViewModel.CanSpecifyNewBranch, Mode=OneWay}"
+            Text="{x:Bind ViewModel.NewBranchName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBlock
+            AutomationProperties.LiveSetting="Polite"
+            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            Text="{x:Bind ViewModel.NewBranchNameError, Mode=OneWay}"
+            TextWrapping="WrapWholeWords"
+            Visibility="{x:Bind ViewModel.HasNewBranchNameError, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+        <CheckBox
+            x:Uid="WorktreeLockCheckBox"
+            IsChecked="{x:Bind ViewModel.IsLocked, Mode=TwoWay}" />
+    </StackPanel>
+</ContentDialog>

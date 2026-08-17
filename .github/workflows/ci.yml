@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: true
+
+jobs:
+  build-and-test:
+    name: Release x64
+    runs-on: windows-2025
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout release history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          architecture: x64
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v3
+        with:
+          msbuild-architecture: x64
+
+      - name: Restore
+        run: msbuild SimpleGit11.slnx /t:Restore /m /p:Configuration=Release /p:Platform=x64
+
+      - name: Build
+        run: msbuild SimpleGit11.slnx /t:Build /m /warnaserror /p:Configuration=Release /p:Platform=x64
+
+      - name: Test
+        run: dotnet test SimpleGit11.Tests\SimpleGit11.Tests.csproj --configuration Release --no-build --no-restore --verbosity normal -p:Platform=x64

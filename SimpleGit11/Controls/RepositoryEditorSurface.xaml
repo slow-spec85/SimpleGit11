@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="SimpleGit11.Controls.RepositoryEditorSurface"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:editor="using:TextControlBoxNS">
+
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator
+            Key="Number0"
+            Modifiers="Control"
+            Invoked="ResetZoomKeyboardAccelerator_Invoked" />
+    </UserControl.KeyboardAccelerators>
+
+    <editor:TextControlBox
+        x:Name="Editor"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch"
+        AutomationProperties.AutomationId="RepositoryEditorTextControl" />
+</UserControl>

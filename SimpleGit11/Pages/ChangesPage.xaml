@@ -1,0 +1,468 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SimpleGit11.Pages.ChangesPage"
+    x:Name="PageRoot"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:dialogs="using:SimpleGit11.Dialogs"
+    xmlns:controls="using:SimpleGit11.Controls"
+    xmlns:models="using:SimpleGit11.Models"
+    xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
+    NavigationCacheMode="Required">
+
+    <Grid
+        x:Name="PageLayout"
+        Padding="0,32,0,0"
+        DataContext="{x:Bind ViewModel, Mode=OneWay}">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutStates">
+                <VisualState x:Name="NarrowLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="PageLayout.Padding" Value="24,20" />
+                        <Setter Target="HeaderCommands.(Grid.Row)" Value="1" />
+                        <Setter Target="HeaderCommands.(Grid.Column)" Value="0" />
+                        <Setter Target="HeaderCommands.Margin" Value="0,12,0,0" />
+                        <Setter Target="HeaderCommandsColumn.Width" Value="0" />
+                        <Setter Target="FileListsColumn.Width" Value="*" />
+                        <Setter Target="DiffSplitterColumn.Width" Value="0" />
+                        <Setter Target="DiffColumn.Width" Value="0" />
+                        <Setter Target="DiffColumn.MinWidth" Value="0" />
+                        <Setter Target="FileListsRow.Height" Value="2*" />
+                        <Setter Target="DiffSplitterRow.Height" Value="12" />
+                        <Setter Target="DiffRow.Height" Value="3*" />
+                        <Setter Target="DiffSplitter.(Grid.Row)" Value="1" />
+                        <Setter Target="DiffSplitter.(Grid.Column)" Value="0" />
+                        <Setter Target="DiffSplitter.(Grid.ColumnSpan)" Value="3" />
+                        <Setter Target="DiffSplitter.Style" Value="{StaticResource HorizontalSplitterStyle}" />
+                        <Setter Target="ChangesContentGrid.ColumnSpacing" Value="0" />
+                        <Setter Target="DiffPane.(Grid.Row)" Value="2" />
+                        <Setter Target="DiffPane.(Grid.Column)" Value="0" />
+                        <Setter Target="DiffPane.(Grid.ColumnSpan)" Value="3" />
+                        <Setter Target="DiffPane.Padding" Value="0" />
+                        <Setter Target="ConflictPane.(Grid.Row)" Value="2" />
+                        <Setter Target="ConflictPane.(Grid.Column)" Value="0" />
+                        <Setter Target="ConflictPane.(Grid.ColumnSpan)" Value="3" />
+                        <Setter Target="ConflictPane.Padding" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1060" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid 
+            Padding="32,0"
+            ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="HeaderCommandsColumn" Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Spacing="8">
+                <TextBlock
+                    x:Uid="ChangesTitleTextBlock"
+                    MaxLines="1" TextWrapping="WrapWholeWords"
+                    Style="{ThemeResource TitleTextBlockStyle}" />
+                <TextBlock
+                    x:Uid="ChangesDescriptionTextBlock"
+                    MaxLines="2" TextWrapping="WrapWholeWords"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <CommandBar
+                x:Name="HeaderCommands"
+                Grid.Column="1"
+                Background="Transparent"
+                DefaultLabelPosition="Right">
+                <AppBarButton
+                    x:Uid="RefreshStatusAppBarButton"
+                    Command="{x:Bind ViewModel.RefreshStatusCommand, Mode=OneWay}"
+                    Icon="Refresh" />
+                <AppBarElementContainer>
+                    <SplitButton x:Uid="StageSplitButton"
+                                 Style="{StaticResource SplitButtonCommandBarStyle}"
+                                 Command="{x:Bind ViewModel.StageAllCommand, Mode=OneWay}">
+                        <SplitButton.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <SymbolIcon Symbol="Add" />
+                                <TextBlock x:Uid="StageSplitButtonTextBlock" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </SplitButton.Content>
+                        <SplitButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem
+                                    x:Uid="StageMenuFlyoutItem"
+                                    Command="{x:Bind ViewModel.StageSelectedCommand, Mode=OneWay}"
+                                    Icon="Add" />
+                                <MenuFlyoutItem
+                                    x:Uid="UnstageSelectedMenuFlyoutItem"
+                                    Command="{x:Bind ViewModel.UnstageSelectedCommand, Mode=OneWay}"
+                                    Icon="Remove" />
+                                <MenuFlyoutItem
+                                    x:Uid="UnstageAllMenuFlyoutItem"
+                                    Command="{x:Bind ViewModel.UnstageAllCommand, Mode=OneWay}"
+                                    Icon="Remove" />
+                            </MenuFlyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+                </AppBarElementContainer>
+                <AppBarElementContainer>
+                    <SplitButton x:Uid="CommitSplitButton"
+                                 Style="{StaticResource SplitButtonCommandBarStyle}"
+                                 Command="{x:Bind ViewModel.OpenCommitDialogCommand, Mode=OneWay}">
+                        <SplitButton.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <SymbolIcon Symbol="Accept" />
+                                <TextBlock x:Uid="CommitSplitButtonTextBlock" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </SplitButton.Content>
+                        <SplitButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem
+                                    x:Uid="AmendCommitMenuFlyoutItem"
+                                    Command="{x:Bind ViewModel.OpenAmendDialogCommand, Mode=OneWay}"
+                                    Icon="Edit" />
+                            </MenuFlyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+                </AppBarElementContainer>
+                <AppBarElementContainer>
+                    <SplitButton x:Uid="DiscardSelectedSplitButton"
+                                 Style="{StaticResource SplitButtonCommandBarStyle}"
+                                 Command="{x:Bind ViewModel.DiscardSelectedCommand, Mode=OneWay}"
+                                 Visibility="{x:Bind ViewModel.ShowDiscardCommands, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                        <SplitButton.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <SymbolIcon Symbol="Undo" />
+                                <TextBlock x:Uid="DiscardSelectedSplitButtonTextBlock" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </SplitButton.Content>
+                        <SplitButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem
+                                    x:Uid="DiscardAllUnstagedMenuFlyoutItem"
+                                    Command="{x:Bind ViewModel.DiscardAllUnstagedCommand, Mode=OneWay}"
+                                    Icon="Undo" />
+                                <MenuFlyoutItem
+                                    x:Uid="CleanUntrackedMenuFlyoutItem"
+                                    Command="{x:Bind ViewModel.CleanUntrackedCommand, Mode=OneWay}"
+                                    Icon="Delete" />
+                            </MenuFlyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+                </AppBarElementContainer>
+                <AppBarButton
+                    x:Uid="AbortMergeAppBarButton"
+                    Command="{x:Bind ViewModel.AbortMergeCommand, Mode=OneWay}"
+                    Icon="Cancel"
+                    Visibility="{x:Bind ViewModel.IsMergeInProgress, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                <AppBarElementContainer
+                    Visibility="{x:Bind ViewModel.HasSequencerOperation, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                    <SplitButton
+                        x:Uid="ContinueOperationSplitButton"
+                        Command="{x:Bind ViewModel.ContinueOperationCommand, Mode=OneWay}"
+                        Style="{StaticResource SplitButtonCommandBarStyle}">
+                        <SplitButton.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <SymbolIcon Symbol="Play" />
+                                <TextBlock x:Uid="ContinueOperationSplitButtonTextBlock" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </SplitButton.Content>
+                        <SplitButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem
+                                    x:Uid="SkipOperationMenuFlyoutItem"
+                                    Command="{x:Bind ViewModel.SkipOperationCommand, Mode=OneWay}"
+                                    Icon="Next" />
+                                <MenuFlyoutItem
+                                    x:Uid="AbortOperationMenuFlyoutItem"
+                                    Command="{x:Bind ViewModel.AbortOperationCommand, Mode=OneWay}"
+                                    Icon="Cancel" />
+                            </MenuFlyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+                </AppBarElementContainer>
+                <AppBarButton
+                    x:Name="OpenStashDialogAppBarButton"
+                    x:Uid="OpenStashDialogAppBarButton"
+                    Icon="SaveLocal">
+                    <AppBarButton.Flyout>
+                        <dialogs:StashDialog />
+                    </AppBarButton.Flyout>
+                </AppBarButton>
+                <AppBarElementContainer
+                    Width="0"
+                    MinWidth="0"
+                    IsHitTestVisible="False">
+                    <Canvas Width="0" Height="48">
+                        <InfoBadge
+                            Canvas.Left="-20"
+                            Canvas.Top="2"
+                            Value="{x:Bind ViewModel.StashCount, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.HasStashes, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                    </Canvas>
+                </AppBarElementContainer>
+            </CommandBar>
+        </Grid>
+
+        <StackPanel
+            Grid.Row="1"
+            Margin="0,20,0,0"
+            Spacing="8"
+            Padding="32,0"
+            Visibility="{x:Bind ViewModel.ShowStatusNotices, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+            <InfoBar
+                x:Uid="NoChangesInfoBar"
+                IsOpen="{x:Bind ViewModel.ShowNoChangesNotice, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.ShowNoChangesNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                Severity="Informational" />
+            <InfoBar
+                x:Uid="MergeOperationInfoBar"
+                IsOpen="{x:Bind ViewModel.ShowMergeNotice, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.ShowMergeNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                Severity="Warning" />
+            <InfoBar
+                x:Uid="RebaseOperationInfoBar"
+                IsOpen="{x:Bind ViewModel.ShowRebaseNotice, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.ShowRebaseNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                Severity="Warning" />
+            <InfoBar
+                x:Uid="CherryPickOperationInfoBar"
+                IsOpen="{x:Bind ViewModel.ShowCherryPickNotice, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.ShowCherryPickNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                Severity="Warning" />
+            <InfoBar
+                x:Uid="RevertOperationInfoBar"
+                IsOpen="{x:Bind ViewModel.ShowRevertNotice, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.ShowRevertNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                Severity="Warning" />
+        </StackPanel>
+
+        <Grid
+            x:Name="ChangesContentGrid"
+            Grid.Row="2"
+            ColumnSpacing="4"
+            Margin="0,20,0,0"
+            Padding="32,0,0,0"
+            Visibility="{x:Bind ViewModel.HasChanges, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="FileListsColumn" Width="400"/>
+                <ColumnDefinition x:Name="DiffSplitterColumn" Width="12" />
+                <ColumnDefinition x:Name="DiffColumn" Width="*" MinWidth="360" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition x:Name="FileListsRow" Height="*" />
+                <RowDefinition x:Name="DiffSplitterRow" Height="0" />
+                <RowDefinition x:Name="DiffRow" Height="0" />
+            </Grid.RowDefinitions>
+
+            <Grid RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="40" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid ColumnSpacing="8" >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        MaxLines="1" TextWrapping="WrapWholeWords"
+                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                        Text="{x:Bind ViewModel.ChangedFilesTitle, Mode=OneWay}" />
+                    <TextBlock
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource DiffAddedStatTextBrush}"
+                        Text="{x:Bind ViewModel.ChangedFilesStat.AddedText, Mode=OneWay, FallbackValue=''}" />
+                    <TextBlock
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource DiffRemovedStatTextBrush}"
+                        Text="{x:Bind ViewModel.ChangedFilesStat.RemovedText, Mode=OneWay, FallbackValue=''}" />
+                </Grid>
+
+                <ListView
+                    x:Name="ChangedFilesListView"
+                    Grid.Row="1"
+                    IsEnabled="{x:Bind ViewModel.IsDiffInteractionEnabled, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.AllChanges, Mode=OneWay}"
+                    SelectionChanged="ChangedFilesListView_SelectionChanged"
+                    SelectionMode="Extended">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="models:GitChangedFile">
+                            <Grid
+                                Padding="0,4"
+                                ColumnSpacing="10"
+                                ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneTime}">
+                                <Grid.ContextFlyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem
+                                            x:Uid="StageChangeMenuFlyoutItem"
+                                            Command="{Binding DataContext.StageChangeCommand, ElementName=ChangedFilesListView}"
+                                            CommandParameter="{x:Bind}"
+                                            Icon="Add"
+                                            Visibility="{x:Bind IsUnstaged, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem
+                                            x:Uid="UnstageChangeMenuFlyoutItem"
+                                            Command="{Binding DataContext.UnstageChangeCommand, ElementName=ChangedFilesListView}"
+                                            CommandParameter="{x:Bind}"
+                                            Icon="Remove"
+                                            Visibility="{x:Bind IsStaged, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem
+                                            x:Uid="DiscardChangeMenuFlyoutItem"
+                                            Command="{Binding DataContext.DiscardChangeCommand, ElementName=ChangedFilesListView}"
+                                            CommandParameter="{x:Bind}"
+                                            Icon="Undo"
+                                            Visibility="{x:Bind CanDiscard, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem
+                                            Command="{Binding DataContext.ToggleChangeDisplayModeCommand, ElementName=ChangedFilesListView}"
+                                            CommandParameter="{x:Bind}"
+                                            Icon="Document"
+                                            Text="{Binding DataContext.ContextMenuDisplayModeText, ElementName=ChangedFilesListView}"
+                                            Visibility="{x:Bind IsNotConflicted, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutSeparator
+                                            Visibility="{x:Bind IsNotConflicted, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem
+                                            x:Uid="CopyFileNameMenuFlyoutItem"
+                                            Command="{Binding DataContext.CopyTextCommand, ElementName=ChangedFilesListView}"
+                                            CommandParameter="{x:Bind FileName}"
+                                            Icon="Copy" />
+                                    </MenuFlyout>
+                                </Grid.ContextFlyout>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border
+                                    Width="28"
+                                    Height="28"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
+                                    CornerRadius="4"
+                                    Visibility="{x:Bind IsNotConflicted, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        FontWeight="SemiBold"
+                                        Text="{x:Bind StatusIndicator, Mode=OneTime}" />
+                                </Border>
+
+                                <Border
+                                    Width="28"
+                                    Height="28"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="{ThemeResource ConflictIndicatorBackgroundBrush}"
+                                    CornerRadius="4"
+                                    Visibility="{x:Bind IsConflicted, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
+                                    <TextBlock
+                                        x:Uid="ConflictStatusIndicatorTextBlock"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource ConflictIndicatorForegroundBrush}"
+                                        Text="{x:Bind StatusIndicator, Mode=OneTime}" />
+                                </Border>
+
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="2">
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        MaxLines="1"
+                                        Text="{x:Bind FileName, Mode=OneTime}"
+                                        TextTrimming="CharacterEllipsis" />
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Border
+                                            Padding="4,1"
+                                            Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
+                                            CornerRadius="3"
+                                            Visibility="{x:Bind IsStaged, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
+                                            <TextBlock
+                                                FontSize="10"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Foreground="{ThemeResource SuccessfulOperationColor}"
+                                                Text="{x:Bind StateLabel, Mode=OneTime}"
+                                                VerticalAlignment="Center"
+                                                HorizontalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            MaxLines="1"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            Text="{x:Bind DirectoryPath, Mode=OneTime}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+
+            <primitives:Thumb
+                x:Name="DiffSplitter"
+                Grid.Column="1"
+                DragDelta="DiffSplitter_DragDelta"
+                Style="{StaticResource VerticalSplitterStyle}" />
+
+            <controls:DiffViewer
+                x:Name="DiffPane"
+                Grid.Column="2"
+                Padding="20,0,0,0"
+                CopyTextCommand="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                CancelEditCommand="{x:Bind ViewModel.CancelEditedFileCommand, Mode=OneWay}"
+                DiffLinesSource="{x:Bind ViewModel.DiffLines, Mode=OneWay}"
+                EditActionVisibility="{x:Bind ViewModel.CanEditSelectedFile, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                EditContentChangedCommand="{x:Bind ViewModel.MarkEditedFileChangedCommand, Mode=OneWay}"
+                EditFileCommand="{x:Bind ViewModel.EditSelectedFileCommand, Mode=OneWay}"
+                EditableDiffLinesSource="{x:Bind ViewModel.EditableDiffLines, Mode=OneWay}"
+                EditableText="{x:Bind ViewModel.EditableFileText, Mode=OneWay}"
+                EmptyMessage="{x:Bind ViewModel.DiffEmptyMessage, Mode=OneWay}"
+                FilePath="{x:Bind ViewModel.SelectedDiffFileTooltip, Mode=OneWay}"
+                HasEmptyState="{x:Bind ViewModel.HasDiffEmptyState, Mode=OneWay}"
+                IsEditDirty="{x:Bind ViewModel.IsEditedFileDirty, Mode=OneWay}"
+                IsEditing="{x:Bind ViewModel.IsEditingFile, Mode=OneWay}"
+                IsFullFileMode="{x:Bind ViewModel.IsFullFileMode, Mode=OneWay}"
+                RevertActionVisibility="{x:Bind ViewModel.CanRevertSelectedChange, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                RevertLineCommand="{x:Bind ViewModel.RevertDiffLineCommand, Mode=OneWay}"
+                SaveEditCommand="{x:Bind ViewModel.SaveEditedFileCommand, Mode=OneWay}"
+                SyntaxHighlightingMode="{x:Bind ViewModel.SelectedSyntaxHighlightingMode, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.DiffViewerVisibility, Mode=OneWay}" />
+
+            <controls:ConflictEditor
+                x:Name="ConflictPane"
+                Grid.Column="2"
+                Padding="20,0,0,0"
+                ViewModel="{x:Bind ViewModel.ConflictEditor, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.ConflictEditorVisibility, Mode=OneWay}" />
+        </Grid>
+
+    </Grid>
+</Page>

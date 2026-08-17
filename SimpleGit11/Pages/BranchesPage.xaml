@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SimpleGit11.Pages.BranchesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SimpleGit11.Controls"
+    xmlns:models="using:SimpleGit11.Models"
+    xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
+    Loaded="Page_Loaded"
+    Unloaded="Page_Unloaded"
+    NavigationCacheMode="Required">
+    <Page.Resources>
+        <Style x:Key="ReferenceHeaderToggleButtonStyle" TargetType="ToggleButton">
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <ContentPresenter
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid
+        x:Name="PageLayout"
+        Padding="0,32,0,0"
+        DataContext="{x:Bind ViewModel, Mode=OneWay}"
+        RowSpacing="16">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutStates">
+                <VisualState x:Name="NarrowLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="PageLayout.Padding" Value="20" />
+                        <Setter Target="HeaderCommands.(Grid.Row)" Value="1" />
+                        <Setter Target="HeaderCommands.(Grid.Column)" Value="0" />
+                        <Setter Target="HeaderCommands.HorizontalAlignment" Value="Left" />
+                        <Setter Target="RemoteUrlTextBlock.(Grid.Row)" Value="2" />
+                        <Setter Target="RemoteUrlTextBlock.(Grid.Column)" Value="0" />
+                        <Setter Target="RemoteUrlTextBlock.Margin" Value="0,6,0,0" />
+                        <Setter Target="ListColumn.Width" Value="*" />
+                        <Setter Target="PaneSplitterColumn.Width" Value="0" />
+                        <Setter Target="DetailsColumn.Width" Value="0" />
+                        <Setter Target="ListRow.Height" Value="300" />
+                        <Setter Target="PaneSplitterRow.Height" Value="12" />
+                        <Setter Target="DetailsRow.Height" Value="*" />
+                        <Setter Target="PaneSplitter.(Grid.Row)" Value="1" />
+                        <Setter Target="PaneSplitter.(Grid.Column)" Value="0" />
+                        <Setter Target="PaneSplitter.(Grid.ColumnSpan)" Value="3" />
+                        <Setter Target="PaneSplitter.Style" Value="{StaticResource HorizontalSplitterStyle}" />
+                        <Setter Target="DetailsPane.(Grid.Row)" Value="2" />
+                        <Setter Target="DetailsPane.(Grid.Column)" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="980" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid 
+            Padding="32,0"
+            ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Spacing="4">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <ToggleButton
+                        x:Name="BranchesHeaderToggleButton"
+                        x:Uid="BranchesHeaderToggleButton"
+                        Command="{x:Bind ViewModel.SelectBranchesCommand, Mode=OneWay}"
+                        PointerEntered="HeaderToggleButton_PointerEntered"
+                        PointerExited="HeaderToggleButton_PointerExited"
+                        Style="{StaticResource ReferenceHeaderToggleButtonStyle}">
+                        <TextBlock x:Name="BranchesHeaderTextBlock" x:Uid="BranchesHeaderTextBlock" Style="{ThemeResource TitleTextBlockStyle}" />
+                    </ToggleButton>
+                    <TextBlock x:Uid="BranchesAndTagsHeaderTextBlock" Foreground="{ThemeResource TextFillColorTertiaryBrush}" Style="{ThemeResource TitleTextBlockStyle}" />
+                    <ToggleButton
+                        x:Name="TagsHeaderToggleButton"
+                        x:Uid="TagsHeaderToggleButton"
+                        Command="{x:Bind ViewModel.SelectTagsCommand, Mode=OneWay}"
+                        PointerEntered="HeaderToggleButton_PointerEntered"
+                        PointerExited="HeaderToggleButton_PointerExited"
+                        Style="{StaticResource ReferenceHeaderToggleButtonStyle}">
+                        <TextBlock x:Name="TagsHeaderTextBlock" x:Uid="TagsHeaderTextBlock" Style="{ThemeResource TitleTextBlockStyle}" />
+                    </ToggleButton>
+                </StackPanel>
+                <TextBlock x:Uid="BranchesDescriptionTextBlock" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="WrapWholeWords" />
+            </StackPanel>
+
+            <CommandBar
+                x:Name="HeaderCommands"
+                Grid.Column="1"
+                Background="Transparent"
+                DefaultLabelPosition="Right">
+                <AppBarButton
+                    x:Uid="RefreshBranchesAppBarButton"
+                    Command="{x:Bind ViewModel.RefreshBranchesCommand, Mode=OneWay}"
+                    Icon="Refresh" />
+                <AppBarButton
+                    x:Uid="CreateReferenceAppBarButton"
+                    Command="{x:Bind ViewModel.CreateReferenceCommand, Mode=OneWay}"
+                    Icon="Add" />
+            </CommandBar>
+        </Grid>
+
+        <Grid 
+            x:Name="ReferenceContentGrid" 
+            Grid.Row="1"
+            Padding="32,0,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="ListColumn" Width="380" />
+                <ColumnDefinition x:Name="PaneSplitterColumn" Width="12" />
+                <ColumnDefinition x:Name="DetailsColumn" Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition x:Name="ListRow" Height="*" />
+                <RowDefinition x:Name="PaneSplitterRow" Height="0" />
+                <RowDefinition x:Name="DetailsRow" Height="0" />
+            </Grid.RowDefinitions>
+
+            <Grid x:Name="ListPane" RowSpacing="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBox
+                    x:Uid="BranchSearchTextBox"
+                    Height="32"
+                    Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <SelectorBar
+                    x:Name="BranchScopeSelectorBar"
+                    Grid.Row="1"
+                    SelectionChanged="BranchScopeSelectorBar_SelectionChanged">
+                    <SelectorBarItem x:Name="LocalBranchScopeSelectorBarItem" x:Uid="LocalBranchScopeSelectorBarItem" Tag="Local" />
+                    <SelectorBarItem x:Uid="RemoteBranchScopeSelectorBarItem" Tag="Remote" />
+                </SelectorBar>
+                <StackPanel Grid.Row="2" Spacing="6">
+                    <InfoBar x:Uid="NoBranchesInfoBar" IsOpen="{x:Bind ViewModel.HasNoBranchesNotice, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoBranchesNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                    <InfoBar x:Uid="NoTagsInfoBar" IsOpen="{x:Bind ViewModel.HasNoTagsNotice, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoTagsNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                    <InfoBar x:Uid="NoFilteredBranchesInfoBar" IsOpen="{x:Bind ViewModel.HasNoFilteredBranches, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoFilteredBranches, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                    <InfoBar x:Uid="NoFilteredTagsInfoBar" IsOpen="{x:Bind ViewModel.HasNoFilteredTags, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoFilteredTags, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                </StackPanel>
+
+                <ListView
+                    x:Name="BranchesListView"
+                    Grid.Row="3"
+                    AutomationProperties.AutomationId="BranchesList"
+                    ItemsSource="{x:Bind ViewModel.FilteredBranches, Mode=OneWay}"
+                    SelectedItem="{x:Bind ViewModel.SelectedBranch, Mode=TwoWay}"
+                    SelectionMode="Single"
+                    Visibility="{x:Bind ViewModel.BranchesModeVisibility, Mode=OneWay}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="models:GitBranch">
+                            <Grid Padding="6" ColumnSpacing="10" RightTapped="BranchItem_RightTapped">
+                                <Grid.ContextFlyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem x:Uid="CheckoutBranchMenuFlyoutItem" Command="{Binding DataContext.BranchPrimaryCommand, ElementName=BranchesListView}" Icon="Forward" />
+                                        <MenuFlyoutItem x:Uid="CreateBranchWorktreeMenuFlyoutItem" Command="{Binding DataContext.CreateBranchWorktreeCommand, ElementName=BranchesListView}" Icon="Folder" />
+                                        <MenuFlyoutItem x:Uid="AddBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.EditContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Edit" Visibility="{x:Bind CanAddConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem x:Uid="EditBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.EditContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Edit" Visibility="{x:Bind CanEditConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.DeleteContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Delete" Visibility="{x:Bind CanEditConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem x:Uid="RenameBranchMenuFlyoutItem" Command="{Binding DataContext.RenameBranchCommand, ElementName=BranchesListView}" Icon="Edit" Visibility="{x:Bind IsLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem x:Uid="MergeBranchMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesListView}" Icon="Link" />
+                                        <MenuFlyoutItem x:Uid="MergeBranchWithoutCommitMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesListView}" CommandParameter="True" Icon="Link" />
+                                        <MenuFlyoutItem x:Uid="SquashMergeBranchMenuFlyoutItem" Command="{Binding DataContext.SquashMergeBranchCommand, ElementName=BranchesListView}" Icon="Copy" />
+                                        <MenuFlyoutItem x:Uid="RebaseBranchMenuFlyoutItem" Command="{Binding DataContext.RebaseBranchCommand, ElementName=BranchesListView}" Icon="Refresh" />
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem x:Uid="DeleteBranchMenuFlyoutItem" Command="{Binding DataContext.DeleteBranchCommand, ElementName=BranchesListView}" Icon="Delete" />
+                                    </MenuFlyout>
+                                </Grid.ContextFlyout>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource MetadataIndicatorBackgroundBrush}" CornerRadius="4">
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind CommitMetadata, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind LastCommitMessage, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <ListView
+                    x:Name="TagsListView"
+                    Grid.Row="3"
+                    AutomationProperties.AutomationId="TagsList"
+                    ItemsSource="{x:Bind ViewModel.FilteredTags, Mode=OneWay}"
+                    SelectedItem="{x:Bind ViewModel.SelectedTag, Mode=TwoWay}"
+                    SelectionMode="Single"
+                    Visibility="{x:Bind ViewModel.TagsModeVisibility, Mode=OneWay}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="models:GitTag">
+                            <Grid Padding="6" ColumnSpacing="10" RightTapped="TagItem_RightTapped">
+                                <Grid.ContextFlyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem x:Uid="CheckoutTagMenuFlyoutItem" Command="{Binding DataContext.CheckoutTagCommand, ElementName=TagsListView}" Icon="Forward" />
+                                        <MenuFlyoutItem x:Uid="FetchTagMenuFlyoutItem" Command="{Binding DataContext.FetchTagCommand, ElementName=TagsListView}" Icon="Download" Visibility="{x:Bind IsRemote, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem x:Uid="CreateBranchFromTagMenuFlyoutItem" Command="{Binding DataContext.CreateBranchFromTagCommand, ElementName=TagsListView}" Icon="Add" />
+                                        <MenuFlyoutItem x:Uid="CreateTagWorktreeMenuFlyoutItem" Command="{Binding DataContext.CreateTagBranchWorktreeCommand, ElementName=TagsListView}" Icon="Folder" />
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem x:Uid="DeleteTagMenuFlyoutItem" Command="{Binding DataContext.DeleteTagCommand, ElementName=TagsListView}" Icon="Delete" />
+                                    </MenuFlyout>
+                                </Grid.ContextFlyout>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="28" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <Border Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource MetadataIndicatorBackgroundBrush}" CornerRadius="4">
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind CommitMetadata, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Subject, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+
+            <primitives:Thumb
+                x:Name="PaneSplitter"
+                Grid.Column="1"
+                DragDelta="PaneSplitter_DragDelta"
+                Style="{StaticResource VerticalSplitterStyle}" />
+
+            <ScrollViewer x:Name="DetailsPane" 
+                          Grid.Column="2" 
+                          VerticalScrollBarVisibility="Auto"
+                          Padding="0,0,32,0">
+                <Grid>
+                    <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasSelectedBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Viewbox Width="24" Height="24" VerticalAlignment="Center"><controls:BranchIcon /></Viewbox>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranch.Name, Mode=OneWay, FallbackValue=''}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    MaxLines="1"
+                                    TextTrimming="CharacterEllipsis">
+                                    <TextBlock.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem x:Uid="EditBranchDescriptionMenuFlyoutItem" Command="{x:Bind ViewModel.EditBranchDescriptionCommand, Mode=OneWay}" Icon="Edit" />
+                                            <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{x:Bind ViewModel.DeleteBranchDescriptionCommand, Mode=OneWay}" Icon="Delete" />
+                                        </MenuFlyout>
+                                    </TextBlock.ContextFlyout>
+                                    <Run Text="{x:Bind ViewModel.SelectedBranchScopeText, Mode=OneWay}" />
+                                    <Run
+                                        FontSize="10"
+                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                        Text="{x:Bind ViewModel.SelectedBranchDescriptionSeparatorText, Mode=OneWay}" />
+                                    <Run Text="{x:Bind ViewModel.SelectedBranch.ConfigDescription, Mode=OneWay, FallbackValue=''}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+
+                        <CommandBar Background="Transparent" DefaultLabelPosition="Right">
+                            <AppBarButton x:Uid="BranchPrimaryAppBarButton" Command="{x:Bind ViewModel.BranchPrimaryCommand, Mode=OneWay}" Icon="Forward" Label="{x:Bind ViewModel.BranchPrimaryActionText, Mode=OneWay}" />
+                            <AppBarButton x:Uid="RenameSelectedBranchAppBarButton" Command="{x:Bind ViewModel.RenameBranchCommand, Mode=OneWay}" Icon="Edit" Visibility="{x:Bind ViewModel.IsSelectedBranchLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                            <AppBarElementContainer>
+                                <SplitButton x:Uid="MergeIntoCurrentSplitButton" Command="{x:Bind ViewModel.MergeBranchCommand, Mode=OneWay}" Style="{StaticResource SplitButtonCommandBarStyle}">
+                                    <SplitButton.Content><StackPanel Orientation="Horizontal"><SymbolIcon Symbol="Link" /><TextBlock x:Uid="MergeIntoCurrentSplitButtonText" Margin="8,0,0,0" /></StackPanel></SplitButton.Content>
+                                    <SplitButton.Flyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem x:Uid="MergeBranchWithoutCommitMenuFlyoutItem" Command="{x:Bind ViewModel.MergeBranchCommand}" CommandParameter="True" Icon="Link" />
+                                            <MenuFlyoutItem x:Uid="SquashMergeBranchMenuFlyoutItem" Command="{x:Bind ViewModel.SquashMergeBranchCommand, Mode=OneWay}" Icon="Copy" />
+                                        </MenuFlyout>
+                                    </SplitButton.Flyout>
+                                </SplitButton>
+                            </AppBarElementContainer>
+                            <AppBarButton x:Uid="RebaseSelectedBranchAppBarButton" Command="{x:Bind ViewModel.RebaseBranchCommand, Mode=OneWay}" Icon="Refresh" />
+                            <AppBarButton x:Uid="DeleteSelectedBranchAppBarButton" Command="{x:Bind ViewModel.DeleteBranchCommand, Mode=OneWay}" Icon="Delete" />
+                        </CommandBar>
+
+                        <toolkit:SettingsExpander x:Name="BranchSynchronizationExpander" IsExpanded="False" Expanded="BranchSynchronizationExpander_Expanded">
+                            <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Globe" /></toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header><TextBlock Text="{x:Bind ViewModel.SelectedBranchSynchronizationTitle, Mode=OneWay}" /></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard Visibility="{x:Bind ViewModel.IsSelectedBranchRemote, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{x:Bind ViewModel.SelectedBranchSynchronizationText, Mode=OneWay}"
+                                                TextWrapping="WrapWholeWords" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Text="{x:Bind ViewModel.LastRepositoryFetchText, Mode=OneWay}"
+                                                TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                    <Button
+                                        x:Uid="FetchBranchButton"
+                                        Command="{x:Bind ViewModel.FetchBranchCommand, Mode=OneWay}"
+                                        Visibility="{x:Bind ViewModel.IsSelectedRemoteBranchMissingLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                </toolkit:SettingsCard>
+                                <toolkit:SettingsCard Visibility="{x:Bind ViewModel.IsSelectedBranchLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Uid="BranchIncomingStatusCardTitle" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{x:Bind ViewModel.SelectedBranchIncomingStatusText, Mode=OneWay}"
+                                                TextWrapping="WrapWholeWords" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Text="{x:Bind ViewModel.LastRepositoryFetchText, Mode=OneWay}"
+                                                TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            x:Uid="BranchPullRemoteLabel"
+                                            VerticalAlignment="Center" />
+                                        <ComboBox
+                                            Grid.Column="1"
+                                            x:Uid="BranchUpstreamRemoteComboBox"
+                                            Width="150"
+                                            AutomationProperties.AutomationId="BranchUpstreamRemoteSelector"
+                                            DisplayMemberPath="Name"
+                                            IsEnabled="{x:Bind ViewModel.CanUseRemoteSelector, Mode=OneWay}"
+                                            ItemsSource="{x:Bind ViewModel.BranchUpstreamRemoteOptions, Mode=OneWay}"
+                                            SelectedItem="{x:Bind ViewModel.SelectedBranchUpstreamRemoteOption, Mode=TwoWay}" />
+                                    </Grid>
+                                </toolkit:SettingsCard>
+                                <toolkit:SettingsCard Visibility="{x:Bind ViewModel.IsSelectedBranchLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Uid="BranchOutgoingStatusCardTitle" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{x:Bind ViewModel.SelectedBranchOutgoingStatusText, Mode=OneWay}"
+                                                TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            x:Uid="BranchPushRemoteLabel"
+                                            VerticalAlignment="Center" />
+                                        <ComboBox
+                                            Grid.Column="1"
+                                            x:Uid="BranchPushRemoteComboBox"
+                                            Width="150"
+                                            AutomationProperties.AutomationId="BranchPushRemoteSelector"
+                                            DisplayMemberPath="Name"
+                                            IsEnabled="{x:Bind ViewModel.CanUseRemoteSelector, Mode=OneWay}"
+                                            ItemsSource="{x:Bind ViewModel.BranchPushRemoteOptions, Mode=OneWay}"
+                                            SelectedItem="{x:Bind ViewModel.SelectedBranchPushRemoteOption, Mode=TwoWay}" />
+                                    </Grid>
+                                </toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+
+                        <toolkit:SettingsExpander x:Name="BranchComparisonExpander" IsExpanded="False" Expanded="BranchComparisonExpander_Expanded">
+                            <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Switch" /></toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="BranchComparisonExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranchRelationText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="3">
+                                            <TextBlock x:Uid="BranchCommonCommitCardTitle" />
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedBranchMergeBaseText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                </toolkit:SettingsCard>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="3">
+                                            <TextBlock x:Uid="BranchMergeCapabilityCardTitle" />
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedBranchMergeCapabilityText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                </toolkit:SettingsCard>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock Text="{x:Bind ViewModel.SelectedBranchDiffText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></toolkit:SettingsCard.Header><StackPanel Orientation="Horizontal" Spacing="8"><Button x:Uid="OpenBranchChangesButton" Command="{x:Bind ViewModel.OpenSelectedBranchChangesCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanOpenSelectedBranchChanges, Mode=OneWay}" /><Button x:Uid="ShowBranchCommitsButton" Command="{x:Bind ViewModel.ShowSelectedBranchCommitsCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanShowSelectedBranchCommits, Mode=OneWay}" /><Button x:Uid="CompareBranchButton" Command="{x:Bind ViewModel.CompareSelectedBranchCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanCompareSelectedBranch, Mode=OneWay}" /></StackPanel></toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+                        <toolkit:SettingsExpander x:Name="BranchLastCommitExpander" IsExpanded="False" Expanded="BranchCommitExpander_Expanded">
+                            <toolkit:SettingsExpander.HeaderIcon>
+                                <SymbolIcon Symbol="Document" />
+                            </toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header>
+                                <StackPanel Spacing="3">
+                                    <TextBlock x:Uid="LastCommitExpanderTitle" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedCommitTitle, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                </StackPanel>
+                            </toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard
+                                    x:Uid="OpenLastCommitChangesCard"
+                                    Click="OpenLastCommitChangesCard_Click"
+                                    IsClickEnabled="True"
+                                    IsEnabled="{x:Bind ViewModel.CanOpenLastCommitBranchChanges, Mode=OneWay}">
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="3">
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}" />
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}" />
+                                            <TextBlock FontFamily="Consolas" Text="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                </toolkit:SettingsCard>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header>
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedCommitMessage, Mode=OneWay}" TextWrapping="Wrap" />
+                                    </toolkit:SettingsCard.Header>
+                                </toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+
+                        <toolkit:SettingsExpander
+                            x:Name="BranchHistoryExpander"
+                            Expanded="BranchHistoryExpander_Expanded"
+                            IsExpanded="False"
+                            Visibility="{x:Bind ViewModel.IsSelectedBranchLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                            <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Clock" /></toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header>
+                                <StackPanel Spacing="3">
+                                    <TextBlock x:Uid="BranchHistoryExpanderTitle" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranchHistorySummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                </StackPanel>
+                            </toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedBranchHistoryAvailabilityText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                            <TextBlock x:Uid="BranchHistoryLocalNotice" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                </toolkit:SettingsCard>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="10">
+                                            <TextBlock x:Uid="BranchHistoryEntriesCardTitle" FontWeight="SemiBold" />
+                                            <ItemsControl ItemsSource="{x:Bind ViewModel.SelectedBranchHistoryEntries, Mode=OneWay}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:BranchReflogDisplayItem">
+                                                        <Grid Margin="0,0,0,10" RowSpacing="2">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Action, Mode=OneTime}" />
+                                                            <TextBlock Grid.Row="1" Text="{x:Bind Details, Mode=OneTime}" TextWrapping="WrapWholeWords" />
+                                                            <TextBlock Grid.Row="2" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Metadata, Mode=OneTime}" TextWrapping="WrapWholeWords" />
+                                                            <TextBlock Grid.Row="3" FontFamily="Consolas" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind HashTransition, Mode=OneTime}" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <Button
+                                                x:Uid="ToggleBranchHistoryButton"
+                                                Command="{x:Bind ViewModel.ToggleBranchHistoryCommand, Mode=OneWay}"
+                                                Content="{x:Bind ViewModel.BranchHistoryToggleText, Mode=OneWay}"
+                                                Visibility="{x:Bind ViewModel.HasMoreBranchHistoryEntries, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"/>
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                </toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+
+                        <toolkit:SettingsExpander x:Name="BranchWorktreeExpander" IsExpanded="False" Expanded="BranchWorktreeExpander_Expanded">
+                            <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Folder" /></toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="WorktreeExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranchWorktreePath, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header><TextBlock x:Uid="OpenBranchWorktreeCardTitle" TextWrapping="WrapWholeWords" /></toolkit:SettingsCard.Header>
+                                    <Button x:Uid="OpenWorktreeButton" Command="{x:Bind ViewModel.OpenBranchWorktreeCommand, Mode=OneWay}" />
+                                </toolkit:SettingsCard>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header><TextBlock x:Uid="CreateBranchWorktreeCardTitle" TextWrapping="WrapWholeWords" /></toolkit:SettingsCard.Header>
+                                    <Button x:Uid="CreateBranchWorktreeButton" Command="{x:Bind ViewModel.CreateBranchWorktreeCommand, Mode=OneWay}" />
+                                </toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+                    </StackPanel>
+
+                    <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasSelectedTag, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE8EC;" FontSize="20" />
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTag.Name, Mode=OneWay, FallbackValue=''}" TextTrimming="CharacterEllipsis" />
+                                <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagScopeText, Mode=OneWay}" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="·" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagTypeText, Mode=OneWay}" /></StackPanel>
+                            </StackPanel>
+                        </Grid>
+                        <CommandBar Background="Transparent" DefaultLabelPosition="Right">
+                            <AppBarButton x:Uid="CheckoutTagAppBarButton" Command="{x:Bind ViewModel.CheckoutTagCommand, Mode=OneWay}" Icon="Forward" />
+                            <AppBarButton x:Uid="DeleteTagAppBarButton" Command="{x:Bind ViewModel.DeleteTagCommand, Mode=OneWay}" Icon="Delete" />
+                        </CommandBar>
+
+                        <toolkit:SettingsExpander x:Name="TagRemoteStatusExpander" IsExpanded="False">
+                            <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Globe" /></toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header><TextBlock Text="{x:Bind ViewModel.SelectedTagRemoteStatusTitle, Mode=OneWay}" /></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagRemoteStatusText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></toolkit:SettingsCard.Header><Button x:Uid="FetchTagButton" Command="{x:Bind ViewModel.FetchTagCommand, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsSelectedRemoteTagMissingLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" /></toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+
+                        <toolkit:SettingsExpander x:Name="TagInformationExpander" IsExpanded="False" Expanded="TagInformationExpander_Expanded">
+                            <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Tag" /></toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagInformationExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTaggerDate, Mode=OneWay}" /></StackPanel></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><StackPanel Spacing="3"><TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedTaggerText, Mode=OneWay}" /><TextBlock Text="{x:Bind ViewModel.SelectedTagMessage, Mode=OneWay}" TextWrapping="Wrap" /></StackPanel></toolkit:SettingsCard.Header></toolkit:SettingsCard>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagTargetObjectLabel" /><TextBlock FontFamily="Consolas" Text="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" TextTrimming="CharacterEllipsis" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagTargetCommitText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsCard.Header><TextBlock Text="{x:Bind ViewModel.SelectedTagTargetType, Mode=OneWay}" /></toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+
+                        <toolkit:SettingsExpander
+                            x:Name="TagSignatureExpander"
+                            Expanded="TagSignatureExpander_Expanded"
+                            IsExpanded="False"
+                            Visibility="{x:Bind ViewModel.IsSelectedTagAnnotated, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                            <toolkit:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE72E;" /></toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header>
+                                <StackPanel Spacing="3">
+                                    <TextBlock x:Uid="TagSignatureExpanderTitle" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTagSignatureSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                </StackPanel>
+                            </toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedTagSignatureSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                            <TextBlock Text="{x:Bind ViewModel.SelectedTagSignatureDetailsText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                            <TextBlock x:Uid="TagSignatureTrustNotice" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                </toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+
+                        <toolkit:SettingsExpander x:Name="TagRelationExpander" IsExpanded="False" Expanded="TagRelationExpander_Expanded">
+                            <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Switch" /></toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagRelationExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTagRelationText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagCommonCommitCardTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagMergeBaseText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsCard.Header></toolkit:SettingsCard>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="3">
+                                            <TextBlock x:Uid="TagContainingBranchesCardTitle" />
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagContainingBranchesText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                            <Button x:Uid="ShowTagCommitsButton" Command="{x:Bind ViewModel.ShowSelectedTagCommitsCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanShowSelectedTagCommits, Mode=OneWay}" />
+                                        </StackPanel></toolkit:SettingsCard.Header>
+                                </toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+
+                        <toolkit:SettingsExpander x:Name="TagBranchActionsExpander" IsExpanded="False">
+                            <toolkit:SettingsExpander.HeaderIcon><controls:BranchIcon /></toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header><TextBlock x:Uid="TagBranchActionsExpanderTitle" /></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock x:Uid="CreateBranchFromTagCardTitle" /></toolkit:SettingsCard.Header><Button x:Uid="CreateBranchFromTagButton" Command="{x:Bind ViewModel.CreateBranchFromTagCommand, Mode=OneWay}" /></toolkit:SettingsCard>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock x:Uid="CreateBranchWorktreeFromTagCardTitle" /></toolkit:SettingsCard.Header><Button x:Uid="CreateBranchWorktreeFromTagButton" Command="{x:Bind ViewModel.CreateTagBranchWorktreeCommand, Mode=OneWay}" /></toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+
+                        <toolkit:SettingsExpander x:Name="TagWorktreesExpander" IsExpanded="False" Expanded="TagWorktreeExpander_Expanded">
+                            <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Folder" /></toolkit:SettingsExpander.HeaderIcon>
+                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagWorktreesExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTagWorktreeText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock x:Uid="OpenExistingTagWorktreeCardTitle" /></toolkit:SettingsCard.Header><Button x:Uid="OpenExistingTagWorktreeButton" Command="{x:Bind ViewModel.OpenTagWorktreeCommand, Mode=OneWay}" /></toolkit:SettingsCard>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock x:Uid="CreateDetachedTagWorktreeCardTitle" /></toolkit:SettingsCard.Header><Button x:Uid="CreateDetachedTagWorktreeButton" Command="{x:Bind ViewModel.CreateTagWorktreeCommand, Mode=OneWay}" /></toolkit:SettingsCard>
+                            </toolkit:SettingsExpander.Items>
+                        </toolkit:SettingsExpander>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
+
+    </Grid>
+</Page>

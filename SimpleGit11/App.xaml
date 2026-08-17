@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application
+    x:Class="SimpleGit11.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:SimpleGit11.Converters"
+    xmlns:local="using:SimpleGit11">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <ResourceDictionary Source="Styles/SplitterStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="DiffAddedLineBackgroundBrush" Color="#E7F4E7" />
+                    <SolidColorBrush x:Key="DiffRemovedLineBackgroundBrush" Color="#FFE8E3" />
+                    <SolidColorBrush x:Key="DiffInlineAddedTextBorderBrush" Color="#B7E6C0" />
+                    <SolidColorBrush x:Key="DiffInlineRemovedTextBorderBrush" Color="#F5B5B5" />
+                    <SolidColorBrush x:Key="DiffHunkLineBackgroundBrush" Color="#F0F0F0" />
+                    <SolidColorBrush x:Key="DiffConflictMarkerLineBackgroundBrush" Color="#FFF4CE" />
+
+                    <SolidColorBrush x:Key="DiffHunkLineAccentBrush" Color="#969696" />
+                    <SolidColorBrush x:Key="DiffConflictMarkerLineAccentBrush" Color="#784600" />
+                    <SolidColorBrush x:Key="DefaultLineAccentBrush" Color="#000000" />
+                    <SolidColorBrush x:Key="SyntaxCommentForegroundBrush" Color="#008000" />
+                    <SolidColorBrush x:Key="SyntaxKeywordForegroundBrush" Color="#0000FF" />
+                    <SolidColorBrush x:Key="SyntaxControlFlowForegroundBrush" Color="#D899BE" />
+                    <SolidColorBrush x:Key="SyntaxTypeForegroundBrush" Color="#2B91AF" />
+                    <SolidColorBrush x:Key="SyntaxFunctionForegroundBrush" Color="#795E26" />
+                    <SolidColorBrush x:Key="SyntaxStringForegroundBrush" Color="#A31515" />
+                    <SolidColorBrush x:Key="SyntaxNumberForegroundBrush" Color="#098658" />
+                    <SolidColorBrush x:Key="SyntaxMarkupNameForegroundBrush" Color="#800000" />
+                    <SolidColorBrush x:Key="SyntaxAttributeNameForegroundBrush" Color="#FF0000" />
+
+                    <SolidColorBrush x:Key="DiffAddedStatTextBrush" Color="#00A240" />
+                    <SolidColorBrush x:Key="DiffRemovedStatTextBrush" Color="#E02E2A" />
+
+                    <SolidColorBrush x:Key="SuccessfulOperationColor" Color="#00A240" />
+                    <SolidColorBrush x:Key="MetadataIndicatorBackgroundBrush" Color="#50808080" />
+                    <SolidColorBrush x:Key="ConflictIndicatorBackgroundBrush" Color="{ThemeResource SystemAccentColor}" />
+                    <SolidColorBrush x:Key="ConflictIndicatorForegroundBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TitleBarButtonForegroundBrush" Color="#1A1A1A" />
+                    <SolidColorBrush x:Key="TitleBarButtonInactiveForegroundBrush" Color="#7A7A7A" />
+                    <SolidColorBrush x:Key="TitleBarButtonHoverBackgroundBrush" Color="#0F000000" />
+                    <SolidColorBrush x:Key="TitleBarButtonPressedBackgroundBrush" Color="#1F000000" />
+                    <SolidColorBrush x:Key="BranchesPageHeaderActiveBrush" Color="#1A1A1A" />
+                    <SolidColorBrush x:Key="BranchesPageHeaderInactiveBrush" Color="#7A7A7A" />
+                    <SolidColorBrush x:Key="CardBorderColorDefaultBrush" Color="#EAEAEA" />
+                    
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="DiffAddedLineBackgroundBrush" Color="#265E4D" />
+                    <SolidColorBrush x:Key="DiffRemovedLineBackgroundBrush" Color="#3C0000" />
+                    <SolidColorBrush x:Key="DiffInlineAddedTextBorderBrush" Color="#6A9955" />
+                    <SolidColorBrush x:Key="DiffInlineRemovedTextBorderBrush" Color="#7A3434" />
+                    <SolidColorBrush x:Key="DiffHunkLineBackgroundBrush" Color="#2D2D2D" />
+                    <SolidColorBrush x:Key="DiffConflictMarkerLineBackgroundBrush" Color="#582F00" />
+
+                    <SolidColorBrush x:Key="DiffHunkLineAccentBrush" Color="#969696" />
+                    <SolidColorBrush x:Key="DiffConflictMarkerLineAccentBrush" Color="#FFD278" />
+                    <SolidColorBrush x:Key="DefaultLineAccentBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="SyntaxCommentForegroundBrush" Color="#6A9955" />
+                    <SolidColorBrush x:Key="SyntaxKeywordForegroundBrush" Color="#569CD6" />
+                    <SolidColorBrush x:Key="SyntaxControlFlowForegroundBrush" Color="#D899BE" />
+                    <SolidColorBrush x:Key="SyntaxTypeForegroundBrush" Color="#4EC9B0" />
+                    <SolidColorBrush x:Key="SyntaxFunctionForegroundBrush" Color="#DCDCAA" />
+                    <SolidColorBrush x:Key="SyntaxStringForegroundBrush" Color="#CE9178" />
+                    <SolidColorBrush x:Key="SyntaxNumberForegroundBrush" Color="#B5CEA8" />
+                    <SolidColorBrush x:Key="SyntaxMarkupNameForegroundBrush" Color="#569CD6" />
+                    <SolidColorBrush x:Key="SyntaxAttributeNameForegroundBrush" Color="#9CDCFE" />
+
+                    <SolidColorBrush x:Key="DiffAddedStatTextBrush" Color="#40C877" />
+                    <SolidColorBrush x:Key="DiffRemovedStatTextBrush" Color="#C83B38" />
+
+                    <SolidColorBrush x:Key="SuccessfulOperationColor" Color="#40C877" />
+                    <SolidColorBrush x:Key="MetadataIndicatorBackgroundBrush" Color="#50808080" />
+                    <SolidColorBrush x:Key="ConflictIndicatorBackgroundBrush" Color="{ThemeResource SystemAccentColor}" />
+                    <SolidColorBrush x:Key="ConflictIndicatorForegroundBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TitleBarButtonForegroundBrush" Color="#F5F5F5" />
+                    <SolidColorBrush x:Key="TitleBarButtonInactiveForegroundBrush" Color="#A0A0A0" />
+                    <SolidColorBrush x:Key="TitleBarButtonHoverBackgroundBrush" Color="#0FFFFFFF" />
+                    <SolidColorBrush x:Key="TitleBarButtonPressedBackgroundBrush" Color="#1FFFFFFF" />
+                    <SolidColorBrush x:Key="BranchesPageHeaderActiveBrush" Color="#F5F5F5" />
+                    <SolidColorBrush x:Key="BranchesPageHeaderInactiveBrush" Color="#A0A0A0" />
+                    <SolidColorBrush x:Key="CardBorderColorDefaultBrush" Color="#232323" />
+
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <SolidColorBrush x:Key="DiffAddedLineBackgroundBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+                    <SolidColorBrush x:Key="DiffRemovedLineBackgroundBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+                    <SolidColorBrush x:Key="DiffInlineAddedTextBorderBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+                    <SolidColorBrush x:Key="DiffInlineRemovedTextBorderBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+                    <SolidColorBrush x:Key="DiffHunkLineBackgroundBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+                    <SolidColorBrush x:Key="DiffConflictMarkerLineBackgroundBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+                    <SolidColorBrush x:Key="DiffHunkLineAccentBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
+                    <SolidColorBrush x:Key="DiffHeaderLineAccentBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
+                    <SolidColorBrush x:Key="DiffConflictMarkerLineAccentBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
+                    <SolidColorBrush x:Key="DefaultLineAccentBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxCommentForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxKeywordForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxControlFlowForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxTypeForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxFunctionForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxStringForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxNumberForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxMarkupNameForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxAttributeNameForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="DiffAddedStatTextBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
+                    <SolidColorBrush x:Key="DiffRemovedStatTextBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
+                    <SolidColorBrush x:Key="SuccessfulOperationColor" Color="{ThemeResource SystemColorHighlightTextColor}" />
+                    <SolidColorBrush x:Key="MetadataIndicatorBackgroundBrush" Color="{ThemeResource SystemColorButtonFaceColor}" />
+                    <SolidColorBrush x:Key="ConflictIndicatorBackgroundBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+                    <SolidColorBrush x:Key="ConflictIndicatorForegroundBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
+                    <SolidColorBrush x:Key="TitleBarButtonForegroundBrush" Color="{ThemeResource SystemColorButtonTextColor}" />
+                    <SolidColorBrush x:Key="TitleBarButtonInactiveForegroundBrush" Color="{ThemeResource SystemColorGrayTextColor}" />
+                    <SolidColorBrush x:Key="TitleBarButtonHoverBackgroundBrush" Color="{ThemeResource SystemColorButtonFaceColor}" />
+                    <SolidColorBrush x:Key="TitleBarButtonPressedBackgroundBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+                    <SolidColorBrush x:Key="BranchesPageHeaderActiveBrush" Color="{ThemeResource SystemColorButtonTextColor}" />
+                    <SolidColorBrush x:Key="BranchesPageHeaderInactiveBrush" Color="{ThemeResource SystemColorGrayTextColor}" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <x:String x:Key="BranchIconData">F1 M 3,0.75 A 1.5,1.5 0 1 1 3,3.75 A 1.5,1.5 0 1 1 3,0.75 Z M 3,1.5 A 0.75,0.75 0 1 0 3,3 A 0.75,0.75 0 1 0 3,1.5 Z M 3,8.25 A 1.5,1.5 0 1 1 3,11.25 A 1.5,1.5 0 1 1 3,8.25 Z M 3,9 A 0.75,0.75 0 1 0 3,10.5 A 0.75,0.75 0 1 0 3,9 Z M 9,2.25 A 1.5,1.5 0 1 1 9,5.25 A 1.5,1.5 0 1 1 9,2.25 Z M 9,3 A 0.75,0.75 0 1 0 9,4.5 A 0.75,0.75 0 1 0 9,3 Z M 2.5,3.75 L 3.5,3.75 L 3.5,8.25 L 2.5,8.25 Z M 3,6.25 C 4.93,6.25 6.25,5.32 7.9,4.78 L 8.22,5.72 C 6.34,6.34 5,7.25 3,7.25 Z</x:String>
+            <x:String x:Key="WorktreeIconData">F1 M 0,0 L 5,0 L 5,5 L 0,5 Z M 1,1 L 1,4 L 4,4 L 4,1 Z M 7,7 L 12,7 L 12,12 L 7,12 Z M 8,8 L 8,11 L 11,11 L 11,8 Z M 5,2 L 8,2 L 8,7 L 7,7 L 7,3 L 5,3 Z</x:String>
+            <x:String x:Key="MergeCommitIconData">F1 M 3,0.75 A 1.5,1.5 0 1 1 3,3.75 A 1.5,1.5 0 1 1 3,0.75 Z M 3,8.25 A 1.5,1.5 0 1 0 3,11.25 A 1.5,1.5 0 1 0 3,8.25 Z M 3,9 A 0.75,0.75 0 1 1 3,10.5 A 0.75,0.75 0 1 1 3,9 Z M 9,6.75 A 1.5,1.5 0 1 0 9,9.75 A 1.5,1.5 0 1 0 9,6.75 Z M 9,7.5 A 0.75,0.75 0 1 1 9,9 A 0.75,0.75 0 1 1 9,7.5 Z M 2.5,3.75 L 3.5,3.75 L 3.5,8.25 L 2.5,8.25 Z M 3,5.75 C 4.93,5.75 6.25,6.68 7.9,7.22 L 8.22,6.28 C 6.34,5.66 5,4.75 3,4.75 Z</x:String>
+
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

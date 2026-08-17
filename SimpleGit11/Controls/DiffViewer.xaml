@@ -1,0 +1,240 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="SimpleGit11.Controls.DiffViewer"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SimpleGit11.Controls"
+    xmlns:toolkit="using:CommunityToolkit.WinUI">
+
+    <Grid RowSpacing="12">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutStates">
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <toolkit:ControlSizeTrigger MinWidth="900" TargetElement="{Binding ElementName=Root}" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="NarrowLayout">
+                    <VisualState.StateTriggers>
+                        <toolkit:ControlSizeTrigger MaxWidth="900" TargetElement="{Binding ElementName=Root}" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="NarrowLayoutControlsRow.Height" Value="Auto" />
+                        <Setter Target="ControlsContainer.(Grid.Row)" Value="1" />
+                        <Setter Target="ControlsContainer.(Grid.Column)" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid 
+            ColumnSpacing="12"
+            RowSpacing="4"
+            Padding="0,0,32,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition x:Name="NarrowLayoutControlsRow" Height="0" />
+            </Grid.RowDefinitions>
+            
+            <Grid
+                VerticalAlignment="Center"
+                ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <controls:RepositoryEditorZoomControl
+                    VerticalAlignment="Center"
+                    EditorSurface="{x:Bind EditorSurface}" />
+                <TextBlock
+                    Grid.Column="1"
+                    x:Name="DiffHeading"
+                    VerticalAlignment="Center"
+                    MaxLines="1"
+                    Style="{ThemeResource SubtitleTextBlockStyle}"
+                    Text="{Binding SelectedDiffFileTitle}"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTipService.ToolTip="{Binding SelectedDiffFileTooltip}" />
+                <TextBlock
+                    Grid.Column="2"
+                    x:Uid="DiffEditorModifiedStatusTextBlock"
+                    x:Name="DiffEditorModifiedStatusTextBlock"    
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                <TextBlock
+                    Grid.Column="3"
+                    VerticalAlignment="Center"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource DiffAddedStatTextBrush}"
+                    Text="{Binding SelectedDiffStat.AddedText}" />
+                <TextBlock
+                    Grid.Column="4"
+                    VerticalAlignment="Center"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource DiffRemovedStatTextBrush}"
+                    Text="{Binding SelectedDiffStat.RemovedText}" />
+                </Grid>
+
+            <Grid
+                Grid.Column="1"
+                x:Name="ControlsContainer"
+                HorizontalAlignment="Right">
+                <StackPanel
+                    
+                    Orientation="Horizontal" 
+                    Spacing="4">
+                    <ToggleSwitch 
+                        x:Name="IgnoreWhitespaceToggleSwitch"
+                        x:Uid="IgnoreWhitespaceToggleSwitch"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="DiffViewerIgnoreWhitespaceToggle"
+                        IsOn="{Binding IgnoreWhitespaceInDiff, Mode=TwoWay}" />
+                    <ComboBox 
+                        x:Uid="DiffViewerSyntaxHighlightingComboBox"
+                        Width="160"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="DiffViewerSyntaxSelector"
+                        DisplayMemberPath="DisplayName"
+                        ItemsSource="{Binding SyntaxHighlightingOptions}"
+                        SelectedItem="{Binding SelectedSyntaxHighlightingOption, Mode=TwoWay}">
+                        <ToolTipService.ToolTip>
+                            <ToolTip x:Uid="SyntaxHighlightingTooltip" />
+                        </ToolTipService.ToolTip>
+                    </ComboBox>
+                    <ToggleButton
+                        x:Name="FullFileModeButton"
+                        Width="32"
+                        Height="32"
+                        MinWidth="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        AutomationProperties.Name="{Binding DiffModeToggleText}"
+                        AutomationProperties.AutomationId="DiffViewerFullFileToggle"
+                        Command="{Binding ToggleFullFileCommand}"
+                        IsChecked="{Binding IsFullFileMode, Mode=TwoWay}"
+                        ToolTipService.ToolTip="{Binding DiffModeToggleText}"
+                        VerticalAlignment="Center"
+                        Padding="5">
+                        <SymbolIcon Symbol="Document" />
+                    </ToggleButton>
+                    <Button
+                        x:Name="EditFileButton"
+                        x:Uid="EditDiffFileButton"
+                        Width="32"
+                        Height="32"
+                        MinWidth="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        AutomationProperties.AutomationId="DiffViewerEditFileButton"
+                        Command="{Binding EditFileCommand, ElementName=Root}"
+                        Padding="5"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding EditActionVisibility, ElementName=Root}">
+                        <SymbolIcon Symbol="Edit" />
+                    </Button>
+                    <Button
+                        x:Name="SaveEditButton"
+                        x:Uid="DiffEditorSaveButton"
+                        AutomationProperties.AutomationId="DiffViewerSaveEditButton"
+                        Width="32"
+                        Height="32"
+                        MinWidth="0"
+                        Padding="5"
+                        VerticalAlignment="Center"
+                        Margin="8,0,0,0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="SaveEditButton_Click">
+                        <SymbolIcon Symbol="Save" />
+                    </Button>
+                    <Button
+                        x:Name="CancelEditButton"
+                        x:Uid="DiffEditorCancelButton"
+                        AutomationProperties.AutomationId="DiffViewerCancelEditButton"
+                        Width="32"
+                        Height="32"
+                        MinWidth="0"
+                        Padding="5"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="CancelEditButton_Click">
+                        <SymbolIcon Symbol="Cancel" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <Grid 
+            Grid.Row="1">
+            <InfoBar
+                x:Name="DiffEmptyInfoBar"
+                Severity="Informational" 
+                Margin="0,0,32,0"/>
+
+            <Grid x:Name="EditorHostGrid">
+                <controls:RepositoryEditorSurface
+                    x:Name="EditorSurface"
+                    AutomationProperties.LabeledBy="{Binding ElementName=DiffHeading}"
+                    ContextFlyoutDisabled="True"
+                    EnableSyntaxHighlighting="True"
+                    ContextRequested="EditorSurface_ContextRequested"
+                    IsReadOnly="True"
+                    LineGutterWidth="24"
+                    ShowCurrentLine="False"
+                    ShowLineGutter="True"
+                    ShowLineNumbers="False">
+                    <controls:RepositoryEditorSurface.ContextFlyout>
+                        <MenuFlyout Opening="DiffContextFlyout_Opening">
+                            <MenuFlyoutItem
+                                x:Uid="CopyDiffSelectionMenuFlyoutItem"
+                                Click="CopyDiffSelectionMenuFlyoutItem_Click"
+                                Icon="Copy" />
+                            <MenuFlyoutItem
+                                x:Uid="CopyDiffAllMenuFlyoutItem"
+                                Click="CopyDiffAllMenuFlyoutItem_Click"
+                                Icon="Copy" />
+                            <MenuFlyoutSeparator x:Name="RevertChangeSeparator" />
+                            <MenuFlyoutItem
+                                x:Name="RevertChangeMenuItem"
+                                x:Uid="RevertChangeMenuFlyoutItem"
+                                Click="RevertChangeMenuFlyoutItem_Click"
+                                Icon="Undo" />
+                        </MenuFlyout>
+                    </controls:RepositoryEditorSurface.ContextFlyout>
+                    <controls:RepositoryEditorSurface.RightGutterContent>
+                        <Border
+                            x:Name="ChangeOverviewBar"
+                            x:Uid="ChangeOverviewBar"
+                            Width="12"
+                            Margin="4,0"
+                            AutomationProperties.AutomationId="DiffViewerChangeOverview"
+                            Background="{ThemeResource ControlFillColorDefaultBrush}"
+                            CornerRadius="{ThemeResource ControlCornerRadius}"
+                            PointerCanceled="ChangeOverviewBar_PointerReleased"
+                            PointerMoved="ChangeOverviewBar_PointerMoved"
+                            PointerPressed="ChangeOverviewBar_PointerPressed"
+                            PointerReleased="ChangeOverviewBar_PointerReleased"
+                            SizeChanged="ChangeOverviewBar_SizeChanged">
+                            <Canvas
+                                x:Name="ChangeMarkersCanvas"
+                                IsHitTestVisible="False" />
+                        </Border>
+                    </controls:RepositoryEditorSurface.RightGutterContent>
+                </controls:RepositoryEditorSurface>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>
