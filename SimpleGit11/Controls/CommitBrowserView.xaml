@@ -7,6 +7,7 @@
     xmlns:controls="using:SimpleGit11.Controls"
     xmlns:models="using:SimpleGit11.Models"
     xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives" 
+    xmlns:toolkit="using:CommunityToolkit.WinUI"
     xmlns:viewmodels="using:SimpleGit11.ViewModels" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -48,6 +49,25 @@
                     </VisualState.StateTriggers>
                 </VisualState>
             </VisualStateGroup>
+            <VisualStateGroup x:Name="CommitListHeaderLayoutStates">
+                <VisualState x:Name="WideCommitListHeader">
+                    <VisualState.StateTriggers>
+                        <toolkit:ControlSizeTrigger MinWidth="300" TargetElement="{Binding ElementName=CommitListGrid}" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="NarrowCommitListHeader">
+                    <VisualState.StateTriggers>
+                        <toolkit:ControlSizeTrigger MaxWidth="300" TargetElement="{Binding ElementName=CommitListGrid}" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="NarrowCommitListHeaderFilterRow.Height" Value="Auto" />
+                        <Setter Target="HistorySearchTextBox.(Grid.Row)" Value="1" />
+                        <Setter Target="HistorySearchTextBox.(Grid.Column)" Value="0" />
+                        <Setter Target="HistorySearchTextBox.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="HistorySearchColumn.Width" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -78,20 +98,28 @@
 
                 <Grid x:Name="CommitListGrid" RowSpacing="12">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="40" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Grid>
+                    <Grid
+                        MinHeight="40"
+                        ColumnSpacing="12"
+                        RowSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition x:Name="HistorySearchColumn" Width="160" />
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition x:Name="NarrowCommitListHeaderFilterRow" Height="0" />
+                        </Grid.RowDefinitions>
                         <TextBlock
                             MaxLines="1" TextWrapping="WrapWholeWords"
                             VerticalAlignment="Center"
                             Style="{ThemeResource SubtitleTextBlockStyle}"
                             Text="{x:Bind ViewModel.CommitsTitle, Mode=OneWay}" />
                         <TextBox
+                            x:Name="HistorySearchTextBox"
                             Grid.Column="1"
                             x:Uid="HistorySearchTextBox"
                             VerticalAlignment="Center"
@@ -259,51 +287,55 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Grid>
+                    <Grid Padding="0,0,16,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <Grid ColumnSpacing="8">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            MaxLines="1" TextWrapping="WrapWholeWords"
+                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                            Text="{x:Bind ViewModel.ChangedFilesTitle, Mode=OneWay}" />
+                        <Button
+                            Grid.Column="1"
+                            Margin="0,0,4,0"
+                            x:Uid="ShowCommitDetailsBlockAppBarButton"
+                            Command="{x:Bind ViewModel.ShowCommitDetailsBlockCommand, Mode=OneWay}"
+                            Style="{ThemeResource SubtleButtonStyle}"
+                            Width="36"
+                            Height="36"
+                            Padding="5">
+                            <SymbolIcon Symbol="More" />
+                        </Button>
+                        <Grid
+                            Grid.Column="2"
+                            HorizontalAlignment="Right"
+                            ColumnSpacing="4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-
                             <TextBlock
-                                VerticalAlignment="Center"
-                                MaxLines="1" TextWrapping="WrapWholeWords"
-                                Style="{ThemeResource SubtitleTextBlockStyle}"
-                                Text="{x:Bind ViewModel.ChangedFilesTitle, Mode=OneWay}" />
-                            <TextBlock
-                                Grid.Column="1"
+                                x:Name="HistoryAddedLinesHeaderTextBlock"
+                                HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
                                 FontWeight="SemiBold"
                                 Foreground="{ThemeResource DiffAddedStatTextBrush}"
-                                Text="{x:Bind ViewModel.ChangedFilesStat.AddedText, Mode=OneWay, FallbackValue=''}" />
+                                Text="{x:Bind ViewModel.ChangedFilesStat.AddedText, Mode=OneWay, FallbackValue=''}"
+                                TextAlignment="Right" />
                             <TextBlock
-                                Grid.Column="2"
+                                x:Name="HistoryRemovedLinesHeaderTextBlock"
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
                                 FontWeight="SemiBold"
                                 Foreground="{ThemeResource DiffRemovedStatTextBrush}"
-                                Text="{x:Bind ViewModel.ChangedFilesStat.RemovedText, Mode=OneWay, FallbackValue=''}" />
+                                Text="{x:Bind ViewModel.ChangedFilesStat.RemovedText, Mode=OneWay, FallbackValue=''}"
+                                TextAlignment="Right" />
                         </Grid>
-                        <StackPanel
-                            Grid.Column="1"
-                            Orientation="Horizontal"
-                            Spacing="4">
-                            <Button
-                                x:Uid="ShowCommitDetailsBlockAppBarButton"
-                                Command="{x:Bind ViewModel.ShowCommitDetailsBlockCommand, Mode=OneWay}"
-                                Style="{ThemeResource SubtleButtonStyle}"
-                                Width="36"
-                                Height="36"
-                                Padding="5">
-                                <SymbolIcon Symbol="More" />
-                            </Button>
-                        </StackPanel>
                     </Grid>
                     <ListView
                         x:Name="HistoryChangedFilesListView"
@@ -341,6 +373,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="28" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
                                     <Border
@@ -373,6 +406,34 @@
                                             Text="{x:Bind DirectoryPath, Mode=OneTime}"
                                             TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
+
+                                    <Grid
+                                        Grid.Column="2"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        ColumnSpacing="4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            FontWeight="SemiBold"
+                                            Foreground="{ThemeResource DiffAddedStatTextBrush}"
+                                            MinWidth="{Binding ActualWidth, ElementName=HistoryAddedLinesHeaderTextBlock}"
+                                            Text="{x:Bind Stat.AddedText, Mode=OneTime}"
+                                            TextAlignment="Right" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            FontWeight="SemiBold"
+                                            Foreground="{ThemeResource DiffRemovedStatTextBrush}"
+                                            MinWidth="{Binding ActualWidth, ElementName=HistoryRemovedLinesHeaderTextBlock}"
+                                            Text="{x:Bind Stat.RemovedText, Mode=OneTime}"
+                                            TextAlignment="Right" />
+                                    </Grid>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>

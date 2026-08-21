@@ -16,6 +16,8 @@ public interface IGitService
 
     IGitCommitService Commits { get; }
 
+    IGitCommitWorkflowService CommitWorkflow { get; }
+
     IGitConfigService Configuration { get; }
 
     IGitDiffService Diff { get; }

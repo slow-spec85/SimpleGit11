@@ -107,6 +107,7 @@
                 <Button
                     Margin="0,12,0,0"
                     HorizontalAlignment="Center"
+                    AutomationProperties.AutomationId="LoadMoreHistoryButton"
                     Command="{x:Bind ViewModel.LoadMoreHistoryCommand, Mode=OneWay}"
                     Content="{x:Bind ViewModel.LoadMoreCommitsButtonText, Mode=OneWay}"
                     Visibility="{x:Bind ViewModel.HasMoreCommits, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />

@@ -51,7 +51,7 @@ public sealed class GitHistoryService : IGitHistoryService
             $"--skip={skip}",
             $"--max-count={requestedCount}",
             "--date=iso-strict",
-            $"--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%ad%x1f%s%x1f%B%x1f%P%x1e");
+            $"--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%ad%x1f%s%x1f%B%x1f%P%x1e");
 
         Task<IReadOnlySet<string>> synchronizedHashesTask = GetSynchronizedCommitHashesAsync(repository);
         Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> changedFilePathsTask =
@@ -76,7 +76,7 @@ public sealed class GitHistoryService : IGitHistoryService
             "log",
             "-1",
             "--date=iso-strict",
-            $"--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%ad%x1f%s%x1f%B%x1f%P%x1e");
+            $"--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%ad%x1f%s%x1f%B%x1f%P%x1e");
 
         return ParseCommits(output).FirstOrDefault()
             ?? new GitCommit("", "", "", "", null, "", "");
@@ -139,7 +139,7 @@ public sealed class GitHistoryService : IGitHistoryService
         foreach (var record in output.Split(RecordSeparator, StringSplitOptions.RemoveEmptyEntries))
         {
             var fields = record.Trim('\r', '\n').Split(UnitSeparator);
-            if (fields.Length < 8)
+            if (fields.Length < 10)
             {
                 continue;
             }
@@ -150,7 +150,7 @@ public sealed class GitHistoryService : IGitHistoryService
             IReadOnlyList<GitCommitReference>? references = null;
             referencesByCommit?.TryGetValue(fields[0], out references);
 
-            IReadOnlyList<string> parentHashes = fields[7]
+            IReadOnlyList<string> parentHashes = fields[9]
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
             commits.Add(new GitCommit(
@@ -158,13 +158,15 @@ public sealed class GitHistoryService : IGitHistoryService
                 fields[1],
                 fields[2],
                 fields[3],
-                ParseDate(fields[4]),
-                fields[5],
-                fields[6],
+                ParseDate(fields[6]),
+                fields[7],
+                fields[8],
                 synchronizedHashes is not null && synchronizedHashes.Contains(fields[0]),
                 changedFilePaths,
                 references,
-                parentHashes));
+                parentHashes,
+                committerName: fields[4],
+                committerEmail: fields[5]));
         }
 
         return commits;

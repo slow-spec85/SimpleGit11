@@ -124,18 +124,29 @@ public sealed class GitBranchService : IGitBranchService
         return RunGitAsync(repository, "branch", "-D", branch.Name);
     }
 
-    public Task MergeAsync(RepositoryInfo repository, GitBranch branch, bool withoutCommit = false)
+    public Task MergeAsync(
+        RepositoryInfo repository,
+        GitBranch branch,
+        GitBranchMergeOptions options)
     {
-        List<string> args = ["merge", "--no-ff", withoutCommit ? "--no-commit" : branch.Name];
-        if (withoutCommit)
-            args.Add(branch.Name);
+        List<string> arguments = ["merge", options.Squash ? "--squash" : "--no-ff"];
+        if (options.AllowUnrelatedHistories)
+        {
+            arguments.Add("--allow-unrelated-histories");
+        }
 
-        return RunGitAsync(repository, [.. args]);
+        if (options.NoCommit || options.AllowUnrelatedHistories)
+        {
+            arguments.Add("--no-commit");
+        }
+
+        arguments.Add(branch.Name);
+        return RunGitAsync(repository, [.. arguments]);
     }
 
-    public Task SquashMergeAsync(RepositoryInfo repository, GitBranch branch)
+    public Task PrepareSnapshotAsync(RepositoryInfo repository, GitBranch sourceBranch)
     {
-        return RunGitAsync(repository, "merge", "--squash", branch.Name);
+        return RunGitAsync(repository, "read-tree", "--reset", "-u", sourceBranch.Name);
     }
 
     public async Task<GitBranchRebaseResult> RebaseAsync(

@@ -92,6 +92,15 @@
             ViewModel="{x:Bind ViewModel, Mode=OneWay}"
             Visibility="{x:Bind ViewModel.ShowContent, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
             ShowMergedCommitsRequested="CommitBrowser_ShowMergedCommitsRequested">
+            <controls:CommitBrowserView.CommitListFooter>
+                <Button
+                    Margin="0,12,0,0"
+                    HorizontalAlignment="Center"
+                    AutomationProperties.AutomationId="LoadMoreCommitRangeButton"
+                    Command="{x:Bind ViewModel.LoadMoreCommitsCommand, Mode=OneWay}"
+                    Content="{x:Bind ViewModel.LoadMoreCommitsButtonText, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.HasMoreCommits, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+            </controls:CommitBrowserView.CommitListFooter>
             <controls:CommitBrowserView.CommitContextFlyout>
                 <MenuFlyout>
                     <SplitMenuFlyoutItem

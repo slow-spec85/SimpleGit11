@@ -19,12 +19,16 @@ public sealed class GitCommit
         IReadOnlyList<string>? parentHashes = null,
         string rangeSideLabel = "",
         string diffBaseRevision = "",
-        GitCommitRangeSide rangeSide = GitCommitRangeSide.None)
+        GitCommitRangeSide rangeSide = GitCommitRangeSide.None,
+        string? committerName = null,
+        string? committerEmail = null)
     {
         Hash = hash;
         ShortHash = shortHash;
         AuthorName = authorName;
         AuthorEmail = authorEmail;
+        CommitterName = committerName ?? authorName;
+        CommitterEmail = committerEmail ?? authorEmail;
         AuthoredAt = authoredAt;
         Title = title;
         Message = message;
@@ -44,6 +48,10 @@ public sealed class GitCommit
     public string AuthorName { get; }
 
     public string AuthorEmail { get; }
+
+    public string CommitterName { get; }
+
+    public string CommitterEmail { get; }
 
     public DateTimeOffset? AuthoredAt { get; }
 
@@ -83,6 +91,14 @@ public sealed class GitCommit
     public string DisplayAuthor => string.IsNullOrWhiteSpace(AuthorEmail)
         ? AuthorName
         : $"{AuthorName} <{AuthorEmail}>";
+
+    public string DisplayCommitter => string.IsNullOrWhiteSpace(CommitterEmail)
+        ? CommitterName
+        : $"{CommitterName} <{CommitterEmail}>";
+
+    public bool HasDistinctCommitter =>
+        !string.Equals(AuthorName, CommitterName, StringComparison.Ordinal) ||
+        !string.Equals(AuthorEmail, CommitterEmail, StringComparison.Ordinal);
 
     public string DisplayDate => AuthoredAt?.ToString("g") ?? "";
 }

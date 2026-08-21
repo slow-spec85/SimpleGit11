@@ -15,10 +15,11 @@ namespace SimpleGit11.ViewModels;
 public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
 {
     private readonly IDialogService _dialogService;
-    private System.Func<RepositoryInfo, Task<IReadOnlyList<GitCommit>>>? _loadCommitsAsync;
+    private System.Func<RepositoryInfo, int, int, Task<GitCommitPage>>? _loadCommitPageAsync;
     private CommitRangeCherryPickScope _cherryPickScope;
     private bool _hasCleanWorkingTree;
     private bool _hasOperationInProgress;
+    private int _nextCommitOffset;
 
     public CommitRangeViewModel(
         MainWindowViewModel mainWindowViewModel,
@@ -65,15 +66,22 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
     [NotifyPropertyChangedFor(nameof(ShowContent))]
     public partial bool IsLoading { get; private set; }
 
+    [ObservableProperty]
+    public partial bool IsLoadingMore { get; private set; }
+
     private void PublishCommitRangeOperationState()
     {
-        PublishOperationState(IsLoading, ProgressMessage);
+        PublishOperationState(IsLoading || IsLoadingMore, ProgressMessage);
     }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowEmptyState))]
     [NotifyPropertyChangedFor(nameof(ShowContent))]
     public partial bool HasNoCommits { get; private set; }
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(LoadMoreCommitsCommand))]
+    public partial bool HasMoreCommits { get; private set; }
 
     public bool ShowEmptyState => !IsLoading && HasNoCommits;
 
@@ -99,6 +107,15 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
     {
         RaiseCommitDetailsCommandCanExecuteChanged();
         UpdateCherryPickCommandStates();
+        LoadMoreCommitsCommand.NotifyCanExecuteChanged();
+        PublishCommitRangeOperationState();
+    }
+
+    partial void OnIsLoadingMoreChanged(bool value)
+    {
+        RaiseCommitDetailsCommandCanExecuteChanged();
+        UpdateCherryPickCommandStates();
+        LoadMoreCommitsCommand.NotifyCanExecuteChanged();
         PublishCommitRangeOperationState();
     }
 
@@ -109,6 +126,7 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
             && repository is not null
             && !repository.IsDetachedHead
             && !IsLoading
+            && !IsLoadingMore
             && _hasCleanWorkingTree
             && !_hasOperationInProgress
             && SelectedCommits.Count > 0
@@ -135,14 +153,36 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
         _asyncCommandExecutor.ExecuteAsync(() => CherryPickSelectedCoreAsync(
             new GitCherryPickOptions(NoCommit: true)));
 
+    [RelayCommand(CanExecute = nameof(CanLoadMoreCommits), FlowExceptionsToTaskScheduler = true)]
+    private Task OnLoadMoreCommitsAsync() =>
+        _asyncCommandExecutor.ExecuteAsync(LoadMoreCommitsAsync);
+
+    private bool CanLoadMoreCommits()
+    {
+        return HasMoreCommits
+            && _loadCommitPageAsync is not null
+            && !IsLoading
+            && !IsLoadingMore;
+    }
+
     public async Task InitializeAsync(CommitRangeNavigationArgs arguments)
     {
         IsRevisionDiffMode = false;
         SetCherryPickScope(arguments.CherryPickScope);
         ConfigureHeader(arguments);
-        await LoadCommitsAsync(repository => arguments.Direction == CommitRangeDirection.Incoming
-            ? _gitService.Remotes.GetIncomingCommitsAsync(repository, arguments.Branch)
-            : _gitService.Remotes.GetOutgoingCommitsAsync(repository, arguments.Remote, arguments.Branch));
+        await LoadCommitsAsync((repository, skip, count) =>
+            arguments.Direction == CommitRangeDirection.Incoming
+                ? _gitService.Remotes.GetIncomingCommitsPageAsync(
+                    repository,
+                    arguments.Branch,
+                    skip,
+                    count)
+                : _gitService.Remotes.GetOutgoingCommitsPageAsync(
+                    repository,
+                    arguments.Remote,
+                    arguments.Branch,
+                    skip,
+                    count));
     }
 
     public async Task InitializeAsync(MergeCommitRangeNavigationArgs arguments)
@@ -154,9 +194,11 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
             arguments.MergeCommitShortHash);
         Description = _localizationService.GetString("MergedCommitRangeDescription");
         EmptyMessage = _localizationService.GetString("NoMergedCommits");
-        await LoadCommitsAsync(repository => _gitService.Remotes.GetCommitsAsync(
+        await LoadCommitsAsync((repository, skip, count) => _gitService.Remotes.GetCommitsPageAsync(
             repository,
-            $"{arguments.FirstParentHash}..{arguments.SecondParentHash}"));
+            $"{arguments.FirstParentHash}..{arguments.SecondParentHash}",
+            skip,
+            count));
     }
 
     public async Task InitializeAsync(RevisionRangeNavigationArgs arguments)
@@ -166,14 +208,20 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
         Title = arguments.Title;
         Description = arguments.Description;
         EmptyMessage = arguments.EmptyMessage;
-        await LoadCommitsAsync(repository => arguments.IsTwoSidedComparison
-            ? _gitService.Remotes.GetComparisonCommitsAsync(
+        await LoadCommitsAsync((repository, skip, count) => arguments.IsTwoSidedComparison
+            ? _gitService.Remotes.GetComparisonCommitsPageAsync(
                 repository,
                 arguments.LeftRevision,
                 arguments.RightRevision,
                 arguments.LeftLabel,
-                arguments.RightLabel)
-            : _gitService.Remotes.GetCommitsAsync(repository, arguments.RevisionRange));
+                arguments.RightLabel,
+                skip,
+                count)
+            : _gitService.Remotes.GetCommitsPageAsync(
+                repository,
+                arguments.RevisionRange,
+                skip,
+                count));
     }
 
     public async Task InitializeAsync(RevisionDiffNavigationArgs arguments)
@@ -183,18 +231,19 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
         Title = arguments.Title;
         Description = arguments.Description;
         EmptyMessage = _localizationService.GetString("NoBranchFileChanges");
-        await LoadCommitsAsync(_ => Task.FromResult<IReadOnlyList<GitCommit>>(
-        [
-            new GitCommit(
-                arguments.NewRevision,
-                arguments.NewRevision,
-                "",
-                "",
-                null,
-                arguments.Title,
-                arguments.Title,
-                diffBaseRevision: arguments.OldRevision)
-        ]));
+        await LoadCommitsAsync((_, _, _) => Task.FromResult(new GitCommitPage(
+            [
+                new GitCommit(
+                    arguments.NewRevision,
+                    arguments.NewRevision,
+                    "",
+                    "",
+                    null,
+                    arguments.Title,
+                    arguments.Title,
+                    diffBaseRevision: arguments.OldRevision)
+            ],
+            false)));
     }
 
     public async Task InitializeAsync(CommitDiffNavigationArgs arguments)
@@ -204,10 +253,11 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
         Title = arguments.Title;
         Description = arguments.Description;
         EmptyMessage = _localizationService.GetString("NoBranchFileChanges");
-        await LoadCommitsAsync(_ => Task.FromResult<IReadOnlyList<GitCommit>>(
-        [
-            arguments.Commit ?? throw new InvalidDataException("CommitDiffNavigationArgs.Commit cannot be null")
-        ]));
+        await LoadCommitsAsync((_, _, _) => Task.FromResult(new GitCommitPage(
+            [
+                arguments.Commit ?? throw new InvalidDataException("CommitDiffNavigationArgs.Commit cannot be null")
+            ],
+            false)));
     }
 
     public void ShowInvalidNavigationError()
@@ -215,11 +265,14 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
         Title = _localizationService.GetString("CommitRangePageTitle");
         Description = "";
         EmptyMessage = _localizationService.GetString("CommitRangeNavigationError");
+        _loadCommitPageAsync = null;
+        _nextCommitOffset = 0;
+        HasMoreCommits = false;
         HasNoCommits = true;
         ShowError(EmptyMessage);
     }
 
-    protected override bool IsCommitDetailsOperationRunning => IsLoading;
+    protected override bool IsCommitDetailsOperationRunning => IsLoading || IsLoadingMore;
 
     protected override void ShowCommitDetailsError(string message, string? details = null)
     {
@@ -260,13 +313,15 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
     }
 
     private async Task LoadCommitsAsync(
-        System.Func<RepositoryInfo, Task<IReadOnlyList<GitCommit>>> loadCommitsAsync)
+        System.Func<RepositoryInfo, int, int, Task<GitCommitPage>> loadCommitPageAsync)
     {
-        _loadCommitsAsync = loadCommitsAsync;
+        _loadCommitPageAsync = loadCommitPageAsync;
+        _nextCommitOffset = 0;
         ClearNotification();
         SelectedCommit = null;
         ClearCommits();
         HasNoCommits = false;
+        HasMoreCommits = false;
         ProgressMessage = _localizationService.GetString("LoadingCommitRange");
         IsLoading = true;
 
@@ -281,13 +336,13 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
 
         try
         {
-            IReadOnlyList<GitCommit> loadedCommits = [];
+            GitCommitPage loadedPage = new([], false);
             await _gitService.ExecuteAsync(async () =>
             {
-                loadedCommits = await loadCommitsAsync(repository);
+                loadedPage = await loadCommitPageAsync(repository, 0, CommitPageSize);
             });
 
-            ReplaceCommits(loadedCommits);
+            ReplaceCommitPage(loadedPage);
             await RefreshCherryPickAvailabilityAsync(repository);
             HasNoCommits = !HasUnfilteredCommits;
             OnPropertyChanged(nameof(ShowContent));
@@ -313,6 +368,62 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
             IsLoading = false;
             OnPropertyChanged(nameof(ShowContent));
         }
+    }
+
+    private async Task LoadMoreCommitsAsync()
+    {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        if (repository is null || _loadCommitPageAsync is null || !HasMoreCommits)
+        {
+            return;
+        }
+
+        try
+        {
+            ClearNotification();
+            ProgressMessage = _localizationService.GetString("LoadingMoreHistoryProgress");
+            IsLoadingMore = true;
+            GitCommitPage loadedPage = new([], false);
+            await _gitService.ExecuteAsync(async () =>
+            {
+                loadedPage = await _loadCommitPageAsync(
+                    repository,
+                    _nextCommitOffset,
+                    CommitPageSize);
+            });
+
+            _nextCommitOffset += loadedPage.Commits.Count;
+            AppendCommits(loadedPage.Commits);
+            HasMoreCommits = loadedPage.HasMore;
+        }
+        catch (FileNotFoundException)
+        {
+            ShowError(_localizationService.GetString("GitExecutableNotFound"));
+        }
+        catch (DirectoryNotFoundException)
+        {
+            ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
+        }
+        catch (GitRemoteOperationException exception)
+        {
+            ShowError(_localizationService.GetString("GitRemoteCommandFailed"), exception.Message);
+        }
+        catch (GitCommandException exception)
+        {
+            ShowError(_localizationService.GetString("GitRemoteCommandFailed"), exception.Message);
+        }
+        finally
+        {
+            ProgressMessage = "";
+            IsLoadingMore = false;
+        }
+    }
+
+    private void ReplaceCommitPage(GitCommitPage page)
+    {
+        ReplaceCommits(page.Commits);
+        _nextCommitOffset = page.Commits.Count;
+        HasMoreCommits = page.HasMore;
     }
 
     private void ShowError(string message)
@@ -429,10 +540,15 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
                     return;
                 }
 
-                if (_loadCommitsAsync is not null)
+                if (_loadCommitPageAsync is not null)
                 {
-                    IReadOnlyList<GitCommit> loadedCommits = await _loadCommitsAsync(repository);
-                    ReplaceCommits(loadedCommits);
+                    GitCommitPage loadedPage = await _loadCommitPageAsync(
+                        repository,
+                        0,
+                        CommitPageSize);
+                    ReplaceCommitPage(loadedPage);
+                    HasNoCommits = !HasUnfilteredCommits;
+                    OnPropertyChanged(nameof(ShowContent));
                 }
 
                 ShowNotification(

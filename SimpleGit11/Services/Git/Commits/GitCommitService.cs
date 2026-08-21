@@ -19,26 +19,83 @@ public sealed class GitCommitService : IGitCommitService
     {
         _commandRunner = commandRunner ?? new GitCommandRunner();
     }
-    public Task<string> CommitAsync(RepositoryInfo repository, string message)
+
+    public Task<string> CommitAsync(
+        RepositoryInfo repository,
+        string message,
+        GitCommitOptions options)
     {
-        List<string> args = ["commit"];
-        AddMessageArguments(args, message);
-        return RunGitAsync(repository, [.. args]);
+        ArgumentNullException.ThrowIfNull(options);
+        List<string> arguments = ["commit"];
+        AddAllowEmptyArgument(arguments, options);
+        AddMessageArguments(arguments, message);
+        return RunGitAsync(repository, [.. arguments]);
     }
 
-    public Task<string> AmendAsync(RepositoryInfo repository, string? message)
+    public Task<string> AmendAsync(
+        RepositoryInfo repository,
+        string? message,
+        GitCommitOptions options)
     {
-        List<string> args = ["commit", "--amend"];
+        ArgumentNullException.ThrowIfNull(options);
+        List<string> arguments = ["commit", "--amend"];
+        AddAllowEmptyArgument(arguments, options);
         if (!string.IsNullOrWhiteSpace(message))
         {
-            AddMessageArguments(args, message);
+            AddMessageArguments(arguments, message);
         }
         else
         {
-            args.Add("--no-edit");
+            arguments.Add("--no-edit");
         }
 
-        return RunGitAsync(repository, [.. args]);
+        return RunGitAsync(repository, [.. arguments]);
+    }
+
+    public async Task<bool> WouldCreateEmptyCommitAsync(
+        RepositoryInfo repository,
+        bool amend)
+    {
+        string? comparisonTree = null;
+        if (amend)
+        {
+            string revisionLine = await RunGitAsync(
+                repository,
+                "rev-list",
+                "--parents",
+                "-n",
+                "1",
+                "HEAD");
+            string[] revisions = revisionLine.Split(
+                [' ', '\t', '\r', '\n'],
+                StringSplitOptions.RemoveEmptyEntries);
+            if (revisions.Length > 2)
+            {
+                return false;
+            }
+
+            comparisonTree = revisions.Length == 2
+                ? revisions[1]
+                : await CreateEmptyTreeAsync(repository);
+        }
+
+        List<string> arguments = ["diff", "--cached", "--quiet"];
+        if (comparisonTree is not null)
+        {
+            arguments.Add(comparisonTree);
+        }
+
+        arguments.Add("--");
+        GitCommandResult result = await _commandRunner.RunAsync(
+            repository.Path,
+            arguments,
+            new GitCommandOptions(ThrowOnError: false));
+        return result.ExitCode switch
+        {
+            0 => true,
+            1 => false,
+            _ => throw CreateCommandException(result)
+        };
     }
 
     public async Task CherryPickAsync(
@@ -118,6 +175,16 @@ public sealed class GitCommitService : IGitCommitService
         }
     }
 
+    private static void AddAllowEmptyArgument(
+        List<string> arguments,
+        GitCommitOptions options)
+    {
+        if (options.AllowEmpty)
+        {
+            arguments.Add("--allow-empty");
+        }
+    }
+
     private static (string Title, string? Body) SplitMessage(string message)
     {
         string normalizedMessage = message.Replace("\r\n", "\n").Replace('\r', '\n').Trim();
@@ -138,9 +205,26 @@ public sealed class GitCommitService : IGitCommitService
         return (normalizedMessage, null);
     }
 
-    private async Task<string> RunGitAsync(RepositoryInfo repository, string[] arguments)
+    private async Task<string> RunGitAsync(RepositoryInfo repository, params string[] arguments)
     {
         GitCommandResult result = await _commandRunner.RunAsync(repository.Path, arguments);
         return result.StandardOutput.Trim();
+    }
+
+    private async Task<string> CreateEmptyTreeAsync(RepositoryInfo repository)
+    {
+        GitCommandResult result = await _commandRunner.RunAsync(
+            repository.Path,
+            ["mktree"],
+            new GitCommandOptions(StandardInput: ""));
+        return result.StandardOutput.Trim();
+    }
+
+    private static GitCommandException CreateCommandException(GitCommandResult result)
+    {
+        string message = string.IsNullOrWhiteSpace(result.StandardError)
+            ? result.StandardOutput.Trim()
+            : result.StandardError.Trim();
+        return new GitCommandException(message, result.ExitCode);
     }
 }

@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using SimpleGit11.Messages;
 using SimpleGit11.Services;
 using TextControlBoxNS;
 using TextControlBoxNS.Models;
@@ -20,6 +23,8 @@ public sealed partial class RepositoryEditorSurface : UserControl
     public const int MaximumZoomFactor = 400;
 
     private readonly ISettingsService _settingsService;
+    private readonly ILocalizationService _localizationService;
+    private readonly IMessenger _messenger;
     private bool _isObservingSettings;
 
     public static readonly DependencyProperty IsReadOnlyProperty = DependencyProperty.Register(
@@ -80,8 +85,11 @@ public sealed partial class RepositoryEditorSurface : UserControl
     {
         InitializeComponent();
         _settingsService = App.GetService<ISettingsService>();
+        _localizationService = App.GetService<ILocalizationService>();
+        _messenger = App.GetService<IMessenger>();
         Editor.DocumentChanged += Editor_DocumentChanged;
         Editor.ZoomChanged += Editor_ZoomChanged;
+        Editor.SyntaxHighlightingRuleQuarantined += Editor_SyntaxHighlightingRuleQuarantined;
         Loaded += RepositoryEditorSurface_Loaded;
         Unloaded += RepositoryEditorSurface_Unloaded;
         ActualThemeChanged += RepositoryEditorSurface_ActualThemeChanged;
@@ -199,6 +207,11 @@ public sealed partial class RepositoryEditorSurface : UserControl
         Editor.SelectSyntaxHighlightingById(languageId);
     }
 
+    public void SetSyntaxHighlightingStateBoundaries(IEnumerable<int> lineIndices)
+    {
+        Editor.SetSyntaxHighlightingStateBoundaries(lineIndices);
+    }
+
     public void SetLineDecorations(string groupKey, IEnumerable<LineDecoration> decorations)
     {
         Editor.SetLineDecorations(groupKey, decorations);
@@ -310,6 +323,37 @@ public sealed partial class RepositoryEditorSurface : UserControl
         {
             ZoomFactor = zoomFactor;
         }
+    }
+
+    private void Editor_SyntaxHighlightingRuleQuarantined(
+        object? sender,
+        SyntaxHighlightingRuleQuarantinedEventArgs args)
+    {
+        string language = string.IsNullOrWhiteSpace(args.Language.Name)
+            ? _localizationService.GetString("SyntaxHighlightingUnknownLanguage")
+            : args.Language.Name;
+        string ruleType = args.RuleType.FullName ?? args.RuleType.Name;
+        string pattern = string.IsNullOrEmpty(args.Pattern)
+            ? _localizationService.GetString("SyntaxHighlightingPatternUnavailable")
+            : args.Pattern;
+        string exceptionType = args.Exception.GetType().FullName
+            ?? args.Exception.GetType().Name;
+        string details = string.Format(
+            CultureInfo.CurrentCulture,
+            _localizationService.GetString("SyntaxHighlightingRuleQuarantinedDetails"),
+            language,
+            ruleType,
+            pattern,
+            args.MatchTimeout.TotalMilliseconds,
+            args.InputLength,
+            exceptionType,
+            args.Exception.Message);
+
+        _messenger.Send(new AppNotificationMessage(
+            this,
+            AppNotificationSeverity.Warning,
+            _localizationService.GetString("SyntaxHighlightingRuleQuarantinedTitle"),
+            details));
     }
 
     private void ResetZoomKeyboardAccelerator_Invoked(

@@ -52,8 +52,6 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <controls:RepositoryEditorZoomControl
                     VerticalAlignment="Center"
@@ -73,19 +71,7 @@
                     x:Name="DiffEditorModifiedStatusTextBlock"    
                     VerticalAlignment="Center"
                     Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                <TextBlock
-                    Grid.Column="3"
-                    VerticalAlignment="Center"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource DiffAddedStatTextBrush}"
-                    Text="{Binding SelectedDiffStat.AddedText}" />
-                <TextBlock
-                    Grid.Column="4"
-                    VerticalAlignment="Center"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource DiffRemovedStatTextBrush}"
-                    Text="{Binding SelectedDiffStat.RemovedText}" />
-                </Grid>
+            </Grid>
 
             <Grid
                 Grid.Column="1"

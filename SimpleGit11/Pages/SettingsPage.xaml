@@ -178,8 +178,6 @@
                             <FontIcon Glyph="&#xE713;" />
                         </controls:SettingsExpander.HeaderIcon>
                         <controls:SettingsExpander.Header>
-                            <!--TextBlock x:Uid="GlobalRepositorySettingsTitleTextBlock" /-->
-
                             <StackPanel>
                                 <TextBlock x:Uid="GlobalRepositorySettingsTitleTextBlock" />
                                 <TextBlock x:Uid="GlobalRepositorySettingsTitleDescriptionTextBlock"

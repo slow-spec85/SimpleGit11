@@ -15,6 +15,7 @@ internal sealed class GitService : IGitService
         IGitBranchService branchService,
         IGitChangeRecoveryService changeRecoveryService,
         IGitCommitService commitService,
+        IGitCommitWorkflowService commitWorkflowService,
         IGitConfigService configService,
         IGitDiffService diffService,
         IGitHistoryService historyService,
@@ -36,6 +37,7 @@ internal sealed class GitService : IGitService
         Branches = branchService;
         ChangeRecovery = changeRecoveryService;
         Commits = commitService;
+        CommitWorkflow = commitWorkflowService;
         Configuration = configService;
         Diff = diffService;
         History = historyService;
@@ -61,6 +63,8 @@ internal sealed class GitService : IGitService
     public IGitChangeRecoveryService ChangeRecovery { get; }
 
     public IGitCommitService Commits { get; }
+
+    public IGitCommitWorkflowService CommitWorkflow { get; }
 
     public IGitConfigService Configuration { get; }
 

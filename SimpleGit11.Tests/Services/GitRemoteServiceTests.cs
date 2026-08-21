@@ -145,7 +145,7 @@ public sealed class GitRemoteServiceTests
     }
 
     [TestMethod]
-    public async Task GetComparisonCommitsAsync_SetsStructuredRangeSide()
+    public async Task GetComparisonCommitsPageAsync_SetsStructuredRangeSide()
     {
         await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
         repository.WriteFile("base.txt", "base");
@@ -158,16 +158,106 @@ public sealed class GitRemoteServiceTests
         await repository.CommitAllAsync("right");
         GitRemoteService service = new(new GitTagService(), new GitConfigService());
 
-        IReadOnlyList<GitCommit> commits = await service.GetComparisonCommitsAsync(
+        GitCommitPage page = await service.GetComparisonCommitsPageAsync(
             repository.Repository,
             "main",
             "right",
             "main",
-            "right");
+            "right",
+            0,
+            300);
 
-        Assert.HasCount(2, commits);
-        Assert.AreEqual(GitCommitRangeSide.Left, commits.Single(commit => commit.Title == "left").RangeSide);
-        Assert.AreEqual(GitCommitRangeSide.Right, commits.Single(commit => commit.Title == "right").RangeSide);
+        Assert.HasCount(2, page.Commits);
+        Assert.IsFalse(page.HasMore);
+        Assert.AreEqual(GitCommitRangeSide.Left, page.Commits.Single(commit => commit.Title == "left").RangeSide);
+        Assert.AreEqual(GitCommitRangeSide.Right, page.Commits.Single(commit => commit.Title == "right").RangeSide);
+    }
+
+    [TestMethod]
+    public async Task GetCommitsPageAsync_ReturnsConsecutiveRangePages()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        for (int index = 1; index <= 5; index++)
+        {
+            repository.WriteFile($"range-{index}.txt", index.ToString());
+            await repository.CommitAllAsync($"range commit {index}");
+        }
+
+        GitRemoteService service = new(new GitTagService(), new GitConfigService());
+
+        GitCommitPage firstPage = await service.GetCommitsPageAsync(
+            repository.Repository,
+            "HEAD",
+            0,
+            2);
+        GitCommitPage secondPage = await service.GetCommitsPageAsync(
+            repository.Repository,
+            "HEAD",
+            2,
+            2);
+        GitCommitPage lastPage = await service.GetCommitsPageAsync(
+            repository.Repository,
+            "HEAD",
+            4,
+            2);
+
+        Assert.HasCount(2, firstPage.Commits);
+        Assert.AreEqual("range commit 5", firstPage.Commits[0].Title);
+        Assert.IsTrue(firstPage.HasMore);
+        Assert.HasCount(2, secondPage.Commits);
+        Assert.AreEqual("range commit 3", secondPage.Commits[0].Title);
+        Assert.IsTrue(secondPage.HasMore);
+        Assert.HasCount(1, lastPage.Commits);
+        Assert.AreEqual("range commit 1", lastPage.Commits[0].Title);
+        Assert.IsFalse(lastPage.HasMore);
+    }
+
+    [TestMethod]
+    public async Task GetComparisonCommitsPageAsync_PreservesRangeSidesAcrossPages()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile("base.txt", "base");
+        await repository.CommitAllAsync("base");
+        await repository.RunGitAsync("branch", "right");
+        for (int index = 1; index <= 2; index++)
+        {
+            repository.WriteFile($"left-{index}.txt", index.ToString());
+            await repository.CommitAllAsync($"left {index}");
+        }
+
+        await repository.RunGitAsync("switch", "right");
+        for (int index = 1; index <= 2; index++)
+        {
+            repository.WriteFile($"right-{index}.txt", index.ToString());
+            await repository.CommitAllAsync($"right {index}");
+        }
+
+        GitRemoteService service = new(new GitTagService(), new GitConfigService());
+
+        GitCommitPage firstPage = await service.GetComparisonCommitsPageAsync(
+            repository.Repository,
+            "main",
+            "right",
+            "main",
+            "right",
+            0,
+            2);
+        GitCommitPage lastPage = await service.GetComparisonCommitsPageAsync(
+            repository.Repository,
+            "main",
+            "right",
+            "main",
+            "right",
+            2,
+            2);
+        IReadOnlyList<GitCommit> commits = firstPage.Commits.Concat(lastPage.Commits).ToList();
+
+        Assert.IsTrue(firstPage.HasMore);
+        Assert.IsFalse(lastPage.HasMore);
+        Assert.HasCount(4, commits);
+        Assert.AreEqual(4, commits.Select(commit => commit.Hash).Distinct().Count());
+        Assert.AreEqual(2, commits.Count(commit => commit.RangeSide == GitCommitRangeSide.Left));
+        Assert.AreEqual(2, commits.Count(commit => commit.RangeSide == GitCommitRangeSide.Right));
     }
 
     [TestMethod]

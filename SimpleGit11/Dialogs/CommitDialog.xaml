@@ -60,7 +60,13 @@
         </Flyout>
     </ContentDialog.Resources>
 
-    <StackPanel>
+    <StackPanel Spacing="8">
+        <InfoBar
+                x:Uid="NoLocalCommitsInfoBar"
+                IsClosable="False"
+                IsOpen="{x:Bind ViewModel.NoLocalCommits, Mode=OneWay}"
+                Severity="Informational" />
+        
         <CheckBox
             x:Uid="AmendMessageCheckBox"
             IsChecked="{x:Bind ViewModel.EditMessage, Mode=TwoWay}"

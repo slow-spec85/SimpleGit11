@@ -277,10 +277,11 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <Grid ColumnSpacing="8" >
+                <Grid
+                    Padding="0,0,12,0"
+                    ColumnSpacing="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
@@ -289,18 +290,32 @@
                         MaxLines="1" TextWrapping="WrapWholeWords"
                         Style="{ThemeResource SubtitleTextBlockStyle}"
                         Text="{x:Bind ViewModel.ChangedFilesTitle, Mode=OneWay}" />
-                    <TextBlock
+                    <Grid
                         Grid.Column="1"
-                        VerticalAlignment="Center"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource DiffAddedStatTextBrush}"
-                        Text="{x:Bind ViewModel.ChangedFilesStat.AddedText, Mode=OneWay, FallbackValue=''}" />
-                    <TextBlock
-                        Grid.Column="2"
-                        VerticalAlignment="Center"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource DiffRemovedStatTextBrush}"
-                        Text="{x:Bind ViewModel.ChangedFilesStat.RemovedText, Mode=OneWay, FallbackValue=''}" />
+                        HorizontalAlignment="Right"
+                        ColumnSpacing="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            x:Name="AddedLinesHeaderTextBlock"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource DiffAddedStatTextBrush}"
+                            Text="{x:Bind ViewModel.ChangedFilesStat.AddedText, Mode=OneWay, FallbackValue=''}"
+                            TextAlignment="Right" />
+                        <TextBlock
+                            x:Name="RemovedLinesHeaderTextBlock"
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource DiffRemovedStatTextBrush}"
+                            Text="{x:Bind ViewModel.ChangedFilesStat.RemovedText, Mode=OneWay, FallbackValue=''}"
+                            TextAlignment="Right" />
+                    </Grid>
                 </Grid>
 
                 <ListView
@@ -354,6 +369,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="28" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
                                 <Border
@@ -420,6 +436,34 @@
                                             TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
                                 </StackPanel>
+
+                                <Grid
+                                    Grid.Column="2"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    ColumnSpacing="4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource DiffAddedStatTextBrush}"
+                                        MinWidth="{Binding ActualWidth, ElementName=AddedLinesHeaderTextBlock}"
+                                        Text="{x:Bind Stat.AddedText, Mode=OneTime}"
+                                        TextAlignment="Right" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource DiffRemovedStatTextBrush}"
+                                        MinWidth="{Binding ActualWidth, ElementName=RemovedLinesHeaderTextBlock}"
+                                        Text="{x:Bind Stat.RemovedText, Mode=OneTime}"
+                                        TextAlignment="Right" />
+                                </Grid>
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>

@@ -11,12 +11,14 @@ internal sealed class DiffEditorProjection
         IReadOnlyList<DiffLine> sourceLines,
         IReadOnlyList<string> lines,
         IReadOnlyList<DiffEditorLineBlock> lineBlocks,
-        IReadOnlyList<DiffEditorTextRange> textRanges)
+        IReadOnlyList<DiffEditorTextRange> textRanges,
+        IReadOnlyList<int> syntaxStateBoundaryLines)
     {
         SourceLines = sourceLines;
         Lines = lines;
         LineBlocks = lineBlocks;
         TextRanges = textRanges;
+        SyntaxStateBoundaryLines = syntaxStateBoundaryLines;
     }
 
     public IReadOnlyList<DiffLine> SourceLines { get; }
@@ -27,11 +29,14 @@ internal sealed class DiffEditorProjection
 
     public IReadOnlyList<DiffEditorTextRange> TextRanges { get; }
 
+    public IReadOnlyList<int> SyntaxStateBoundaryLines { get; }
+
     public static DiffEditorProjection Create(IEnumerable<DiffLine>? source)
     {
         IReadOnlyList<DiffLine> sourceLines = source?.ToArray() ?? [];
         List<DiffEditorLineBlock> lineBlocks = [];
         List<DiffEditorTextRange> textRanges = [];
+        List<int> syntaxStateBoundaryLines = [];
         int blockStart = -1;
         DiffLineKind blockKind = DiffLineKind.Context;
 
@@ -60,6 +65,11 @@ internal sealed class DiffEditorProjection
             }
 
             DiffLine line = sourceLines[index];
+            if (line.Kind is DiffLineKind.Header or DiffLineKind.Hunk or DiffLineKind.ConflictMarker)
+            {
+                syntaxStateBoundaryLines.Add(index);
+            }
+
             foreach (DiffLineSegment segment in line.InlineSegments)
             {
                 int start = Math.Clamp(segment.StartIndex, 0, line.Text.Length);
@@ -75,7 +85,8 @@ internal sealed class DiffEditorProjection
             sourceLines,
             sourceLines.Select(line => line.Text).ToArray(),
             lineBlocks,
-            textRanges);
+            textRanges,
+            syntaxStateBoundaryLines);
     }
 
     private static bool HasBackground(DiffLineKind kind)

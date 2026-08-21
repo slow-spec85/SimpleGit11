@@ -99,57 +99,71 @@ public sealed class GitRemoteService : IGitRemoteService
             pushTarget);
     }
 
-    public async Task<IReadOnlyList<GitCommit>> GetCommitsAsync(
+    public async Task<GitCommitPage> GetCommitsPageAsync(
         RepositoryInfo repository,
-        string revisionRange)
+        string revisionRange,
+        int skip,
+        int count)
     {
         if (string.IsNullOrWhiteSpace(revisionRange) || revisionRange.StartsWith('-'))
         {
             throw new ArgumentException("A valid Git revision range is required.", nameof(revisionRange));
         }
 
-        return await GetCommitsCoreAsync(repository, [revisionRange]);
+        return await GetCommitsCoreAsync(repository, [revisionRange], skip, count);
     }
 
-    public async Task<IReadOnlyList<GitCommit>> GetComparisonCommitsAsync(
+    public async Task<GitCommitPage> GetComparisonCommitsPageAsync(
         RepositoryInfo repository,
         string leftRevision,
         string rightRevision,
         string leftLabel,
-        string rightLabel)
+        string rightLabel,
+        int skip,
+        int count)
     {
         ValidateRevision(leftRevision, nameof(leftRevision));
         ValidateRevision(rightRevision, nameof(rightRevision));
+        ValidatePageArguments(skip, count);
 
+        int requestedCount = count + 1;
         string revisionRange = $"{leftRevision}...{rightRevision}";
         Task<GitRemoteOperationResult> outputTask = RunGitAsync(
             repository,
             false,
             "log",
             "--left-right",
-            "--max-count=300",
+            $"--skip={skip}",
+            $"--max-count={requestedCount}",
             "--date=iso-strict",
-            "--pretty=format:%m%x1f%H%x1f%h%x1f%an%x1f%ae%x1f%ad%x1f%s%x1f%B%x1f%P%x1e",
+            "--pretty=format:%m%x1f%H%x1f%h%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%ad%x1f%s%x1f%B%x1f%P%x1e",
             revisionRange);
         Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> changedFilePathsTask =
-            GetChangedFilePathsByCommitAsync(repository, [revisionRange]);
+            GetChangedFilePathsByCommitAsync(repository, [revisionRange], skip, requestedCount);
         await Task.WhenAll(outputTask, changedFilePathsTask);
-        return ParseComparisonCommits(
+        IReadOnlyList<GitCommit> commits = ParseComparisonCommits(
             (await outputTask).Output,
             leftLabel,
             rightLabel,
             await changedFilePathsTask);
+        return CreateCommitPage(commits, count);
     }
 
-    public async Task<IReadOnlyList<GitCommit>> GetOutgoingCommitsAsync(
+    public async Task<GitCommitPage> GetOutgoingCommitsPageAsync(
         RepositoryInfo repository,
         GitRemote remote,
-        BranchSynchronizationItem branch)
+        BranchSynchronizationItem branch,
+        int skip,
+        int count)
     {
         ValidateReferenceName(branch.Name, nameof(branch));
         if (branch.IsPublishedToPushRemote)
         {
-            return await GetCommitsAsync(repository, branch.OutgoingRevisionRange);
+            return await GetCommitsPageAsync(
+                repository,
+                branch.OutgoingRevisionRange,
+                skip,
+                count);
         }
 
         string remoteName = string.IsNullOrWhiteSpace(branch.ConfiguredPushRemoteName)
@@ -158,19 +172,28 @@ public sealed class GitRemoteService : IGitRemoteService
         ValidateReferenceName(remoteName, nameof(remote));
         return await GetCommitsCoreAsync(
             repository,
-            [$"refs/heads/{branch.Name}", "--not", $"--remotes={remoteName}"]);
+            [$"refs/heads/{branch.Name}", "--not", $"--remotes={remoteName}"],
+            skip,
+            count);
     }
 
-    public async Task<IReadOnlyList<GitCommit>> GetIncomingCommitsAsync(
+    public async Task<GitCommitPage> GetIncomingCommitsPageAsync(
         RepositoryInfo repository,
-        BranchSynchronizationItem branch)
+        BranchSynchronizationItem branch,
+        int skip,
+        int count)
     {
+        ValidatePageArguments(skip, count);
         if (!branch.IsPublishedToRemote)
         {
-            return [];
+            return new GitCommitPage([], false);
         }
 
-        return await GetCommitsAsync(repository, branch.IncomingRevisionRange);
+        return await GetCommitsPageAsync(
+            repository,
+            branch.IncomingRevisionRange,
+            skip,
+            count);
     }
 
     public async Task<SynchronizationSnapshot> GetSynchronizationSnapshotAsync(
@@ -981,16 +1004,21 @@ public sealed class GitRemoteService : IGitRemoteService
         return (aheadCount, behindCount);
     }
 
-    private async Task<IReadOnlyList<GitCommit>> GetCommitsCoreAsync(
+    private async Task<GitCommitPage> GetCommitsCoreAsync(
         RepositoryInfo repository,
-        IReadOnlyList<string> revisionArguments)
+        IReadOnlyList<string> revisionArguments,
+        int skip,
+        int count)
     {
+        ValidatePageArguments(skip, count);
+        int requestedCount = count + 1;
         List<string> arguments =
         [
             "log",
-            "--max-count=300",
+            $"--skip={skip}",
+            $"--max-count={requestedCount}",
             "--date=iso-strict",
-            $"--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%ad%x1f%s%x1f%B%x1f%P%x1e"
+            $"--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%ad%x1f%s%x1f%B%x1f%P%x1e"
         ];
         arguments.AddRange(revisionArguments);
         Task<GitRemoteOperationResult> outputTask = RunGitAsync(
@@ -998,19 +1026,25 @@ public sealed class GitRemoteService : IGitRemoteService
             false,
             arguments.ToArray());
         Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> changedFilePathsTask =
-            GetChangedFilePathsByCommitAsync(repository, revisionArguments);
+            GetChangedFilePathsByCommitAsync(repository, revisionArguments, skip, requestedCount);
         await Task.WhenAll(outputTask, changedFilePathsTask);
-        return ParseCommits((await outputTask).Output, await changedFilePathsTask);
+        IReadOnlyList<GitCommit> commits = ParseCommits(
+            (await outputTask).Output,
+            await changedFilePathsTask);
+        return CreateCommitPage(commits, count);
     }
 
     private async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> GetChangedFilePathsByCommitAsync(
         RepositoryInfo repository,
-        IReadOnlyList<string> revisionArguments)
+        IReadOnlyList<string> revisionArguments,
+        int skip,
+        int count)
     {
         List<string> arguments =
         [
             "log",
-            "--max-count=300",
+            $"--skip={skip}",
+            $"--max-count={count}",
             "--name-only",
             "--pretty=format:%x1e%H"
         ];
@@ -1043,6 +1077,14 @@ public sealed class GitRemoteService : IGitRemoteService
         }
 
         return changedFilePaths;
+    }
+
+    private static GitCommitPage CreateCommitPage(
+        IReadOnlyList<GitCommit> commits,
+        int count)
+    {
+        bool hasMore = commits.Count > count;
+        return new GitCommitPage(commits.Take(count).ToList(), hasMore);
     }
 
     private async Task<GitRemoteOperationResult> RunGitAsync(
@@ -1165,7 +1207,7 @@ public sealed class GitRemoteService : IGitRemoteService
         foreach (var record in output.Split(RecordSeparator, StringSplitOptions.RemoveEmptyEntries))
         {
             var fields = record.Trim('\r', '\n').Split(UnitSeparator);
-            if (fields.Length < 8)
+            if (fields.Length < 10)
             {
                 continue;
             }
@@ -1173,18 +1215,20 @@ public sealed class GitRemoteService : IGitRemoteService
             changedFilePathsByCommit.TryGetValue(
                 fields[0],
                 out IReadOnlyList<string>? changedFilePaths);
-            IReadOnlyList<string> parentHashes = fields[7]
+            IReadOnlyList<string> parentHashes = fields[9]
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries);
             commits.Add(new GitCommit(
                 fields[0],
                 fields[1],
                 fields[2],
                 fields[3],
-                ParseDate(fields[4]),
-                fields[5],
-                fields[6],
+                ParseDate(fields[6]),
+                fields[7],
+                fields[8],
                 changedFilePaths: changedFilePaths,
-                parentHashes: parentHashes));
+                parentHashes: parentHashes,
+                committerName: fields[4],
+                committerEmail: fields[5]));
         }
 
         return commits;
@@ -1200,7 +1244,7 @@ public sealed class GitRemoteService : IGitRemoteService
         foreach (string record in output.Split(RecordSeparator, StringSplitOptions.RemoveEmptyEntries))
         {
             string[] fields = record.Trim('\r', '\n').Split(UnitSeparator);
-            if (fields.Length < 9)
+            if (fields.Length < 11)
             {
                 continue;
             }
@@ -1210,20 +1254,22 @@ public sealed class GitRemoteService : IGitRemoteService
             changedFilePathsByCommit.TryGetValue(
                 fields[1],
                 out IReadOnlyList<string>? changedFilePaths);
-            IReadOnlyList<string> parentHashes = fields[8]
+            IReadOnlyList<string> parentHashes = fields[10]
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries);
             commits.Add(new GitCommit(
                 fields[1],
                 fields[2],
                 fields[3],
                 fields[4],
-                ParseDate(fields[5]),
-                fields[6],
-                fields[7],
+                ParseDate(fields[7]),
+                fields[8],
+                fields[9],
                 changedFilePaths: changedFilePaths,
                 parentHashes: parentHashes,
                 rangeSideLabel: sideLabel,
-                rangeSide: isLeftSide ? GitCommitRangeSide.Left : GitCommitRangeSide.Right));
+                rangeSide: isLeftSide ? GitCommitRangeSide.Left : GitCommitRangeSide.Right,
+                committerName: fields[5],
+                committerEmail: fields[6]));
         }
 
         return commits;
@@ -1234,6 +1280,16 @@ public sealed class GitRemoteService : IGitRemoteService
         if (string.IsNullOrWhiteSpace(revision) || revision.StartsWith('-'))
         {
             throw new ArgumentException("A valid Git revision is required.", parameterName);
+        }
+    }
+
+    private static void ValidatePageArguments(int skip, int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(skip);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(count, 0);
+        if (count == int.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(count));
         }
     }
 

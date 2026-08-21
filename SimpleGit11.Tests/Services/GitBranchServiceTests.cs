@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
+using SimpleGit11.Services.Git.Execution;
 using SimpleGit11.Tests.TestInfrastructure;
 
 namespace SimpleGit11.Tests.Services;
@@ -10,6 +11,130 @@ namespace SimpleGit11.Tests.Services;
 [TestClass]
 public sealed class GitBranchServiceTests
 {
+    [TestMethod]
+    public async Task MergeAsync_Default_AddsNoFastForwardArgument()
+    {
+        RecordingGitCommandRunner runner = new();
+        GitBranchService service = new(runner);
+
+        await service.MergeAsync(
+            CreateRepository(),
+            CreateBranch("feature"),
+            new GitBranchMergeOptions());
+
+        CollectionAssert.AreEqual(
+            new[] { "merge", "--no-ff", "feature" },
+            runner.Arguments.ToArray());
+    }
+
+    [TestMethod]
+    public async Task MergeAsync_UnrelatedHistories_DisablesAutomaticCommit()
+    {
+        RecordingGitCommandRunner runner = new();
+        GitBranchService service = new(runner);
+
+        await service.MergeAsync(
+            CreateRepository(),
+            CreateBranch("feature"),
+            new GitBranchMergeOptions(AllowUnrelatedHistories: true));
+
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "merge",
+                "--no-ff",
+                "--allow-unrelated-histories",
+                "--no-commit",
+                "feature"
+            },
+            runner.Arguments.ToArray());
+    }
+
+    [TestMethod]
+    public async Task MergeAsync_SquashUnrelatedHistories_PreservesSquashAndDisablesCommit()
+    {
+        RecordingGitCommandRunner runner = new();
+        GitBranchService service = new(runner);
+
+        await service.MergeAsync(
+            CreateRepository(),
+            CreateBranch("feature"),
+            new GitBranchMergeOptions(Squash: true, AllowUnrelatedHistories: true));
+
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "merge",
+                "--squash",
+                "--allow-unrelated-histories",
+                "--no-commit",
+                "feature"
+            },
+            runner.Arguments.ToArray());
+    }
+
+    [TestMethod]
+    public async Task PrepareSnapshotAsync_ResetsIndexAndWorkingTreeFromSourceBranch()
+    {
+        RecordingGitCommandRunner runner = new();
+        GitBranchService service = new(runner);
+
+        await service.PrepareSnapshotAsync(
+            CreateRepository(),
+            CreateBranch("dev"));
+
+        CollectionAssert.AreEqual(
+            new[] { "read-tree", "--reset", "-u", "dev" },
+            runner.Arguments.ToArray());
+    }
+
+    [TestMethod]
+    public async Task PrepareSnapshotAsync_ProducesExactSourceTreeWithoutMovingHead()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile("shared.txt", "base");
+        repository.WriteFile("obsolete.txt", "remove from snapshot");
+        await repository.CommitAllAsync("base");
+        await repository.RunGitAsync("switch", "-c", "dev");
+        repository.WriteFile("shared.txt", "dev");
+        repository.WriteFile("dev-only.txt", "dev");
+        await repository.RunGitAsync("rm", "obsolete.txt");
+        await repository.CommitAllAsync("dev snapshot");
+        string sourceTree = await repository.RunGitAsync("rev-parse", "dev^{tree}");
+        await repository.RunGitAsync("switch", "main");
+        repository.WriteFile("main-only.txt", "main");
+        await repository.CommitAllAsync("main state");
+        string headBefore = await repository.RunGitAsync("rev-parse", "HEAD");
+        GitBranchService service = new();
+
+        await service.PrepareSnapshotAsync(repository.Repository, CreateBranch("dev"));
+
+        Assert.AreEqual(headBefore, await repository.RunGitAsync("rev-parse", "HEAD"));
+        Assert.AreEqual(sourceTree, await repository.RunGitAsync("write-tree"));
+        Assert.AreEqual("dev", repository.ReadFile("shared.txt"));
+        Assert.IsTrue(repository.FileExists("dev-only.txt"));
+        Assert.IsFalse(repository.FileExists("obsolete.txt"));
+        Assert.IsFalse(repository.FileExists("main-only.txt"));
+    }
+
+    [TestMethod]
+    public void IsUnrelatedHistories_MatchingFatalMessage_ReturnsTrue()
+    {
+        GitCommandException exception = new(
+            "fatal: refusing to merge unrelated histories",
+            128);
+
+        Assert.IsTrue(GitMergeFailureDetector.IsUnrelatedHistories(exception));
+    }
+
+    [TestMethod]
+    public void IsUnrelatedHistories_OtherMergeFailure_ReturnsFalse()
+    {
+        GitCommandException exception = new("Automatic merge failed", 1);
+
+        Assert.IsFalse(GitMergeFailureDetector.IsUnrelatedHistories(exception));
+    }
+
     [TestMethod]
     public async Task RebaseAsync_ReplaysCurrentBranchOntoSelectedBranch()
     {
@@ -77,5 +202,23 @@ public sealed class GitBranchServiceTests
     private static GitBranch CreateBranch(string name)
     {
         return new GitBranch(name, false, false, "", "", null);
+    }
+
+    private static RepositoryInfo CreateRepository() =>
+        new("C:\\repository", "repository", "main");
+
+    private sealed class RecordingGitCommandRunner : IGitCommandRunner
+    {
+        public IReadOnlyList<string> Arguments { get; private set; } = [];
+
+        public Task<GitCommandResult> RunAsync(
+            string workingDirectory,
+            IReadOnlyList<string> arguments,
+            GitCommandOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
+            Arguments = arguments.ToArray();
+            return Task.FromResult(new GitCommandResult(0, "", ""));
+        }
     }
 }

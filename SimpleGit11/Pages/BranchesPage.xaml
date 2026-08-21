@@ -195,6 +195,8 @@
                                         <MenuFlyoutItem x:Uid="SquashMergeBranchMenuFlyoutItem" Command="{Binding DataContext.SquashMergeBranchCommand, ElementName=BranchesListView}" Icon="Copy" />
                                         <MenuFlyoutItem x:Uid="RebaseBranchMenuFlyoutItem" Command="{Binding DataContext.RebaseBranchCommand, ElementName=BranchesListView}" Icon="Refresh" />
                                         <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem x:Uid="PrepareBranchSnapshotMenuFlyoutItem" Command="{Binding DataContext.PrepareBranchSnapshotCommand, ElementName=BranchesListView}" Icon="Copy" />
+                                        <MenuFlyoutSeparator />
                                         <MenuFlyoutItem x:Uid="DeleteBranchMenuFlyoutItem" Command="{Binding DataContext.DeleteBranchCommand, ElementName=BranchesListView}" Icon="Delete" />
                                     </MenuFlyout>
                                 </Grid.ContextFlyout>
@@ -304,6 +306,9 @@
                             </AppBarElementContainer>
                             <AppBarButton x:Uid="RebaseSelectedBranchAppBarButton" Command="{x:Bind ViewModel.RebaseBranchCommand, Mode=OneWay}" Icon="Refresh" />
                             <AppBarButton x:Uid="DeleteSelectedBranchAppBarButton" Command="{x:Bind ViewModel.DeleteBranchCommand, Mode=OneWay}" Icon="Delete" />
+                            <CommandBar.SecondaryCommands>
+                                <AppBarButton x:Uid="PrepareBranchSnapshotAppBarButton" Command="{x:Bind ViewModel.PrepareBranchSnapshotCommand, Mode=OneWay}" Icon="Copy" />
+                            </CommandBar.SecondaryCommands>
                         </CommandBar>
 
                         <toolkit:SettingsExpander x:Name="BranchSynchronizationExpander" IsExpanded="False" Expanded="BranchSynchronizationExpander_Expanded">

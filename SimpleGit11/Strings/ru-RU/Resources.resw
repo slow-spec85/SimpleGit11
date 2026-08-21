@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -288,11 +288,26 @@
   <data name="GitCommitCommandFailed" xml:space="preserve">
     <value>Операция с коммитом завершилась с ошибкой.</value>
   </data>
-  <data name="CommitRequiresStagedChanges" xml:space="preserve">
-    <value>Подготовьте хотя бы один файл перед созданием коммита.</value>
-  </data>
   <data name="CommitRequiresMessage" xml:space="preserve">
     <value>Введите сообщение перед сохранением.</value>
+  </data>
+  <data name="EmptyCommitDialogTitle" xml:space="preserve">
+    <value>Создать пустой коммит?</value>
+  </data>
+  <data name="EmptyCommitDialogMessage" xml:space="preserve">
+    <value>В индексе нет изменений относительно текущего коммита. Создать пустой коммит? Неподготовленные изменения, если они есть, не войдут в него.</value>
+  </data>
+  <data name="EmptyCommitDialogPrimaryButton" xml:space="preserve">
+    <value>Создать пустой коммит</value>
+  </data>
+  <data name="EmptyAmendDialogTitle" xml:space="preserve">
+    <value>Разрешить пустой amend-коммит?</value>
+  </data>
+  <data name="EmptyAmendDialogMessage" xml:space="preserve">
+    <value>После amend дерево файлов коммита совпадёт с его родителем. Продолжить и сохранить его как пустой коммит? Последний коммит будет переписан.</value>
+  </data>
+  <data name="EmptyAmendDialogPrimaryButton" xml:space="preserve">
+    <value>Выполнить пустой amend</value>
   </data>
   <data name="CommitCreated" xml:space="preserve">
     <value>Изменения зафиксированы.</value>
@@ -885,6 +900,15 @@
   </data>
   <data name="SquashMergeBranchDialogPrimaryButton" xml:space="preserve">
     <value>Squash merge</value>
+  </data>
+  <data name="UnrelatedHistoriesMergeDialogTitle" xml:space="preserve">
+    <value>Слить несвязанные истории?</value>
+  </data>
+  <data name="UnrelatedHistoriesMergeDialogMessage" xml:space="preserve">
+    <value>У текущей ветки и '{0}' нет общих предков. Разрешить Git слить эти несвязанные истории? Результат будет подготовлен без автоматического создания коммита и может потребовать разрешения конфликтов.</value>
+  </data>
+  <data name="UnrelatedHistoriesMergeDialogPrimaryButton" xml:space="preserve">
+    <value>Разрешить слияние</value>
   </data>
   <data name="RebaseBranchDialogTitle" xml:space="preserve">
     <value>Выполнить rebase?</value>
@@ -3360,5 +3384,59 @@ Push будет выполнен в настроенные направлени�
   </data>
   <data name="RenameRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Изменить имя удаленного репозитория</value>
+  </data>
+  <data name="PrepareBranchSnapshotMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Подготовить снимок в текущей ветке…</value>
+  </data>
+  <data name="PrepareBranchSnapshotAppBarButton.Label" xml:space="preserve">
+    <value>Подготовить снимок в текущей ветке…</value>
+  </data>
+  <data name="PrepareBranchSnapshotAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Заменить файлы текущей ветки снимком выбранной ветки</value>
+  </data>
+  <data name="PrepareBranchSnapshotDialogTitle" xml:space="preserve">
+    <value>Подготовить снимок из ветки „{0}“?</value>
+  </data>
+  <data name="PrepareBranchSnapshotDialogMessage" xml:space="preserve">
+    <value>Файлы текущей ветки „{0}“ будут заменены состоянием ветки „{1}“. Изменения будут подготовлены для проверки, но коммит не будет создан.</value>
+  </data>
+  <data name="PrepareBranchSnapshotDialogPrimaryButton" xml:space="preserve">
+    <value>Подготовить снимок</value>
+  </data>
+  <data name="PrepareBranchSnapshotProgressMessage" xml:space="preserve">
+    <value>Подготовка снимка из ветки „{0}“…</value>
+  </data>
+  <data name="PrepareBranchSnapshotWorkingTreeNotClean" xml:space="preserve">
+    <value>Перед подготовкой снимка закоммитьте, отмените или сохраните все локальные изменения.</value>
+  </data>
+  <data name="PrepareBranchSnapshotOperationInProgress" xml:space="preserve">
+    <value>Перед подготовкой снимка завершите или отмените текущую операцию Git.</value>
+  </data>
+  <data name="PrepareBranchSnapshotSucceeded" xml:space="preserve">
+    <value>Снимок ветки „{0}“ подготовлен в текущей ветке. Проверьте изменения и создайте коммит.</value>
+  </data>
+  <data name="RemoveRemoteMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Отвязать</value>
+  </data>
+  <data name="SyntaxHighlightingRuleQuarantinedTitle" xml:space="preserve">
+    <value>Правило подсветки отключено</value>
+  </data>
+  <data name="SyntaxHighlightingRuleQuarantinedDetails" xml:space="preserve">
+    <value>Язык: {0}&#xA;Правило: {1}&#xA;Шаблон: {2}&#xA;Тайм-аут: {3:N0} мс&#xA;Длина входного текста: {4:N0} символов&#xA;Исключение: {5}&#xA;Сообщение: {6}&#xA;&#xA;Правило помещено в карантин для текущего сеанса редактора и будет пропускаться до сброса определения подсветки.</value>
+  </data>
+  <data name="SyntaxHighlightingUnknownLanguage" xml:space="preserve">
+    <value>Неизвестный</value>
+  </data>
+  <data name="SyntaxHighlightingPatternUnavailable" xml:space="preserve">
+    <value>Не указан</value>
+  </data>
+  <data name="CommitterIdentityFormat" xml:space="preserve">
+    <value>Коммиттер - {0}</value>
+  </data>
+  <data name="NoLocalCommitsInfoBar.Message" xml:space="preserve">
+    <value>Исправление фактически создаст новый коммит, заменив старый. Это повлечет за собой расхождение между локальной и удаленной историей.</value>
+  </data>
+  <data name="NoLocalCommitsInfoBar.Title" xml:space="preserve">
+    <value>Предыдущий коммит уже отправлен в удаленный репозиторий.</value>
   </data>
 </root>

@@ -109,7 +109,26 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
     public bool HasSelectedCommit => SelectedCommit is not null;
     public Visibility SelectedCommitDetailsVisibility => HasSelectedCommit ? Visibility.Visible : Visibility.Collapsed;
     public string SelectedCommitHash => SelectedCommit?.Hash ?? "";
-    public string SelectedCommitAuthor => SelectedCommit?.DisplayAuthor ?? "";
+    public string SelectedCommitAuthor
+    {
+        get
+        {
+            if (SelectedCommit is not GitCommit commit)
+            {
+                return "";
+            }
+
+            if (!commit.HasDistinctCommitter)
+            {
+                return commit.DisplayAuthor;
+            }
+
+            string committer = string.Format(
+                _localizationService.GetString("CommitterIdentityFormat"),
+                commit.DisplayCommitter);
+            return $"{commit.DisplayAuthor}  •  {committer}";
+        }
+    }
     public string SelectedCommitDate => SelectedCommit?.DisplayDate ?? "";
     public string SelectedCommitMessage => SelectedCommit?.Message ?? "";
 

@@ -259,21 +259,31 @@ public sealed class GitReferenceDetailsService : IGitReferenceDetailsService
     private async Task<GitCommit> GetCommitAsync(RepositoryInfo repository, string reference)
     {
         string format = string.Join(UnitSeparator,
-            "%H", "%h", "%an", "%ae", "%aI", "%s", "%B", "%P");
+            "%H", "%h", "%an", "%ae", "%cn", "%ce", "%aI", "%s", "%B", "%P");
         string output = await RunGitAsync(repository, "show", "-s", $"--format={format}", reference);
         string[] fields = output.TrimEnd('\r', '\n').Split(UnitSeparator);
-        if (fields.Length < 7)
+        if (fields.Length < 9)
         {
             throw new GitCommandException("Commit details could not be parsed.", -1);
         }
 
-        DateTimeOffset? authoredAt = DateTimeOffset.TryParse(fields[4], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsedDate)
+        DateTimeOffset? authoredAt = DateTimeOffset.TryParse(fields[6], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsedDate)
             ? parsedDate
             : null;
-        IReadOnlyList<string> parents = fields.Length > 7
-            ? fields[7].Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        IReadOnlyList<string> parents = fields.Length > 9
+            ? fields[9].Split(' ', StringSplitOptions.RemoveEmptyEntries)
             : [];
-        return new GitCommit(fields[0], fields[1], fields[2], fields[3], authoredAt, fields[5], fields[6].Trim(), parentHashes: parents);
+        return new GitCommit(
+            fields[0],
+            fields[1],
+            fields[2],
+            fields[3],
+            authoredAt,
+            fields[7],
+            fields[8].Trim(),
+            parentHashes: parents,
+            committerName: fields[4],
+            committerEmail: fields[5]);
     }
 
     private static DateTimeOffset? ParseReflogDate(string selector)

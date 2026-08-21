@@ -84,6 +84,7 @@ public partial class App : Application
         services.AddSingleton<IGitOperationQueue, GitOperationQueue>();
         services.AddSingleton<IGitStagingService, GitStagingService>();
         services.AddSingleton<IGitCommitService, GitCommitService>();
+        services.AddSingleton<IGitCommitWorkflowService, GitCommitWorkflowService>();
         services.AddSingleton<IGitHistoryService, GitHistoryService>();
         services.AddSingleton<IGitBranchService, GitBranchService>();
         services.AddSingleton<IGitTagService, GitTagService>();

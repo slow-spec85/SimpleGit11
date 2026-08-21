@@ -288,11 +288,26 @@
   <data name="GitCommitCommandFailed" xml:space="preserve">
     <value>Commit operation failed.</value>
   </data>
-  <data name="CommitRequiresStagedChanges" xml:space="preserve">
-    <value>Stage at least one file before creating a commit.</value>
-  </data>
   <data name="CommitRequiresMessage" xml:space="preserve">
     <value>Enter a commit message before creating a commit.</value>
+  </data>
+  <data name="EmptyCommitDialogTitle" xml:space="preserve">
+    <value>Create an empty commit?</value>
+  </data>
+  <data name="EmptyCommitDialogMessage" xml:space="preserve">
+    <value>The index contains no changes relative to the current commit. Create an empty commit? Unstaged changes, if any, will not be included.</value>
+  </data>
+  <data name="EmptyCommitDialogPrimaryButton" xml:space="preserve">
+    <value>Create empty commit</value>
+  </data>
+  <data name="EmptyAmendDialogTitle" xml:space="preserve">
+    <value>Allow an empty amended commit?</value>
+  </data>
+  <data name="EmptyAmendDialogMessage" xml:space="preserve">
+    <value>The amended commit will have the same file tree as its parent. Continue and preserve it as an empty commit? This rewrites the latest commit.</value>
+  </data>
+  <data name="EmptyAmendDialogPrimaryButton" xml:space="preserve">
+    <value>Amend as empty</value>
   </data>
   <data name="CommitCreated" xml:space="preserve">
     <value>Commit created.</value>
@@ -885,6 +900,15 @@
   </data>
   <data name="SquashMergeBranchDialogPrimaryButton" xml:space="preserve">
     <value>Squash merge</value>
+  </data>
+  <data name="UnrelatedHistoriesMergeDialogTitle" xml:space="preserve">
+    <value>Merge unrelated histories?</value>
+  </data>
+  <data name="UnrelatedHistoriesMergeDialogMessage" xml:space="preserve">
+    <value>The current branch and '{0}' have no common ancestors. Allow Git to merge these unrelated histories? The result will be prepared without creating a commit automatically and may require resolving conflicts.</value>
+  </data>
+  <data name="UnrelatedHistoriesMergeDialogPrimaryButton" xml:space="preserve">
+    <value>Allow merge</value>
   </data>
   <data name="RebaseBranchDialogTitle" xml:space="preserve">
     <value>Rebase current branch?</value>
@@ -3360,5 +3384,59 @@ Push will use the configured destinations, not the selected remote.</value>
   </data>
   <data name="RenameRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Change the name of a remote repository</value>
+  </data>
+  <data name="PrepareBranchSnapshotMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Prepare snapshot in current branch…</value>
+  </data>
+  <data name="PrepareBranchSnapshotAppBarButton.Label" xml:space="preserve">
+    <value>Prepare snapshot in current branch…</value>
+  </data>
+  <data name="PrepareBranchSnapshotAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Replace the current branch files with the selected branch snapshot</value>
+  </data>
+  <data name="PrepareBranchSnapshotDialogTitle" xml:space="preserve">
+    <value>Prepare snapshot from “{0}”?</value>
+  </data>
+  <data name="PrepareBranchSnapshotDialogMessage" xml:space="preserve">
+    <value>The files in the current branch “{0}” will be replaced with the state of branch “{1}”. The changes will be staged for review, but no commit will be created.</value>
+  </data>
+  <data name="PrepareBranchSnapshotDialogPrimaryButton" xml:space="preserve">
+    <value>Prepare snapshot</value>
+  </data>
+  <data name="PrepareBranchSnapshotProgressMessage" xml:space="preserve">
+    <value>Preparing snapshot from branch “{0}”…</value>
+  </data>
+  <data name="PrepareBranchSnapshotWorkingTreeNotClean" xml:space="preserve">
+    <value>Commit, discard, or stash all local changes before preparing a branch snapshot.</value>
+  </data>
+  <data name="PrepareBranchSnapshotOperationInProgress" xml:space="preserve">
+    <value>Complete or abort the current Git operation before preparing a branch snapshot.</value>
+  </data>
+  <data name="PrepareBranchSnapshotSucceeded" xml:space="preserve">
+    <value>The snapshot from branch “{0}” has been prepared in the current branch. Review the changes and create a commit.</value>
+  </data>
+  <data name="RemoveRemoteMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="SyntaxHighlightingRuleQuarantinedTitle" xml:space="preserve">
+    <value>Syntax highlighting rule disabled</value>
+  </data>
+  <data name="SyntaxHighlightingRuleQuarantinedDetails" xml:space="preserve">
+    <value>Language: {0}&#xA;Rule: {1}&#xA;Pattern: {2}&#xA;Timeout: {3:N0} ms&#xA;Input length: {4:N0} characters&#xA;Exception: {5}&#xA;Message: {6}&#xA;&#xA;The rule has been quarantined for this editor session and will be skipped until the syntax highlighting definition is reset.</value>
+  </data>
+  <data name="SyntaxHighlightingUnknownLanguage" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="SyntaxHighlightingPatternUnavailable" xml:space="preserve">
+    <value>Not reported</value>
+  </data>
+  <data name="CommitterIdentityFormat" xml:space="preserve">
+    <value>Committer - {0}</value>
+  </data>
+  <data name="NoLocalCommitsInfoBar.Message" xml:space="preserve">
+    <value>The amend will actually create a new commit, replacing the old one. This will cause a discrepancy between the local and remote history.</value>
+  </data>
+  <data name="NoLocalCommitsInfoBar.Title" xml:space="preserve">
+    <value>The previous comment has already been sent to the remote repository.</value>
   </data>
 </root>

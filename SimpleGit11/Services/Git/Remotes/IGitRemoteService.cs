@@ -17,23 +17,33 @@ public interface IGitRemoteService
         GitRemote? defaultRemote,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<GitCommit>> GetCommitsAsync(RepositoryInfo repository, string revisionRange);
+    Task<GitCommitPage> GetCommitsPageAsync(
+        RepositoryInfo repository,
+        string revisionRange,
+        int skip,
+        int count);
 
-    Task<IReadOnlyList<GitCommit>> GetComparisonCommitsAsync(
+    Task<GitCommitPage> GetComparisonCommitsPageAsync(
         RepositoryInfo repository,
         string leftRevision,
         string rightRevision,
         string leftLabel,
-        string rightLabel);
+        string rightLabel,
+        int skip,
+        int count);
 
-    Task<IReadOnlyList<GitCommit>> GetOutgoingCommitsAsync(
+    Task<GitCommitPage> GetOutgoingCommitsPageAsync(
         RepositoryInfo repository,
         GitRemote remote,
-        BranchSynchronizationItem branch);
+        BranchSynchronizationItem branch,
+        int skip,
+        int count);
 
-    Task<IReadOnlyList<GitCommit>> GetIncomingCommitsAsync(
+    Task<GitCommitPage> GetIncomingCommitsPageAsync(
         RepositoryInfo repository,
-        BranchSynchronizationItem branch);
+        BranchSynchronizationItem branch,
+        int skip,
+        int count);
 
     Task<SynchronizationSnapshot> GetSynchronizationSnapshotAsync(
         RepositoryInfo repository,

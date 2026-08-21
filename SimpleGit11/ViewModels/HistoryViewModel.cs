@@ -17,7 +17,6 @@ namespace SimpleGit11.ViewModels;
 
 public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
 {
-    private const int HistoryPageSize = 300;
     private readonly IDialogService _dialogService;
     private int _nextHistoryOffset;
     public HistoryViewModel(
@@ -154,10 +153,6 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
     [NotifyCanExecuteChangedFor(nameof(LoadMoreHistoryCommand))]
     public partial bool HasMoreCommits { get; private set; }
 
-    public string LoadMoreCommitsButtonText => string.Format(
-        _localizationService.GetString("LoadMoreCommitsButtonText"),
-        HistoryPageSize);
-
     public Visibility HistoryVisible => AllCommits.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
     [ObservableProperty]
@@ -203,7 +198,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
             GitCommitPage page = await _gitService.GetHistoryPageAsync(
                 _mainWindowViewModel.CurrentRepository,
                 0,
-                HistoryPageSize);
+                CommitPageSize);
             ReplaceHistory(page);
         }
         catch (FileNotFoundException)
@@ -243,7 +238,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
                 GitCommitPage page = await _gitService.GetHistoryPageAsync(
                     repository,
                     _nextHistoryOffset,
-                    HistoryPageSize);
+                    CommitPageSize);
                 _nextHistoryOffset += page.Commits.Count;
                 AppendCommits(page.Commits);
                 HasMoreCommits = page.HasMore;
@@ -300,7 +295,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
                 GitCommitPage page = await _gitService.GetHistoryPageAsync(
                     repository,
                     0,
-                    HistoryPageSize);
+                    CommitPageSize);
                 ReplaceHistory(page);
                 ShowSuccess(_localizationService.GetString("RepositoryRepairSucceeded"));
             }
@@ -363,7 +358,14 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
             {
                 ClearResultMessages();
                 ProgressMessage = _localizationService.GetString("AmendingCommitMessageProgress");
-                await _gitService.Commits.AmendAsync(repository, message);
+                GitCommitOperationResult operationResult = await _gitService.CommitWorkflow.AmendAsync(
+                    repository,
+                    message);
+                if (!operationResult.Completed)
+                {
+                    return;
+                }
+
                 await RefreshHistoryCoreAsync();
                 ShowSuccess(_localizationService.GetString("CommitMessageAmended"));
             }

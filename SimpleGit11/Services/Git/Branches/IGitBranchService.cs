@@ -40,9 +40,12 @@ public interface IGitBranchService
 
     Task ForceDeleteBranchAsync(RepositoryInfo repository, GitBranch branch);
 
-    Task MergeAsync(RepositoryInfo repository, GitBranch branch, bool withoutCommit = false);
+    Task MergeAsync(
+        RepositoryInfo repository,
+        GitBranch branch,
+        GitBranchMergeOptions options);
 
-    Task SquashMergeAsync(RepositoryInfo repository, GitBranch branch);
+    Task PrepareSnapshotAsync(RepositoryInfo repository, GitBranch sourceBranch);
 
     Task<GitBranchRebaseResult> RebaseAsync(RepositoryInfo repository, GitBranch branch);
 

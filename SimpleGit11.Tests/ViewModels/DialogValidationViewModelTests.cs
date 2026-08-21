@@ -244,6 +244,7 @@ public sealed class DialogValidationViewModelTests
         public IGitBranchService Branches => throw new NotSupportedException();
         public IGitChangeRecoveryService ChangeRecovery => throw new NotSupportedException();
         public IGitCommitService Commits => throw new NotSupportedException();
+        public IGitCommitWorkflowService CommitWorkflow => throw new NotSupportedException();
         public IGitConfigService Configuration => throw new NotSupportedException();
         public IGitDiffService Diff => throw new NotSupportedException();
         public IGitHistoryService History => throw new NotSupportedException();

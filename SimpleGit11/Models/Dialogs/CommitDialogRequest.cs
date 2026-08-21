@@ -15,11 +15,13 @@ public sealed class CommitDialogRequest
     private CommitDialogRequest(
         CommitDialogMode mode,
         IReadOnlyList<GitChangedFile> changedFiles,
-        string initialMessage)
+        string initialMessage,
+        bool noLocalCommits = false)
     {
         Mode = mode;
         ChangedFiles = changedFiles;
         InitialMessage = initialMessage;
+        NoLocalCommits = noLocalCommits;
     }
 
     public CommitDialogMode Mode { get; }
@@ -28,14 +30,16 @@ public sealed class CommitDialogRequest
 
     public string InitialMessage { get; }
 
+    public bool NoLocalCommits { get; }
+
     public static CommitDialogRequest CreateCommit(IReadOnlyList<GitChangedFile> changedFiles)
     {
         return new CommitDialogRequest(CommitDialogMode.Create, changedFiles, "");
     }
 
-    public static CommitDialogRequest CreateAmend(IReadOnlyList<GitChangedFile> changedFiles)
+    public static CommitDialogRequest CreateAmend(IReadOnlyList<GitChangedFile> changedFiles, bool noLocalCommits)
     {
-        return new CommitDialogRequest(CommitDialogMode.Amend, changedFiles, "");
+        return new CommitDialogRequest(CommitDialogMode.Amend, changedFiles, "", noLocalCommits);
     }
 
     public static CommitDialogRequest CreateMerge(

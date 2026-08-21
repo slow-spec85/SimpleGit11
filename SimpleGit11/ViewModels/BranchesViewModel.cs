@@ -71,6 +71,13 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         Failed
     }
 
+    private enum BranchMergeResult
+    {
+        Canceled,
+        Completed,
+        CompletedWithoutCommit
+    }
+
     public BranchesViewModel(
         MainWindowViewModel mainWindowViewModel,
         RepositoryViewModel repositoryViewModel,
@@ -245,6 +252,10 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
     [RelayCommand(CanExecute = nameof(CanMergeSelectedBranch), FlowExceptionsToTaskScheduler = true)]
     private Task OnSquashMergeBranchAsync() =>
         _asyncCommandExecutor.ExecuteAsync(SquashMergeSelectedBranchAsync);
+
+    [RelayCommand(CanExecute = nameof(CanPrepareSelectedBranchSnapshot), FlowExceptionsToTaskScheduler = true)]
+    private Task OnPrepareBranchSnapshotAsync() =>
+        _asyncCommandExecutor.ExecuteAsync(PrepareSelectedBranchSnapshotAsync);
 
     [RelayCommand(CanExecute = nameof(CanMergeSelectedBranch), FlowExceptionsToTaskScheduler = true)]
     private Task OnRebaseBranchAsync() => _asyncCommandExecutor.ExecuteAsync(RebaseSelectedBranchAsync);
@@ -1381,6 +1392,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         && !SelectedBranch.IsCurrent
         && !HasOperationInProgress
         && !IsGitOperationRunning;
+
+    public bool CanPrepareSelectedBranchSnapshot => CanMergeSelectedBranch;
 
     public bool CanCreateBranch => ReferenceKind == ReferenceListKind.Branches && !IsGitOperationRunning;
 
@@ -2761,12 +2774,26 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
             return;
 
 
+        BranchMergeResult mergeResult = BranchMergeResult.Canceled;
+        GitBranchMergeOptions options = new(NoCommit: withoutCommit);
         await ExecuteBranchOperationAsync(string.Format(_localizationService.GetString("MergeBranchProgressMessage"), branch.Name),
-            () => _gitService.Branches.MergeAsync(_mainWindowViewModel.CurrentRepository, branch, withoutCommit),
+            async () =>
+            {
+                mergeResult = await MergeWithUnrelatedHistoriesConfirmationAsync(
+                    _mainWindowViewModel.CurrentRepository,
+                    branch,
+                    options);
+                return mergeResult != BranchMergeResult.Canceled;
+            },
             async () =>
             {
                 await RefreshBranchesCoreAsync();
-                ShowSuccess(string.Format(_localizationService.GetString(withoutCommit ? "MergeBranchWithoutCommitSucceeded" : "MergeBranchSucceeded"), branch.Name));
+                string successMessageKey = mergeResult == BranchMergeResult.CompletedWithoutCommit
+                    ? "MergeBranchWithoutCommitSucceeded"
+                    : "MergeBranchSucceeded";
+                ShowSuccess(string.Format(
+                    _localizationService.GetString(successMessageKey),
+                    branch.Name));
             });
     }
 
@@ -2789,13 +2816,114 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
             return;
         }
 
+        GitBranchMergeOptions options = new(Squash: true);
         await ExecuteBranchOperationAsync(string.Format(_localizationService.GetString("MergeBranchProgressMessage"), branch.Name),
-            () => _gitService.Branches.SquashMergeAsync(_mainWindowViewModel.CurrentRepository, branch),
+            async () => await MergeWithUnrelatedHistoriesConfirmationAsync(
+                _mainWindowViewModel.CurrentRepository,
+                branch,
+                options) != BranchMergeResult.Canceled,
             async () =>
             {
                 await RefreshBranchesCoreAsync();
                 ShowSuccess(string.Format(_localizationService.GetString("SquashMergeBranchSucceeded"), branch.Name));
             });
+    }
+
+    private async Task PrepareSelectedBranchSnapshotAsync()
+    {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        GitBranch? sourceBranch = SelectedBranch;
+        if (repository is null || sourceBranch is null || sourceBranch.IsCurrent)
+        {
+            return;
+        }
+
+        string currentBranchName = _mainWindowViewModel.CurrentBranch;
+        string successMessage = string.Format(
+            _localizationService.GetString("PrepareBranchSnapshotSucceeded"),
+            sourceBranch.Name);
+
+        await ExecuteBranchOperationAsync(
+            string.Format(
+                _localizationService.GetString("PrepareBranchSnapshotProgressMessage"),
+                sourceBranch.Name),
+            async () =>
+            {
+                GitOperationState operationState = await _gitService.GetOperationStateAsync(repository);
+                if (operationState.Kind != GitOperationKind.None)
+                {
+                    ShowError(_localizationService.GetString("PrepareBranchSnapshotOperationInProgress"));
+                    return false;
+                }
+
+                GitStatusSnapshot status = await _gitService.GetStatusAsync(repository);
+                if (!IsCleanWorkingTree(status))
+                {
+                    ShowError(_localizationService.GetString("PrepareBranchSnapshotWorkingTreeNotClean"));
+                    return false;
+                }
+
+                bool confirmed = await _dialogService.ConfirmAsync(
+                    string.Format(
+                        _localizationService.GetString("PrepareBranchSnapshotDialogTitle"),
+                        sourceBranch.Name),
+                    string.Format(
+                        _localizationService.GetString("PrepareBranchSnapshotDialogMessage"),
+                        currentBranchName,
+                        sourceBranch.Name),
+                    _localizationService.GetString("PrepareBranchSnapshotDialogPrimaryButton"));
+                if (!confirmed)
+                {
+                    return false;
+                }
+
+                await _gitService.Branches.PrepareSnapshotAsync(repository, sourceBranch);
+                return true;
+            },
+            () =>
+            {
+                _mainWindowViewModel.RequestChangesNavigation(successMessage);
+                return Task.CompletedTask;
+            });
+    }
+
+    private static bool IsCleanWorkingTree(GitStatusSnapshot status)
+    {
+        return status.StagedChanges.Count == 0
+            && status.UnstagedChanges.Count == 0
+            && status.ConflictedChanges.Count == 0;
+    }
+
+    private async Task<BranchMergeResult> MergeWithUnrelatedHistoriesConfirmationAsync(
+        RepositoryInfo repository,
+        GitBranch branch,
+        GitBranchMergeOptions options)
+    {
+        try
+        {
+            await _gitService.Branches.MergeAsync(repository, branch, options);
+            return options.NoCommit || options.Squash
+                ? BranchMergeResult.CompletedWithoutCommit
+                : BranchMergeResult.Completed;
+        }
+        catch (GitCommandException exception) when (GitMergeFailureDetector.IsUnrelatedHistories(exception))
+        {
+            bool confirmed = await ConfirmBranchOperationAsync(
+                "UnrelatedHistoriesMergeDialogTitle",
+                "UnrelatedHistoriesMergeDialogMessage",
+                "UnrelatedHistoriesMergeDialogPrimaryButton",
+                branch);
+            if (!confirmed)
+            {
+                return BranchMergeResult.Canceled;
+            }
+
+            await _gitService.Branches.MergeAsync(
+                repository,
+                branch,
+                options with { AllowUnrelatedHistories = true });
+            return BranchMergeResult.CompletedWithoutCommit;
+        }
     }
 
     private async Task RebaseSelectedBranchAsync()
@@ -2836,14 +2964,31 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
 
     private async Task ExecuteBranchOperationAsync(string progressMessage, System.Func<Task> operation, System.Func<Task> onSuccess)
     {
+        await ExecuteBranchOperationAsync(
+            progressMessage,
+            async () =>
+            {
+                await operation();
+                return true;
+            },
+            onSuccess);
+    }
+
+    private async Task ExecuteBranchOperationAsync(
+        string progressMessage,
+        System.Func<Task<bool>> operation,
+        System.Func<Task> onSuccess)
+    {
         await RunGitOperationAsync(progressMessage, async () =>
         {
             bool gitCommandFailed = false;
             try
             {
                 ClearResultMessages();
-                await operation();
-                await onSuccess();
+                if (await operation())
+                {
+                    await onSuccess();
+                }
             }
             catch (FileNotFoundException)
             {
@@ -3773,6 +3918,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         CreateBranchFromContextTagCommand.NotifyCanExecuteChanged();
         MergeBranchCommand.NotifyCanExecuteChanged();
         SquashMergeBranchCommand.NotifyCanExecuteChanged();
+        PrepareBranchSnapshotCommand.NotifyCanExecuteChanged();
         RebaseBranchCommand.NotifyCanExecuteChanged();
         CreateBranchWorktreeCommand.NotifyCanExecuteChanged();
         OpenBranchWorktreeCommand.NotifyCanExecuteChanged();
@@ -3785,6 +3931,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         OnPropertyChanged(nameof(CanEditSelectedBranchDescription));
         OnPropertyChanged(nameof(CanDeleteSelectedBranchDescription));
         OnPropertyChanged(nameof(CanMergeSelectedBranch));
+        OnPropertyChanged(nameof(CanPrepareSelectedBranchSnapshot));
         OnPropertyChanged(nameof(CanCreateBranch));
         OnPropertyChanged(nameof(CanCreateTag));
         OnPropertyChanged(nameof(CanCreateReference));

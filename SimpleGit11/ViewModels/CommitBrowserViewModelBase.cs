@@ -17,6 +17,7 @@ namespace SimpleGit11.ViewModels;
 
 public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewModel
 {
+    protected const int CommitPageSize = 300;
     private readonly List<GitCommit> _allCommits = [];
     private string _exactFilePathSearchText = "";
 
@@ -74,6 +75,10 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     public string CommitsTitle => PluralizationService.FormatCommitCount(
         Commits.Count,
         _localizationService);
+
+    public string LoadMoreCommitsButtonText => string.Format(
+        _localizationService.GetString("LoadMoreCommitsButtonText"),
+        CommitPageSize);
 
     protected IReadOnlyList<GitCommit> AllCommits => _allCommits;
 

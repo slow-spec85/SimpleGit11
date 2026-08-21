@@ -34,6 +34,26 @@ public sealed class DiffEditorProjectionTests
         CollectionAssert.AreEqual(
             new[] { new DiffEditorTextRange(1, 1, 4, DiffLineKind.Added) },
             projection.TextRanges.ToArray());
+        Assert.IsEmpty(projection.SyntaxStateBoundaryLines);
+    }
+
+    [TestMethod]
+    public void Create_CollectsSyntaxStateBoundaryLines()
+    {
+        IReadOnlyList<DiffLine> lines =
+        [
+            new("diff --git a/file b/file", DiffLineKind.Header),
+            new("@@ -1 +1 @@", DiffLineKind.Hunk),
+            new("context", DiffLineKind.Context),
+            new("<<<<<<< HEAD", DiffLineKind.ConflictMarker),
+            new("added", DiffLineKind.Added)
+        ];
+
+        DiffEditorProjection projection = DiffEditorProjection.Create(lines);
+
+        CollectionAssert.AreEqual(
+            new[] { 0, 1, 3 },
+            projection.SyntaxStateBoundaryLines.ToArray());
     }
 
 }

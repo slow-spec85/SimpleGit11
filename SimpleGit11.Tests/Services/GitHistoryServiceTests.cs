@@ -39,4 +39,29 @@ public sealed class GitHistoryServiceTests
         Assert.AreEqual("commit 1", lastPage.Commits[0].Title);
         Assert.IsFalse(lastPage.HasMore);
     }
+
+    [TestMethod]
+    public async Task GetLastCommitAsync_ReturnsDistinctCommitterIdentity()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        await repository.RunGitAsync(
+            "-c",
+            "user.name=Committer Name",
+            "-c",
+            "user.email=committer@example.invalid",
+            "commit",
+            "--allow-empty",
+            "--author=Author Name <author@example.invalid>",
+            "-m",
+            "distinct identities");
+        GitHistoryService service = new();
+
+        GitCommit commit = await service.GetLastCommitAsync(repository.Repository);
+
+        Assert.AreEqual("Author Name", commit.AuthorName);
+        Assert.AreEqual("author@example.invalid", commit.AuthorEmail);
+        Assert.AreEqual("Committer Name", commit.CommitterName);
+        Assert.AreEqual("committer@example.invalid", commit.CommitterEmail);
+        Assert.IsTrue(commit.HasDistinctCommitter);
+    }
 }

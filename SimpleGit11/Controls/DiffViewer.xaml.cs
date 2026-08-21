@@ -457,6 +457,8 @@ public sealed partial class DiffViewer : UserControl
         EditorSurface.SetSyntaxHighlighting(
             languageId,
             RepositorySyntaxHighlightPalette.Create());
+        EditorSurface.SetSyntaxHighlightingStateBoundaries(
+            IsEditing ? [] : _projection.SyntaxStateBoundaryLines);
     }
 
     private void ApplyDecorations()

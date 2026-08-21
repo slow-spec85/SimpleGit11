@@ -36,6 +36,7 @@ public sealed partial class CommitDialogViewModel : ViewModelBase
             .OrderBy(file => file.FileName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(file => file.Path, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+        NoLocalCommits = request.NoLocalCommits;
     }
 
     public bool IsAmend => _mode == CommitDialogMode.Amend;
@@ -77,6 +78,9 @@ public sealed partial class CommitDialogViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanCommit))]
     public partial bool EditMessage { get; set; }
+
+    [ObservableProperty]
+    public partial bool NoLocalCommits { get; set; }
 
     public bool CanCommit => !(EditMessage && string.IsNullOrWhiteSpace(Message));
 

@@ -74,7 +74,6 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
     private bool CanUnstageAll() => StagedChanges.Count > 0 && CanRunWhenIdle();
 
     private bool CanOpenAmendDialog() => HasStagedChanges
-        && HasLocalCommits
         && !IsMergeInProgress
         && !HasSequencerOperation
         && CanRunWhenIdle();
@@ -243,8 +242,8 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
 
     public ObservableCollection<GitStash> Stashes { get; } = [];
 
-    public bool CanOpenCommitDialog => (HasStagedChanges
-        || IsMergeInProgress && !HasConflictedChanges)
+    public bool CanOpenCommitDialog => _mainWindowViewModel.CurrentRepository is not null
+        && (HasStagedChanges || !HasConflictedChanges)
         && !HasSequencerOperation
         && CanRunWhenIdle();
 
@@ -1389,7 +1388,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
     {
         IReadOnlyList<GitChangedFile> changedFiles = AllChanges.ToArray();
         CommitDialogRequest request = isAmend
-            ? CommitDialogRequest.CreateAmend(changedFiles)
+            ? CommitDialogRequest.CreateAmend(changedFiles, !HasLocalCommits)
             : IsMergeInProgress
                 ? CommitDialogRequest.CreateMerge(
                     changedFiles,
@@ -1424,12 +1423,6 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
             return;
         }
 
-        if (StagedChanges.Count == 0 && !(IsMergeInProgress && !isAmend))
-        {
-            ShowError(_localizationService.GetString("CommitRequiresStagedChanges"));
-            return;
-        }
-
         var trimmedMessage = string.IsNullOrWhiteSpace(message) ? null : message.Trim();
         if (!isAmend && string.IsNullOrWhiteSpace(trimmedMessage))
         {
@@ -1437,29 +1430,45 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
             return;
         }
 
-        var repository = _mainWindowViewModel.CurrentRepository;
+        RepositoryInfo repository = _mainWindowViewModel.CurrentRepository;
+        bool isMergeCommit = IsMergeInProgress && !isAmend;
 
         await RunGitOperationAsync(async () =>
         {
             try
             {
                 ClearResultMessages();
-                string? result = null;
+                GitCommitOperationResult operationResult = GitCommitOperationResult.Canceled;
                 await RunMutationAndRefreshStatusAsync(async () =>
                 {
                     if (isAmend)
                     {
-                        result = await _gitService.Commits.AmendAsync(repository, trimmedMessage);
+                        operationResult = await _gitService.CommitWorkflow.AmendAsync(
+                            repository,
+                            trimmedMessage);
+                    }
+                    else if (isMergeCommit)
+                    {
+                        operationResult = await _gitService.CommitWorkflow.CompleteMergeAsync(
+                            repository,
+                            trimmedMessage!);
                     }
                     else
                     {
-                        result = await _gitService.Commits.CommitAsync(repository, trimmedMessage!);
+                        operationResult = await _gitService.CommitWorkflow.CreateAsync(
+                            repository,
+                            trimmedMessage!);
                     }
                 });
 
+                if (!operationResult.Completed)
+                {
+                    return;
+                }
+
                 string successMessage = _localizationService.GetString(
                     isAmend ? "CommitMessageAmended" : "CommitCreated");
-                ShowSuccess(successMessage, result);
+                ShowSuccess(successMessage, operationResult.Output);
             }
             catch (FileNotFoundException)
             {
