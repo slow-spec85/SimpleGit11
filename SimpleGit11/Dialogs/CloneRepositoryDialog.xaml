@@ -23,6 +23,9 @@
             x:Name="CloneRepositoryUrlInput"
             x:Uid="CloneRepositoryUrlTextBox"
             Text="{Binding CloneRepositoryUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <CheckBox
+            x:Uid="CloneSubmodulesRecursivelyCheckBox"
+            IsChecked="{Binding CloneSubmodulesRecursively, Mode=TwoWay}" />
         <Button
             x:Uid="CloneRepositoryFlyoutButton"
             HorizontalAlignment="Right"

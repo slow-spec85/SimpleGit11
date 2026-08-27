@@ -186,9 +186,9 @@ artifacts\SimpleGit11-<version>-win-x64.zip.sha256
 
 The application directory and ZIP archive also contain `LICENSE`,
 `THIRD-PARTY-NOTICES.txt`, and a `Licenses` directory with exact package
-versions and original license files for the components that are actually
-redistributed. Publishing fails if the license of a new runtime package cannot
-be determined automatically.
+versions, source component revisions, and original license files for the
+components that are actually redistributed. Publishing fails if a required
+license cannot be collected automatically.
 
 To run the PowerShell script directly without the BAT wrapper:
 

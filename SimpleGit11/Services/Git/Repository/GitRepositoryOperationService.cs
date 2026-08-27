@@ -34,7 +34,10 @@ public sealed class GitRepositoryOperationService : IGitRepositoryOperationServi
             ?? throw new GitCommandException("Git repository was initialized, but could not be opened.", -1);
     }
 
-    public async Task<RepositoryInfo> CloneAsync(string parentPath, string remoteUrl)
+    public async Task<RepositoryInfo> CloneAsync(
+        string parentPath,
+        string remoteUrl,
+        bool initializeSubmodulesRecursively = false)
     {
         if (!Directory.Exists(parentPath))
         {
@@ -43,7 +46,14 @@ public sealed class GitRepositoryOperationService : IGitRepositoryOperationServi
 
         string repositoryName = GetRepositoryName(remoteUrl);
         string repositoryPath = Path.Combine(parentPath, repositoryName);
-        await RunGitAsync(parentPath, "clone", "--progress", remoteUrl);
+        if (initializeSubmodulesRecursively)
+        {
+            await RunGitAsync(parentPath, "clone", "--progress", "--recurse-submodules", remoteUrl);
+        }
+        else
+        {
+            await RunGitAsync(parentPath, "clone", "--progress", remoteUrl);
+        }
 
         return _repositoryDiscoveryService.TryOpenRepository(repositoryPath)
             ?? throw new GitCommandException("Git repository was cloned, but could not be opened.", -1);

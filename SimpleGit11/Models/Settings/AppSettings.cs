@@ -12,9 +12,13 @@ public sealed class AppSettings
 
     public bool IgnoreWhitespaceInDiff { get; set; }
 
+    public bool IncludePrereleaseVersions { get; set; }
+
     public string EditorFontFamily { get; set; } = DefaultEditorFontFamily;
 
     public int EditorFontSize { get; set; } = DefaultEditorFontSize;
 
     public int EditorLineSpacing { get; set; } = DefaultEditorLineSpacing;
+
+    public string SshCommand { get; set; } = "";
 }

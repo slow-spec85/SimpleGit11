@@ -18,9 +18,11 @@ namespace SimpleGit11.ViewModels;
 public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
 {
     private readonly IDialogService _dialogService;
+    private readonly RepositoryViewModel _repositoryViewModel;
     private int _nextHistoryOffset;
     public HistoryViewModel(
         MainWindowViewModel mainWindowViewModel,
+        RepositoryViewModel repositoryViewModel,
         IGitService gitService,
         ILocalizationService localizationService,
         IClipboardService clipboardService,
@@ -41,6 +43,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
             "OpenRepositoryBeforeHistory")
     {
         _dialogService = dialogService;
+        _repositoryViewModel = repositoryViewModel;
         ProgressMessage = "";
     }
 
@@ -83,6 +86,12 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
     private Task OnRevertCommitAsync()
     {
         return _asyncCommandExecutor.ExecuteAsync(RevertCommitCoreAsync);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunHistoryOperation), FlowExceptionsToTaskScheduler = true)]
+    private Task OnCheckoutCommitAsync()
+    {
+        return _asyncCommandExecutor.ExecuteAsync(CheckoutCommitCoreAsync);
     }
 
     [RelayCommand(CanExecute = nameof(CanRunHistoryOperation), FlowExceptionsToTaskScheduler = true)]
@@ -413,6 +422,62 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
             string.Format(_localizationService.GetString("RevertCommitSucceeded"), commit.ShortHash));
     }
 
+    private async Task CheckoutCommitCoreAsync()
+    {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        GitCommit? commit = SelectedCommit;
+        if (repository is null || commit is null)
+        {
+            ShowError(_localizationService.GetString("OpenRepositoryBeforeHistory"));
+            return;
+        }
+
+        bool confirmed = await _dialogService.ConfirmAsync(
+            _localizationService.GetString("CheckoutCommitDialogTitle"),
+            string.Format(
+                _localizationService.GetString("CheckoutCommitDialogMessage"),
+                commit.ShortHash,
+                commit.Title),
+            _localizationService.GetString("CheckoutCommitDialogPrimaryButton"));
+        if (!confirmed)
+        {
+            return;
+        }
+
+        await RunGitOperationAsync(async () =>
+        {
+            try
+            {
+                ClearResultMessages();
+                ProgressMessage = string.Format(
+                    _localizationService.GetString("CheckoutCommitProgressMessage"),
+                    commit.ShortHash);
+                await _gitService.Branches.CheckoutCommitAsync(repository, commit.Hash);
+                _repositoryViewModel.RefreshCurrentRepositoryIdentity();
+                await RefreshHistoryCoreAsync();
+                ShowSuccess(string.Format(
+                    _localizationService.GetString("CheckoutCommitSucceeded"),
+                    commit.ShortHash));
+            }
+            catch (FileNotFoundException)
+            {
+                ShowError(_localizationService.GetString("GitExecutableNotFound"));
+            }
+            catch (DirectoryNotFoundException)
+            {
+                ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
+            }
+            catch (GitCommandException exception)
+            {
+                ShowError(_localizationService.GetString("CheckoutCommitFailed"), exception.Message);
+            }
+            finally
+            {
+                ProgressMessage = "";
+            }
+        });
+    }
+
     private async Task ResetAsync(string mode)
     {
         if (_mainWindowViewModel.CurrentRepository is null || SelectedCommit is null)
@@ -563,6 +628,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
     {
         RefreshHistoryCommand.NotifyCanExecuteChanged();
         LoadMoreHistoryCommand.NotifyCanExecuteChanged();
+        CheckoutCommitCommand.NotifyCanExecuteChanged();
         RevertCommitCommand.NotifyCanExecuteChanged();
         ResetSoftCommand.NotifyCanExecuteChanged();
         ResetMixedCommand.NotifyCanExecuteChanged();

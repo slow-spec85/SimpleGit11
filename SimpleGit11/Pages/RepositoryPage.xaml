@@ -127,7 +127,7 @@
                                 <TextBlock.ContextFlyout>
                                     <MenuFlyout>
                                         <MenuFlyoutItem
-                                            x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                            x:Uid="CopyTextMenuFlyoutItem"
                                             Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                             CommandParameter="{x:Bind ViewModel.RepositoryName, Mode=OneWay}"
                                             Icon="Copy" />
@@ -143,7 +143,7 @@
                                 <TextBlock.ContextFlyout>
                                     <MenuFlyout>
                                         <MenuFlyoutItem
-                                            x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                            x:Uid="CopyTextMenuFlyoutItem"
                                             Command="{x:Bind ViewModel.CopyRepositoryPathCommand, Mode=OneWay}"
                                             Icon="Copy" />
                                     </MenuFlyout>
@@ -175,7 +175,7 @@
                                     <TextBlock.ContextFlyout>
                                         <MenuFlyout>
                                             <MenuFlyoutItem
-                                                x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                                x:Uid="CopyTextMenuFlyoutItem"
                                                 Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                                 CommandParameter="{x:Bind ViewModel.CurrentUser, Mode=OneWay}"
                                                 Icon="Copy" />
@@ -190,7 +190,7 @@
                                     <TextBlock.ContextFlyout>
                                         <MenuFlyout>
                                             <MenuFlyoutItem
-                                                x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                                x:Uid="CopyTextMenuFlyoutItem"
                                                 Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                                 CommandParameter="{x:Bind ViewModel.CurrentEmail, Mode=OneWay}"
                                                 Icon="Copy" />
@@ -271,7 +271,7 @@
                                             <TextBlock.ContextFlyout>
                                                 <MenuFlyout>
                                                     <MenuFlyoutItem
-                                                        x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                                        x:Uid="CopyTextMenuFlyoutItem"
                                                         Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                                         CommandParameter="{x:Bind ViewModel.LastCommitSummary, Mode=OneWay}"
                                                         Icon="Copy" />
@@ -310,7 +310,7 @@
                                             <TextBlock.ContextFlyout>
                                                 <MenuFlyout>
                                                     <MenuFlyoutItem
-                                                        x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                                        x:Uid="CopyTextMenuFlyoutItem"
                                                         Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                                         CommandParameter="{x:Bind ViewModel.TrackingUrl, Mode=OneWay}"
                                                         Icon="Copy" />
@@ -337,7 +337,7 @@
                                                 <TextBlock.ContextFlyout>
                                                     <MenuFlyout>
                                                         <MenuFlyoutItem
-                                                            x:Uid="CopyRepositoryInfoMenuFlyoutItem"
+                                                            x:Uid="CopyTextMenuFlyoutItem"
                                                             Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                                             CommandParameter="{x:Bind ViewModel.PushUrl, Mode=OneWay}"
                                                             Icon="Copy" />
@@ -610,6 +610,214 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel Spacing="0">
+                            <toolkit:SettingsCard
+                                Background="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="0"
+                                Padding="16,26">
+                                <toolkit:SettingsCard.HeaderIcon>
+                                    <SymbolIcon Symbol="Library" />
+                                </toolkit:SettingsCard.HeaderIcon>
+                                <toolkit:SettingsCard.Header>
+                                    <StackPanel VerticalAlignment="Center" Spacing="4">
+                                        <TextBlock
+                                            x:Uid="SubmodulesCardTitleTextBlock"
+                                            MaxLines="1"
+                                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                                            TextWrapping="WrapWholeWords" />
+                                        <TextBlock
+                                            x:Uid="SubmodulesCardDescriptionTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            MaxLines="1"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </toolkit:SettingsCard.Header>
+                                <toolkit:SettingsCard.Content>
+                                    <CommandBar
+                                        Background="Transparent"
+                                        DefaultLabelPosition="Right"
+                                        IsDynamicOverflowEnabled="False"
+                                        VerticalAlignment="Center">
+                                        <AppBarElementContainer VerticalContentAlignment="Center">
+                                            <Button
+                                                x:Uid="AddSubmoduleButton"
+                                                Width="140"
+                                                Margin="0,0,8,0"
+                                                Command="{x:Bind ViewModel.AddSubmoduleCommand, Mode=OneWay}" />
+                                        </AppBarElementContainer>
+                                        <CommandBar.SecondaryCommands>
+                                            <AppBarButton
+                                                x:Uid="InitializeAllSubmodulesAppBarButton"
+                                                Command="{x:Bind ViewModel.InitializeAllSubmodulesCommand, Mode=OneWay}" />
+                                            <AppBarButton
+                                                x:Uid="CheckoutAllSubmodulesAppBarButton"
+                                                Command="{x:Bind ViewModel.CheckoutAllSubmodulesCommand, Mode=OneWay}" />
+                                            <AppBarButton
+                                                x:Uid="UpdateAllSubmodulesAppBarButton"
+                                                Command="{x:Bind ViewModel.UpdateAllSubmodulesCommand, Mode=OneWay}" />
+                                            <AppBarButton
+                                                x:Uid="SyncAllSubmodulesAppBarButton"
+                                                Command="{x:Bind ViewModel.SyncAllSubmodulesCommand, Mode=OneWay}" />
+                                        </CommandBar.SecondaryCommands>
+                                    </CommandBar>
+                                </toolkit:SettingsCard.Content>
+                            </toolkit:SettingsCard>
+
+                            <TreeView
+                                x:Uid="SubmoduleTreeView"
+                                ItemsSource="{x:Bind ViewModel.Submodules, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.CanRunGitOperation, Mode=OneWay}"
+                                SelectionMode="None"
+                                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                ScrollViewer.HorizontalScrollMode="Disabled"
+                                ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                ScrollViewer.VerticalScrollMode="Disabled"
+                                Visibility="{x:Bind ViewModel.HasSubmodules, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                <TreeView.Resources>
+                                    <StaticResource
+                                        x:Key="TreeViewItemBackgroundPointerOver"
+                                        ResourceKey="SubtleFillColorTransparentBrush" />
+                                    <StaticResource
+                                        x:Key="TreeViewItemBackgroundPressed"
+                                        ResourceKey="SubtleFillColorTransparentBrush" />
+                                    <StaticResource
+                                        x:Key="TreeViewItemBorderBrushPointerOver"
+                                        ResourceKey="CardBorderColorDefaultBrush" />
+                                    <StaticResource
+                                        x:Key="TreeViewItemBorderBrushPressed"
+                                        ResourceKey="CardBorderColorDefaultBrush" />
+                                </TreeView.Resources>
+                                <TreeView.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:SubmoduleViewItem">
+                                        <TreeViewItem
+                                            AutomationProperties.Name="{x:Bind AutomationName, Mode=OneTime}"
+                                            BorderBrush="{ThemeResource CardBorderColorDefaultBrush}"
+                                            BorderThickness="0,1,0,0"
+                                            CornerRadius="0"
+                                            HorizontalContentAlignment="Stretch"
+                                            ItemsSource="{x:Bind Children, Mode=OneWay}">
+                                            <Grid
+                                                MinHeight="68"
+                                                Padding="16,4"
+                                                ColumnSpacing="12"
+                                                ToolTipService.ToolTip="{x:Bind FullPath, Mode=OneTime}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock
+                                                            Text="{x:Bind Name, Mode=OneTime}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="·"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind StatusText, Mode=OneTime}"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{x:Bind IsStatusNeutral, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind StatusText, Mode=OneTime}"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{x:Bind IsStatusAccent, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="·"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind CommitText, Mode=OneTime}"
+                                                            VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind Url, Mode=OneTime}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            ToolTipService.ToolTip="{x:Bind Url, Mode=OneTime}" />
+                                                        <TextBlock
+                                                            Grid.Column="1"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="·"
+                                                            VerticalAlignment="Center" />
+                                                        <TextBlock
+                                                            Grid.Column="2"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind BranchText, Mode=OneTime}"
+                                                            VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </StackPanel>
+
+                                                <CommandBar
+                                                    Grid.Column="1"
+                                                    Margin="0,0,28,0"
+                                                    Background="Transparent"
+                                                    DefaultLabelPosition="Right"
+                                                    IsDynamicOverflowEnabled="False"
+                                                    VerticalAlignment="Center">
+                                                    <CommandBar.SecondaryCommands>
+                                                        <AppBarButton
+                                                            x:Uid="OpenSubmoduleAppBarButton"
+                                                            AutomationProperties.AutomationId="OpenSubmoduleAppBarButton"
+                                                            Command="{x:Bind OpenCommand, Mode=OneTime}" />
+                                                        <AppBarButton
+                                                            x:Uid="OpenSubmoduleFolderAppBarButton"
+                                                            AutomationProperties.AutomationId="OpenSubmoduleFolderAppBarButton"
+                                                            Command="{x:Bind OpenFolderCommand, Mode=OneTime}" />
+                                                        <AppBarSeparator />
+                                                        <AppBarButton
+                                                            x:Uid="InitializeSubmoduleAppBarButton"
+                                                            Command="{x:Bind InitializeCommand, Mode=OneTime}" />
+                                                        <AppBarButton
+                                                            x:Uid="CheckoutSubmoduleAppBarButton"
+                                                            Command="{x:Bind CheckoutRecordedCommand, Mode=OneTime}" />
+                                                        <AppBarButton
+                                                            x:Uid="UpdateSubmoduleAppBarButton"
+                                                            Command="{x:Bind UpdateFromRemoteCommand, Mode=OneTime}" />
+                                                        <AppBarButton
+                                                            x:Uid="SyncSubmoduleAppBarButton"
+                                                            Command="{x:Bind SyncCommand, Mode=OneTime}" />
+                                                        <AppBarSeparator />
+                                                        <AppBarButton
+                                                            x:Uid="EditSubmoduleUrlAppBarButton"
+                                                            Command="{x:Bind EditUrlCommand, Mode=OneTime}" />
+                                                        <AppBarButton
+                                                            x:Uid="EditSubmoduleBranchAppBarButton"
+                                                            Command="{x:Bind EditBranchCommand, Mode=OneTime}" />
+                                                        <AppBarSeparator />
+                                                        <AppBarButton
+                                                            x:Uid="DeinitializeSubmoduleAppBarButton"
+                                                            Command="{x:Bind DeinitializeCommand, Mode=OneTime}" />
+                                                        <AppBarButton
+                                                            x:Uid="RemoveSubmoduleAppBarButton"
+                                                            Command="{x:Bind RemoveCommand, Mode=OneTime}" />
+                                                    </CommandBar.SecondaryCommands>
+                                                </CommandBar>
+                                            </Grid>
+                                        </TreeViewItem>
+                                    </DataTemplate>
+                                </TreeView.ItemTemplate>
+                            </TreeView>
                         </StackPanel>
                     </Border>
 

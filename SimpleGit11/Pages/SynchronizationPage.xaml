@@ -185,7 +185,7 @@
                                 <TextBlock.ContextFlyout>
                                     <MenuFlyout>
                                         <MenuFlyoutItem
-                                            x:Uid="CopyRemoteUrlMenuFlyoutItem"
+                                            x:Uid="CopyTextMenuFlyoutItem"
                                             Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                             CommandParameter="{x:Bind ViewModel.SelectedRemote.DisplayUrl, Mode=OneWay, FallbackValue=''}"
                                             Icon="Copy" />
@@ -386,6 +386,52 @@
                                             </DataTemplate>
                                         </toolkit:SettingsExpander.ItemTemplate>
                                     </toolkit:SettingsExpander>
+
+                                    <toolkit:SettingsExpander
+                                        x:Name="LocalSubmoduleChangesExpander"
+                                        x:Load="{x:Bind ViewModel.HasLocalSubmoduleChanges, Mode=OneWay}"
+                                        IsExpanded="False"
+                                        ItemsSource="{x:Bind ViewModel.LocalSubmoduleChanges, Mode=OneWay}"
+                                        Visibility="{x:Bind ViewModel.HasLocalSubmoduleChanges, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                        <toolkit:SettingsExpander.HeaderIcon>
+                                            <SymbolIcon Symbol="Library" />
+                                        </toolkit:SettingsExpander.HeaderIcon>
+                                        <toolkit:SettingsExpander.Header>
+                                            <StackPanel Spacing="3">
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Uid="SynchronizationLocalSubmodulesExpanderTitleTextBlock" />
+                                                    <InfoBadge
+                                                        Grid.Column="1"
+                                                        Value="{x:Bind ViewModel.LocalSubmoduleChangesCount, Mode=OneWay}" />
+                                                </Grid>
+                                                <TextBlock
+                                                    x:Uid="SynchronizationLocalSubmodulesExpanderDescriptionTextBlock"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                                    TextWrapping="WrapWholeWords" />
+                                            </StackPanel>
+                                        </toolkit:SettingsExpander.Header>
+                                        <toolkit:SettingsExpander.ItemTemplate>
+                                            <DataTemplate x:DataType="viewmodels:SubmoduleSynchronizationViewItem">
+                                                <toolkit:SettingsCard>
+                                                    <toolkit:SettingsCard.Header>
+                                                        <StackPanel Spacing="3">
+                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Path, Mode=OneTime}" />
+                                                            <TextBlock
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                                Text="{x:Bind Description, Mode=OneTime}"
+                                                                TextWrapping="WrapWholeWords" />
+                                                        </StackPanel>
+                                                    </toolkit:SettingsCard.Header>
+                                                </toolkit:SettingsCard>
+                                            </DataTemplate>
+                                        </toolkit:SettingsExpander.ItemTemplate>
+                                    </toolkit:SettingsExpander>
                                 </StackPanel>
 
                                 <StackPanel
@@ -441,6 +487,122 @@
                                                         x:Uid="SynchronizationPullBranchButton"
                                                         Command="{Binding DataContext.PullCommand, ElementName=IncomingChangesExpander}"
                                                         Visibility="{x:Bind IsCurrentBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                </toolkit:SettingsCard>
+                                            </DataTemplate>
+                                        </toolkit:SettingsExpander.ItemTemplate>
+                                    </toolkit:SettingsExpander>
+
+                                    <toolkit:SettingsExpander
+                                        x:Name="IncomingSubmoduleChangesExpander"
+                                        x:Load="{x:Bind ViewModel.HasIncomingSubmoduleChanges, Mode=OneWay}"
+                                        IsExpanded="False"
+                                        ItemsSource="{x:Bind ViewModel.IncomingSubmoduleChanges, Mode=OneWay}"
+                                        Visibility="{x:Bind ViewModel.HasIncomingSubmoduleChanges, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                        <toolkit:SettingsExpander.HeaderIcon>
+                                            <SymbolIcon Symbol="Library" />
+                                        </toolkit:SettingsExpander.HeaderIcon>
+                                        <toolkit:SettingsExpander.Header>
+                                            <StackPanel Spacing="3">
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Uid="SynchronizationIncomingSubmodulesExpanderTitleTextBlock" />
+                                                    <InfoBadge
+                                                        Grid.Column="1"
+                                                        Value="{x:Bind ViewModel.IncomingSubmoduleChangesCount, Mode=OneWay}" />
+                                                </Grid>
+                                                <TextBlock
+                                                    x:Uid="SynchronizationIncomingSubmodulesExpanderDescriptionTextBlock"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                                    TextWrapping="WrapWholeWords" />
+                                            </StackPanel>
+                                        </toolkit:SettingsExpander.Header>
+                                        <toolkit:SettingsExpander.ItemTemplate>
+                                            <DataTemplate x:DataType="viewmodels:SubmoduleSynchronizationViewItem">
+                                                <toolkit:SettingsCard>
+                                                    <toolkit:SettingsCard.Header>
+                                                        <StackPanel Spacing="3">
+                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Path, Mode=OneTime}" />
+                                                            <TextBlock
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                                Text="{x:Bind Description, Mode=OneTime}"
+                                                                TextWrapping="WrapWholeWords" />
+                                                        </StackPanel>
+                                                    </toolkit:SettingsCard.Header>
+                                                </toolkit:SettingsCard>
+                                            </DataTemplate>
+                                        </toolkit:SettingsExpander.ItemTemplate>
+                                    </toolkit:SettingsExpander>
+                                </StackPanel>
+
+                                <StackPanel
+                                    x:Name="SubmodulesRequiringApplicationContent"
+                                    x:Load="{x:Bind ViewModel.HasSubmodulesRequiringApplication, Mode=OneWay}"
+                                    Spacing="12"
+                                    Visibility="{x:Bind ViewModel.HasSubmodulesRequiringApplication, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                    <StackPanel Margin="2,0,0,0" Spacing="3">
+                                        <TextBlock
+                                            x:Uid="SynchronizationRequiresApplicationTitleTextBlock"
+                                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                        <TextBlock
+                                            x:Uid="SynchronizationRequiresApplicationDescriptionTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+
+                                    <toolkit:SettingsExpander
+                                        x:Name="SubmodulesRequiringApplicationExpander"
+                                        IsExpanded="True"
+                                        ItemsSource="{x:Bind ViewModel.SubmodulesRequiringApplication, Mode=OneWay}">
+                                        <toolkit:SettingsExpander.HeaderIcon>
+                                            <SymbolIcon Symbol="Library" />
+                                        </toolkit:SettingsExpander.HeaderIcon>
+                                        <toolkit:SettingsExpander.Header>
+                                            <StackPanel Spacing="3">
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Uid="SynchronizationApplySubmodulesExpanderTitleTextBlock" />
+                                                    <InfoBadge
+                                                        Grid.Column="1"
+                                                        Value="{x:Bind ViewModel.SubmodulesRequiringApplicationCount, Mode=OneWay}" />
+                                                </Grid>
+                                                <TextBlock
+                                                    x:Uid="SynchronizationApplySubmodulesExpanderDescriptionTextBlock"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                                    TextWrapping="WrapWholeWords" />
+                                            </StackPanel>
+                                        </toolkit:SettingsExpander.Header>
+                                        <Button
+                                            x:Uid="SynchronizationApplyAllSubmodulesButton"
+                                            AutomationProperties.AutomationId="SynchronizationApplyAllSubmodulesButton"
+                                            Command="{x:Bind ViewModel.ApplyAllSubmodulesCommand, Mode=OneWay}" />
+                                        <toolkit:SettingsExpander.ItemTemplate>
+                                            <DataTemplate x:DataType="viewmodels:SubmoduleApplicationViewItem">
+                                                <toolkit:SettingsCard>
+                                                    <toolkit:SettingsCard.Header>
+                                                        <StackPanel Spacing="3">
+                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Path, Mode=OneTime}" />
+                                                            <TextBlock
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                                Text="{x:Bind Description, Mode=OneTime}"
+                                                                TextWrapping="WrapWholeWords" />
+                                                        </StackPanel>
+                                                    </toolkit:SettingsCard.Header>
+                                                    <Button
+                                                        x:Uid="SynchronizationApplySubmoduleButton"
+                                                        AutomationProperties.AutomationId="SynchronizationApplySubmoduleButton"
+                                                        Command="{Binding DataContext.ApplySubmoduleCommand, ElementName=SubmodulesRequiringApplicationExpander}"
+                                                        CommandParameter="{x:Bind}" />
                                                 </toolkit:SettingsCard>
                                             </DataTemplate>
                                         </toolkit:SettingsExpander.ItemTemplate>

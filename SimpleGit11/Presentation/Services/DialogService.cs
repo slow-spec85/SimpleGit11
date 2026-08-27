@@ -17,6 +17,7 @@ public sealed class DialogService : IDialogService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILocalizationService _localizationService;
+    private bool _isAboutDialogOpen;
     private Window? _window;
 
     public DialogService(
@@ -30,6 +31,31 @@ public sealed class DialogService : IDialogService
     public void RegisterWindow(Window window)
     {
         _window = window;
+    }
+
+    public async Task ShowAboutAsync()
+    {
+        EnsureWindowRegistered();
+        if (_isAboutDialogOpen)
+        {
+            return;
+        }
+
+        _isAboutDialogOpen = true;
+        try
+        {
+            AboutDialogViewModel viewModel = _serviceProvider.GetRequiredService<AboutDialogViewModel>();
+            AboutDialog dialog = new(viewModel)
+            {
+                XamlRoot = _window!.Content.XamlRoot
+            };
+            ApplyTheme(dialog);
+            await dialog.ShowAsync();
+        }
+        finally
+        {
+            _isAboutDialogOpen = false;
+        }
     }
 
     public async Task<bool> ConfirmAsync(string title, string message, string primaryButtonText)
@@ -398,6 +424,38 @@ public sealed class DialogService : IDialogService
         ContentDialogResult result = await dialog.ShowAsync();
         return result == ContentDialogResult.Primary
             ? viewModel.CreateRequest()
+            : null;
+    }
+
+    public async Task<SubmoduleAddRequest?> ShowAddSubmoduleDialogAsync(string defaultPath)
+    {
+        EnsureWindowRegistered();
+        SubmoduleAddDialogViewModel viewModel = new(defaultPath);
+        SubmoduleAddDialog dialog = new(viewModel)
+        {
+            XamlRoot = _window!.Content.XamlRoot
+        };
+        ApplyTheme(dialog);
+
+        ContentDialogResult result = await dialog.ShowAsync();
+        return result == ContentDialogResult.Primary
+            ? viewModel.CreateRequest()
+            : null;
+    }
+
+    public async Task<GitUrlRewrite?> ShowGitUrlRewriteDialogAsync(GitUrlRewrite? rewrite = null)
+    {
+        EnsureWindowRegistered();
+        GitUrlRewriteDialogViewModel viewModel = new(rewrite);
+        GitUrlRewriteDialog dialog = new(viewModel)
+        {
+            XamlRoot = _window!.Content.XamlRoot
+        };
+        ApplyTheme(dialog);
+
+        ContentDialogResult result = await dialog.ShowAsync();
+        return result == ContentDialogResult.Primary
+            ? viewModel.CreateRewrite()
             : null;
     }
 

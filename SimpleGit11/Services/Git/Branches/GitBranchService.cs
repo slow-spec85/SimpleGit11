@@ -28,8 +28,9 @@ public sealed class GitBranchService : IGitBranchService
     {
         var output = await RunGitAsync(
             repository,
-            "branch",
-            $"--format={BranchFormat}");
+            "for-each-ref",
+            $"--format={BranchFormat}",
+            "refs/heads");
 
         return ParseBranches(output, false);
     }
@@ -48,6 +49,11 @@ public sealed class GitBranchService : IGitBranchService
     public Task CheckoutAsync(RepositoryInfo repository, GitBranch branch)
     {
         return RunGitAsync(repository, "checkout", branch.Name);
+    }
+
+    public Task CheckoutCommitAsync(RepositoryInfo repository, string commitHash)
+    {
+        return RunGitAsync(repository, "switch", "--detach", "--", commitHash);
     }
 
     public async Task<string> CheckoutRemoteAsync(RepositoryInfo repository, GitBranch branch)
@@ -225,11 +231,6 @@ public sealed class GitBranchService : IGitBranchService
             if (isRemote
                 && (isSymbolicReference
                     || fields[1].EndsWith("/HEAD", StringComparison.Ordinal)))
-            {
-                continue;
-            }
-
-            if (!isRemote && fields[0] == "*" && fields[1] == "(no branch)")
             {
                 continue;
             }

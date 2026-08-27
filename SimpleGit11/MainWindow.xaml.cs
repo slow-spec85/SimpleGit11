@@ -34,6 +34,7 @@ public sealed partial class MainWindow : Window
     private static readonly TimeSpan AutomaticRefreshCooldown = TimeSpan.FromSeconds(10);
     private readonly ILocalizationService _localizationService;
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
+    private readonly IDialogService _dialogService;
     private readonly IGitRepositoryChangeDetector _gitRepositoryChangeDetector;
     private readonly IGitService _gitService;
     private readonly WindowActivationRefreshGate _activationRefreshGate = new(
@@ -56,12 +57,14 @@ public sealed partial class MainWindow : Window
         MainWindowViewModel viewModel,
         ILocalizationService localizationService,
         IAsyncCommandExecutor asyncCommandExecutor,
+        IDialogService dialogService,
         IGitRepositoryChangeDetector gitRepositoryChangeDetector,
         IGitService gitService)
     {
         ViewModel = viewModel;
         _localizationService = localizationService;
         _asyncCommandExecutor = asyncCommandExecutor;
+        _dialogService = dialogService;
         _gitRepositoryChangeDetector = gitRepositoryChangeDetector;
         _gitService = gitService;
         RepositoryViewModel = App.GetService<RepositoryViewModel>();
@@ -494,6 +497,17 @@ public sealed partial class MainWindow : Window
         }
 
         NavigateToTopLevelPage(GetPageType(selectedItem.Tag));
+    }
+
+    private void ShellNavigation_ItemInvoked(
+        NavigationView sender,
+        NavigationViewItemInvokedEventArgs args)
+    {
+        if (args.InvokedItemContainer is NavigationViewItem navigationItem
+            && string.Equals(navigationItem.Tag as string, "About", StringComparison.Ordinal))
+        {
+            _ = _asyncCommandExecutor.ExecuteAsync(_dialogService.ShowAboutAsync);
+        }
     }
 
     private static Type GetPageType(object? navigationTag)

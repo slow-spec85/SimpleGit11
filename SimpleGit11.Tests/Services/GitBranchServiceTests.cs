@@ -12,6 +12,19 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitBranchServiceTests
 {
     [TestMethod]
+    public async Task CheckoutCommitAsync_SwitchesToDetachedHeadAtCommit()
+    {
+        RecordingGitCommandRunner runner = new();
+        GitBranchService service = new(runner);
+
+        await service.CheckoutCommitAsync(CreateRepository(), "0123456789abcdef");
+
+        CollectionAssert.AreEqual(
+            new[] { "switch", "--detach", "--", "0123456789abcdef" },
+            runner.Arguments.ToArray());
+    }
+
+    [TestMethod]
     public async Task MergeAsync_Default_AddsNoFastForwardArgument()
     {
         RecordingGitCommandRunner runner = new();
@@ -177,6 +190,31 @@ public sealed class GitBranchServiceTests
             CreateBranch("base-branch"));
 
         Assert.IsFalse(result.HeadChanged);
+    }
+
+    [TestMethod]
+    public async Task GetLocalBranchesAsync_DetachedHead_ReturnsOnlyBranchReferences()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        await repository.RunGitAsync("commit", "--allow-empty", "-m", "initial");
+        GitBranchService service = new();
+
+        IReadOnlyList<GitBranch> attachedBranches =
+            await service.GetLocalBranchesAsync(repository.Repository);
+
+        Assert.HasCount(1, attachedBranches);
+        Assert.AreEqual("main", attachedBranches[0].Name);
+        Assert.IsTrue(attachedBranches[0].IsCurrent);
+
+        string commitHash = await repository.RunGitAsync("rev-parse", "HEAD");
+        await repository.RunGitAsync("switch", "--detach", commitHash);
+
+        IReadOnlyList<GitBranch> branches =
+            await service.GetLocalBranchesAsync(repository.Repository);
+
+        Assert.HasCount(1, branches);
+        Assert.AreEqual("main", branches[0].Name);
+        Assert.IsFalse(branches[0].IsCurrent);
     }
 
     [TestMethod]

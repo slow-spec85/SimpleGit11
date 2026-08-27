@@ -139,6 +139,8 @@ public sealed class GitCommitWorkflowServiceTests
 
         public string? LastTitle { get; private set; }
 
+        public Task ShowAboutAsync() => throw new NotSupportedException();
+
         public Task<bool> ConfirmAsync(
             string title,
             string message,
@@ -189,6 +191,12 @@ public sealed class GitCommitWorkflowServiceTests
             WorktreeCreationMode creationMode = WorktreeCreationMode.ExistingBranch,
             bool canUseExistingBranch = true,
             GitRevisionKind startPointKind = GitRevisionKind.Branch) =>
+            throw new NotSupportedException();
+
+        public Task<SubmoduleAddRequest?> ShowAddSubmoduleDialogAsync(string defaultPath) =>
+            throw new NotSupportedException();
+
+        public Task<GitUrlRewrite?> ShowGitUrlRewriteDialogAsync(GitUrlRewrite? rewrite = null) =>
             throw new NotSupportedException();
 
         public Task<GitArchiveDialogResult?> ShowArchiveDialogAsync(

@@ -11,6 +11,39 @@ namespace SimpleGit11.Tests.Services;
 public sealed class RepositoryDiscoveryServiceTests
 {
     [TestMethod]
+    public void TryOpenRepository_SubmoduleGitFile_UsesSubmoduleFolderAsMainWorktree()
+    {
+        using TemporaryDirectory temporaryDirectory = new();
+        string superprojectPath = Path.GetFullPath(
+            temporaryDirectory.CreateDirectory("SimpleGit11"));
+        string submodulePath = Path.GetFullPath(
+            temporaryDirectory.CreateDirectory("SimpleGit11/External/TextControlBox-WinUI"));
+        string submoduleGitDirectory = Path.GetFullPath(temporaryDirectory.CreateDirectory(
+            "SimpleGit11/.git/modules/External/TextControlBox-WinUI"));
+
+        temporaryDirectory.CreateFile("SimpleGit11/.git/HEAD", "ref: refs/heads/main");
+        temporaryDirectory.CreateFile(
+            "SimpleGit11/External/TextControlBox-WinUI/.git",
+            $"gitdir: {submoduleGitDirectory}");
+        temporaryDirectory.CreateFile(
+            "SimpleGit11/.git/modules/External/TextControlBox-WinUI/HEAD",
+            "ref: refs/heads/master");
+
+        RepositoryDiscoveryService service = new();
+
+        RepositoryInfo? repository = service.TryOpenRepository(submodulePath);
+
+        Assert.IsNotNull(repository);
+        Assert.AreEqual("TextControlBox-WinUI", repository.Name);
+        Assert.AreEqual(submodulePath, repository.Path);
+        Assert.AreEqual(submodulePath, repository.MainWorktreePath);
+        Assert.AreEqual(submoduleGitDirectory, repository.CommonGitDirectory);
+        Assert.AreEqual("master", repository.CurrentBranch);
+        Assert.IsTrue(repository.IsMainWorktree);
+        Assert.AreNotEqual(superprojectPath, repository.MainWorktreePath);
+    }
+
+    [TestMethod]
     public void TryOpenRepository_LinkedWorktree_UsesWorktreeFolderName()
     {
         using TemporaryDirectory temporaryDirectory = new();

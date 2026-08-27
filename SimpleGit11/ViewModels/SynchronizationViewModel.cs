@@ -57,6 +57,9 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         LocalBranches = [];
         Tags = [];
         IncomingBranches = [];
+        LocalSubmoduleChanges = [];
+        IncomingSubmoduleChanges = [];
+        SubmodulesRequiringApplication = [];
         ProgressMessage = "";
     }
 
@@ -74,6 +77,17 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
 
     [ObservableProperty]
     public partial IReadOnlyList<BranchSynchronizationViewItem> IncomingBranches { get; private set; }
+
+    [ObservableProperty]
+    public partial IReadOnlyList<SubmoduleSynchronizationViewItem> LocalSubmoduleChanges { get; private set; }
+
+    [ObservableProperty]
+    public partial IReadOnlyList<SubmoduleSynchronizationViewItem> IncomingSubmoduleChanges { get; private set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSynchronized))]
+    [NotifyPropertyChangedFor(nameof(HasSynchronizationContent))]
+    public partial IReadOnlyList<SubmoduleApplicationViewItem> SubmodulesRequiringApplication { get; private set; }
 
     [RelayCommand(CanExecute = nameof(CanRefreshSynchronization), FlowExceptionsToTaskScheduler = true)]
     private Task OnRefreshSynchronizationAsync() =>
@@ -123,6 +137,23 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
 
     [RelayCommand(CanExecute = nameof(CanRemoveRemote), FlowExceptionsToTaskScheduler = true)]
     private Task OnRemoveRemoteAsync() => _asyncCommandExecutor.ExecuteAsync(RemoveRemoteAsync);
+
+    [RelayCommand(CanExecute = nameof(CanApplySubmodule), FlowExceptionsToTaskScheduler = true)]
+    private Task OnApplySubmoduleAsync(SubmoduleApplicationViewItem? submodule) =>
+        _asyncCommandExecutor.ExecuteAsync(() => ApplySubmoduleAsync(submodule));
+
+    private bool CanApplySubmodule(SubmoduleApplicationViewItem? submodule) =>
+        submodule is not null
+        && _mainWindowViewModel.CurrentRepository?.Path == _snapshotRepositoryPath
+        && !IsGitOperationRunning;
+
+    [RelayCommand(CanExecute = nameof(CanApplyAllSubmodules), FlowExceptionsToTaskScheduler = true)]
+    private Task OnApplyAllSubmodulesAsync() =>
+        _asyncCommandExecutor.ExecuteAsync(ApplyAllSubmodulesAsync);
+
+    private bool CanApplyAllSubmodules() => _mainWindowViewModel.CurrentRepository?.Path == _snapshotRepositoryPath
+        && SubmodulesRequiringApplication.Count > 0
+        && !IsGitOperationRunning;
 
     [RelayCommand]
     private void OnCopyText(string? text)
@@ -198,11 +229,14 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         PublishSynchronizationOperationState();
     }
 
-    public bool IsSynchronized => Snapshot?.IsSynchronized == true;
+    public bool IsSynchronized => Snapshot?.IsSynchronized == true
+        && SubmodulesRequiringApplication.Count == 0;
 
     public bool HasSynchronizationContent => Snapshot is not null && !IsSynchronized && !HasNoRemotes;
 
-    public bool HasLocalChanges => LocalBranches.Count > 0 || Tags.Count > 0;
+    public bool HasLocalChanges => LocalBranches.Count > 0
+        || Tags.Count > 0
+        || LocalSubmoduleChanges.Count > 0;
 
     public bool HasBranchChanges => LocalBranches.Count > 0;
 
@@ -212,7 +246,20 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
 
     public int TagChangesCount => Tags.Count;
 
-    public bool HasRemoteChanges => IncomingBranches.Count > 0;
+    public bool HasLocalSubmoduleChanges => LocalSubmoduleChanges.Count > 0;
+
+    public int LocalSubmoduleChangesCount => LocalSubmoduleChanges.Count;
+
+    public bool HasRemoteChanges => IncomingBranches.Count > 0
+        || IncomingSubmoduleChanges.Count > 0;
+
+    public bool HasIncomingSubmoduleChanges => IncomingSubmoduleChanges.Count > 0;
+
+    public int IncomingSubmoduleChangesCount => IncomingSubmoduleChanges.Count;
+
+    public bool HasSubmodulesRequiringApplication => SubmodulesRequiringApplication.Count > 0;
+
+    public int SubmodulesRequiringApplicationCount => SubmodulesRequiringApplication.Count;
 
     public string LastSuccessfulFetchText => _lastSuccessfulFetch is null
         ? _localizationService.GetString("SynchronizationFetchNotPerformed")
@@ -395,7 +442,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
                 return;
             }
 
-            ApplySynchronizationSnapshot(snapshot, repository.Path);
+            await ApplySynchronizationSnapshotAsync(snapshot, repository, cancellationToken);
         }
         catch (Exception exception) when (IsExpectedGitException(exception))
         {
@@ -403,7 +450,10 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         }
     }
 
-    private void ApplySynchronizationSnapshot(SynchronizationSnapshot snapshot, string repositoryPath)
+    private async Task ApplySynchronizationSnapshotAsync(
+        SynchronizationSnapshot snapshot,
+        RepositoryInfo repository,
+        CancellationToken cancellationToken)
     {
         IReadOnlyList<BranchSynchronizationViewItem> localBranches = snapshot.OutgoingBranches
             .Select(branch => new BranchSynchronizationViewItem(
@@ -421,14 +471,153 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
                 _localizationService,
                 BranchSynchronizationDirection.Incoming))
             .ToList();
+        Task<IReadOnlyList<SubmoduleSynchronizationViewItem>> localSubmoduleChangesTask =
+            CreateSubmoduleSynchronizationItemsAsync(
+                repository,
+                snapshot.OutgoingBranches,
+                SubmoduleSynchronizationDirection.Outgoing,
+                cancellationToken);
+        Task<IReadOnlyList<SubmoduleSynchronizationViewItem>> incomingSubmoduleChangesTask =
+            CreateSubmoduleSynchronizationItemsAsync(
+                repository,
+                snapshot.IncomingBranches,
+                SubmoduleSynchronizationDirection.Incoming,
+                cancellationToken);
+        Task<IReadOnlyList<GitSubmoduleApplicationState>> applicationStatesTask =
+            _gitService.Submodules.GetApplicationStatesAsync(repository, cancellationToken);
+        await Task.WhenAll(
+            localSubmoduleChangesTask,
+            incomingSubmoduleChangesTask,
+            applicationStatesTask);
 
-        Snapshot = snapshot;
-        _snapshotRepositoryPath = repositoryPath;
+        if (_mainWindowViewModel.CurrentRepository?.Path != repository.Path
+            || SelectedRemote?.Name != snapshot.Remote.Name)
+        {
+            return;
+        }
+
+        _snapshotRepositoryPath = repository.Path;
         LocalBranches = localBranches;
         Tags = tags;
         IncomingBranches = incomingBranches;
+        LocalSubmoduleChanges = await localSubmoduleChangesTask;
+        IncomingSubmoduleChanges = await incomingSubmoduleChangesTask;
+        SubmodulesRequiringApplication = (await applicationStatesTask)
+            .Select(state => new SubmoduleApplicationViewItem(state, _localizationService))
+            .ToList();
+        Snapshot = snapshot;
 
         NotifySynchronizationStateChanged();
+    }
+
+    private async Task<IReadOnlyList<SubmoduleSynchronizationViewItem>> CreateSubmoduleSynchronizationItemsAsync(
+        RepositoryInfo repository,
+        IReadOnlyList<BranchSynchronizationItem> branches,
+        SubmoduleSynchronizationDirection direction,
+        CancellationToken cancellationToken)
+    {
+        List<SubmoduleSynchronizationViewItem> items = [];
+        foreach (BranchSynchronizationItem branch in branches)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            string? oldRevision = direction == SubmoduleSynchronizationDirection.Outgoing
+                ? branch.IsPublishedToPushRemote ? branch.PushTrackingBranch : null
+                : branch.Name;
+            string newRevision = direction == SubmoduleSynchronizationDirection.Outgoing
+                ? branch.Name
+                : branch.RemoteTrackingBranch;
+            if (string.IsNullOrWhiteSpace(newRevision))
+            {
+                continue;
+            }
+
+            IReadOnlyList<GitSubmoduleReferenceChange> changes =
+                await _gitService.Submodules.GetReferenceChangesAsync(
+                    repository.Path,
+                    oldRevision,
+                    newRevision,
+                    cancellationToken);
+            items.AddRange(changes.Select(change => new SubmoduleSynchronizationViewItem(
+                change,
+                branch.Name,
+                direction,
+                _localizationService)));
+        }
+
+        return items;
+    }
+
+    private Task ApplySubmoduleAsync(SubmoduleApplicationViewItem? submodule)
+    {
+        if (submodule is null
+            || _mainWindowViewModel.CurrentRepository?.Path != _snapshotRepositoryPath)
+        {
+            return Task.CompletedTask;
+        }
+
+        GitSubmoduleApplicationState state = submodule.State;
+        return RunSubmoduleApplicationAsync(
+            string.Format(
+                _localizationService.GetString("SynchronizationApplyingSubmoduleProgress"),
+                state.Path),
+            cancellationToken => _gitService.Submodules.ApplyPinnedAsync(
+                state.OwnerRepositoryPath,
+                state.RelativePath,
+                recursive: true,
+                cancellationToken: cancellationToken),
+            string.Format(
+                _localizationService.GetString("SynchronizationSubmoduleApplied"),
+                state.Path));
+    }
+
+    private Task ApplyAllSubmodulesAsync()
+    {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        if (repository is null
+            || repository.Path != _snapshotRepositoryPath
+            || SubmodulesRequiringApplication.Count == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        return RunSubmoduleApplicationAsync(
+            _localizationService.GetString("SynchronizationApplyingAllSubmodulesProgress"),
+            cancellationToken => _gitService.Submodules.ApplyPinnedAsync(
+                repository.Path,
+                recursive: true,
+                cancellationToken: cancellationToken),
+            _localizationService.GetString("SynchronizationAllSubmodulesApplied"));
+    }
+
+    private Task RunSubmoduleApplicationAsync(
+        string progressMessage,
+        Func<CancellationToken, Task> operation,
+        string successMessage)
+    {
+        return RunGitOperationAsync(progressMessage, async cancellationToken =>
+        {
+            try
+            {
+                ClearNotification();
+                await operation(cancellationToken);
+                await RefreshSnapshotAsync(cancellationToken);
+                ShowNotification(AppNotificationSeverity.Success, successMessage);
+            }
+            catch (Exception exception) when (IsExpectedGitException(exception))
+            {
+                await RefreshSnapshotAsync(cancellationToken);
+                if (exception is GitCommandException)
+                {
+                    ShowError(
+                        _localizationService.GetString("SynchronizationApplySubmoduleFailed"),
+                        exception.Message);
+                }
+                else
+                {
+                    ShowGitError(exception);
+                }
+            }
+        }, canCancel: true);
     }
 
     private Task PullAsync()
@@ -935,6 +1124,9 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         LocalBranches = [];
         Tags = [];
         IncomingBranches = [];
+        LocalSubmoduleChanges = [];
+        IncomingSubmoduleChanges = [];
+        SubmodulesRequiringApplication = [];
         NotifySynchronizationStateChanged();
     }
 
@@ -978,7 +1170,13 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         OnPropertyChanged(nameof(HasTagChanges));
         OnPropertyChanged(nameof(BranchChangesCount));
         OnPropertyChanged(nameof(TagChangesCount));
+        OnPropertyChanged(nameof(HasLocalSubmoduleChanges));
+        OnPropertyChanged(nameof(LocalSubmoduleChangesCount));
         OnPropertyChanged(nameof(HasRemoteChanges));
+        OnPropertyChanged(nameof(HasIncomingSubmoduleChanges));
+        OnPropertyChanged(nameof(IncomingSubmoduleChangesCount));
+        OnPropertyChanged(nameof(HasSubmodulesRequiringApplication));
+        OnPropertyChanged(nameof(SubmodulesRequiringApplicationCount));
         UpdateCommandStates();
     }
 
@@ -996,6 +1194,8 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         AddRemoteCommand.NotifyCanExecuteChanged();
         EditRemoteUrlCommand.NotifyCanExecuteChanged();
         RemoveRemoteCommand.NotifyCanExecuteChanged();
+        ApplySubmoduleCommand.NotifyCanExecuteChanged();
+        ApplyAllSubmodulesCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(CanRunRemoteOperation));
         OnPropertyChanged(nameof(CanAddRemote));
         OnPropertyChanged(nameof(CanUseRemoteSelector));

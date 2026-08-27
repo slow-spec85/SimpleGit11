@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -33,6 +34,7 @@ public partial class App : Application
                 GetService<MainWindowViewModel>(),
                 GetService<ILocalizationService>(),
                 GetService<IAsyncCommandExecutor>(),
+                GetService<IDialogService>(),
                 GetService<IGitRepositoryChangeDetector>(),
                 GetService<IGitService>());
             GetService<ThemeService>().RegisterWindow(_window);
@@ -61,10 +63,15 @@ public partial class App : Application
 
     private static ServiceProvider ConfigureServices()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
 
         services.AddSingleton<IGitCommandRunner, GitCommandRunner>();
         services.AddSingleton<IGitRepositoryChangeDetector, GitRepositoryChangeDetector>();
+        services.AddSingleton(static _ => new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(10)
+        });
+        services.AddSingleton<IProductInfoService, ProductInfoService>();
         services.AddSingleton<ILocalSettingsStore, JsonLocalSettingsStore>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();
@@ -80,6 +87,7 @@ public partial class App : Application
         services.AddSingleton<IGitRepositorySearchService, RepositorySearchService>();
         services.AddSingleton<IRecentRepositoriesService, RecentRepositoriesService>();
         services.AddSingleton<IGitStatusService, GitStatusService>();
+        services.AddSingleton<IGitSubmoduleService, GitSubmoduleService>();
         services.AddSingleton<IGitDiffService, GitDiffService>();
         services.AddSingleton<IGitOperationQueue, GitOperationQueue>();
         services.AddSingleton<IGitStagingService, GitStagingService>();
@@ -114,6 +122,7 @@ public partial class App : Application
         services.AddTransient<CommitRangeViewModel>();
         services.AddTransient<CommitDialogViewModel>();
         services.AddTransient<SettingsViewModel>();
+        services.AddTransient<AboutDialogViewModel>();
 
         return services.BuildServiceProvider();
     }

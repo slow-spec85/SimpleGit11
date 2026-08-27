@@ -15,7 +15,7 @@
             <MenuFlyout>
                 <MenuFlyoutItem
                     x:Name="CopyMenuFlyoutItem"
-                    x:Uid="CopyInfoBarMenuFlyoutItem"
+                    x:Uid="CopyTextMenuFlyoutItem"
                     Command="{x:Bind CopyCommand, Mode=OneWay}" />
             </MenuFlyout>
         </InfoBar.ContextFlyout>

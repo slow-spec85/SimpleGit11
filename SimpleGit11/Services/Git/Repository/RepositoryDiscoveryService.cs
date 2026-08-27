@@ -20,9 +20,13 @@ public sealed class RepositoryDiscoveryService : IGitRepositoryDiscoveryService
             return null;
         }
 
+        string commonDirectoryFile = Path.Combine(gitDirectory, "commondir");
+        bool isLinkedWorktree = File.Exists(commonDirectoryFile);
         string commonGitDirectory = ResolveCommonGitDirectory(gitDirectory);
-        bool isMainWorktree = PathsEqual(gitDirectory, commonGitDirectory);
-        string mainWorktreePath = Directory.GetParent(commonGitDirectory)?.FullName ?? root;
+        bool isMainWorktree = !isLinkedWorktree;
+        string mainWorktreePath = isLinkedWorktree
+            ? Directory.GetParent(commonGitDirectory)?.FullName ?? root
+            : root;
 
         return new RepositoryInfo(
             root,
@@ -106,13 +110,5 @@ public sealed class RepositoryDiscoveryService : IGitRepositoryDiscoveryService
         return Path.GetFullPath(Path.IsPathRooted(commonDirectory)
             ? commonDirectory
             : Path.Combine(gitDirectory, commonDirectory));
-    }
-
-    private static bool PathsEqual(string left, string right)
-    {
-        return string.Equals(
-            Path.TrimEndingDirectorySeparator(Path.GetFullPath(left)),
-            Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)),
-            StringComparison.OrdinalIgnoreCase);
     }
 }

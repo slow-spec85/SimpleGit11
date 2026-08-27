@@ -19,6 +19,8 @@ public interface IGitConfigService
     Task<string> GetCredentialHelperAsync(ConfigScope level, RepositoryInfo? repository);
     Task<string> GetInitialBranchNameAsync(ConfigScope level, RepositoryInfo? repository);
     Task<string> GetPushDefaultRemoteAsync(ConfigScope level, RepositoryInfo? repository);
+    Task<string> GetGlobalSshCommandAsync();
+    Task<IReadOnlyList<GitUrlRewrite>> GetGlobalUrlRewritesAsync();
     Task<bool> IsGlobalCredentialHelperManagerConfiguredAsync();
     Task<IReadOnlyDictionary<string, string>> GetBranchDescriptionsAsync(RepositoryInfo repository);
     Task<IReadOnlyDictionary<string, string>> GetBranchPushRemotesAsync(RepositoryInfo repository);
@@ -28,11 +30,15 @@ public interface IGitConfigService
     Task SetCredentialHelperAsync(ConfigScope level, RepositoryInfo? repository);
     Task SetInitialBranchNameAsync(ConfigScope level, RepositoryInfo? repository, string branchName);
     Task SetPushDefaultRemoteAsync(ConfigScope level, RepositoryInfo? repository, string remoteName);
+    Task SetGlobalSshCommandAsync(string sshCommand);
     Task SetBranchUpstreamAsync(RepositoryInfo repository, string branchName, string remoteName);
     Task UnsetBranchUpstreamAsync(RepositoryInfo repository, string branchName);
     Task SetBranchPushRemoteAsync(RepositoryInfo repository, string branchName, string? remoteName);
     Task SetBranchDescriptionAsync(RepositoryInfo repository, string branchName, string description);
     Task SetGlobalCredentialHelperManagerAsync();
+    Task AddGlobalUrlRewriteAsync(GitUrlRewrite rewrite);
+    Task UpdateGlobalUrlRewriteAsync(GitUrlRewrite oldRewrite, GitUrlRewrite newRewrite);
+    Task RemoveGlobalUrlRewriteAsync(GitUrlRewrite rewrite);
     Task UnsetGlobalCredentialHelperAsync();
 
     Task UnsetUserNameAsync(ConfigScope level, RepositoryInfo? repository);
@@ -40,4 +46,5 @@ public interface IGitConfigService
     Task UnsetCredentialHelperAsync(ConfigScope level, RepositoryInfo? repository);
     Task UnsetInitialBranchNameAsync(ConfigScope level, RepositoryInfo? repository);
     Task UnsetPushDefaultRemoteAsync(ConfigScope level, RepositoryInfo? repository);
+    Task UnsetGlobalSshCommandAsync();
 }

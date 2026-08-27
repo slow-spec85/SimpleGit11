@@ -132,6 +132,54 @@
   <data name="SynchronizationNavigationItem.Content" xml:space="preserve">
     <value>Synchronization</value>
   </data>
+  <data name="AboutNavigationItem.Content" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="AboutNavigationItem.AutomationProperties.Name" xml:space="preserve">
+    <value>About SimpleGit11</value>
+  </data>
+  <data name="AboutDialog.Title" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="AboutDialog.CloseButtonText" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="AboutProductDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Git client for Windows 11</value>
+  </data>
+  <data name="AboutCurrentVersionLabelTextBlock.Text" xml:space="preserve">
+    <value>Current version</value>
+  </data>
+  <data name="AboutRepositoryLabelTextBlock.Text" xml:space="preserve">
+    <value>Repository</value>
+  </data>
+  <data name="AboutLatestVersionLabelTextBlock.Text" xml:space="preserve">
+    <value>Latest version</value>
+  </data>
+  <data name="AboutCheckingReleaseTextBlock.Text" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="IncludePrereleaseVersionsToggleSwitch.Header" xml:space="preserve">
+    <value>Include prerelease versions</value>
+  </data>
+  <data name="IncludePrereleaseVersionsToggleSwitch.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="IncludePrereleaseVersionsToggleSwitch.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="RetryReleaseCheckButton.Content" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="AboutNoPublishedRelease" xml:space="preserve">
+    <value>No published releases found.</value>
+  </data>
+  <data name="AboutNoStableRelease" xml:space="preserve">
+    <value>No stable releases have been published yet.</value>
+  </data>
+  <data name="AboutReleaseCheckFailed" xml:space="preserve">
+    <value>Couldn't check the latest version.</value>
+  </data>
   <data name="RecentRepositoriesTextBlock.Text" xml:space="preserve">
     <value>Recent repositories</value>
   </data>
@@ -331,7 +379,7 @@
     <value>Show diff</value>
   </data>
   <data name="CopyDiffSelectionMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy</value>
+    <value>Copy selected</value>
   </data>
   <data name="CopyDiffAllMenuFlyoutItem.Text" xml:space="preserve">
     <value>Copy all</value>
@@ -480,13 +528,7 @@
   <data name="CommitMessageAmended" xml:space="preserve">
     <value>Commit message updated.</value>
   </data>
-  <data name="CopyCommitDateMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy</value>
-  </data>
-  <data name="CopyCommitAuthorMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy</value>
-  </data>
-  <data name="CopyCommitHashMenuFlyoutItem.Text" xml:space="preserve">
+  <data name="CopyTextMenuFlyoutItem.Text" xml:space="preserve">
     <value>Copy</value>
   </data>
   <data name="OpenRepositoryBeforeHistory" xml:space="preserve">
@@ -1126,6 +1168,9 @@
   <data name="RevertCommitMenuFlyoutItem.Text" xml:space="preserve">
     <value>Revert</value>
   </data>
+  <data name="CheckoutCommitMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Switch to this commit</value>
+  </data>
   <data name="ResetSplitButtonTextBlock.Text" xml:space="preserve">
     <value>Reset</value>
   </data>
@@ -1279,6 +1324,24 @@
   <data name="GitDangerousOperationFailed" xml:space="preserve">
     <value>Git operation failed.</value>
   </data>
+  <data name="CheckoutCommitDialogTitle" xml:space="preserve">
+    <value>Switch to commit?</value>
+  </data>
+  <data name="CheckoutCommitDialogMessage" xml:space="preserve">
+    <value>The worktree will switch to commit {0} ({1}) without creating a branch. New commits will not belong to a branch.</value>
+  </data>
+  <data name="CheckoutCommitDialogPrimaryButton" xml:space="preserve">
+    <value>Switch</value>
+  </data>
+  <data name="CheckoutCommitProgressMessage" xml:space="preserve">
+    <value>Switching to commit {0}</value>
+  </data>
+  <data name="CheckoutCommitSucceeded" xml:space="preserve">
+    <value>Switched to commit {0} in detached HEAD mode.</value>
+  </data>
+  <data name="CheckoutCommitFailed" xml:space="preserve">
+    <value>Could not switch to the commit.</value>
+  </data>
   <data name="StageSplitButtonTextBlock.Text" xml:space="preserve">
     <value>Stage</value>
   </data>
@@ -1381,9 +1444,6 @@
   <data name="CopyRepositoryPathMenuFlyoutItem.Text" xml:space="preserve">
     <value>Copy path</value>
   </data>
-  <data name="CopyRepositoryInfoMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy</value>
-  </data>
   <data name="OpenFoundRepositoryMenuFlyoutItem.Text" xml:space="preserve">
     <value>Open</value>
   </data>
@@ -1416,9 +1476,6 @@
   </data>
   <data name="CloseRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Close</value>
-  </data>
-  <data name="CopyInfoBarMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy</value>
   </data>
   <data name="RepositoryStatusSectionTitleTextBlock.Text" xml:space="preserve">
     <value>Current state</value>
@@ -1549,9 +1606,6 @@
   <data name="CheckoutBranchMenuFlyoutItem.Text" xml:space="preserve">
     <value>Checkout</value>
   </data>
-  <data name="CopyRemoteUrlMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy</value>
-  </data>
   <data name="EditRemoteUrlMenuFlyoutItem.Text" xml:space="preserve">
     <value>Edit</value>
   </data>
@@ -1658,6 +1712,24 @@
     <value>On</value>
   </data>
   <data name="CredentialHelperToggleSwitch.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="SshCommandSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>SSH client override</value>
+  </data>
+  <data name="SshCommandSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Use the specified SSH executable instead of the client selected by Git</value>
+  </data>
+  <data name="SshCommandTextBox.PlaceholderText" xml:space="preserve">
+    <value>C:/Windows/System32/OpenSSH/ssh.exe</value>
+  </data>
+  <data name="SshCommandTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>SSH client path</value>
+  </data>
+  <data name="SshCommandToggleSwitch.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="SshCommandToggleSwitch.OffContent" xml:space="preserve">
     <value>Off</value>
   </data>
   <data name="InitialBranchNameSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
@@ -1791,6 +1863,69 @@
   </data>
   <data name="SynchronizationPullBranchButton.Content" xml:space="preserve">
     <value>Pull</value>
+  </data>
+  <data name="SynchronizationLocalSubmodulesExpanderTitleTextBlock.Text" xml:space="preserve">
+    <value>Submodules</value>
+  </data>
+  <data name="SynchronizationLocalSubmodulesExpanderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Pinned-version changes in local branches.</value>
+  </data>
+  <data name="SynchronizationIncomingSubmodulesExpanderTitleTextBlock.Text" xml:space="preserve">
+    <value>Submodules</value>
+  </data>
+  <data name="SynchronizationIncomingSubmodulesExpanderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Pinned-version changes in incoming commits.</value>
+  </data>
+  <data name="SynchronizationSubmoduleOutgoingDescription" xml:space="preserve">
+    <value>Pinned version {0} → {1}. It will be pushed with branch {2}.</value>
+  </data>
+  <data name="SynchronizationSubmoduleIncomingDescription" xml:space="preserve">
+    <value>Pinned version {0} → {1}. It will be pulled with branch {2}.</value>
+  </data>
+  <data name="SynchronizationRequiresApplicationTitleTextBlock.Text" xml:space="preserve">
+    <value>Require application</value>
+  </data>
+  <data name="SynchronizationRequiresApplicationDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Submodule working folders differ from the versions pinned by the parent repository.</value>
+  </data>
+  <data name="SynchronizationApplySubmodulesExpanderTitleTextBlock.Text" xml:space="preserve">
+    <value>Submodules</value>
+  </data>
+  <data name="SynchronizationApplySubmodulesExpanderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Applying downloads the required objects and checks out the pinned commits.</value>
+  </data>
+  <data name="SynchronizationApplyAllSubmodulesButton.Content" xml:space="preserve">
+    <value>Apply all</value>
+  </data>
+  <data name="SynchronizationApplyAllSubmodulesButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Apply all submodule changes</value>
+  </data>
+  <data name="SynchronizationApplySubmoduleButton.Content" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="SynchronizationApplySubmoduleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Apply submodule change</value>
+  </data>
+  <data name="SynchronizationSubmoduleApplicationDescription" xml:space="preserve">
+    <value>Pinned: {0} · Local: {1}</value>
+  </data>
+  <data name="SynchronizationSubmoduleNotInitialized" xml:space="preserve">
+    <value>not initialized</value>
+  </data>
+  <data name="SynchronizationApplyingSubmoduleProgress" xml:space="preserve">
+    <value>Applying the pinned version of submodule {0}...</value>
+  </data>
+  <data name="SynchronizationApplyingAllSubmodulesProgress" xml:space="preserve">
+    <value>Applying pinned submodule versions...</value>
+  </data>
+  <data name="SynchronizationSubmoduleApplied" xml:space="preserve">
+    <value>Submodule {0} now matches its pinned version.</value>
+  </data>
+  <data name="SynchronizationAllSubmodulesApplied" xml:space="preserve">
+    <value>All submodules now match their pinned versions.</value>
+  </data>
+  <data name="SynchronizationApplySubmoduleFailed" xml:space="preserve">
+    <value>Could not apply the pinned submodule version.</value>
   </data>
   <data name="SynchronizationBranchDivergedDescription" xml:space="preserve">
     <value>Diverged: {0} outgoing and {1} incoming. Review both directions before synchronizing.</value>
@@ -2794,9 +2929,6 @@ Push will use the configured destinations, not the selected remote.</value>
   <data name="LastCommitBranchChangesDescription" xml:space="preserve">
     <value>Changes in commit {0}: {1}</value>
   </data>
-  <data name="CopyFileNameMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy name</value>
-  </data>
   <data name="FileFilterModeMenuFlyoutItem.Text" xml:space="preserve">
     <value>Filter by file</value>
   </data>
@@ -3422,7 +3554,15 @@ Push will use the configured destinations, not the selected remote.</value>
     <value>Syntax highlighting rule disabled</value>
   </data>
   <data name="SyntaxHighlightingRuleQuarantinedDetails" xml:space="preserve">
-    <value>Language: {0}&#xA;Rule: {1}&#xA;Pattern: {2}&#xA;Timeout: {3:N0} ms&#xA;Input length: {4:N0} characters&#xA;Exception: {5}&#xA;Message: {6}&#xA;&#xA;The rule has been quarantined for this editor session and will be skipped until the syntax highlighting definition is reset.</value>
+    <value>Language: {0}
+Rule: {1}
+Pattern: {2}
+Timeout: {3:N0} ms
+Input length: {4:N0} characters
+Exception: {5}
+Message: {6}
+
+The rule has been quarantined for this editor session and will be skipped until the syntax highlighting definition is reset.</value>
   </data>
   <data name="SyntaxHighlightingUnknownLanguage" xml:space="preserve">
     <value>Unknown</value>
@@ -3438,5 +3578,341 @@ Push will use the configured destinations, not the selected remote.</value>
   </data>
   <data name="NoLocalCommitsInfoBar.Title" xml:space="preserve">
     <value>The previous comment has already been sent to the remote repository.</value>
+  </data>
+  <data name="CopyNameMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Сopy name</value>
+  </data>
+  <data name="SubmodulesCardTitleTextBlock.Text" xml:space="preserve">
+    <value>Submodules</value>
+  </data>
+  <data name="SubmodulesCardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Repositories pinned to commits and stored inside this repository.</value>
+  </data>
+  <data name="SubmoduleTreeView.AutomationProperties.Name" xml:space="preserve">
+    <value>Submodules</value>
+  </data>
+  <data name="OpenSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="OpenSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Open the submodule as the current repository</value>
+  </data>
+  <data name="OpenSubmoduleFolderAppBarButton.Label" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="OpenSubmoduleFolderAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Open the submodule folder in File Explorer</value>
+  </data>
+  <data name="SubmoduleStatusNotInitialized" xml:space="preserve">
+    <value>Not initialized</value>
+  </data>
+  <data name="SubmoduleStatusConflict" xml:space="preserve">
+    <value>Conflict</value>
+  </data>
+  <data name="SubmoduleStatusError" xml:space="preserve">
+    <value>Unavailable</value>
+  </data>
+  <data name="SubmoduleStatusDifferentCommit" xml:space="preserve">
+    <value>Different commit</value>
+  </data>
+  <data name="SubmoduleStatusStaged" xml:space="preserve">
+    <value>Pointer staged</value>
+  </data>
+  <data name="SubmoduleStatusTrackedChanges" xml:space="preserve">
+    <value>Modified files</value>
+  </data>
+  <data name="SubmoduleStatusUntrackedFiles" xml:space="preserve">
+    <value>Untracked files</value>
+  </data>
+  <data name="SubmoduleStatusReady" xml:space="preserve">
+    <value>At pinned commit</value>
+  </data>
+  <data name="SubmoduleDefaultBranch" xml:space="preserve">
+    <value>Default branch</value>
+  </data>
+  <data name="SubmoduleAutomationName" xml:space="preserve">
+    <value>{0}, path {1}, {2}</value>
+  </data>
+  <data name="SubmoduleListFailed" xml:space="preserve">
+    <value>Could not load submodules.</value>
+  </data>
+  <data name="SubmoduleFolderOpenFailed" xml:space="preserve">
+    <value>Could not open the submodule folder.</value>
+  </data>
+  <data name="SubmoduleAddDialog.Title" xml:space="preserve">
+    <value>Add submodule</value>
+  </data>
+  <data name="SubmoduleAddDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="SubmoduleAddDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SubmoduleUrlTextBox.Header" xml:space="preserve">
+    <value>Repository URL</value>
+  </data>
+  <data name="SubmoduleUrlTextBox.PlaceholderText" xml:space="preserve">
+    <value>https://example.com/owner/repository.git</value>
+  </data>
+  <data name="SubmodulePathTextBox.Header" xml:space="preserve">
+    <value>Path inside the repository</value>
+  </data>
+  <data name="SubmoduleBranchTextBox.Header" xml:space="preserve">
+    <value>Branch to track (optional)</value>
+  </data>
+  <data name="SubmoduleBranchTextBox.PlaceholderText" xml:space="preserve">
+    <value>Leave empty to use the remote default branch</value>
+  </data>
+  <data name="SubmoduleAddInfoBar.Message" xml:space="preserve">
+    <value>The parent repository records a URL, path, and exact commit. Future clones can restore the same version.</value>
+  </data>
+  <data name="AddSubmoduleButton.Content" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="AddSubmoduleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Clone a repository into the selected path and stage its configuration and pinned commit</value>
+  </data>
+  <data name="InitializeAllSubmodulesAppBarButton.Label" xml:space="preserve">
+    <value>Initialize all</value>
+  </data>
+  <data name="CheckoutAllSubmodulesAppBarButton.Label" xml:space="preserve">
+    <value>Restore pinned versions</value>
+  </data>
+  <data name="UpdateAllSubmodulesAppBarButton.Label" xml:space="preserve">
+    <value>Switch to submodule versions</value>
+  </data>
+  <data name="SyncAllSubmodulesAppBarButton.Label" xml:space="preserve">
+    <value>Synchronize URLs</value>
+  </data>
+  <data name="InitializeSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Initialize</value>
+  </data>
+  <data name="CheckoutSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Restore pinned version</value>
+  </data>
+  <data name="UpdateSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Switch to submodule version</value>
+  </data>
+  <data name="SyncSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Synchronize URL</value>
+  </data>
+  <data name="EditSubmoduleUrlAppBarButton.Label" xml:space="preserve">
+    <value>Edit URL</value>
+  </data>
+  <data name="EditSubmoduleBranchAppBarButton.Label" xml:space="preserve">
+    <value>Edit tracked branch</value>
+  </data>
+  <data name="DeinitializeSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Deinitialize</value>
+  </data>
+  <data name="RemoveSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Remove from repository</value>
+  </data>
+  <data name="SubmoduleUrlTextBoxHeader" xml:space="preserve">
+    <value>Repository URL</value>
+  </data>
+  <data name="SubmoduleBranchTextBoxHeader" xml:space="preserve">
+    <value>Tracked branch</value>
+  </data>
+  <data name="SubmoduleBranchTextBoxPlaceholder" xml:space="preserve">
+    <value>Leave empty to restore the remote default branch</value>
+  </data>
+  <data name="SaveButton" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="EditSubmoduleUrlDialogTitle" xml:space="preserve">
+    <value>Edit submodule URL</value>
+  </data>
+  <data name="EditSubmoduleBranchDialogTitle" xml:space="preserve">
+    <value>Edit tracked branch</value>
+  </data>
+  <data name="DeinitializeSubmoduleDialogTitle" xml:space="preserve">
+    <value>Deinitialize submodule?</value>
+  </data>
+  <data name="DeinitializeSubmoduleDialogMessage" xml:space="preserve">
+    <value>The working directory for “{0}” will be removed. The submodule remains registered and can be initialized again.</value>
+  </data>
+  <data name="DeinitializeSubmoduleButton" xml:space="preserve">
+    <value>Deinitialize</value>
+  </data>
+  <data name="RemoveSubmoduleDialogTitle" xml:space="preserve">
+    <value>Remove submodule?</value>
+  </data>
+  <data name="RemoveSubmoduleDialogMessage" xml:space="preserve">
+    <value>“{0}” will be deinitialized and removed from the parent repository. Git will refuse if local changes would be lost.</value>
+  </data>
+  <data name="RemoveSubmoduleButton" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="AddingSubmoduleProgress" xml:space="preserve">
+    <value>Adding submodule...</value>
+  </data>
+  <data name="InitializingSubmodulesProgress" xml:space="preserve">
+    <value>Initializing submodules...</value>
+  </data>
+  <data name="CheckingOutSubmodulesProgress" xml:space="preserve">
+    <value>Restoring pinned submodule versions...</value>
+  </data>
+  <data name="UpdatingSubmodulesProgress" xml:space="preserve">
+    <value>Switching to submodule versions from configured branches...</value>
+  </data>
+  <data name="SyncingSubmodulesProgress" xml:space="preserve">
+    <value>Synchronizing submodule URLs...</value>
+  </data>
+  <data name="EditingSubmoduleProgress" xml:space="preserve">
+    <value>Updating submodule settings...</value>
+  </data>
+  <data name="DeinitializingSubmoduleProgress" xml:space="preserve">
+    <value>Deinitializing submodule...</value>
+  </data>
+  <data name="RemovingSubmoduleProgress" xml:space="preserve">
+    <value>Removing submodule...</value>
+  </data>
+  <data name="SubmoduleAdded" xml:space="preserve">
+    <value>Submodule added.</value>
+  </data>
+  <data name="SubmodulesInitialized" xml:space="preserve">
+    <value>Submodules initialized.</value>
+  </data>
+  <data name="SubmoduleInitialized" xml:space="preserve">
+    <value>Submodule initialized.</value>
+  </data>
+  <data name="SubmodulesCheckedOut" xml:space="preserve">
+    <value>Pinned submodule versions restored.</value>
+  </data>
+  <data name="SubmoduleCheckedOut" xml:space="preserve">
+    <value>Pinned submodule version restored.</value>
+  </data>
+  <data name="SubmodulesUpdated" xml:space="preserve">
+    <value>Latest versions from the configured submodule branches selected.</value>
+  </data>
+  <data name="SubmoduleUpdated" xml:space="preserve">
+    <value>Latest version from the configured submodule branch selected.</value>
+  </data>
+  <data name="SubmodulesSynchronized" xml:space="preserve">
+    <value>Submodule URLs synchronized.</value>
+  </data>
+  <data name="SubmoduleSynchronized" xml:space="preserve">
+    <value>Submodule URL synchronized.</value>
+  </data>
+  <data name="SubmoduleUrlUpdated" xml:space="preserve">
+    <value>Submodule URL updated.</value>
+  </data>
+  <data name="SubmoduleBranchUpdated" xml:space="preserve">
+    <value>Tracked branch updated.</value>
+  </data>
+  <data name="SubmoduleDeinitialized" xml:space="preserve">
+    <value>Submodule deinitialized.</value>
+  </data>
+  <data name="SubmoduleRemoved" xml:space="preserve">
+    <value>Submodule removed from the repository.</value>
+  </data>
+  <data name="SubmoduleOperationFailed" xml:space="preserve">
+    <value>Could not complete the submodule operation.</value>
+  </data>
+  <data name="InitializeAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Clone missing submodules and recursively checkout the commits recorded by the parent repository</value>
+  </data>
+  <data name="CheckoutAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Restore all initialized submodules to the versions pinned by their parent repositories</value>
+  </data>
+  <data name="UpdateAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Fetch the latest commits from the branches configured for the submodules in .gitmodules and switch to them; the parent repository will show changed submodule pointers</value>
+  </data>
+  <data name="SyncAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Copy all submodule URLs from .gitmodules to the local Git configuration recursively</value>
+  </data>
+  <data name="InitializeSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Clone this submodule if needed and recursively checkout the commit recorded by its parent repository</value>
+  </data>
+  <data name="CheckoutSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Restore the submodule version pinned by its parent repository</value>
+  </data>
+  <data name="UpdateSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Fetch the latest commit from the branch configured for the submodule in .gitmodules and switch to it; the parent repository will show a changed submodule pointer</value>
+  </data>
+  <data name="SyncSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Copy this submodule URL from .gitmodules to the local Git configuration</value>
+  </data>
+  <data name="EditSubmoduleUrlAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Change the repository URL stored for this submodule</value>
+  </data>
+  <data name="EditSubmoduleBranchAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Choose the branch used by “Switch to submodule version”; leave it empty to use the remote default</value>
+  </data>
+  <data name="DeinitializeSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Remove the submodule working directory while keeping it registered in the parent repository</value>
+  </data>
+  <data name="RemoveSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Deinitialize the submodule and stage its removal from the parent repository</value>
+  </data>
+  <data name="SubmoduleChangeBadgeTextBlock.Text" xml:space="preserve">
+    <value>submodule</value>
+  </data>
+  <data name="CloneSubmodulesRecursivelyCheckBox.Content" xml:space="preserve">
+    <value>Initialize nested submodules recursively</value>
+  </data>
+  <data name="GlobalUrlRewritesTitleTextBlock.Text" xml:space="preserve">
+    <value>Git URL redirection</value>
+  </data>
+  <data name="GlobalUrlRewritesDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Global insteadOf rules. Git replaces a matching URL or URL prefix before contacting the remote repository.</value>
+  </data>
+  <data name="AddGlobalUrlRewriteButton.Content" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="AddGlobalUrlRewriteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Add a Git URL redirect</value>
+  </data>
+  <data name="EditGlobalUrlRewriteButton.Content" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="EditGlobalUrlRewriteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Edit the Git URL redirect</value>
+  </data>
+  <data name="RemoveGlobalUrlRewriteButton.Content" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="RemoveGlobalUrlRewriteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Remove the Git URL redirect</value>
+  </data>
+  <data name="GitUrlRewriteDialog.Title" xml:space="preserve">
+    <value>Git URL redirection</value>
+  </data>
+  <data name="GitUrlRewriteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="GitUrlRewriteDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="GitUrlRewriteDialogDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Git will replace the beginning of the source URL with the specified value in every repository for the current user, including submodules.</value>
+  </data>
+  <data name="GitUrlRewriteInsteadOfTextBox.Header" xml:space="preserve">
+    <value>Source URL or prefix</value>
+  </data>
+  <data name="GitUrlRewriteInsteadOfTextBox.PlaceholderText" xml:space="preserve">
+    <value>https://example.com/public/repository.git</value>
+  </data>
+  <data name="GitUrlRewriteReplacementTextBox.Header" xml:space="preserve">
+    <value>URL or prefix to use</value>
+  </data>
+  <data name="GitUrlRewriteReplacementTextBox.PlaceholderText" xml:space="preserve">
+    <value>ssh://git@private.example.com/repository.git</value>
+  </data>
+  <data name="GitUrlRewriteAdded" xml:space="preserve">
+    <value>URL redirect added.</value>
+  </data>
+  <data name="GitUrlRewriteUpdated" xml:space="preserve">
+    <value>URL redirect updated.</value>
+  </data>
+  <data name="GitUrlRewriteRemoved" xml:space="preserve">
+    <value>URL redirect removed.</value>
+  </data>
+  <data name="GitUrlRewriteAlreadyExists" xml:space="preserve">
+    <value>A redirect is already configured for this source URL.</value>
+  </data>
+  <data name="GitUrlRewriteSaveFailed" xml:space="preserve">
+    <value>Could not change the global Git URL redirect rules.</value>
   </data>
 </root>

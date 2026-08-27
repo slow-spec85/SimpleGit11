@@ -6,12 +6,14 @@ public sealed class GitChangedFile
         string path,
         string status,
         DiffStat? stat = null,
-        GitChangeState? state = null)
+        GitChangeState? state = null,
+        bool isSubmodule = false)
     {
         Path = path;
         Status = status;
         Stat = stat ?? DiffStat.Empty;
         State = state;
+        IsSubmodule = isSubmodule;
     }
 
     public string Path { get; }
@@ -54,6 +56,10 @@ public sealed class GitChangedFile
 
     public GitChangeState? State { get; }
 
+    public bool IsSubmodule { get; }
+
+    public bool CanShowFileContent => !IsSubmodule && !IsConflicted;
+
     public bool IsStaged => State == GitChangeState.Staged;
 
     public bool IsUnstaged => State == GitChangeState.Unstaged;
@@ -62,7 +68,7 @@ public sealed class GitChangedFile
 
     public bool IsNotConflicted => !IsConflicted;
 
-    public bool CanDiscard => State.HasValue && !IsConflicted;
+    public bool CanDiscard => State.HasValue && !IsConflicted && !IsSubmodule;
 
     public string StateLabel => State switch
     {

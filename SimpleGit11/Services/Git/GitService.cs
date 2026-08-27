@@ -30,6 +30,7 @@ internal sealed class GitService : IGitService
         IGitStagingService stagingService,
         IGitStashService stashService,
         IGitStatusService statusService,
+        IGitSubmoduleService submoduleService,
         IGitTagService tagService,
         IGitWorktreeService worktreeService)
     {
@@ -52,6 +53,7 @@ internal sealed class GitService : IGitService
         Staging = stagingService;
         Stashes = stashService;
         Status = statusService;
+        Submodules = submoduleService;
         Tags = tagService;
         Worktrees = worktreeService;
     }
@@ -91,6 +93,8 @@ internal sealed class GitService : IGitService
     public IGitStashService Stashes { get; }
 
     public IGitStatusService Status { get; }
+
+    public IGitSubmoduleService Submodules { get; }
 
     public IGitTagService Tags { get; }
 

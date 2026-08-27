@@ -1,5 +1,5 @@
-using SimpleGit11.Models;
 using System;
+using SimpleGit11.Models;
 
 namespace SimpleGit11.Services;
 
@@ -12,19 +12,29 @@ public sealed class SettingsService : ISettingsService
     private const string ThemeModeKey = "ThemeMode";
     private const string LanguageKey = "Language";
     private const string IgnoreWhitespaceInDiffKey = "IgnoreWhitespaceInDiff";
+    private const string IncludePrereleaseVersionsKey = "IncludePrereleaseVersions";
     private const string EditorFontFamilyKey = "EditorFontFamily";
     private const string EditorFontSizeKey = "EditorFontSize";
     private const string EditorLineSpacingKey = "EditorLineSpacing";
+    private const string SshCommandKey = "SshCommand";
     private readonly ILocalSettingsStore _localSettingsStore;
 
-    public SettingsService(ILocalSettingsStore localSettingsStore)
+    public SettingsService(
+        ILocalSettingsStore localSettingsStore,
+        IProductInfoService productInfoService)
     {
         _localSettingsStore = localSettingsStore;
+        bool currentVersionIsPrerelease = productInfoService.CurrentVersion.Contains(
+            '-',
+            StringComparison.Ordinal);
         Current = new AppSettings
         {
             ThemeMode = LoadEnum(ThemeModeKey, AppThemeMode.System),
             Language = LoadEnum(LanguageKey, AppLanguage.System),
-            IgnoreWhitespaceInDiff = LoadBool(IgnoreWhitespaceInDiffKey),
+            IgnoreWhitespaceInDiff = LoadBool(IgnoreWhitespaceInDiffKey, false),
+            IncludePrereleaseVersions = LoadBool(
+                IncludePrereleaseVersionsKey,
+                currentVersionIsPrerelease),
             EditorFontFamily = LoadString(
                 EditorFontFamilyKey,
                 AppSettings.DefaultEditorFontFamily),
@@ -37,7 +47,8 @@ public sealed class SettingsService : ISettingsService
                 EditorLineSpacingKey,
                 AppSettings.DefaultEditorLineSpacing,
                 MinimumEditorLineSpacing,
-                MaximumEditorLineSpacing)
+                MaximumEditorLineSpacing),
+            SshCommand = LoadString(SshCommandKey, "")
         };
     }
 
@@ -61,6 +72,14 @@ public sealed class SettingsService : ISettingsService
     {
         Current.IgnoreWhitespaceInDiff = ignoreWhitespace;
         _localSettingsStore.SetString(IgnoreWhitespaceInDiffKey, ignoreWhitespace.ToString());
+    }
+
+    public void SetIncludePrereleaseVersions(bool includePrereleaseVersions)
+    {
+        Current.IncludePrereleaseVersions = includePrereleaseVersions;
+        _localSettingsStore.SetString(
+            IncludePrereleaseVersionsKey,
+            includePrereleaseVersions.ToString());
     }
 
     public void SetEditorFont(string fontFamily, int fontSize)
@@ -98,6 +117,13 @@ public sealed class SettingsService : ISettingsService
         EditorAppearanceChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public void SetSshCommand(string sshCommand)
+    {
+        string normalizedCommand = sshCommand.Trim();
+        Current.SshCommand = normalizedCommand;
+        _localSettingsStore.SetString(SshCommandKey, normalizedCommand);
+    }
+
     private T LoadEnum<T>(string key, T fallback)
         where T : struct, Enum
     {
@@ -111,9 +137,11 @@ public sealed class SettingsService : ISettingsService
         _localSettingsStore.SetString(key, value.ToString());
     }
 
-    private bool LoadBool(string key)
+    private bool LoadBool(string key, bool fallback)
     {
-        return bool.TryParse(_localSettingsStore.GetString(key), out bool value) && value;
+        return bool.TryParse(_localSettingsStore.GetString(key), out bool value)
+            ? value
+            : fallback;
     }
 
     private string LoadString(string key, string fallback)

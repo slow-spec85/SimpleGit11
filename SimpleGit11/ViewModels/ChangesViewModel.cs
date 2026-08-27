@@ -175,13 +175,13 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
     private Task OnToggleChangeDisplayModeAsync(GitChangedFile? change) =>
         _asyncCommandExecutor.ExecuteAsync(() => ToggleChangeDisplayModeAsync(change));
 
-    [RelayCommand(CanExecute = nameof(CanShowSelectedChange), FlowExceptionsToTaskScheduler = true)]
+    [RelayCommand(CanExecute = nameof(CanShowSelectedFileContent), FlowExceptionsToTaskScheduler = true)]
     private Task OnShowFullFileAsync() => _asyncCommandExecutor.ExecuteAsync(ShowFullFileAsync);
 
     [RelayCommand(CanExecute = nameof(CanShowSelectedChange), FlowExceptionsToTaskScheduler = true)]
     private Task OnShowDiffAsync() => _asyncCommandExecutor.ExecuteAsync(ShowDiffAsync);
 
-    [RelayCommand(CanExecute = nameof(CanShowSelectedChange), FlowExceptionsToTaskScheduler = true)]
+    [RelayCommand(CanExecute = nameof(CanShowSelectedFileContent), FlowExceptionsToTaskScheduler = true)]
     private Task OnToggleFullFileAsync() => _asyncCommandExecutor.ExecuteAsync(ToggleFullFileAsync);
 
     [RelayCommand(CanExecute = nameof(CanRevertDiffLine), FlowExceptionsToTaskScheduler = true)]
@@ -438,13 +438,18 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
 
     public bool CanRevertSelectedChange => SelectedUnstagedChange is not null
         && !SelectedUnstagedChange.IsConflicted
+        && !SelectedUnstagedChange.IsSubmodule
         && SelectedUnstagedChange.Status != "Untracked"
         && CanRunWhenIdle();
 
     public bool CanEditSelectedFile => IsRepositoryOpen
         && SelectedChange is not null
         && !SelectedChange.IsConflicted
+        && !SelectedChange.IsSubmodule
         && SelectedChange.Status != "Deleted"
+        && CanRunWhenIdle();
+
+    private bool CanShowSelectedFileContent() => SelectedChange?.CanShowFileContent == true
         && CanRunWhenIdle();
 
     private bool CanSaveEditedFile() =>
@@ -958,7 +963,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
 
     private Task ToggleChangeDisplayModeAsync(object? parameter)
     {
-        if (parameter is not GitChangedFile change || change.IsConflicted)
+        if (parameter is not GitChangedFile change || !change.CanShowFileContent)
         {
             return Task.CompletedTask;
         }

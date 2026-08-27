@@ -132,6 +132,54 @@
   <data name="SynchronizationNavigationItem.Content" xml:space="preserve">
     <value>Синхронизация</value>
   </data>
+  <data name="AboutNavigationItem.Content" xml:space="preserve">
+    <value>О программе</value>
+  </data>
+  <data name="AboutNavigationItem.AutomationProperties.Name" xml:space="preserve">
+    <value>О программе SimpleGit11</value>
+  </data>
+  <data name="AboutDialog.Title" xml:space="preserve">
+    <value>О программе</value>
+  </data>
+  <data name="AboutDialog.CloseButtonText" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="AboutProductDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Git-клиент для Windows 11</value>
+  </data>
+  <data name="AboutCurrentVersionLabelTextBlock.Text" xml:space="preserve">
+    <value>Текущая версия</value>
+  </data>
+  <data name="AboutRepositoryLabelTextBlock.Text" xml:space="preserve">
+    <value>Репозиторий</value>
+  </data>
+  <data name="AboutLatestVersionLabelTextBlock.Text" xml:space="preserve">
+    <value>Новейшая версия</value>
+  </data>
+  <data name="AboutCheckingReleaseTextBlock.Text" xml:space="preserve">
+    <value>Проверка…</value>
+  </data>
+  <data name="IncludePrereleaseVersionsToggleSwitch.Header" xml:space="preserve">
+    <value>Включить предварительные версии</value>
+  </data>
+  <data name="IncludePrereleaseVersionsToggleSwitch.OnContent" xml:space="preserve">
+    <value>Включено</value>
+  </data>
+  <data name="IncludePrereleaseVersionsToggleSwitch.OffContent" xml:space="preserve">
+    <value>Выключено</value>
+  </data>
+  <data name="RetryReleaseCheckButton.Content" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
+  <data name="AboutNoPublishedRelease" xml:space="preserve">
+    <value>Опубликованные версии не найдены.</value>
+  </data>
+  <data name="AboutNoStableRelease" xml:space="preserve">
+    <value>Стабильные версии пока не опубликованы.</value>
+  </data>
+  <data name="AboutReleaseCheckFailed" xml:space="preserve">
+    <value>Не удалось проверить новейшую версию.</value>
+  </data>
   <data name="RecentRepositoriesTextBlock.Text" xml:space="preserve">
     <value>Последние репозитории</value>
   </data>
@@ -331,7 +379,7 @@
     <value>Показать Diff</value>
   </data>
   <data name="CopyDiffSelectionMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать</value>
+    <value>Копировать выделенное</value>
   </data>
   <data name="CopyDiffAllMenuFlyoutItem.Text" xml:space="preserve">
     <value>Копировать всё</value>
@@ -480,13 +528,7 @@
   <data name="CommitMessageAmended" xml:space="preserve">
     <value>Сообщение коммита обновлено.</value>
   </data>
-  <data name="CopyCommitDateMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать</value>
-  </data>
-  <data name="CopyCommitAuthorMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать</value>
-  </data>
-  <data name="CopyCommitHashMenuFlyoutItem.Text" xml:space="preserve">
+  <data name="CopyTextMenuFlyoutItem.Text" xml:space="preserve">
     <value>Копировать</value>
   </data>
   <data name="OpenRepositoryBeforeHistory" xml:space="preserve">
@@ -1126,6 +1168,9 @@
   <data name="RevertCommitMenuFlyoutItem.Text" xml:space="preserve">
     <value>Отменить</value>
   </data>
+  <data name="CheckoutCommitMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Переключиться на этот коммит</value>
+  </data>
   <data name="ResetSplitButtonTextBlock.Text" xml:space="preserve">
     <value>Сброс</value>
   </data>
@@ -1279,6 +1324,24 @@
   <data name="GitDangerousOperationFailed" xml:space="preserve">
     <value>Git-операция завершилась с ошибкой.</value>
   </data>
+  <data name="CheckoutCommitDialogTitle" xml:space="preserve">
+    <value>Переключиться на коммит?</value>
+  </data>
+  <data name="CheckoutCommitDialogMessage" xml:space="preserve">
+    <value>Рабочее дерево будет переключено на коммит {0} ({1}) без создания ветки. Новые коммиты не будут принадлежать ветке.</value>
+  </data>
+  <data name="CheckoutCommitDialogPrimaryButton" xml:space="preserve">
+    <value>Переключиться</value>
+  </data>
+  <data name="CheckoutCommitProgressMessage" xml:space="preserve">
+    <value>Переключение на коммит {0}</value>
+  </data>
+  <data name="CheckoutCommitSucceeded" xml:space="preserve">
+    <value>Выполнено переключение на коммит {0} в режиме detached HEAD.</value>
+  </data>
+  <data name="CheckoutCommitFailed" xml:space="preserve">
+    <value>Не удалось переключиться на коммит.</value>
+  </data>
   <data name="StageSplitButtonTextBlock.Text" xml:space="preserve">
     <value>Подготовка</value>
   </data>
@@ -1381,9 +1444,6 @@
   <data name="CopyRepositoryPathMenuFlyoutItem.Text" xml:space="preserve">
     <value>Копировать путь</value>
   </data>
-  <data name="CopyRepositoryInfoMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать</value>
-  </data>
   <data name="OpenFoundRepositoryMenuFlyoutItem.Text" xml:space="preserve">
     <value>Открыть</value>
   </data>
@@ -1416,9 +1476,6 @@
   </data>
   <data name="CloseRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Закрыть</value>
-  </data>
-  <data name="CopyInfoBarMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать</value>
   </data>
   <data name="RepositoryStatusSectionTitleTextBlock.Text" xml:space="preserve">
     <value>Текущее состояние</value>
@@ -1549,9 +1606,6 @@
   <data name="CheckoutBranchMenuFlyoutItem.Text" xml:space="preserve">
     <value>Переключиться</value>
   </data>
-  <data name="CopyRemoteUrlMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать</value>
-  </data>
   <data name="EditRemoteUrlMenuFlyoutItem.Text" xml:space="preserve">
     <value>Изменить</value>
   </data>
@@ -1658,6 +1712,24 @@
     <value>Вкл.</value>
   </data>
   <data name="CredentialHelperToggleSwitch.OffContent" xml:space="preserve">
+    <value>Выкл.</value>
+  </data>
+  <data name="SshCommandSettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Переопределение SSH-клиента</value>
+  </data>
+  <data name="SshCommandSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Использовать указанный исполняемый файл SSH вместо клиента, выбранного Git</value>
+  </data>
+  <data name="SshCommandTextBox.PlaceholderText" xml:space="preserve">
+    <value>C:/Windows/System32/OpenSSH/ssh.exe</value>
+  </data>
+  <data name="SshCommandTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Путь к SSH-клиенту</value>
+  </data>
+  <data name="SshCommandToggleSwitch.OnContent" xml:space="preserve">
+    <value>Вкл.</value>
+  </data>
+  <data name="SshCommandToggleSwitch.OffContent" xml:space="preserve">
     <value>Выкл.</value>
   </data>
   <data name="InitialBranchNameSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
@@ -1791,6 +1863,69 @@
   </data>
   <data name="SynchronizationPullBranchButton.Content" xml:space="preserve">
     <value>Получить</value>
+  </data>
+  <data name="SynchronizationLocalSubmodulesExpanderTitleTextBlock.Text" xml:space="preserve">
+    <value>Подмодули</value>
+  </data>
+  <data name="SynchronizationLocalSubmodulesExpanderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Изменения закреплённых версий в локальных ветках.</value>
+  </data>
+  <data name="SynchronizationIncomingSubmodulesExpanderTitleTextBlock.Text" xml:space="preserve">
+    <value>Подмодули</value>
+  </data>
+  <data name="SynchronizationIncomingSubmodulesExpanderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Изменения закреплённых версий во входящих коммитах.</value>
+  </data>
+  <data name="SynchronizationSubmoduleOutgoingDescription" xml:space="preserve">
+    <value>Закреплённая версия {0} → {1}. Будет отправлена вместе с веткой {2}.</value>
+  </data>
+  <data name="SynchronizationSubmoduleIncomingDescription" xml:space="preserve">
+    <value>Закреплённая версия {0} → {1}. Будет получена вместе с веткой {2}.</value>
+  </data>
+  <data name="SynchronizationRequiresApplicationTitleTextBlock.Text" xml:space="preserve">
+    <value>Требуют применения</value>
+  </data>
+  <data name="SynchronizationRequiresApplicationDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Рабочие папки подмодулей отличаются от версий, закреплённых в родительском репозитории.</value>
+  </data>
+  <data name="SynchronizationApplySubmodulesExpanderTitleTextBlock.Text" xml:space="preserve">
+    <value>Подмодули</value>
+  </data>
+  <data name="SynchronizationApplySubmodulesExpanderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Применение загрузит необходимые объекты и выполнит checkout закреплённых коммитов.</value>
+  </data>
+  <data name="SynchronizationApplyAllSubmodulesButton.Content" xml:space="preserve">
+    <value>Применить всё</value>
+  </data>
+  <data name="SynchronizationApplyAllSubmodulesButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Применить все изменения подмодулей</value>
+  </data>
+  <data name="SynchronizationApplySubmoduleButton.Content" xml:space="preserve">
+    <value>Применить</value>
+  </data>
+  <data name="SynchronizationApplySubmoduleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Применить изменение подмодуля</value>
+  </data>
+  <data name="SynchronizationSubmoduleApplicationDescription" xml:space="preserve">
+    <value>Закреплено: {0} · Локально: {1}</value>
+  </data>
+  <data name="SynchronizationSubmoduleNotInitialized" xml:space="preserve">
+    <value>не инициализирован</value>
+  </data>
+  <data name="SynchronizationApplyingSubmoduleProgress" xml:space="preserve">
+    <value>Применение закреплённой версии подмодуля {0}...</value>
+  </data>
+  <data name="SynchronizationApplyingAllSubmodulesProgress" xml:space="preserve">
+    <value>Применение закреплённых версий подмодулей...</value>
+  </data>
+  <data name="SynchronizationSubmoduleApplied" xml:space="preserve">
+    <value>Подмодуль {0} приведён к закреплённой версии.</value>
+  </data>
+  <data name="SynchronizationAllSubmodulesApplied" xml:space="preserve">
+    <value>Все подмодули приведены к закреплённым версиям.</value>
+  </data>
+  <data name="SynchronizationApplySubmoduleFailed" xml:space="preserve">
+    <value>Не удалось применить закреплённую версию подмодуля.</value>
   </data>
   <data name="SynchronizationBranchDivergedDescription" xml:space="preserve">
     <value>Ветки разошлись: исходящие — {0}, входящие — {1}. Просмотрите оба направления перед синхронизацией.</value>
@@ -2794,9 +2929,6 @@ Push будет выполнен в настроенные направлени�
   <data name="LastCommitBranchChangesDescription" xml:space="preserve">
     <value>Изменения в коммите {0}: {1}</value>
   </data>
-  <data name="CopyFileNameMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать имя</value>
-  </data>
   <data name="FileFilterModeMenuFlyoutItem.Text" xml:space="preserve">
     <value>Фильтр по файлу</value>
   </data>
@@ -3422,7 +3554,15 @@ Push будет выполнен в настроенные направлени�
     <value>Правило подсветки отключено</value>
   </data>
   <data name="SyntaxHighlightingRuleQuarantinedDetails" xml:space="preserve">
-    <value>Язык: {0}&#xA;Правило: {1}&#xA;Шаблон: {2}&#xA;Тайм-аут: {3:N0} мс&#xA;Длина входного текста: {4:N0} символов&#xA;Исключение: {5}&#xA;Сообщение: {6}&#xA;&#xA;Правило помещено в карантин для текущего сеанса редактора и будет пропускаться до сброса определения подсветки.</value>
+    <value>Язык: {0}
+Правило: {1}
+Шаблон: {2}
+Тайм-аут: {3:N0} мс
+Длина входного текста: {4:N0} символов
+Исключение: {5}
+Сообщение: {6}
+
+Правило помещено в карантин для текущего сеанса редактора и будет пропускаться до сброса определения подсветки.</value>
   </data>
   <data name="SyntaxHighlightingUnknownLanguage" xml:space="preserve">
     <value>Неизвестный</value>
@@ -3438,5 +3578,341 @@ Push будет выполнен в настроенные направлени�
   </data>
   <data name="NoLocalCommitsInfoBar.Title" xml:space="preserve">
     <value>Предыдущий коммит уже отправлен в удаленный репозиторий.</value>
+  </data>
+  <data name="CopyNameMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать имя</value>
+  </data>
+  <data name="SubmodulesCardTitleTextBlock.Text" xml:space="preserve">
+    <value>Подмодули</value>
+  </data>
+  <data name="SubmodulesCardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Репозитории, закреплённые на коммитах и размещённые внутри этого репозитория.</value>
+  </data>
+  <data name="SubmoduleTreeView.AutomationProperties.Name" xml:space="preserve">
+    <value>Подмодули</value>
+  </data>
+  <data name="OpenSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="OpenSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Открыть подмодуль как текущий репозиторий</value>
+  </data>
+  <data name="OpenSubmoduleFolderAppBarButton.Label" xml:space="preserve">
+    <value>Расположение</value>
+  </data>
+  <data name="OpenSubmoduleFolderAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Открыть папку подмодуля в Проводнике</value>
+  </data>
+  <data name="SubmoduleStatusNotInitialized" xml:space="preserve">
+    <value>Не инициализирован</value>
+  </data>
+  <data name="SubmoduleStatusConflict" xml:space="preserve">
+    <value>Конфликт</value>
+  </data>
+  <data name="SubmoduleStatusError" xml:space="preserve">
+    <value>Недоступен</value>
+  </data>
+  <data name="SubmoduleStatusDifferentCommit" xml:space="preserve">
+    <value>Другой коммит</value>
+  </data>
+  <data name="SubmoduleStatusStaged" xml:space="preserve">
+    <value>Указатель подготовлен</value>
+  </data>
+  <data name="SubmoduleStatusTrackedChanges" xml:space="preserve">
+    <value>Изменённые файлы</value>
+  </data>
+  <data name="SubmoduleStatusUntrackedFiles" xml:space="preserve">
+    <value>Неотслеживаемые файлы</value>
+  </data>
+  <data name="SubmoduleStatusReady" xml:space="preserve">
+    <value>Закреплённый коммит</value>
+  </data>
+  <data name="SubmoduleDefaultBranch" xml:space="preserve">
+    <value>Ветка по умолчанию</value>
+  </data>
+  <data name="SubmoduleAutomationName" xml:space="preserve">
+    <value>{0}, путь {1}, {2}</value>
+  </data>
+  <data name="SubmoduleListFailed" xml:space="preserve">
+    <value>Не удалось загрузить подмодули.</value>
+  </data>
+  <data name="SubmoduleFolderOpenFailed" xml:space="preserve">
+    <value>Не удалось открыть папку подмодуля.</value>
+  </data>
+  <data name="SubmoduleAddDialog.Title" xml:space="preserve">
+    <value>Добавление подмодуля</value>
+  </data>
+  <data name="SubmoduleAddDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="SubmoduleAddDialog.CloseButtonText" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="SubmoduleUrlTextBox.Header" xml:space="preserve">
+    <value>URL репозитория</value>
+  </data>
+  <data name="SubmoduleUrlTextBox.PlaceholderText" xml:space="preserve">
+    <value>https://example.com/owner/repository.git</value>
+  </data>
+  <data name="SubmodulePathTextBox.Header" xml:space="preserve">
+    <value>Путь внутри репозитория</value>
+  </data>
+  <data name="SubmoduleBranchTextBox.Header" xml:space="preserve">
+    <value>Отслеживаемая ветка (необязательно)</value>
+  </data>
+  <data name="SubmoduleBranchTextBox.PlaceholderText" xml:space="preserve">
+    <value>Оставьте пустым для ветки удалённого репозитория по умолчанию</value>
+  </data>
+  <data name="SubmoduleAddInfoBar.Message" xml:space="preserve">
+    <value>Родительский репозиторий сохранит URL, путь и точный коммит. Следующие клоны смогут восстановить ту же версию.</value>
+  </data>
+  <data name="AddSubmoduleButton.Content" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="AddSubmoduleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Клонировать репозиторий в выбранный путь и добавить в индекс его конфигурацию и зафиксированный коммит</value>
+  </data>
+  <data name="InitializeAllSubmodulesAppBarButton.Label" xml:space="preserve">
+    <value>Инициализировать все</value>
+  </data>
+  <data name="CheckoutAllSubmodulesAppBarButton.Label" xml:space="preserve">
+    <value>Восстановить закреплённые версии</value>
+  </data>
+  <data name="UpdateAllSubmodulesAppBarButton.Label" xml:space="preserve">
+    <value>Перейти на версии подмодулей</value>
+  </data>
+  <data name="SyncAllSubmodulesAppBarButton.Label" xml:space="preserve">
+    <value>Синхронизировать URL</value>
+  </data>
+  <data name="InitializeSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Инициализировать</value>
+  </data>
+  <data name="CheckoutSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Восстановить закреплённую версию</value>
+  </data>
+  <data name="UpdateSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Перейти на версию подмодуля</value>
+  </data>
+  <data name="SyncSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Синхронизировать URL</value>
+  </data>
+  <data name="EditSubmoduleUrlAppBarButton.Label" xml:space="preserve">
+    <value>Изменить URL</value>
+  </data>
+  <data name="EditSubmoduleBranchAppBarButton.Label" xml:space="preserve">
+    <value>Изменить отслеживаемую ветку</value>
+  </data>
+  <data name="DeinitializeSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Деинициализировать</value>
+  </data>
+  <data name="RemoveSubmoduleAppBarButton.Label" xml:space="preserve">
+    <value>Удалить из репозитория</value>
+  </data>
+  <data name="SubmoduleUrlTextBoxHeader" xml:space="preserve">
+    <value>URL репозитория</value>
+  </data>
+  <data name="SubmoduleBranchTextBoxHeader" xml:space="preserve">
+    <value>Отслеживаемая ветка</value>
+  </data>
+  <data name="SubmoduleBranchTextBoxPlaceholder" xml:space="preserve">
+    <value>Оставьте пустым, чтобы восстановить ветку удалённого репозитория по умолчанию</value>
+  </data>
+  <data name="SaveButton" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="EditSubmoduleUrlDialogTitle" xml:space="preserve">
+    <value>Изменение URL подмодуля</value>
+  </data>
+  <data name="EditSubmoduleBranchDialogTitle" xml:space="preserve">
+    <value>Изменение отслеживаемой ветки</value>
+  </data>
+  <data name="DeinitializeSubmoduleDialogTitle" xml:space="preserve">
+    <value>Деинициализировать подмодуль?</value>
+  </data>
+  <data name="DeinitializeSubmoduleDialogMessage" xml:space="preserve">
+    <value>Рабочий каталог «{0}» будет удалён. Подмодуль останется зарегистрированным, и его можно будет инициализировать снова.</value>
+  </data>
+  <data name="DeinitializeSubmoduleButton" xml:space="preserve">
+    <value>Деинициализировать</value>
+  </data>
+  <data name="RemoveSubmoduleDialogTitle" xml:space="preserve">
+    <value>Удалить подмодуль?</value>
+  </data>
+  <data name="RemoveSubmoduleDialogMessage" xml:space="preserve">
+    <value>«{0}» будет деинициализирован и удалён из родительского репозитория. Git откажется выполнять операцию, если она приведёт к потере локальных изменений.</value>
+  </data>
+  <data name="RemoveSubmoduleButton" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="AddingSubmoduleProgress" xml:space="preserve">
+    <value>Добавление подмодуля...</value>
+  </data>
+  <data name="InitializingSubmodulesProgress" xml:space="preserve">
+    <value>Инициализация подмодулей...</value>
+  </data>
+  <data name="CheckingOutSubmodulesProgress" xml:space="preserve">
+    <value>Восстановление закреплённых версий подмодулей...</value>
+  </data>
+  <data name="UpdatingSubmodulesProgress" xml:space="preserve">
+    <value>Переход на версии подмодулей из указанных веток...</value>
+  </data>
+  <data name="SyncingSubmodulesProgress" xml:space="preserve">
+    <value>Синхронизация URL подмодулей...</value>
+  </data>
+  <data name="EditingSubmoduleProgress" xml:space="preserve">
+    <value>Обновление параметров подмодуля...</value>
+  </data>
+  <data name="DeinitializingSubmoduleProgress" xml:space="preserve">
+    <value>Деинициализация подмодуля...</value>
+  </data>
+  <data name="RemovingSubmoduleProgress" xml:space="preserve">
+    <value>Удаление подмодуля...</value>
+  </data>
+  <data name="SubmoduleAdded" xml:space="preserve">
+    <value>Подмодуль добавлен.</value>
+  </data>
+  <data name="SubmodulesInitialized" xml:space="preserve">
+    <value>Подмодули инициализированы.</value>
+  </data>
+  <data name="SubmoduleInitialized" xml:space="preserve">
+    <value>Подмодуль инициализирован.</value>
+  </data>
+  <data name="SubmodulesCheckedOut" xml:space="preserve">
+    <value>Закреплённые версии подмодулей восстановлены.</value>
+  </data>
+  <data name="SubmoduleCheckedOut" xml:space="preserve">
+    <value>Закреплённая версия подмодуля восстановлена.</value>
+  </data>
+  <data name="SubmodulesUpdated" xml:space="preserve">
+    <value>Выбраны последние версии из указанных веток подмодулей.</value>
+  </data>
+  <data name="SubmoduleUpdated" xml:space="preserve">
+    <value>Выбрана последняя версия из указанной ветки подмодуля.</value>
+  </data>
+  <data name="SubmodulesSynchronized" xml:space="preserve">
+    <value>URL подмодулей синхронизированы.</value>
+  </data>
+  <data name="SubmoduleSynchronized" xml:space="preserve">
+    <value>URL подмодуля синхронизирован.</value>
+  </data>
+  <data name="SubmoduleUrlUpdated" xml:space="preserve">
+    <value>URL подмодуля обновлён.</value>
+  </data>
+  <data name="SubmoduleBranchUpdated" xml:space="preserve">
+    <value>Отслеживаемая ветка обновлена.</value>
+  </data>
+  <data name="SubmoduleDeinitialized" xml:space="preserve">
+    <value>Подмодуль деинициализирован.</value>
+  </data>
+  <data name="SubmoduleRemoved" xml:space="preserve">
+    <value>Подмодуль удалён из репозитория.</value>
+  </data>
+  <data name="SubmoduleOperationFailed" xml:space="preserve">
+    <value>Не удалось выполнить операцию с подмодулем.</value>
+  </data>
+  <data name="InitializeAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Клонировать отсутствующие подмодули и рекурсивно перейти на коммиты, записанные родительским репозиторием</value>
+  </data>
+  <data name="CheckoutAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Восстановить во всех инициализированных подмодулях версии, закреплённые родительскими репозиториями</value>
+  </data>
+  <data name="UpdateAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Получить последние коммиты веток, указанных для подмодулей в .gitmodules, и перейти на них; указатели подмодулей в родительском репозитории изменятся</value>
+  </data>
+  <data name="SyncAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Рекурсивно скопировать URL всех подмодулей из .gitmodules в локальную конфигурацию Git</value>
+  </data>
+  <data name="InitializeSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>При необходимости клонировать подмодуль и рекурсивно перейти на коммит, записанный его родительским репозиторием</value>
+  </data>
+  <data name="CheckoutSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Восстановить версию подмодуля, закреплённую его родительским репозиторием</value>
+  </data>
+  <data name="UpdateSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Получить последний коммит ветки, указанной для подмодуля в .gitmodules, и перейти на него; указатель подмодуля в родительском репозитории изменится</value>
+  </data>
+  <data name="SyncSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Скопировать URL подмодуля из .gitmodules в локальную конфигурацию Git</value>
+  </data>
+  <data name="EditSubmoduleUrlAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Изменить URL репозитория, сохранённый для этого подмодуля</value>
+  </data>
+  <data name="EditSubmoduleBranchAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Выбрать ветку для команды «Перейти на версию подмодуля»; оставьте поле пустым для ветки удалённого репозитория по умолчанию</value>
+  </data>
+  <data name="DeinitializeSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Удалить рабочий каталог подмодуля, сохранив его регистрацию в родительском репозитории</value>
+  </data>
+  <data name="RemoveSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Деинициализировать подмодуль и добавить его удаление из родительского репозитория в индекс</value>
+  </data>
+  <data name="SubmoduleChangeBadgeTextBlock.Text" xml:space="preserve">
+    <value>подмодуль</value>
+  </data>
+  <data name="CloneSubmodulesRecursivelyCheckBox.Content" xml:space="preserve">
+    <value>Рекурсивно инициализировать вложенные подмодули</value>
+  </data>
+  <data name="GlobalUrlRewritesTitleTextBlock.Text" xml:space="preserve">
+    <value>Перенаправление URL Git</value>
+  </data>
+  <data name="GlobalUrlRewritesDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Глобальные правила insteadOf. Git заменяет совпавший URL или его префикс перед обращением к удалённому репозиторию.</value>
+  </data>
+  <data name="AddGlobalUrlRewriteButton.Content" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="AddGlobalUrlRewriteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Добавить перенаправление URL Git</value>
+  </data>
+  <data name="EditGlobalUrlRewriteButton.Content" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
+  <data name="EditGlobalUrlRewriteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Изменить перенаправление URL Git</value>
+  </data>
+  <data name="RemoveGlobalUrlRewriteButton.Content" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="RemoveGlobalUrlRewriteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Удалить перенаправление URL Git</value>
+  </data>
+  <data name="GitUrlRewriteDialog.Title" xml:space="preserve">
+    <value>Перенаправление URL Git</value>
+  </data>
+  <data name="GitUrlRewriteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="GitUrlRewriteDialog.CloseButtonText" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="GitUrlRewriteDialogDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Git заменит начало исходного URL указанным значением во всех репозиториях текущего пользователя, включая подмодули.</value>
+  </data>
+  <data name="GitUrlRewriteInsteadOfTextBox.Header" xml:space="preserve">
+    <value>Исходный URL или префикс</value>
+  </data>
+  <data name="GitUrlRewriteInsteadOfTextBox.PlaceholderText" xml:space="preserve">
+    <value>https://example.com/public/repository.git</value>
+  </data>
+  <data name="GitUrlRewriteReplacementTextBox.Header" xml:space="preserve">
+    <value>Используемый URL или префикс</value>
+  </data>
+  <data name="GitUrlRewriteReplacementTextBox.PlaceholderText" xml:space="preserve">
+    <value>ssh://git@private.example.com/repository.git</value>
+  </data>
+  <data name="GitUrlRewriteAdded" xml:space="preserve">
+    <value>Перенаправление URL добавлено.</value>
+  </data>
+  <data name="GitUrlRewriteUpdated" xml:space="preserve">
+    <value>Перенаправление URL обновлено.</value>
+  </data>
+  <data name="GitUrlRewriteRemoved" xml:space="preserve">
+    <value>Перенаправление URL удалено.</value>
+  </data>
+  <data name="GitUrlRewriteAlreadyExists" xml:space="preserve">
+    <value>Для этого исходного URL уже настроено перенаправление.</value>
+  </data>
+  <data name="GitUrlRewriteSaveFailed" xml:space="preserve">
+    <value>Не удалось изменить глобальные правила перенаправления URL Git.</value>
   </data>
 </root>

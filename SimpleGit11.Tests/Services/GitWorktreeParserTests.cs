@@ -59,4 +59,32 @@ public sealed class GitWorktreeParserTests
 
         Assert.IsEmpty(result);
     }
+
+    [TestMethod]
+    public void Parse_SubmoduleMainWorktree_UsesRepositoryWorktreePath()
+    {
+        using TemporaryDirectory temporaryDirectory = new();
+        string submodulePath = temporaryDirectory.CreateDirectory(
+            "SimpleGit11/External/TextControlBox-WinUI");
+        string administrativePath = temporaryDirectory.CreateDirectory(
+            "SimpleGit11/.git/modules/External/TextControlBox-WinUI");
+        RepositoryInfo repository = new(
+            submodulePath,
+            "TextControlBox-WinUI",
+            "master",
+            administrativePath,
+            submodulePath);
+        string output =
+            $"worktree {administrativePath}\0" +
+            "HEAD 1111111111111111111111111111111111111111\0" +
+            "branch refs/heads/master\0";
+
+        IReadOnlyList<GitWorktree> result = GitWorktreeParser.Parse(output, repository);
+
+        Assert.HasCount(1, result);
+        Assert.AreEqual(submodulePath, result[0].Path);
+        Assert.AreEqual("TextControlBox-WinUI", result[0].DisplayName);
+        Assert.IsTrue(result[0].IsMain);
+        Assert.IsTrue(result[0].IsCurrent);
+    }
 }

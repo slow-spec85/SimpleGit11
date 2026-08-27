@@ -328,6 +328,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
 
     public string SelectedRemoteUrl => SelectedRemote?.DisplayUrl ?? "";
 
+    public string SelectedBranchName => SelectedBranch?.Name ?? "";
+    public string SelectedTagName => SelectedTag?.Name ?? "";
+
     public bool HasSelectedRemote => SelectedRemote is not null;
 
     public bool CanUseRemoteSelector => IsSelectedBranchLocal
@@ -368,7 +371,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
             SetBranchUpstreamCommand.TryExecute();
         }
     }
-
+    
     partial void OnSelectedBranchPushRemoteOptionChanged(BranchRemoteOption? value)
     {
         if (!_isSynchronizingBranchRemoteSettings && SetBranchPushRemoteCommand.CanExecute(null))
@@ -632,6 +635,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
     public bool HasSelectedBranchDescription => SelectedBranch?.HasConfigDescription == true;
 
     public bool CanEditSelectedBranchDescription => IsSelectedBranchLocal && !IsGitOperationRunning;
+
+    public Visibility CanAddSelectedBranchDescriptionVisibility => !HasSelectedBranchDescription ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility CanEditSelectedBranchDescriptionVisibility => HasSelectedBranchDescription ? Visibility.Visible : Visibility.Collapsed;
 
     public bool CanDeleteSelectedBranchDescription => HasSelectedBranchDescription
         && IsSelectedBranchLocal
@@ -3830,6 +3836,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         OnPropertyChanged(nameof(IsSelectedBranchRemote));
         OnPropertyChanged(nameof(HasSelectedBranchDescription));
         OnPropertyChanged(nameof(CanEditSelectedBranchDescription));
+        OnPropertyChanged(nameof(CanAddSelectedBranchDescriptionVisibility));
+        OnPropertyChanged(nameof(CanEditSelectedBranchDescriptionVisibility));
         OnPropertyChanged(nameof(CanDeleteSelectedBranchDescription));
         OnPropertyChanged(nameof(SelectedBranchScopeText));
         OnPropertyChanged(nameof(SelectedBranchDescriptionSeparatorText));
@@ -3886,6 +3894,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         OnPropertyChanged(nameof(SelectedTagRemoteStatusText));
         OnPropertyChanged(nameof(SelectedTagRemoteStatusTitle));
         OnPropertyChanged(nameof(IsSelectedRemoteTagMissingLocal));
+        OnPropertyChanged(nameof(SelectedBranchName));
+        OnPropertyChanged(nameof(SelectedTagName));
     }
 
     private void UpdateCommandStates()

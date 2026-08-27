@@ -1,0 +1,12 @@
+[
+  {
+    "name": "TextControlBox.WinUI.slow-spec85",
+    "projectPath": "External/TextControlBox-WinUI/TextControlBox/TextControlBox.csproj",
+    "repositoryPath": "External/TextControlBox-WinUI",
+    "publishedFile": "TextControlBox.dll",
+    "licenseFile": "External/TextControlBox-WinUI/LICENSE.txt",
+    "license": "MIT",
+    "copyright": "Copyright (c) 2024-2026 Julius Kirsch",
+    "projectUrl": "https://github.com/slow-spec85/TextControlBox-WinUI"
+  }
+]

@@ -21,6 +21,11 @@ public sealed class ReleaseLicenseTests
             "SimpleGit11",
             "Build",
             "Collect-ReleaseLicenses.ps1");
+        string sourceComponentsPath = Path.Combine(
+            repositoryRoot,
+            "SimpleGit11",
+            "Build",
+            "SourceComponents.json");
 
         using TemporaryDirectory temporaryDirectory = new();
         string publishedDirectory = temporaryDirectory.CreateDirectory("publish");
@@ -49,6 +54,8 @@ public sealed class ReleaseLicenseTests
         startInfo.ArgumentList.Add(repositoryRoot);
         startInfo.ArgumentList.Add("-ProjectAssetsPath");
         startInfo.ArgumentList.Add(projectAssetsPath);
+        startInfo.ArgumentList.Add("-SourceComponentsPath");
+        startInfo.ArgumentList.Add(sourceComponentsPath);
         startInfo.ArgumentList.Add("-PublishedDirectory");
         startInfo.ArgumentList.Add(publishedDirectory);
 
@@ -81,8 +88,41 @@ public sealed class ReleaseLicenseTests
         StringAssert.Contains(packageIndex, "Package: Microsoft.NETCore.App.Runtime.win-x64");
         StringAssert.Contains(packageIndex, "Package: Microsoft.WindowsAppSDK");
         StringAssert.Contains(packageIndex, "Package: Microsoft.Web.WebView2");
-        StringAssert.Contains(packageIndex, "Package: TextControlBox.WinUI.slow-spec85");
+        StringAssert.Contains(packageIndex, "Component: TextControlBox.WinUI.slow-spec85");
+        Assert.IsFalse(packageIndex.Contains(
+            "Package: TextControlBox.WinUI.slow-spec85",
+            StringComparison.Ordinal));
         Assert.IsFalse(packageIndex.Contains("Package: MinVer", StringComparison.Ordinal));
+
+        string[] packageIndexLines = packageIndex.Split(
+            Environment.NewLine,
+            StringSplitOptions.RemoveEmptyEntries);
+        int componentLineIndex = Array.FindIndex(
+            packageIndexLines,
+            line => line.Equals(
+                "Component: TextControlBox.WinUI.slow-spec85",
+                StringComparison.Ordinal));
+        Assert.IsTrue(componentLineIndex >= 0);
+        string revisionLine = packageIndexLines[componentLineIndex + 1];
+        StringAssert.StartsWith(revisionLine, "Revision: ");
+        string revision = revisionLine["Revision: ".Length..];
+        Assert.AreEqual(40, revision.Length);
+        Assert.IsTrue(revision.All(Uri.IsHexDigit));
+
+        string[] sourceComponentLicenses = Directory.GetFiles(
+            Path.Combine(publishedDirectory, "Licenses"),
+                "LICENSE.txt",
+                SearchOption.AllDirectories)
+            .Where(path => (Path.GetFileName(Path.GetDirectoryName(path)) ?? string.Empty)
+                .StartsWith(
+                    "TextControlBox.WinUI.slow-spec85-",
+                    StringComparison.Ordinal))
+            .ToArray();
+        Assert.AreEqual(1, sourceComponentLicenses.Length);
+        string sourceComponentLicense = await File.ReadAllTextAsync(sourceComponentLicenses[0]);
+        StringAssert.Contains(
+            sourceComponentLicense,
+            "Copyright (c) 2024-2026 Julius Kirsch");
 
         string[] vendorNoticeFiles = Directory.GetFiles(
             Path.Combine(publishedDirectory, "Licenses"),

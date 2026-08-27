@@ -9,6 +9,9 @@ param(
     [string]$ProjectAssetsPath,
 
     [Parameter(Mandatory)]
+    [string]$SourceComponentsPath,
+
+    [Parameter(Mandatory)]
     [string]$PublishedDirectory
 )
 
@@ -83,14 +86,91 @@ function Add-PackageById {
     throw "Required NuGet package is missing from project.assets.json: $PackageId"
 }
 
+function Get-RequiredComponentValue {
+    param(
+        [Parameter(Mandatory)]
+        $Component,
+
+        [Parameter(Mandatory)]
+        [string]$PropertyName
+    )
+
+    $property = $Component.PSObject.Properties[$PropertyName]
+    if ($null -eq $property -or
+        [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+        throw "Source component property is required: $PropertyName"
+    }
+
+    return [string]$property.Value
+}
+
+function Resolve-PathUnderRoot {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Root,
+
+        [Parameter(Mandatory)]
+        [string]$RelativePath,
+
+        [Parameter(Mandatory)]
+        [string]$Description
+    )
+
+    if ([System.IO.Path]::IsPathRooted($RelativePath)) {
+        throw "$Description must be relative to the repository root: $RelativePath"
+    }
+
+    [string]$fullRoot = [System.IO.Path]::GetFullPath($Root)
+    [string]$fullPath = [System.IO.Path]::GetFullPath((Join-Path $fullRoot $RelativePath))
+    [char[]]$directorySeparators = @(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar)
+    [string]$rootPrefix = $fullRoot.TrimEnd($directorySeparators) +
+        [System.IO.Path]::DirectorySeparatorChar
+
+    if (-not $fullPath.StartsWith(
+        $rootPrefix,
+        [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "$Description escapes the repository root: $RelativePath"
+    }
+
+    return $fullPath
+}
+
+function Get-SourceRevision {
+    param(
+        [Parameter(Mandatory)]
+        [string]$RepositoryPath
+    )
+
+    if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+        throw "Git is required to determine source component revisions."
+    }
+
+    [string]$gitSafeDirectory = $RepositoryPath.Replace('\', '/')
+    [string[]]$revisionOutput = @(& git `
+        -c "safe.directory=$gitSafeDirectory" `
+        -C $RepositoryPath `
+        rev-parse HEAD)
+    if ($LASTEXITCODE -ne 0 -or
+        $revisionOutput.Count -ne 1 -or
+        $revisionOutput[0] -notmatch '^[0-9a-fA-F]{40,64}$') {
+        throw "Could not determine the Git revision of source component: $RepositoryPath"
+    }
+
+    return $revisionOutput[0].ToLowerInvariant()
+}
+
 [string]$fullRepositoryRoot = [System.IO.Path]::GetFullPath($RepositoryRoot)
 [string]$fullProjectAssetsPath = [System.IO.Path]::GetFullPath($ProjectAssetsPath)
+[string]$fullSourceComponentsPath = [System.IO.Path]::GetFullPath($SourceComponentsPath)
 [string]$fullPublishedDirectory = [System.IO.Path]::GetFullPath($PublishedDirectory)
 [string]$applicationLicensePath = Join-Path $fullRepositoryRoot "LICENSE"
 [string]$thirdPartyNoticesPath = Join-Path $fullRepositoryRoot "THIRD-PARTY-NOTICES.txt"
 
 foreach ($requiredFile in @(
     $fullProjectAssetsPath,
+    $fullSourceComponentsPath,
     $applicationLicensePath,
     $thirdPartyNoticesPath
 )) {
@@ -104,6 +184,18 @@ if (-not (Test-Path -LiteralPath $fullPublishedDirectory -PathType Container)) {
 }
 
 $assets = Get-Content -LiteralPath $fullProjectAssetsPath -Raw | ConvertFrom-Json
+$sourceComponentsDocument = Get-Content `
+    -LiteralPath $fullSourceComponentsPath `
+    -Raw | ConvertFrom-Json
+$sourceComponentDefinitions = New-Object 'System.Collections.Generic.List[object]'
+if ($sourceComponentsDocument -is [System.Array]) {
+    foreach ($componentDefinition in $sourceComponentsDocument) {
+        $sourceComponentDefinitions.Add($componentDefinition)
+    }
+}
+else {
+    $sourceComponentDefinitions.Add($sourceComponentsDocument)
+}
 $runtimeTarget = $assets.targets.PSObject.Properties |
     Where-Object { $_.Name.EndsWith('/win-x64', [System.StringComparison]::OrdinalIgnoreCase) } |
     Select-Object -First 1
@@ -119,6 +211,128 @@ foreach ($publishedFile in Get-ChildItem `
     -Recurse `
     -Force) {
     [void]$publishedFileNames.Add($publishedFile.Name)
+}
+
+[string]$mainProjectPath = [string]$assets.project.restore.projectPath
+if ([string]::IsNullOrWhiteSpace($mainProjectPath)) {
+    throw "The root project path is missing from project.assets.json."
+}
+
+[string]$mainProjectDirectory = Split-Path -Parent (
+    [System.IO.Path]::GetFullPath($mainProjectPath))
+$sourceComponents = New-Object 'System.Collections.Generic.List[object]'
+foreach ($componentDefinition in $sourceComponentDefinitions) {
+    [string]$componentName = Get-RequiredComponentValue `
+        -Component $componentDefinition `
+        -PropertyName "name"
+    [string]$componentProjectRelativePath = Get-RequiredComponentValue `
+        -Component $componentDefinition `
+        -PropertyName "projectPath"
+    [string]$componentRepositoryRelativePath = Get-RequiredComponentValue `
+        -Component $componentDefinition `
+        -PropertyName "repositoryPath"
+    [string]$componentPublishedFile = Get-RequiredComponentValue `
+        -Component $componentDefinition `
+        -PropertyName "publishedFile"
+    [string]$componentLicenseRelativePath = Get-RequiredComponentValue `
+        -Component $componentDefinition `
+        -PropertyName "licenseFile"
+    [string]$componentLicense = Get-RequiredComponentValue `
+        -Component $componentDefinition `
+        -PropertyName "license"
+    [string]$componentCopyright = Get-RequiredComponentValue `
+        -Component $componentDefinition `
+        -PropertyName "copyright"
+    [string]$componentProjectUrl = Get-RequiredComponentValue `
+        -Component $componentDefinition `
+        -PropertyName "projectUrl"
+
+    if ($componentPublishedFile -ne [System.IO.Path]::GetFileName($componentPublishedFile)) {
+        throw "Source component publishedFile must contain only a file name: $componentPublishedFile"
+    }
+    if ($componentLicense -ne "MIT") {
+        throw "Unsupported source component license '$componentLicense' for $componentName."
+    }
+
+    [string]$componentProjectPath = Resolve-PathUnderRoot `
+        -Root $fullRepositoryRoot `
+        -RelativePath $componentProjectRelativePath `
+        -Description "Source component project path"
+    [string]$componentRepositoryPath = Resolve-PathUnderRoot `
+        -Root $fullRepositoryRoot `
+        -RelativePath $componentRepositoryRelativePath `
+        -Description "Source component repository path"
+    [string]$componentLicensePath = Resolve-PathUnderRoot `
+        -Root $fullRepositoryRoot `
+        -RelativePath $componentLicenseRelativePath `
+        -Description "Source component license path"
+
+    foreach ($requiredComponentFile in @(
+        $componentProjectPath,
+        $componentLicensePath
+    )) {
+        if (-not (Test-Path -LiteralPath $requiredComponentFile -PathType Leaf)) {
+            throw "Required source component file was not found: $requiredComponentFile"
+        }
+    }
+    if (-not (Test-Path -LiteralPath $componentRepositoryPath -PathType Container)) {
+        throw "Source component repository was not found: $componentRepositoryPath"
+    }
+    if (-not $publishedFileNames.Contains($componentPublishedFile)) {
+        throw "Published source component file was not found: $componentPublishedFile"
+    }
+
+    [string]$componentLicenseText = Get-Content `
+        -LiteralPath $componentLicensePath `
+        -Raw
+    if ($componentLicenseText.IndexOf(
+        $componentCopyright,
+        [System.StringComparison]::Ordinal) -lt 0) {
+        throw "Source component license does not contain its declared copyright: $componentName"
+    }
+
+    $matchingProjectLibrary = $null
+    foreach ($libraryProperty in $assets.libraries.PSObject.Properties) {
+        if ($libraryProperty.Value.type -ne "project") {
+            continue
+        }
+
+        [string]$msbuildProject = [string]$libraryProperty.Value.msbuildProject
+        if ([string]::IsNullOrWhiteSpace($msbuildProject)) {
+            continue
+        }
+
+        [string]$referencedProjectPath = [System.IO.Path]::GetFullPath((
+            Join-Path $mainProjectDirectory $msbuildProject))
+        if ($referencedProjectPath.Equals(
+            $componentProjectPath,
+            [System.StringComparison]::OrdinalIgnoreCase)) {
+            $matchingProjectLibrary = $libraryProperty
+            break
+        }
+    }
+
+    if ($null -eq $matchingProjectLibrary) {
+        throw "Source component is not a restored ProjectReference: $componentName"
+    }
+
+    $projectIdentity = Get-PackageIdentity -LibraryName $matchingProjectLibrary.Name
+    if (-not $projectIdentity.Id.Equals(
+        $componentName,
+        [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Source component name '$componentName' does not match restored project '$($projectIdentity.Id)'."
+    }
+
+    [string]$componentRevision = Get-SourceRevision `
+        -RepositoryPath $componentRepositoryPath
+    $sourceComponents.Add([pscustomobject]@{
+        Name = $componentName
+        Revision = $componentRevision
+        License = $componentLicense
+        Copyright = $componentCopyright
+        ProjectUrl = $componentProjectUrl
+        LicensePath = $componentLicensePath
+    })
 }
 
 $includedPackages = New-Object 'System.Collections.Generic.HashSet[string]' `
@@ -190,10 +404,10 @@ Copy-Item `
     -Destination (Join-Path $fullPublishedDirectory "THIRD-PARTY-NOTICES.txt")
 
 $packageIndex = New-Object 'System.Collections.Generic.List[string]'
-$packageIndex.Add("Third-party packages included in this SimpleGit11 release")
-$packageIndex.Add("=========================================================")
+$packageIndex.Add("Third-party components included in this SimpleGit11 release")
+$packageIndex.Add("===========================================================")
 $packageIndex.Add("")
-$packageIndex.Add("This file is generated from project.assets.json and the actual publish output.")
+$packageIndex.Add("This file is generated from project.assets.json, SourceComponents.json, and the actual publish output.")
 $packageIndex.Add("Original vendor license and notice files are stored in adjacent directories.")
 $packageIndex.Add("")
 
@@ -273,7 +487,29 @@ foreach ($libraryName in @($includedPackages | Sort-Object)) {
     $packageIndex.Add("")
 }
 
+foreach ($component in @($sourceComponents | Sort-Object Name)) {
+    [string]$shortRevision = $component.Revision.Substring(0, 12)
+    [string]$componentLicenseDirectoryName = "$($component.Name)-$shortRevision" `
+        -replace '[^0-9A-Za-z._-]', '_'
+    [string]$componentLicenseDirectory = Join-Path `
+        $licensesDirectory `
+        $componentLicenseDirectoryName
+
+    New-Item -ItemType Directory -Path $componentLicenseDirectory | Out-Null
+    Copy-Item `
+        -LiteralPath $component.LicensePath `
+        -Destination $componentLicenseDirectory
+
+    $packageIndex.Add("Component: $($component.Name)")
+    $packageIndex.Add("Revision: $($component.Revision)")
+    $packageIndex.Add("License: $($component.License)")
+    $packageIndex.Add("Copyright: $($component.Copyright)")
+    $packageIndex.Add("Project: $($component.ProjectUrl)")
+    $packageIndex.Add("Bundled notices: Licenses/$componentLicenseDirectoryName")
+    $packageIndex.Add("")
+}
+
 [string]$packageIndexPath = Join-Path $licensesDirectory "PACKAGES.txt"
 Set-Content -LiteralPath $packageIndexPath -Value $packageIndex -Encoding UTF8
 
-Write-Host "Collected licenses for $($includedPackages.Count) redistributed packages."
+Write-Host "Collected licenses for $($includedPackages.Count) redistributed packages and $($sourceComponents.Count) source components."

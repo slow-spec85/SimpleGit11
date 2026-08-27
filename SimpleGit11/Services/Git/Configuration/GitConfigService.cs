@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
@@ -15,6 +16,9 @@ public sealed class GitConfigService : IGitConfigService
     private const string CredentialHelperKey = "credential.helper";
     private const string CredentialManagerHelperValue = "manager";
     private const string PushDefaultRemoteKey = "remote.pushDefault";
+    private const string SshCommandKey = "core.sshCommand";
+    private const string UrlRewriteKeyPrefix = "url.";
+    private const string UrlRewriteKeySuffix = ".insteadof";
     private readonly IGitCommandRunner _commandRunner;
 
     public GitConfigService(IGitCommandRunner? commandRunner = null)
@@ -78,6 +82,55 @@ public sealed class GitConfigService : IGitConfigService
             args.Add("--get");
 
         return RunGitAsync(repository, [.. args, PushDefaultRemoteKey], level != ConfigScope.Global, throwOnError: false);
+    }
+
+    public Task<string> GetGlobalSshCommandAsync()
+    {
+        return RunGitAsync(
+            null,
+            ["config", "--global", "--get", SshCommandKey],
+            repoNeeded: false,
+            throwOnError: false);
+    }
+
+    public async Task<IReadOnlyList<GitUrlRewrite>> GetGlobalUrlRewritesAsync()
+    {
+        string output = await RunGitAsync(
+            null,
+            ["config", "--global", "--null", "--get-regexp", "^url\\..*\\.insteadof$"],
+            repoNeeded: false,
+            throwOnError: false,
+            trimOutput: false);
+        List<GitUrlRewrite> rewrites = [];
+        foreach (string entry in output.Split('\0', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int separatorIndex = entry.IndexOf('\n');
+            if (separatorIndex <= 0)
+            {
+                continue;
+            }
+
+            string key = entry[..separatorIndex];
+            if (!key.StartsWith(UrlRewriteKeyPrefix, StringComparison.OrdinalIgnoreCase)
+                || !key.EndsWith(UrlRewriteKeySuffix, StringComparison.OrdinalIgnoreCase)
+                || key.Length <= UrlRewriteKeyPrefix.Length + UrlRewriteKeySuffix.Length)
+            {
+                continue;
+            }
+
+            string replacementUrl = key[UrlRewriteKeyPrefix.Length..^UrlRewriteKeySuffix.Length];
+            string insteadOfUrl = entry[(separatorIndex + 1)..];
+            if (!string.IsNullOrWhiteSpace(replacementUrl)
+                && !string.IsNullOrWhiteSpace(insteadOfUrl))
+            {
+                rewrites.Add(new GitUrlRewrite(insteadOfUrl, replacementUrl));
+            }
+        }
+
+        return rewrites
+            .OrderBy(rewrite => rewrite.InsteadOfUrl, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(rewrite => rewrite.ReplacementUrl, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     public Task<IReadOnlyDictionary<string, string>> GetBranchDescriptionsAsync(RepositoryInfo repository)
@@ -169,6 +222,49 @@ public sealed class GitConfigService : IGitConfigService
             throwOnError: false);
     }
 
+    public Task AddGlobalUrlRewriteAsync(GitUrlRewrite rewrite)
+    {
+        GitUrlRewrite normalizedRewrite = NormalizeUrlRewrite(rewrite);
+        return RunGitAsync(
+            null,
+            [
+                "config",
+                "--global",
+                "--add",
+                GetUrlRewriteKey(normalizedRewrite),
+                normalizedRewrite.InsteadOfUrl
+            ],
+            repoNeeded: false);
+    }
+
+    public async Task UpdateGlobalUrlRewriteAsync(
+        GitUrlRewrite oldRewrite,
+        GitUrlRewrite newRewrite)
+    {
+        GitUrlRewrite normalizedOldRewrite = NormalizeUrlRewrite(oldRewrite);
+        GitUrlRewrite normalizedNewRewrite = NormalizeUrlRewrite(newRewrite);
+        if (normalizedOldRewrite == normalizedNewRewrite)
+        {
+            return;
+        }
+
+        await AddGlobalUrlRewriteAsync(normalizedNewRewrite);
+        try
+        {
+            await RemoveGlobalUrlRewriteCoreAsync(normalizedOldRewrite, throwOnError: true);
+        }
+        catch
+        {
+            await RemoveGlobalUrlRewriteCoreAsync(normalizedNewRewrite, throwOnError: false);
+            throw;
+        }
+    }
+
+    public Task RemoveGlobalUrlRewriteAsync(GitUrlRewrite rewrite)
+    {
+        return RemoveGlobalUrlRewriteCoreAsync(NormalizeUrlRewrite(rewrite), throwOnError: true);
+    }
+
     public Task SetInitialBranchNameAsync(ConfigScope level, RepositoryInfo? repository, string branchName)
     {
         List<string> args = ["config", level == ConfigScope.Global ? "--global" : level == ConfigScope.Local ? "--local" : "init.defaultBranch"];
@@ -192,6 +288,15 @@ public sealed class GitConfigService : IGitConfigService
             args.Add(PushDefaultRemoteKey);
 
         return RunGitAsync(repository, [.. args, remoteName], level != ConfigScope.Global);
+    }
+
+    public Task SetGlobalSshCommandAsync(string sshCommand)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sshCommand);
+        return RunGitAsync(
+            null,
+            ["config", "--global", "--replace-all", SshCommandKey, sshCommand.Trim()],
+            repoNeeded: false);
     }
 
     public async Task SetBranchUpstreamAsync(
@@ -294,6 +399,15 @@ public sealed class GitConfigService : IGitConfigService
         return RunGitAsync(repository, [.. args, PushDefaultRemoteKey], level != ConfigScope.Global, throwOnError: false);
     }
 
+    public Task UnsetGlobalSshCommandAsync()
+    {
+        return RunGitAsync(
+            null,
+            ["config", "--global", "--unset-all", SshCommandKey],
+            repoNeeded: false,
+            throwOnError: false);
+    }
+
 
     private async Task<string> RunGitAsync(
         RepositoryInfo? repository,
@@ -310,5 +424,46 @@ public sealed class GitConfigService : IGitConfigService
             arguments,
             new GitCommandOptions(ThrowOnError: throwOnError));
         return trimOutput ? result.StandardOutput.Trim() : result.StandardOutput;
+    }
+
+    private Task RemoveGlobalUrlRewriteCoreAsync(GitUrlRewrite rewrite, bool throwOnError)
+    {
+        return RunGitAsync(
+            null,
+            [
+                "config",
+                "--global",
+                "--fixed-value",
+                "--unset-all",
+                GetUrlRewriteKey(rewrite),
+                rewrite.InsteadOfUrl
+            ],
+            repoNeeded: false,
+            throwOnError: throwOnError);
+    }
+
+    private static GitUrlRewrite NormalizeUrlRewrite(GitUrlRewrite rewrite)
+    {
+        ArgumentNullException.ThrowIfNull(rewrite);
+        string insteadOfUrl = rewrite.InsteadOfUrl.Trim();
+        string replacementUrl = rewrite.ReplacementUrl.Trim();
+        ArgumentException.ThrowIfNullOrWhiteSpace(insteadOfUrl);
+        ArgumentException.ThrowIfNullOrWhiteSpace(replacementUrl);
+        if (ContainsConfigLineBreak(insteadOfUrl) || ContainsConfigLineBreak(replacementUrl))
+        {
+            throw new ArgumentException("Git URL rewrite values must not contain line breaks.");
+        }
+
+        return new GitUrlRewrite(insteadOfUrl, replacementUrl);
+    }
+
+    private static string GetUrlRewriteKey(GitUrlRewrite rewrite)
+    {
+        return $"{UrlRewriteKeyPrefix}{rewrite.ReplacementUrl}.insteadOf";
+    }
+
+    private static bool ContainsConfigLineBreak(string value)
+    {
+        return value.IndexOfAny(['\0', '\r', '\n']) >= 0;
     }
 }

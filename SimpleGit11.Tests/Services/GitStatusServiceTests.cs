@@ -8,6 +8,34 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitStatusServiceTests
 {
     [TestMethod]
+    public async Task GetStatusAsync_DirtySubmodule_MarksChangeAsSubmodule()
+    {
+        await using TemporaryGitRepository submodule = await TemporaryGitRepository.CreateAsync();
+        submodule.WriteFile("library.txt", "first");
+        await submodule.CommitAllAsync();
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        await repository.RunGitAsync(
+            "-c",
+            "protocol.file.allow=always",
+            "submodule",
+            "add",
+            submodule.Repository.Path,
+            "External/Library");
+        await repository.CommitAllAsync();
+        repository.WriteFile("External/Library/library.txt", "changed");
+        GitStatusService service = new();
+
+        GitStatusSnapshot snapshot = await service.GetStatusAsync(repository.Repository);
+
+        Assert.HasCount(1, snapshot.UnstagedChanges);
+        GitChangedFile change = snapshot.UnstagedChanges[0];
+        Assert.AreEqual("External/Library", change.Path.Replace('\\', '/'));
+        Assert.IsTrue(change.IsSubmodule);
+        Assert.IsFalse(change.CanDiscard);
+        Assert.IsFalse(change.CanShowFileContent);
+    }
+
+    [TestMethod]
     public async Task GetOperationStateAsync_MergeMarker_ReturnsMergeWithPreparedMessage()
     {
         await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();

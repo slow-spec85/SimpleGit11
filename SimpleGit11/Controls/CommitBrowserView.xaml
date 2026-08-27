@@ -364,7 +364,7 @@
                                                 Visibility="{Binding IsCommitListVisible, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                             <MenuFlyoutSeparator />
                                             <MenuFlyoutItem
-                                                x:Uid="CopyFileNameMenuFlyoutItem"
+                                                x:Uid="CopyNameMenuFlyoutItem"
                                                 Command="{Binding DataContext.CopyTextCommand, ElementName=HistoryChangedFilesListView}"
                                                 CommandParameter="{x:Bind FileName}"
                                                 Icon="Copy" />
@@ -502,7 +502,7 @@
                                 <TextBlock.ContextFlyout>
                                     <MenuFlyout>
                                         <MenuFlyoutItem
-                                            x:Uid="CopyCommitDateMenuFlyoutItem"
+                                            x:Uid="CopyTextMenuFlyoutItem"
                                             Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                             CommandParameter="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}" />
                                     </MenuFlyout>
@@ -521,7 +521,7 @@
                                 <TextBlock.ContextFlyout>
                                     <MenuFlyout>
                                         <MenuFlyoutItem
-                                            x:Uid="CopyCommitAuthorMenuFlyoutItem"
+                                            x:Uid="CopyTextMenuFlyoutItem"
                                             Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                             CommandParameter="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}" />
                                     </MenuFlyout>
@@ -540,7 +540,7 @@
                                 <TextBlock.ContextFlyout>
                                     <MenuFlyout>
                                         <MenuFlyoutItem
-                                            x:Uid="CopyCommitHashMenuFlyoutItem"
+                                            x:Uid="CopyTextMenuFlyoutItem"
                                             Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                             CommandParameter="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" />
                                     </MenuFlyout>

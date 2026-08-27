@@ -6,6 +6,8 @@ namespace SimpleGit11.Services;
 
 public interface IDialogService
 {
+    Task ShowAboutAsync();
+
     Task<bool> ConfirmAsync(string title, string message, string primaryButtonText);
 
     Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit);
@@ -37,6 +39,10 @@ public interface IDialogService
         WorktreeCreationMode creationMode = WorktreeCreationMode.ExistingBranch,
         bool canUseExistingBranch = true,
         GitRevisionKind startPointKind = GitRevisionKind.Branch);
+
+    Task<SubmoduleAddRequest?> ShowAddSubmoduleDialogAsync(string defaultPath);
+
+    Task<GitUrlRewrite?> ShowGitUrlRewriteDialogAsync(GitUrlRewrite? rewrite = null);
 
     Task<GitArchiveDialogResult?> ShowArchiveDialogAsync(RepositoryInfo repository);
 }

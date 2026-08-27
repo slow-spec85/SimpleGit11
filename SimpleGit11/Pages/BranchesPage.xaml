@@ -185,16 +185,16 @@
                                 <Grid.ContextFlyout>
                                     <MenuFlyout>
                                         <MenuFlyoutItem x:Uid="CheckoutBranchMenuFlyoutItem" Command="{Binding DataContext.BranchPrimaryCommand, ElementName=BranchesListView}" Icon="Forward" />
-                                        <MenuFlyoutItem x:Uid="CreateBranchWorktreeMenuFlyoutItem" Command="{Binding DataContext.CreateBranchWorktreeCommand, ElementName=BranchesListView}" Icon="Folder" />
-                                        <MenuFlyoutItem x:Uid="AddBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.EditContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Edit" Visibility="{x:Bind CanAddConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutItem x:Uid="EditBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.EditContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Edit" Visibility="{x:Bind CanEditConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.DeleteContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Delete" Visibility="{x:Bind CanEditConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Name}" Icon="Copy" />
                                         <MenuFlyoutItem x:Uid="RenameBranchMenuFlyoutItem" Command="{Binding DataContext.RenameBranchCommand, ElementName=BranchesListView}" Icon="Edit" Visibility="{x:Bind IsLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem x:Uid="AddBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.EditContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Add" Visibility="{x:Bind CanAddConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.DeleteContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Delete" Visibility="{x:Bind CanEditConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutSeparator />
                                         <MenuFlyoutItem x:Uid="MergeBranchMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesListView}" Icon="Link" />
                                         <MenuFlyoutItem x:Uid="MergeBranchWithoutCommitMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesListView}" CommandParameter="True" Icon="Link" />
                                         <MenuFlyoutItem x:Uid="SquashMergeBranchMenuFlyoutItem" Command="{Binding DataContext.SquashMergeBranchCommand, ElementName=BranchesListView}" Icon="Copy" />
                                         <MenuFlyoutItem x:Uid="RebaseBranchMenuFlyoutItem" Command="{Binding DataContext.RebaseBranchCommand, ElementName=BranchesListView}" Icon="Refresh" />
-                                        <MenuFlyoutSeparator />
                                         <MenuFlyoutItem x:Uid="PrepareBranchSnapshotMenuFlyoutItem" Command="{Binding DataContext.PrepareBranchSnapshotCommand, ElementName=BranchesListView}" Icon="Copy" />
                                         <MenuFlyoutSeparator />
                                         <MenuFlyoutItem x:Uid="DeleteBranchMenuFlyoutItem" Command="{Binding DataContext.DeleteBranchCommand, ElementName=BranchesListView}" Icon="Delete" />
@@ -231,9 +231,8 @@
                                 <Grid.ContextFlyout>
                                     <MenuFlyout>
                                         <MenuFlyoutItem x:Uid="CheckoutTagMenuFlyoutItem" Command="{Binding DataContext.CheckoutTagCommand, ElementName=TagsListView}" Icon="Forward" />
+                                        <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Name}" Icon="Copy" />
                                         <MenuFlyoutItem x:Uid="FetchTagMenuFlyoutItem" Command="{Binding DataContext.FetchTagCommand, ElementName=TagsListView}" Icon="Download" Visibility="{x:Bind IsRemote, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutItem x:Uid="CreateBranchFromTagMenuFlyoutItem" Command="{Binding DataContext.CreateBranchFromTagCommand, ElementName=TagsListView}" Icon="Add" />
-                                        <MenuFlyoutItem x:Uid="CreateTagWorktreeMenuFlyoutItem" Command="{Binding DataContext.CreateTagBranchWorktreeCommand, ElementName=TagsListView}" Icon="Folder" />
                                         <MenuFlyoutSeparator />
                                         <MenuFlyoutItem x:Uid="DeleteTagMenuFlyoutItem" Command="{Binding DataContext.DeleteTagCommand, ElementName=TagsListView}" Icon="Delete" />
                                     </MenuFlyout>
@@ -269,15 +268,26 @@
                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                             <Viewbox Width="24" Height="24" VerticalAlignment="Center"><controls:BranchIcon /></Viewbox>
                             <StackPanel Grid.Column="1" Spacing="2">
-                                <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranch.Name, Mode=OneWay, FallbackValue=''}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock 
+                                    Style="{ThemeResource SubtitleTextBlockStyle}" 
+                                    Text="{x:Bind ViewModel.SelectedBranch.Name, Mode=OneWay, FallbackValue=''}" 
+                                    TextTrimming="CharacterEllipsis" >
+                                    <TextBlock.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchName, Mode=OneWay}" Icon="Copy"/>
+                                            <MenuFlyoutItem x:Uid="RenameBranchMenuFlyoutItem" Command="{x:Bind ViewModel.RenameBranchCommand, Mode=OneWay}" Icon="Edit" />
+                                        </MenuFlyout>
+                                    </TextBlock.ContextFlyout>
+                                </TextBlock>
                                 <TextBlock
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                     MaxLines="1"
                                     TextTrimming="CharacterEllipsis">
                                     <TextBlock.ContextFlyout>
                                         <MenuFlyout>
-                                            <MenuFlyoutItem x:Uid="EditBranchDescriptionMenuFlyoutItem" Command="{x:Bind ViewModel.EditBranchDescriptionCommand, Mode=OneWay}" Icon="Edit" />
-                                            <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{x:Bind ViewModel.DeleteBranchDescriptionCommand, Mode=OneWay}" Icon="Delete" />
+                                            <MenuFlyoutItem x:Uid="AddBranchDescriptionMenuFlyoutItem" Command="{x:Bind ViewModel.EditBranchDescriptionCommand, Mode=OneWay}" Visibility="{x:Bind ViewModel.CanAddSelectedBranchDescriptionVisibility, Mode=OneWay}" Icon="Add" />
+                                            <MenuFlyoutItem x:Uid="EditBranchDescriptionMenuFlyoutItem" Command="{x:Bind ViewModel.EditBranchDescriptionCommand, Mode=OneWay}" Visibility="{x:Bind ViewModel.CanEditSelectedBranchDescriptionVisibility, Mode=OneWay}" Icon="Edit" />
+                                            <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{x:Bind ViewModel.DeleteBranchDescriptionCommand, Mode=OneWay}" Visibility="{x:Bind ViewModel.CanEditSelectedBranchDescriptionVisibility, Mode=OneWay}" Icon="Delete" />
                                         </MenuFlyout>
                                     </TextBlock.ContextFlyout>
                                     <Run Text="{x:Bind ViewModel.SelectedBranchScopeText, Mode=OneWay}" />
@@ -530,7 +540,13 @@
                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                             <FontIcon Glyph="&#xE8EC;" FontSize="20" />
                             <StackPanel Grid.Column="1" Spacing="2">
-                                <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTag.Name, Mode=OneWay, FallbackValue=''}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTag.Name, Mode=OneWay, FallbackValue=''}" TextTrimming="CharacterEllipsis" >
+                                    <TextBlock.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagName, Mode=OneWay}" Icon="Copy"/>
+                                        </MenuFlyout>
+                                    </TextBlock.ContextFlyout>
+                                </TextBlock>
                                 <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagScopeText, Mode=OneWay}" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="·" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagTypeText, Mode=OneWay}" /></StackPanel>
                             </StackPanel>
                         </Grid>

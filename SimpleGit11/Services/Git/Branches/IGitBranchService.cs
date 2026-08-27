@@ -12,6 +12,8 @@ public interface IGitBranchService
 
     Task CheckoutAsync(RepositoryInfo repository, GitBranch branch);
 
+    Task CheckoutCommitAsync(RepositoryInfo repository, string commitHash);
+
     Task<string> CheckoutRemoteAsync(RepositoryInfo repository, GitBranch branch);
 
     Task<string> CreateLocalFromRemoteAsync(RepositoryInfo repository, GitBranch branch);

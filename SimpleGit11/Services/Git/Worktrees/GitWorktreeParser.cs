@@ -92,8 +92,12 @@ internal static class GitWorktreeParser
         public GitWorktree Build(RepositoryInfo repository, bool isFirst)
         {
             bool isMain = !IsBare && (PathsEqual(Path, repository.MainWorktreePath) || isFirst);
+            string worktreePath = isMain && !string.IsNullOrWhiteSpace(repository.MainWorktreePath)
+                ? repository.MainWorktreePath
+                : Path;
+
             return new GitWorktree(
-                Path,
+                worktreePath,
                 HeadHash,
                 BranchName,
                 IsBare,
@@ -101,7 +105,7 @@ internal static class GitWorktreeParser
                 IsLocked,
                 IsPrunable,
                 isMain,
-                PathsEqual(Path, repository.Path),
+                PathsEqual(worktreePath, repository.Path),
                 LockReason,
                 PrunableReason);
         }

@@ -26,6 +26,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
     private readonly ILocalizationService _localizationService;
     private readonly IGitService _gitService;
     private readonly IClipboardService _clipboardService;
+    private readonly IProductInfoService _productInfoService;
     private readonly Dictionary<object, ActiveOperation> _activeOperations = new(ReferenceEqualityComparer.Instance);
     private object? _notificationSource;
     private string? _pendingChangesNotice;
@@ -37,12 +38,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         ILocalizationService localizationService,
         IGitService gitService,
         IClipboardService clipboardService,
+        IProductInfoService productInfoService,
         IMessenger messenger)
     {
         _recentRepositoriesService = recentRepositoriesService;
         _localizationService = localizationService;
         _gitService = gitService;
         _clipboardService = clipboardService;
+        _productInfoService = productInfoService;
         messenger.RegisterAll(this);
         CurrentRepositoryDisplayName = _localizationService.GetString("NoRepositoryOpen");
         SelectedRemoteName = _localizationService.GetString("NoRemote");
@@ -60,7 +63,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         _ = LoadUserNameAsync(null);
     }
 
-    public string AppName => "SimpleGit11";
+    public string AppName => _productInfoService.ProductName;
 
     public event EventHandler<NavigationRequestedEventArgs>? NavigationRequested;
 

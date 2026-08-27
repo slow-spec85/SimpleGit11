@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="SimpleGit11.Dialogs.SubmoduleAddDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Uid="SubmoduleAddDialog"
+    DataContext="{x:Bind ViewModel, Mode=OneWay}"
+    DefaultButton="Primary"
+    IsPrimaryButtonEnabled="{x:Bind ViewModel.CanAdd, Mode=OneWay}"
+    Style="{StaticResource DefaultContentDialogStyle}">
+
+    <StackPanel MinWidth="440" Spacing="12">
+        <TextBox
+            x:Uid="SubmoduleUrlTextBox"
+            Text="{x:Bind ViewModel.Url, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBox
+            x:Uid="SubmodulePathTextBox"
+            Text="{x:Bind ViewModel.Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBox
+            x:Uid="SubmoduleBranchTextBox"
+            Text="{x:Bind ViewModel.Branch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <InfoBar
+            x:Uid="SubmoduleAddInfoBar"
+            IsClosable="False"
+            IsOpen="True"
+            Severity="Informational" />
+    </StackPanel>
+</ContentDialog>

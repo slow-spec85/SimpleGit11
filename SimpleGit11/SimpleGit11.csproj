@@ -46,7 +46,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="TextControlBox.WinUI.slow-spec85" Version="2.0.0-preview.2" />
+    <ProjectReference Include="..\External\TextControlBox-WinUI\TextControlBox\TextControlBox.csproj" />
   </ItemGroup>
 
   <!-- Publish Properties -->

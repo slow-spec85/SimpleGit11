@@ -27,6 +27,7 @@
             IsPaneOpen="True"
             IsPaneToggleButtonVisible="True"
             IsSettingsVisible="True"
+            ItemInvoked="ShellNavigation_ItemInvoked"
             Margin="0,32,0,0"
             OpenPaneLength="300"
             PaneDisplayMode="Auto"
@@ -63,6 +64,21 @@
                     Icon="Globe"
                     Tag="Synchronization" />
             </NavigationView.MenuItems>
+
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem
+                    x:Name="AboutNavigationItem"
+                    x:Uid="AboutNavigationItem"
+                    AutomationProperties.AutomationId="AboutNavigationItem"
+                    SelectsOnInvoked="False"
+                    Tag="About">
+                    <NavigationViewItem.Icon>
+                        <FontIcon
+                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                            Glyph="&#xE946;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
 
             <NavigationView.PaneHeader>
                 <Grid Padding="10,30,10,30">

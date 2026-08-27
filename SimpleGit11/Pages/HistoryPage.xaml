@@ -115,6 +115,11 @@
             <controls:CommitBrowserView.CommitContextFlyout>
                 <MenuFlyout>
                     <MenuFlyoutItem
+                        x:Uid="CheckoutCommitMenuFlyoutItem"
+                        Command="{x:Bind ViewModel.CheckoutCommitCommand, Mode=OneWay}"
+                        Icon="Switch" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem
                         x:Uid="RevertCommitMenuFlyoutItem"
                         Command="{x:Bind ViewModel.RevertCommitCommand, Mode=OneWay}"
                         Icon="Undo" />

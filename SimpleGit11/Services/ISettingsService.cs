@@ -15,7 +15,11 @@ public interface ISettingsService
 
     void SetIgnoreWhitespaceInDiff(bool ignoreWhitespace);
 
+    void SetIncludePrereleaseVersions(bool includePrereleaseVersions);
+
     void SetEditorFont(string fontFamily, int fontSize);
 
     void SetEditorLineSpacing(int lineSpacing);
+
+    void SetSshCommand(string sshCommand);
 }

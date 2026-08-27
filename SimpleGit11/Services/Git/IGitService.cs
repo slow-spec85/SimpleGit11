@@ -44,6 +44,8 @@ public interface IGitService
 
     IGitStatusService Status { get; }
 
+    IGitSubmoduleService Submodules { get; }
+
     IGitTagService Tags { get; }
 
     IGitWorktreeService Worktrees { get; }

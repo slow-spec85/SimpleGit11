@@ -7,5 +7,8 @@ public interface IGitRepositoryOperationService
 {
     Task<RepositoryInfo> CreateAsync(string path);
 
-    Task<RepositoryInfo> CloneAsync(string parentPath, string remoteUrl);
+    Task<RepositoryInfo> CloneAsync(
+        string parentPath,
+        string remoteUrl,
+        bool initializeSubmodulesRecursively = false);
 }

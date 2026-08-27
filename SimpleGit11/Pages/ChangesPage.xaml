@@ -356,11 +356,11 @@
                                             CommandParameter="{x:Bind}"
                                             Icon="Document"
                                             Text="{Binding DataContext.ContextMenuDisplayModeText, ElementName=ChangedFilesListView}"
-                                            Visibility="{x:Bind IsNotConflicted, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                            Visibility="{x:Bind CanShowFileContent, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
                                         <MenuFlyoutSeparator
-                                            Visibility="{x:Bind IsNotConflicted, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                            Visibility="{x:Bind CanShowFileContent, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
                                         <MenuFlyoutItem
-                                            x:Uid="CopyFileNameMenuFlyoutItem"
+                                            x:Uid="CopyNameMenuFlyoutItem"
                                             Command="{Binding DataContext.CopyTextCommand, ElementName=ChangedFilesListView}"
                                             CommandParameter="{x:Bind FileName}"
                                             Icon="Copy" />
@@ -415,6 +415,16 @@
                                         Text="{x:Bind FileName, Mode=OneTime}"
                                         TextTrimming="CharacterEllipsis" />
                                     <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Border
+                                            Padding="4,1"
+                                            Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
+                                            CornerRadius="3"
+                                            Visibility="{x:Bind IsSubmodule, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
+                                            <TextBlock
+                                                x:Uid="SubmoduleChangeBadgeTextBlock"
+                                                FontSize="10"
+                                                Style="{ThemeResource CaptionTextBlockStyle}" />
+                                        </Border>
                                         <Border
                                             Padding="4,1"
                                             Background="{ThemeResource MetadataIndicatorBackgroundBrush}"

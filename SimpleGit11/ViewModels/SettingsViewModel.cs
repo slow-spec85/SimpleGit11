@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Collections.ObjectModel;
@@ -21,6 +22,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     private readonly ILocalizationService _localizationService;
     private readonly IGitService _gitService;
     private readonly ISettingsService _settingsService;
+    private readonly IDialogService _dialogService;
     private bool _isInitializing = true;
     public SettingsViewModel(
         MainWindowViewModel mainWindowViewModel,
@@ -28,6 +30,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         ILocalizationService localizationService,
         ISettingsService settingsService,
         IGitService gitService,
+        IDialogService dialogService,
         IMessenger messenger,
         IAsyncCommandExecutor asyncCommandExecutor)
         : base(messenger)
@@ -37,6 +40,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         _localizationService = localizationService;
         _settingsService = settingsService;
         _gitService = gitService;
+        _dialogService = dialogService;
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
         ThemeOptions =
@@ -72,9 +76,11 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         GlobalRepositoryEmail = "";
         InitialBranchName = "";
         GlobalPushDefaultRemote = "";
+        SshCommand = _settingsService.Current.SshCommand;
         RepositoryPushDefaultRemote = "";
         CredentialHelperStatus = "";
         RepositorySettingsStatus = "";
+        GlobalUrlRewrites = [];
         _isInitializing = false;
 
     }
@@ -120,6 +126,12 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     public partial string GlobalPushDefaultRemote { get; set; }
 
     [ObservableProperty]
+    public partial string SshCommand { get; set; }
+
+    [ObservableProperty]
+    public partial bool UseSshCommandOverride { get; set; }
+
+    [ObservableProperty]
     public partial string RepositoryPushDefaultRemote { get; set; }
 
     [ObservableProperty]
@@ -130,6 +142,12 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     [ObservableProperty]
     public partial string RepositorySettingsStatus { get; private set; }
+
+    [ObservableProperty]
+    public partial IReadOnlyList<GitUrlRewrite> GlobalUrlRewrites { get; private set; }
+
+    [ObservableProperty]
+    public partial bool IsUrlRewriteOperationRunning { get; private set; }
 
     partial void OnSelectedThemeChanged(DisplayOption<AppThemeMode> value)
     {
@@ -179,6 +197,13 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         UpdateCredentialHelperStatus();
     }
 
+    partial void OnIsUrlRewriteOperationRunningChanged(bool value)
+    {
+        AddGlobalUrlRewriteCommand.NotifyCanExecuteChanged();
+        EditGlobalUrlRewriteCommand.NotifyCanExecuteChanged();
+        RemoveGlobalUrlRewriteCommand.NotifyCanExecuteChanged();
+    }
+
     private async Task ReadGitConfig()
     {
         ClearNotification();
@@ -191,7 +216,19 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
             GlobalPushDefaultRemote = await _gitService.Configuration.GetPushDefaultRemoteAsync(
                 ConfigScope.Global,
                 null) ?? "";
+            string configuredSshCommand = await _gitService.Configuration.GetGlobalSshCommandAsync();
+            UseSshCommandOverride = !string.IsNullOrWhiteSpace(configuredSshCommand);
+            if (UseSshCommandOverride)
+            {
+                SshCommand = configuredSshCommand;
+                _settingsService.SetSshCommand(SshCommand);
+            }
+            else
+            {
+                SshCommand = _settingsService.Current.SshCommand;
+            }
             UseCredentialHelperManager = await _gitService.Configuration.IsGlobalCredentialHelperManagerConfiguredAsync();
+            GlobalUrlRewrites = await _gitService.Configuration.GetGlobalUrlRewritesAsync();
 
             RepositoryInfo? currentRepository = _mainWindowViewModel.CurrentRepository;
             if (currentRepository is not null)
@@ -218,6 +255,124 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     public Task RefreshSettingsAsync()
     {
         return ReadGitConfig();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanManageGlobalUrlRewrites), FlowExceptionsToTaskScheduler = true)]
+    private Task OnAddGlobalUrlRewriteAsync()
+    {
+        return _asyncCommandExecutor.ExecuteAsync(AddGlobalUrlRewriteAsync);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanEditGlobalUrlRewrite), FlowExceptionsToTaskScheduler = true)]
+    private Task OnEditGlobalUrlRewriteAsync(GitUrlRewrite? rewrite)
+    {
+        return _asyncCommandExecutor.ExecuteAsync(() => EditGlobalUrlRewriteAsync(rewrite));
+    }
+
+    private bool CanEditGlobalUrlRewrite(GitUrlRewrite? rewrite) =>
+        CanManageGlobalUrlRewrites() && rewrite is not null;
+
+    [RelayCommand(CanExecute = nameof(CanRemoveGlobalUrlRewrite), FlowExceptionsToTaskScheduler = true)]
+    private Task OnRemoveGlobalUrlRewriteAsync(GitUrlRewrite? rewrite)
+    {
+        return _asyncCommandExecutor.ExecuteAsync(() => RemoveGlobalUrlRewriteAsync(rewrite));
+    }
+
+    private bool CanRemoveGlobalUrlRewrite(GitUrlRewrite? rewrite) =>
+        CanManageGlobalUrlRewrites() && rewrite is not null;
+
+    private bool CanManageGlobalUrlRewrites() => !IsUrlRewriteOperationRunning;
+
+    private async Task AddGlobalUrlRewriteAsync()
+    {
+        GitUrlRewrite? rewrite = await _dialogService.ShowGitUrlRewriteDialogAsync();
+        if (rewrite is null || HasConflictingUrlRewrite(rewrite))
+        {
+            return;
+        }
+
+        await RunUrlRewriteOperationAsync(
+            () => _gitService.Configuration.AddGlobalUrlRewriteAsync(rewrite),
+            "GitUrlRewriteAdded");
+    }
+
+    private async Task EditGlobalUrlRewriteAsync(GitUrlRewrite? rewrite)
+    {
+        if (rewrite is null)
+        {
+            return;
+        }
+
+        GitUrlRewrite? updatedRewrite = await _dialogService.ShowGitUrlRewriteDialogAsync(rewrite);
+        if (updatedRewrite is null || updatedRewrite == rewrite)
+        {
+            return;
+        }
+
+        if (HasConflictingUrlRewrite(updatedRewrite, rewrite))
+        {
+            return;
+        }
+
+        await RunUrlRewriteOperationAsync(
+            () => _gitService.Configuration.UpdateGlobalUrlRewriteAsync(rewrite, updatedRewrite),
+            "GitUrlRewriteUpdated");
+    }
+
+    private Task RemoveGlobalUrlRewriteAsync(GitUrlRewrite? rewrite)
+    {
+        return rewrite is null
+            ? Task.CompletedTask
+            : RunUrlRewriteOperationAsync(
+                () => _gitService.Configuration.RemoveGlobalUrlRewriteAsync(rewrite),
+                "GitUrlRewriteRemoved");
+    }
+
+    private bool HasConflictingUrlRewrite(
+        GitUrlRewrite rewrite,
+        GitUrlRewrite? ignoredRewrite = null)
+    {
+        bool hasConflict = GlobalUrlRewrites.Any(existing =>
+            !ReferenceEquals(existing, ignoredRewrite)
+            && string.Equals(
+                existing.InsteadOfUrl,
+                rewrite.InsteadOfUrl,
+                StringComparison.Ordinal));
+        if (hasConflict)
+        {
+            ShowNotification(
+                AppNotificationSeverity.Error,
+                _localizationService.GetString("GitUrlRewriteAlreadyExists"));
+        }
+
+        return hasConflict;
+    }
+
+    private async Task RunUrlRewriteOperationAsync(Func<Task> operation, string successResourceKey)
+    {
+        if (IsUrlRewriteOperationRunning)
+        {
+            return;
+        }
+
+        ClearNotification();
+        IsUrlRewriteOperationRunning = true;
+        try
+        {
+            await operation();
+            GlobalUrlRewrites = await _gitService.Configuration.GetGlobalUrlRewritesAsync();
+            ShowNotification(
+                AppNotificationSeverity.Success,
+                _localizationService.GetString(successResourceKey));
+        }
+        catch (Exception exception)
+        {
+            ShowGitConfigError(exception, "GitUrlRewriteSaveFailed");
+        }
+        finally
+        {
+            IsUrlRewriteOperationRunning = false;
+        }
     }
 
     [RelayCommand(FlowExceptionsToTaskScheduler = true)]
@@ -279,6 +434,19 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     private async Task SaveGlobalGitSettingsAsync()
     {
+        _settingsService.SetSshCommand(SshCommand);
+        SshCommand = _settingsService.Current.SshCommand;
+        if (UseSshCommandOverride && !string.IsNullOrWhiteSpace(SshCommand))
+        {
+            await _gitService.Configuration.SetGlobalSshCommandAsync(SshCommand);
+            SshCommand = await _gitService.Configuration.GetGlobalSshCommandAsync();
+        }
+        else
+        {
+            await _gitService.Configuration.UnsetGlobalSshCommandAsync();
+            UseSshCommandOverride = false;
+        }
+
         if (string.IsNullOrWhiteSpace(InitialBranchName))
         {
             await _gitService.Configuration.UnsetInitialBranchNameAsync(ConfigScope.Global, null);

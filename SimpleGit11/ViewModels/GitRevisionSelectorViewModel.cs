@@ -187,7 +187,7 @@ public sealed partial class GitRevisionSelectorViewModel : ViewModelBase, IDispo
 
             IReadOnlyList<GitRevisionSuggestion> availableSuggestions = GetAvailableSuggestions(suggestions);
             ReplaceFilteredSuggestions(availableSuggestions);
-            string preferredStartPoint = _preferredStartPoint ?? "";
+            string preferredStartPoint = _preferredStartPoint ?? StartPoint;
             _preferredStartPoint = null;
             if (!string.IsNullOrWhiteSpace(preferredStartPoint))
             {

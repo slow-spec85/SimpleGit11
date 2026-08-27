@@ -16,6 +16,7 @@ $ErrorActionPreference = "Stop"
 [string]$projectPath = Join-Path $projectDirectory "SimpleGit11.csproj"
 [string]$projectAssetsPath = Join-Path $projectDirectory "obj\project.assets.json"
 [string]$licenseCollectorPath = Join-Path $PSScriptRoot "Collect-ReleaseLicenses.ps1"
+[string]$sourceComponentsPath = Join-Path $PSScriptRoot "SourceComponents.json"
 [string]$artifactDirectory = Join-Path $repositoryRoot "artifacts"
 [string]$stagingDirectory = Join-Path $artifactDirectory ".publish-staging-win-x64"
 [string]$gitSafeDirectory = $repositoryRoot.Replace('\', '/')
@@ -34,6 +35,10 @@ Assert-NoReparsePointUnderRoot -Path $projectPath -Root $repositoryRoot | Out-Nu
 
 if (-not (Test-Path -LiteralPath $licenseCollectorPath -PathType Leaf)) {
     throw "License collector was not found: $licenseCollectorPath"
+}
+
+if (-not (Test-Path -LiteralPath $sourceComponentsPath -PathType Leaf)) {
+    throw "Source component manifest was not found: $sourceComponentsPath"
 }
 
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
@@ -165,6 +170,7 @@ Write-Host "Collecting release licenses and third-party notices..."
 & $licenseCollectorPath `
     -RepositoryRoot $repositoryRoot `
     -ProjectAssetsPath $projectAssetsPath `
+    -SourceComponentsPath $sourceComponentsPath `
     -PublishedDirectory $stagingDirectory
 Assert-NoReparsePointsInTree -Path $stagingDirectory -Root $repositoryRoot | Out-Null
 
@@ -175,6 +181,7 @@ Assert-NoReparsePointsInTree -Path $stagingDirectory -Root $repositoryRoot | Out
     "App.xbf",
     "MainWindow.xbf",
     "Controls\DiffViewer.xbf",
+    "Dialogs\AboutDialog.xbf",
     "Dialogs\CommitDialog.xbf",
     "Pages\SettingsPage.xbf",
     "Assets\AppIcon.ico",

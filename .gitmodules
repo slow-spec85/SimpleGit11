@@ -1,0 +1,3 @@
+[submodule "External/TextControlBox-WinUI"]
+	path = External/TextControlBox-WinUI
+	url = https://github.com/slow-spec85/TextControlBox-WinUI.git

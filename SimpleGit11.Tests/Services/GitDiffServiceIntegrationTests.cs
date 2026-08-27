@@ -23,7 +23,9 @@ public sealed class GitDiffServiceIntegrationTests
         await repository.CommitAllAsync();
         repository.WriteFile("file.txt", "before\r\nnew value\r\nafter\r\n");
 
-        SettingsService settingsService = new(new InMemoryLocalSettingsStore());
+        SettingsService settingsService = new(
+            new InMemoryLocalSettingsStore(),
+            new TestProductInfoService());
         GitDiffService service = new(settingsService);
         GitChangedFile changedFile = new(
             "file.txt",

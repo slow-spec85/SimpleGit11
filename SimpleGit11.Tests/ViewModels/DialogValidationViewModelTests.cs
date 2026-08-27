@@ -13,6 +13,25 @@ namespace SimpleGit11.Tests.ViewModels;
 [TestClass]
 public sealed class DialogValidationViewModelTests
 {
+    [TestMethod]
+    public void GitUrlRewriteDialog_RequiresBothUrlsAndTrimsResult()
+    {
+        GitUrlRewriteDialogViewModel viewModel = new(null)
+        {
+            InsteadOfUrl = "  https://public.example/library.git  ",
+            ReplacementUrl = "  ssh://private.example/library.git  "
+        };
+
+        Assert.IsTrue(viewModel.CanSave);
+        GitUrlRewrite rewrite = viewModel.CreateRewrite();
+        Assert.AreEqual("https://public.example/library.git", rewrite.InsteadOfUrl);
+        Assert.AreEqual("ssh://private.example/library.git", rewrite.ReplacementUrl);
+
+        viewModel.ReplacementUrl = " ";
+
+        Assert.IsFalse(viewModel.CanSave);
+    }
+
     private static readonly DialogValidationMessages ValidationMessages =
         new("Required", "Selection required");
 
@@ -172,6 +191,35 @@ public sealed class DialogValidationViewModelTests
         Assert.AreEqual("v1.0", revisionSelector.StartPoint);
     }
 
+    [TestMethod]
+    public async Task Worktree_TagToNewBranchPreservesTagWhenSuggestionsReload()
+    {
+        GitRevisionSuggestion selectedTag = new("v1.0", "v1.0", "Selected tag", "0123456");
+        GitRevisionSelectorViewModel revisionSelector = CreateRevisionSelector(
+            GitRevisionKind.Tag,
+            selectedTag.Value,
+            [
+                new GitRevisionSuggestion("v2.0", "v2.0", "Latest tag", "abcdef0"),
+                selectedTag
+            ]);
+        await revisionSelector.LoadSelectedSourceAsync();
+        WorktreeCreateDialogViewModel viewModel = new(
+            revisionSelector,
+            "D:\\worktree",
+            "feature/v1.0",
+            WorktreeCreationMode.Detached,
+            canUseExistingBranch: false,
+            validationMessages: ValidationMessages);
+
+        viewModel.SelectedModeIndex = (int)WorktreeCreationMode.NewBranch;
+        await revisionSelector.LoadSelectedSourceAsync();
+        await revisionSelector.LoadSelectedSourceAsync();
+
+        Assert.AreEqual(GitRevisionKind.Tag, revisionSelector.SelectedKind);
+        Assert.AreSame(selectedTag, revisionSelector.SelectedSuggestion);
+        Assert.AreEqual("v1.0", revisionSelector.StartPoint);
+    }
+
     private static TextInputDialogRequest CreateTextInputRequest(string value, bool allowEmpty)
     {
         return new TextInputDialogRequest(
@@ -197,7 +245,8 @@ public sealed class DialogValidationViewModelTests
 
     private static GitRevisionSelectorViewModel CreateRevisionSelector(
         GitRevisionKind selectedKind,
-        string initialValue)
+        string initialValue,
+        IReadOnlyList<GitRevisionSuggestion>? suggestions = null)
     {
         RepositoryInfo repository = new(
             "D:\\repository",
@@ -206,7 +255,7 @@ public sealed class DialogValidationViewModelTests
             mainWorktreePath: "D:\\repository");
         return new GitRevisionSelectorViewModel(
             repository,
-            new TestGitService(),
+            new TestGitService(suggestions),
             new TestLocalizationService(),
             [
                 GitRevisionKind.Head,
@@ -220,12 +269,19 @@ public sealed class DialogValidationViewModelTests
 
     private sealed class TestRevisionService : IGitRevisionService
     {
+        private readonly IReadOnlyList<GitRevisionSuggestion> _suggestions;
+
+        public TestRevisionService(IReadOnlyList<GitRevisionSuggestion>? suggestions)
+        {
+            _suggestions = suggestions ?? [];
+        }
+
         public Task<IReadOnlyList<GitRevisionSuggestion>> GetSuggestionsAsync(
             RepositoryInfo repository,
             GitRevisionKind kind,
             CancellationToken cancellationToken)
         {
-            return Task.FromResult<IReadOnlyList<GitRevisionSuggestion>>([]);
+            return Task.FromResult(_suggestions);
         }
 
         public Task<GitResolvedRevision> ResolveAsync(
@@ -240,6 +296,11 @@ public sealed class DialogValidationViewModelTests
 
     private sealed class TestGitService : IGitService
     {
+        public TestGitService(IReadOnlyList<GitRevisionSuggestion>? suggestions)
+        {
+            Revisions = new TestRevisionService(suggestions);
+        }
+
         public IGitArchiveService Archive => throw new NotSupportedException();
         public IGitBranchService Branches => throw new NotSupportedException();
         public IGitChangeRecoveryService ChangeRecovery => throw new NotSupportedException();
@@ -249,7 +310,7 @@ public sealed class DialogValidationViewModelTests
         public IGitDiffService Diff => throw new NotSupportedException();
         public IGitHistoryService History => throw new NotSupportedException();
         public IGitReferenceDetailsService ReferenceDetails => throw new NotSupportedException();
-        public IGitRevisionService Revisions { get; } = new TestRevisionService();
+        public IGitRevisionService Revisions { get; }
         public IGitRemoteService Remotes => throw new NotSupportedException();
         public IGitRepositoryDiscoveryService RepositoryDiscovery => throw new NotSupportedException();
         public IGitRepositoryOperationService RepositoryOperations => throw new NotSupportedException();
@@ -258,6 +319,7 @@ public sealed class DialogValidationViewModelTests
         public IGitStagingService Staging => throw new NotSupportedException();
         public IGitStashService Stashes => throw new NotSupportedException();
         public IGitStatusService Status => throw new NotSupportedException();
+        public IGitSubmoduleService Submodules => throw new NotSupportedException();
         public IGitTagService Tags => throw new NotSupportedException();
         public IGitWorktreeService Worktrees => throw new NotSupportedException();
 

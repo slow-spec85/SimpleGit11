@@ -70,6 +70,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         PushSummary = "";
         PushUrl = "";
         CloneRepositoryUrl = "";
+        CloneSubmodulesRecursively = true;
         FoundRepositoryFilterText = "";
         RepositorySearchStartPath = _gitService.RepositorySearch.LoadStartPath();
         ResetRepositoryDetails();
@@ -156,6 +157,25 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     private Task OnRepairWorktreesAsync() => _asyncCommandExecutor.ExecuteAsync(RepairWorktreesAsync);
 
     [RelayCommand(CanExecute = nameof(CanRunWithOpenRepository), FlowExceptionsToTaskScheduler = true)]
+    private Task OnAddSubmoduleAsync() => _asyncCommandExecutor.ExecuteAsync(AddSubmoduleAsync);
+
+    [RelayCommand(CanExecute = nameof(CanRunWithOpenRepository), FlowExceptionsToTaskScheduler = true)]
+    private Task OnInitializeAllSubmodulesAsync() =>
+        _asyncCommandExecutor.ExecuteAsync(InitializeAllSubmodulesAsync);
+
+    [RelayCommand(CanExecute = nameof(CanRunWithOpenRepository), FlowExceptionsToTaskScheduler = true)]
+    private Task OnCheckoutAllSubmodulesAsync() =>
+        _asyncCommandExecutor.ExecuteAsync(CheckoutAllSubmodulesAsync);
+
+    [RelayCommand(CanExecute = nameof(CanRunWithOpenRepository), FlowExceptionsToTaskScheduler = true)]
+    private Task OnUpdateAllSubmodulesAsync() =>
+        _asyncCommandExecutor.ExecuteAsync(UpdateAllSubmodulesAsync);
+
+    [RelayCommand(CanExecute = nameof(CanRunWithOpenRepository), FlowExceptionsToTaskScheduler = true)]
+    private Task OnSyncAllSubmodulesAsync() =>
+        _asyncCommandExecutor.ExecuteAsync(SyncAllSubmodulesAsync);
+
+    [RelayCommand(CanExecute = nameof(CanRunWithOpenRepository), FlowExceptionsToTaskScheduler = true)]
     private Task OnArchiveAsync() => _asyncCommandExecutor.ExecuteAsync(ArchiveAsync);
 
     [RelayCommand(CanExecute = nameof(CanCloseRepository))]
@@ -194,6 +214,8 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     public ObservableCollection<FoundRepositoryViewItem> FilteredFoundRepositories { get; } = [];
 
     public ObservableCollection<WorktreeViewItem> Worktrees { get; } = [];
+
+    public ObservableCollection<SubmoduleViewItem> Submodules { get; } = [];
 
     public ObservableCollection<RemoteViewItem> RemoteViewItems { get; } = [];
 
@@ -255,6 +277,9 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     [NotifyPropertyChangedFor(nameof(CanCloneRepository))]
     [NotifyCanExecuteChangedFor(nameof(CloneRepositoryCommand))]
     public partial string CloneRepositoryUrl { get; set; }
+
+    [ObservableProperty]
+    public partial bool CloneSubmodulesRecursively { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSearchRepositories))]
@@ -332,6 +357,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
 
     public bool HasNoWorktrees => IsRepositoryOpen && Worktrees.Count == 0;
     public bool HasNoRemotes => IsRepositoryOpen && RemoteViewItems.Count == 0;
+    public bool HasSubmodules => Submodules.Count > 0;
 
     public Visibility OperationProgressVisibility => IsGitOperationRunning ? Visibility.Visible : Visibility.Collapsed;
 
@@ -489,7 +515,10 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         {
             try
             {
-                RepositoryInfo repository = await _gitService.RepositoryOperations.CloneAsync(selectedPath, remoteUrl);
+                RepositoryInfo repository = await _gitService.RepositoryOperations.CloneAsync(
+                    selectedPath,
+                    remoteUrl,
+                    CloneSubmodulesRecursively);
                 await OpenRepositoryAsync(repository);
                 CloneRepositoryUrl = "";
                 ShowSuccess(string.Format(_localizationService.GetString("RepositoryCloned"), repository.Name));
@@ -904,6 +933,288 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         await LoadLastCommitAsync(repository);
         await LoadRemoteDetailsAsync(repository);
         await LoadWorktreesAsync(repository);
+        await LoadSubmodulesAsync(repository);
+    }
+
+    private async Task LoadSubmodulesAsync(RepositoryInfo repository)
+    {
+        try
+        {
+            IReadOnlyList<GitSubmodule> submodules =
+                await _gitService.Submodules.GetSubmodulesAsync(repository);
+            ReplaceSubmodules(repository.Path, submodules);
+        }
+        catch (Exception exception) when (exception is GitCommandException
+            or FileNotFoundException
+            or DirectoryNotFoundException)
+        {
+            ClearSubmodules();
+            ShowError(_localizationService.GetString("SubmoduleListFailed"), exception.Message);
+        }
+    }
+
+    private void ReplaceSubmodules(
+        string repositoryPath,
+        IReadOnlyList<GitSubmodule> submodules)
+    {
+        Submodules.Clear();
+        foreach (GitSubmodule submodule in submodules)
+        {
+            Submodules.Add(new SubmoduleViewItem(
+                submodule,
+                _localizationService,
+                _asyncCommandExecutor,
+                OpenRepositoryPathAsync,
+                OpenSubmoduleFolder,
+                ExecuteSubmoduleActionAsync,
+                repositoryPath));
+        }
+
+        OnPropertyChanged(nameof(HasSubmodules));
+    }
+
+    private void ClearSubmodules()
+    {
+        Submodules.Clear();
+        OnPropertyChanged(nameof(HasSubmodules));
+    }
+
+    private void OpenSubmoduleFolder(string path)
+    {
+        try
+        {
+            _fileExplorerService.OpenFolder(path);
+        }
+        catch (Exception exception) when (exception is Win32Exception or DirectoryNotFoundException)
+        {
+            ShowError(_localizationService.GetString("SubmoduleFolderOpenFailed"), exception.Message);
+        }
+    }
+
+    private async Task AddSubmoduleAsync()
+    {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        if (repository is null)
+        {
+            return;
+        }
+
+        SubmoduleAddRequest? request = await _dialogService.ShowAddSubmoduleDialogAsync("External/");
+        if (request is null)
+        {
+            return;
+        }
+
+        await ExecuteSubmoduleOperationAsync(
+            _localizationService.GetString("AddingSubmoduleProgress"),
+            _localizationService.GetString("SubmoduleAdded"),
+            () => _gitService.Submodules.AddAsync(repository, request));
+    }
+
+    private Task InitializeAllSubmodulesAsync()
+    {
+        return ExecuteRootSubmoduleOperationAsync(
+            _localizationService.GetString("InitializingSubmodulesProgress"),
+            _localizationService.GetString("SubmodulesInitialized"),
+            path => _gitService.Submodules.InitializeAsync(path));
+    }
+
+    private Task CheckoutAllSubmodulesAsync()
+    {
+        return ExecuteRootSubmoduleOperationAsync(
+            _localizationService.GetString("CheckingOutSubmodulesProgress"),
+            _localizationService.GetString("SubmodulesCheckedOut"),
+            path => _gitService.Submodules.CheckoutRecordedAsync(path));
+    }
+
+    private Task UpdateAllSubmodulesAsync()
+    {
+        return ExecuteRootSubmoduleOperationAsync(
+            _localizationService.GetString("UpdatingSubmodulesProgress"),
+            _localizationService.GetString("SubmodulesUpdated"),
+            path => _gitService.Submodules.UpdateFromRemoteAsync(path));
+    }
+
+    private Task SyncAllSubmodulesAsync()
+    {
+        return ExecuteRootSubmoduleOperationAsync(
+            _localizationService.GetString("SyncingSubmodulesProgress"),
+            _localizationService.GetString("SubmodulesSynchronized"),
+            path => _gitService.Submodules.SyncAsync(path));
+    }
+
+    private Task ExecuteRootSubmoduleOperationAsync(
+        string progressMessage,
+        string successMessage,
+        Func<string, Task> operation)
+    {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        return repository is null
+            ? Task.CompletedTask
+            : ExecuteSubmoduleOperationAsync(
+                progressMessage,
+                successMessage,
+                () => operation(repository.Path));
+    }
+
+    private async Task ExecuteSubmoduleActionAsync(
+        SubmoduleViewItem item,
+        SubmoduleAction action)
+    {
+        switch (action)
+        {
+            case SubmoduleAction.Initialize:
+                await ExecuteSubmoduleOperationAsync(
+                    _localizationService.GetString("InitializingSubmodulesProgress"),
+                    _localizationService.GetString("SubmoduleInitialized"),
+                    () => _gitService.Submodules.InitializeAsync(
+                        item.OwnerRepositoryPath,
+                        item.Path));
+                break;
+            case SubmoduleAction.CheckoutRecorded:
+                await ExecuteSubmoduleOperationAsync(
+                    _localizationService.GetString("CheckingOutSubmodulesProgress"),
+                    _localizationService.GetString("SubmoduleCheckedOut"),
+                    () => _gitService.Submodules.CheckoutRecordedAsync(
+                        item.OwnerRepositoryPath,
+                        item.Path));
+                break;
+            case SubmoduleAction.UpdateFromRemote:
+                await ExecuteSubmoduleOperationAsync(
+                    _localizationService.GetString("UpdatingSubmodulesProgress"),
+                    _localizationService.GetString("SubmoduleUpdated"),
+                    () => _gitService.Submodules.UpdateFromRemoteAsync(
+                        item.OwnerRepositoryPath,
+                        item.Path));
+                break;
+            case SubmoduleAction.Sync:
+                await ExecuteSubmoduleOperationAsync(
+                    _localizationService.GetString("SyncingSubmodulesProgress"),
+                    _localizationService.GetString("SubmoduleSynchronized"),
+                    () => _gitService.Submodules.SyncAsync(
+                        item.OwnerRepositoryPath,
+                        item.Path));
+                break;
+            case SubmoduleAction.EditUrl:
+                await EditSubmoduleUrlAsync(item);
+                break;
+            case SubmoduleAction.EditBranch:
+                await EditSubmoduleBranchAsync(item);
+                break;
+            case SubmoduleAction.Deinitialize:
+                await DeinitializeSubmoduleAsync(item);
+                break;
+            case SubmoduleAction.Remove:
+                await RemoveSubmoduleAsync(item);
+                break;
+        }
+    }
+
+    private async Task EditSubmoduleUrlAsync(SubmoduleViewItem item)
+    {
+        string? url = await _dialogService.ShowTextInputAsync(new TextInputDialogRequest(
+            _localizationService.GetString("EditSubmoduleUrlDialogTitle"),
+            _localizationService.GetString("SubmoduleUrlTextBoxHeader"),
+            item.Url,
+            _localizationService.GetString("SaveButton"),
+            _localizationService.GetString("ConfirmationDialogCancelButton")));
+        if (string.IsNullOrWhiteSpace(url) || string.Equals(url, item.Url, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        await ExecuteSubmoduleOperationAsync(
+            _localizationService.GetString("EditingSubmoduleProgress"),
+            _localizationService.GetString("SubmoduleUrlUpdated"),
+            () => _gitService.Submodules.SetUrlAsync(item.OwnerRepositoryPath, item.Path, url));
+    }
+
+    private async Task EditSubmoduleBranchAsync(SubmoduleViewItem item)
+    {
+        string? branch = await _dialogService.ShowTextInputAsync(new TextInputDialogRequest(
+            _localizationService.GetString("EditSubmoduleBranchDialogTitle"),
+            _localizationService.GetString("SubmoduleBranchTextBoxHeader"),
+            item.Branch,
+            _localizationService.GetString("SaveButton"),
+            _localizationService.GetString("ConfirmationDialogCancelButton"),
+            _localizationService.GetString("SubmoduleBranchTextBoxPlaceholder"),
+            allowEmpty: true));
+        if (branch is null || string.Equals(branch.Trim(), item.Branch, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        await ExecuteSubmoduleOperationAsync(
+            _localizationService.GetString("EditingSubmoduleProgress"),
+            _localizationService.GetString("SubmoduleBranchUpdated"),
+            () => _gitService.Submodules.SetBranchAsync(
+                item.OwnerRepositoryPath,
+                item.Path,
+                branch));
+    }
+
+    private async Task DeinitializeSubmoduleAsync(SubmoduleViewItem item)
+    {
+        bool confirmed = await _dialogService.ConfirmAsync(
+            _localizationService.GetString("DeinitializeSubmoduleDialogTitle"),
+            string.Format(
+                _localizationService.GetString("DeinitializeSubmoduleDialogMessage"),
+                item.Path),
+            _localizationService.GetString("DeinitializeSubmoduleButton"));
+        if (!confirmed)
+        {
+            return;
+        }
+
+        await ExecuteSubmoduleOperationAsync(
+            _localizationService.GetString("DeinitializingSubmoduleProgress"),
+            _localizationService.GetString("SubmoduleDeinitialized"),
+            () => _gitService.Submodules.DeinitializeAsync(item.OwnerRepositoryPath, item.Path));
+    }
+
+    private async Task RemoveSubmoduleAsync(SubmoduleViewItem item)
+    {
+        bool confirmed = await _dialogService.ConfirmAsync(
+            _localizationService.GetString("RemoveSubmoduleDialogTitle"),
+            string.Format(_localizationService.GetString("RemoveSubmoduleDialogMessage"), item.Path),
+            _localizationService.GetString("RemoveSubmoduleButton"));
+        if (!confirmed)
+        {
+            return;
+        }
+
+        await ExecuteSubmoduleOperationAsync(
+            _localizationService.GetString("RemovingSubmoduleProgress"),
+            _localizationService.GetString("SubmoduleRemoved"),
+            () => _gitService.Submodules.RemoveAsync(item.OwnerRepositoryPath, item.Path));
+    }
+
+    private async Task ExecuteSubmoduleOperationAsync(
+        string progressMessage,
+        string successMessage,
+        Func<Task> operation)
+    {
+        await RunGitOperationAsync(progressMessage, async () =>
+        {
+            try
+            {
+                await operation();
+                RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+                if (repository is not null)
+                {
+                    await LoadSubmodulesAsync(repository);
+                    await LoadStatusAsync(repository);
+                }
+
+                ShowSuccess(successMessage);
+            }
+            catch (Exception exception) when (exception is GitCommandException
+                or FileNotFoundException
+                or DirectoryNotFoundException)
+            {
+                ShowError(_localizationService.GetString("SubmoduleOperationFailed"), exception.Message);
+            }
+        });
     }
 
     private async Task LoadWorktreesAsync(RepositoryInfo repository)
@@ -1401,6 +1712,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         UnstagedCount = 0;
         ConflictCount = 0;
         Worktrees.Clear();
+        ClearSubmodules();
         RemoteViewItems.Clear();
         OnPropertyChanged(nameof(HasNoWorktrees));
     }
@@ -1462,6 +1774,11 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         CreateWorktreeCommand.NotifyCanExecuteChanged();
         PruneWorktreesCommand.NotifyCanExecuteChanged();
         RepairWorktreesCommand.NotifyCanExecuteChanged();
+        AddSubmoduleCommand.NotifyCanExecuteChanged();
+        InitializeAllSubmodulesCommand.NotifyCanExecuteChanged();
+        CheckoutAllSubmodulesCommand.NotifyCanExecuteChanged();
+        UpdateAllSubmodulesCommand.NotifyCanExecuteChanged();
+        SyncAllSubmodulesCommand.NotifyCanExecuteChanged();
         ArchiveCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(CanRunGitOperation));
         OnPropertyChanged(nameof(CanRemoveTrackingRemote));

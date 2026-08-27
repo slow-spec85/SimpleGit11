@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:appControls="using:SimpleGit11.Controls"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:models="using:SimpleGit11.Models"
     NavigationCacheMode="Required">
 
     <Grid
@@ -273,7 +274,85 @@
                                     x:Uid="CredentialHelperToggleSwitch"
                                     IsOn="{x:Bind ViewModel.UseCredentialHelperManager, Mode=TwoWay}" />
                             </controls:SettingsCard>
+
+                            <controls:SettingsCard>
+                                <controls:SettingsCard.Header>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Uid="SshCommandSettingsCardHeaderTextBlock" />
+                                        <TextBlock
+                                            x:Uid="SshCommandSettingsCardHeaderDescriptionTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+                                </controls:SettingsCard.Header>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <TextBox
+                                        x:Name="SshCommandTextBox"
+                                        x:Uid="SshCommandTextBox"
+                                        Width="320"
+                                        AutomationProperties.AutomationId="SshCommandPath"
+                                        Text="{x:Bind ViewModel.SshCommand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <ToggleSwitch
+                                        x:Uid="SshCommandToggleSwitch"
+                                        VerticalAlignment="Center"
+                                        IsOn="{x:Bind ViewModel.UseSshCommandOverride, Mode=TwoWay}" />
+                                </StackPanel>
+                            </controls:SettingsCard>
                         </controls:SettingsExpander.Items>
+                    </controls:SettingsExpander>
+
+                    <controls:SettingsExpander
+                        x:Name="GlobalUrlRewritesExpander"
+                        IsExpanded="False"
+                        ItemsSource="{x:Bind ViewModel.GlobalUrlRewrites, Mode=OneWay}">
+                        <controls:SettingsExpander.HeaderIcon>
+                            <FontIcon Glyph="&#xE71B;" />
+                        </controls:SettingsExpander.HeaderIcon>
+                        <controls:SettingsExpander.Header>
+                            <StackPanel Spacing="4">
+                                <TextBlock x:Uid="GlobalUrlRewritesTitleTextBlock" />
+                                <TextBlock
+                                    x:Uid="GlobalUrlRewritesDescriptionTextBlock"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                    TextWrapping="WrapWholeWords" />
+                            </StackPanel>
+                        </controls:SettingsExpander.Header>
+                        <Button
+                            x:Uid="AddGlobalUrlRewriteButton"
+                            AutomationProperties.AutomationId="AddGlobalUrlRewriteButton"
+                            Command="{x:Bind ViewModel.AddGlobalUrlRewriteCommand, Mode=OneWay}" />
+                        <controls:SettingsExpander.ItemTemplate>
+                            <DataTemplate x:DataType="models:GitUrlRewrite">
+                                <controls:SettingsCard>
+                                    <controls:SettingsCard.Header>
+                                        <StackPanel Spacing="3">
+                                            <TextBlock
+                                                FontWeight="SemiBold"
+                                                Text="{x:Bind InsteadOfUrl, Mode=OneTime}"
+                                                TextWrapping="WrapWholeWords" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{x:Bind ReplacementUrl, Mode=OneTime}"
+                                                TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </controls:SettingsCard.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button
+                                            x:Uid="EditGlobalUrlRewriteButton"
+                                            AutomationProperties.AutomationId="EditGlobalUrlRewriteButton"
+                                            Command="{Binding DataContext.EditGlobalUrlRewriteCommand, ElementName=GlobalUrlRewritesExpander}"
+                                            CommandParameter="{x:Bind}" />
+                                        <Button
+                                            x:Uid="RemoveGlobalUrlRewriteButton"
+                                            AutomationProperties.AutomationId="RemoveGlobalUrlRewriteButton"
+                                            Command="{Binding DataContext.RemoveGlobalUrlRewriteCommand, ElementName=GlobalUrlRewritesExpander}"
+                                            CommandParameter="{x:Bind}" />
+                                    </StackPanel>
+                                </controls:SettingsCard>
+                            </DataTemplate>
+                        </controls:SettingsExpander.ItemTemplate>
                     </controls:SettingsExpander>
 
                     <controls:SettingsExpander IsExpanded="False">

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="SimpleGit11.Dialogs.AboutDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Uid="AboutDialog"
+    DataContext="{x:Bind ViewModel, Mode=OneWay}"
+    DefaultButton="Close"
+    Style="{StaticResource DefaultContentDialogStyle}">
+
+    <StackPanel MinWidth="440" MaxWidth="520" Spacing="20">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+            <Image
+                Width="96"
+                Height="96"
+                AutomationProperties.AccessibilityView="Raw"
+                IsHitTestVisible="False"
+                Source="/Assets/Square44x44Logo.targetsize-256.png" />
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                Spacing="4">
+                <TextBlock
+                    Style="{ThemeResource TitleTextBlockStyle}"
+                    Text="{x:Bind ViewModel.ProductName, Mode=OneTime}" />
+                <TextBlock
+                    x:Uid="AboutProductDescriptionTextBlock"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Style="{ThemeResource BodyTextBlockStyle}"
+                    TextWrapping="WrapWholeWords" />
+            </StackPanel>
+        </Grid>
+
+        <Grid
+            ColumnDefinitions="Auto,*"
+            ColumnSpacing="20"
+            RowDefinitions="Auto,Auto,Auto"
+            RowSpacing="12">
+            <TextBlock
+                x:Uid="AboutCurrentVersionLabelTextBlock"
+                VerticalAlignment="Center"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                Text="{x:Bind ViewModel.CurrentVersion, Mode=OneTime}"
+                TextWrapping="WrapWholeWords" />
+
+            <TextBlock
+                x:Uid="AboutRepositoryLabelTextBlock"
+                Grid.Row="1"
+                VerticalAlignment="Center"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <HyperlinkButton
+                Grid.Row="1"
+                Grid.Column="1"
+                x:Name="RepositoryHyperlinkButton"
+                AutomationProperties.AutomationId="AboutRepositoryLink"
+                HorizontalAlignment="Left"
+                NavigateUri="{x:Bind ViewModel.RepositoryUri, Mode=OneTime}"
+                Padding="0"
+                Content="{x:Bind ViewModel.RepositoryDisplayUri, Mode=OneTime}" />
+
+            <TextBlock
+                x:Uid="AboutLatestVersionLabelTextBlock"
+                Grid.Row="2"
+                VerticalAlignment="Top"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Grid Grid.Row="2" Grid.Column="1">
+                <StackPanel
+                    Orientation="Horizontal"
+                    Spacing="8"
+                    Visibility="{x:Bind ViewModel.IsLoadingLatestRelease, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                    <ProgressRing
+                        Width="16"
+                        Height="16"
+                        IsActive="{x:Bind ViewModel.IsLoadingLatestRelease, Mode=OneWay}" />
+                    <TextBlock
+                        x:Uid="AboutCheckingReleaseTextBlock"
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+
+                <HyperlinkButton
+                    x:Name="LatestReleaseHyperlinkButton"
+                    AutomationProperties.AutomationId="AboutLatestReleaseLink"
+                    HorizontalAlignment="Left"
+                    NavigateUri="{x:Bind ViewModel.LatestReleaseUri, Mode=OneWay}"
+                    Padding="0"
+                    Content="{x:Bind ViewModel.LatestReleaseVersion, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.HasLatestRelease, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                <StackPanel
+                    Spacing="8"
+                    Visibility="{x:Bind ViewModel.HasReleaseStatus, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind ViewModel.ReleaseStatusMessage, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <Button
+                        x:Name="RetryReleaseCheckButton"
+                        x:Uid="RetryReleaseCheckButton"
+                        AutomationProperties.AutomationId="AboutRetryReleaseCheck"
+                        Command="{x:Bind ViewModel.RefreshLatestReleaseCommand, Mode=OneWay}"
+                        HorizontalAlignment="Left"
+                        Visibility="{x:Bind ViewModel.HasReleaseError, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <ToggleSwitch
+            x:Name="IncludePrereleaseVersionsToggleSwitch"
+            x:Uid="IncludePrereleaseVersionsToggleSwitch"
+            AutomationProperties.AutomationId="AboutIncludePrereleaseVersions"
+            IsOn="{x:Bind ViewModel.IncludePrereleaseVersions, Mode=TwoWay}" />
+    </StackPanel>
+</ContentDialog>

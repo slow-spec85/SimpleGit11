@@ -27,11 +27,19 @@ public sealed class GitStatusService : IGitStatusService
             throw new DirectoryNotFoundException(repository.Path);
         }
 
-        var statusOutput = await RunGitAsync(repository, "status", "--porcelain=v1");
-        var stagedStats = await GetDiffStatsAsync(repository, true);
-        var unstagedStats = await GetDiffStatsAsync(repository, false);
+        Task<string> statusTask = RunGitAsync(repository, "status", "--porcelain=v1");
+        Task<string> indexTask = RunGitAsync(repository, "ls-files", "--stage", "-z");
+        Task<IReadOnlyDictionary<string, DiffStat>> stagedStatsTask =
+            GetDiffStatsAsync(repository, true);
+        Task<IReadOnlyDictionary<string, DiffStat>> unstagedStatsTask =
+            GetDiffStatsAsync(repository, false);
+        await Task.WhenAll(statusTask, indexTask, stagedStatsTask, unstagedStatsTask);
 
-        return ParseStatus(statusOutput, stagedStats, unstagedStats);
+        return ParseStatus(
+            await statusTask,
+            await stagedStatsTask,
+            await unstagedStatsTask,
+            ParseSubmodulePaths(await indexTask));
     }
 
     public async Task<GitOperationState> GetOperationStateAsync(RepositoryInfo repository)
@@ -106,7 +114,8 @@ public sealed class GitStatusService : IGitStatusService
     private static GitStatusSnapshot ParseStatus(
         string output,
         IReadOnlyDictionary<string, DiffStat> stagedStats,
-        IReadOnlyDictionary<string, DiffStat> unstagedStats)
+        IReadOnlyDictionary<string, DiffStat> unstagedStats,
+        IReadOnlySet<string> submodulePaths)
     {
         var stagedChanges = new List<GitChangedFile>();
         var unstagedChanges = new List<GitChangedFile>();
@@ -130,7 +139,8 @@ public sealed class GitStatusService : IGitStatusService
                     path,
                     "Conflict",
                     GetStat(stagedStats, unstagedStats, path),
-                    GitChangeState.Conflicted));
+                    GitChangeState.Conflicted,
+                    submodulePaths.Contains(path)));
                 continue;
             }
 
@@ -140,7 +150,8 @@ public sealed class GitStatusService : IGitStatusService
                     path,
                     GetStatusName(indexStatus),
                     GetStat(stagedStats, path),
-                    GitChangeState.Staged));
+                    GitChangeState.Staged,
+                    submodulePaths.Contains(path)));
             }
 
             if (workTreeStatus != ' ' || indexStatus == '?')
@@ -150,11 +161,33 @@ public sealed class GitStatusService : IGitStatusService
                     path,
                     status,
                     GetStat(unstagedStats, path),
-                    GitChangeState.Unstaged));
+                    GitChangeState.Unstaged,
+                    submodulePaths.Contains(path)));
             }
         }
 
         return new GitStatusSnapshot(stagedChanges, unstagedChanges, conflictedChanges);
+    }
+
+    private static IReadOnlySet<string> ParseSubmodulePaths(string output)
+    {
+        HashSet<string> paths = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string entry in output.Split('\0', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int tabIndex = entry.IndexOf('\t');
+            if (tabIndex <= 0)
+            {
+                continue;
+            }
+
+            string metadata = entry[..tabIndex];
+            if (metadata.StartsWith("160000 ", StringComparison.Ordinal))
+            {
+                paths.Add(NormalizePath(entry[(tabIndex + 1)..]));
+            }
+        }
+
+        return paths;
     }
 
     private static IReadOnlyDictionary<string, DiffStat> ParseNumstat(string output)
