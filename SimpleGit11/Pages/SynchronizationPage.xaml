@@ -483,10 +483,17 @@
                                                                 TextWrapping="WrapWholeWords" />
                                                         </StackPanel>
                                                     </toolkit:SettingsCard.Header>
-                                                    <Button
-                                                        x:Uid="SynchronizationPullBranchButton"
-                                                        Command="{Binding DataContext.PullCommand, ElementName=IncomingChangesExpander}"
-                                                        Visibility="{x:Bind IsCurrentBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                    <StackPanel>
+                                                        <Button
+                                                            x:Uid="SynchronizationPullBranchButton"
+                                                            Command="{Binding DataContext.PullCommand, ElementName=IncomingChangesExpander}"
+                                                            Visibility="{x:Bind IsCurrentBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                        <Button
+                                                            x:Uid="SynchronizationSwitchAndPullBranchButton"
+                                                            Command="{Binding DataContext.SwitchAndPullCommand, ElementName=IncomingChangesExpander}"
+                                                            CommandParameter="{x:Bind}"
+                                                            Visibility="{x:Bind IsNotCurrentBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                    </StackPanel>
                                                 </toolkit:SettingsCard>
                                             </DataTemplate>
                                         </toolkit:SettingsExpander.ItemTemplate>

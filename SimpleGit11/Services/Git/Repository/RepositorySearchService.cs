@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
+using SimpleGit11.Services.Execution;
 
 namespace SimpleGit11.Services;
 
@@ -13,30 +14,47 @@ public sealed class RepositorySearchService : IGitRepositorySearchService
     private const string StartPathKey = "RepositorySearchStartPath";
     private const string FoundRepositoriesKey = "RepositorySearchFoundRepositories";
     private const int MaxFoundRepositories = 500;
-    private readonly IGitRepositoryDiscoveryService _repositoryDiscoveryService;
+    private readonly IGitRepositoryDiscoveryService _localRepositoryDiscoveryService;
+    private readonly IExecutionRepositoryDiscoveryService _executionRepositoryDiscoveryService;
     private readonly ILocalSettingsStore _localSettingsStore;
+    private readonly IExecutionContextService _executionContextService;
 
     public RepositorySearchService(
-        IGitRepositoryDiscoveryService repositoryDiscoveryService,
-        ILocalSettingsStore localSettingsStore)
+        IGitRepositoryDiscoveryService localRepositoryDiscoveryService,
+        IExecutionRepositoryDiscoveryService executionRepositoryDiscoveryService,
+        ILocalSettingsStore localSettingsStore,
+        IExecutionContextService executionContextService)
     {
-        _repositoryDiscoveryService = repositoryDiscoveryService;
+        _localRepositoryDiscoveryService = localRepositoryDiscoveryService;
+        _executionRepositoryDiscoveryService = executionRepositoryDiscoveryService;
         _localSettingsStore = localSettingsStore;
+        _executionContextService = executionContextService;
     }
 
     public string LoadStartPath()
     {
-        return _localSettingsStore.GetString(StartPathKey) ?? "";
+        string? settingsKey = GetSettingsKey(StartPathKey);
+        return settingsKey is null ? "" : _localSettingsStore.GetString(settingsKey) ?? "";
     }
 
     public void SaveStartPath(string path)
     {
-        _localSettingsStore.SetString(StartPathKey, path);
+        string? settingsKey = GetSettingsKey(StartPathKey);
+        if (settingsKey is not null)
+        {
+            _localSettingsStore.SetString(settingsKey, path);
+        }
     }
 
     public IReadOnlyList<RepositoryInfo> LoadFoundRepositories()
     {
-        string? value = _localSettingsStore.GetString(FoundRepositoriesKey);
+        string? settingsKey = GetSettingsKey(FoundRepositoriesKey);
+        if (settingsKey is null)
+        {
+            return [];
+        }
+
+        string? value = _localSettingsStore.GetString(settingsKey);
         if (string.IsNullOrWhiteSpace(value))
         {
             return [];
@@ -44,10 +62,7 @@ public sealed class RepositorySearchService : IGitRepositorySearchService
 
         try
         {
-            List<RepositoryInfo> repositories = JsonSerializer.Deserialize<List<RepositoryInfo>>(value) ?? [];
-            return repositories
-                .Select(repository => TryOpenMainRepository(repository.Path) ?? repository)
-                .ToList();
+            return JsonSerializer.Deserialize<List<RepositoryInfo>>(value) ?? [];
         }
         catch (JsonException)
         {
@@ -57,36 +72,44 @@ public sealed class RepositorySearchService : IGitRepositorySearchService
 
     public void SaveFoundRepositories(IReadOnlyList<RepositoryInfo> repositories)
     {
-        _localSettingsStore.SetString(FoundRepositoriesKey, JsonSerializer.Serialize(repositories));
+        string? settingsKey = GetSettingsKey(FoundRepositoriesKey);
+        if (settingsKey is not null)
+        {
+            _localSettingsStore.SetString(settingsKey, JsonSerializer.Serialize(repositories));
+        }
     }
 
-    public Task<IReadOnlyList<RepositoryInfo>> SearchAsync(string startPath)
+    public async Task<IReadOnlyList<RepositoryInfo>> SearchAsync(string startPath)
     {
-        return Task.Run(() => Search(startPath));
-    }
-
-    private IReadOnlyList<RepositoryInfo> Search(string startPath)
-    {
-        if (!Directory.Exists(startPath))
+        IExecutionRuntime runtime = _executionContextService.Current.Runtime;
+        if (!await runtime.Files.DirectoryExistsAsync(startPath))
         {
             throw new DirectoryNotFoundException(startPath);
         }
 
-        var found = new List<RepositoryInfo>();
-        var pending = new Stack<string>();
+        List<RepositoryInfo> found = [];
+        Stack<string> pending = [];
+        StringComparer pathComparer = runtime.Paths.Style == RepositoryPathStyle.Windows
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
+        HashSet<string> visited = new(pathComparer);
         pending.Push(startPath);
 
         while (pending.Count > 0 && found.Count < MaxFoundRepositories)
         {
             string directory = pending.Pop();
-            if (IsRepositoryDirectory(directory))
+            if (!visited.Add(runtime.Paths.Normalize(directory)))
             {
-                RepositoryInfo? repository = TryOpenMainRepository(directory);
+                continue;
+            }
+
+            if (await IsRepositoryDirectoryAsync(directory, runtime))
+            {
+                RepositoryInfo? repository = await TryOpenMainRepositoryAsync(directory);
                 if (repository is not null &&
-                    !found.Any(item => string.Equals(
+                    !found.Any(item => pathComparer.Equals(
                         GetRepositoryIdentity(item),
-                        GetRepositoryIdentity(repository),
-                        StringComparison.OrdinalIgnoreCase)))
+                        GetRepositoryIdentity(repository))))
                 {
                     found.Add(repository);
                 }
@@ -94,7 +117,7 @@ public sealed class RepositorySearchService : IGitRepositorySearchService
                 continue;
             }
 
-            foreach (string childDirectory in EnumerateDirectories(directory))
+            foreach (string childDirectory in await runtime.Files.EnumerateDirectoriesAsync(directory))
             {
                 pending.Push(childDirectory);
             }
@@ -106,9 +129,9 @@ public sealed class RepositorySearchService : IGitRepositorySearchService
             .ToList();
     }
 
-    private RepositoryInfo? TryOpenMainRepository(string path)
+    private async Task<RepositoryInfo?> TryOpenMainRepositoryAsync(string path)
     {
-        RepositoryInfo? repository = _repositoryDiscoveryService.TryOpenRepository(path);
+        RepositoryInfo? repository = await TryOpenRepositoryAsync(path);
         if (repository is null
             || repository.IsMainWorktree
             || string.IsNullOrWhiteSpace(repository.MainWorktreePath))
@@ -116,13 +139,26 @@ public sealed class RepositorySearchService : IGitRepositorySearchService
             return repository;
         }
 
-        return _repositoryDiscoveryService.TryOpenRepository(repository.MainWorktreePath) ?? repository;
+        return await TryOpenRepositoryAsync(repository.MainWorktreePath)
+            ?? repository;
     }
 
-    private static bool IsRepositoryDirectory(string directory)
+    private Task<RepositoryInfo?> TryOpenRepositoryAsync(string path)
     {
-        string gitPath = Path.Combine(directory, ".git");
-        return Directory.Exists(gitPath) || File.Exists(gitPath);
+        return _executionContextService.Current.IsLocal
+            ? Task.FromResult(_localRepositoryDiscoveryService.TryOpenRepository(path))
+            : _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(path);
+    }
+
+    private static async Task<bool> IsRepositoryDirectoryAsync(
+        string directory,
+        IExecutionRuntime runtime)
+    {
+        string gitPath = runtime.Paths.Combine(directory, ".git");
+        Task<bool> directoryTask = runtime.Files.DirectoryExistsAsync(gitPath);
+        Task<bool> fileTask = runtime.Files.FileExistsAsync(gitPath);
+        await Task.WhenAll(directoryTask, fileTask);
+        return await directoryTask || await fileTask;
     }
 
     private static string GetRepositoryIdentity(RepositoryInfo repository)
@@ -132,23 +168,16 @@ public sealed class RepositorySearchService : IGitRepositorySearchService
             : repository.CommonGitDirectory;
     }
 
-    private static IEnumerable<string> EnumerateDirectories(string directory)
+    private string? GetSettingsKey(string baseKey)
     {
-        try
+        ExecutionContext context = _executionContextService.Current;
+        if (context.IsLocal)
         {
-            return Directory.EnumerateDirectories(directory);
+            return baseKey;
         }
-        catch (UnauthorizedAccessException)
-        {
-            return [];
-        }
-        catch (DirectoryNotFoundException)
-        {
-            return [];
-        }
-        catch (IOException)
-        {
-            return [];
-        }
+
+        return string.IsNullOrWhiteSpace(context.ConnectionProfileId)
+            ? null
+            : $"{baseKey}:{context.ConnectionProfileId}";
     }
 }

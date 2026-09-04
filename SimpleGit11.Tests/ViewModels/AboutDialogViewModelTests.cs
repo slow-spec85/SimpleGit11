@@ -1,3 +1,4 @@
+using SimpleGit11.Extensibility.Plugins;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
 using SimpleGit11.Tests.TestInfrastructure;
@@ -22,7 +23,8 @@ public sealed class AboutDialogViewModelTests
         using AboutDialogViewModel viewModel = new(
             productInfoService,
             settingsService,
-            new TestLocalizationService());
+            new TestLocalizationService(),
+            new TestPluginCatalog());
 
         await viewModel.LoadAsync();
 
@@ -33,6 +35,8 @@ public sealed class AboutDialogViewModelTests
         CollectionAssert.AreEqual(
             new[] { false },
             productInfoService.IncludePrereleaseRequests);
+        Assert.IsFalse(viewModel.HasSshPlugin);
+        Assert.AreEqual(string.Empty, viewModel.SshPluginVersion);
     }
 
     [TestMethod]
@@ -43,7 +47,8 @@ public sealed class AboutDialogViewModelTests
         using AboutDialogViewModel viewModel = new(
             productInfoService,
             settingsService,
-            new TestLocalizationService());
+            new TestLocalizationService(),
+            new TestPluginCatalog());
         await viewModel.LoadAsync();
 
         viewModel.IncludePrereleaseVersions = true;
@@ -64,13 +69,47 @@ public sealed class AboutDialogViewModelTests
         using AboutDialogViewModel viewModel = new(
             productInfoService,
             new TestSettingsService(),
-            new TestLocalizationService());
+            new TestLocalizationService(),
+            new TestPluginCatalog());
 
         await viewModel.LoadAsync();
 
         Assert.IsTrue(viewModel.HasReleaseError);
         Assert.IsTrue(viewModel.HasReleaseStatus);
         Assert.AreEqual("AboutReleaseCheckFailed", viewModel.ReleaseStatusMessage);
+    }
+
+    [TestMethod]
+    public void Constructor_SshPluginInstalled_ExposesItsVersion()
+    {
+        TestPluginCatalog plugins = new([
+            new PluginMetadata("test.z", "Zulu", "2.0.0", "1.0"),
+            new PluginMetadata("simplegit11.ssh", "SSH", "1.0.0", "1.0")
+        ]);
+        using AboutDialogViewModel viewModel = new(
+            new TestProductInfoService(),
+            new TestSettingsService(),
+            new TestLocalizationService(),
+            plugins);
+
+        Assert.IsTrue(viewModel.HasSshPlugin);
+        Assert.AreEqual("1.0.0", viewModel.SshPluginVersion);
+    }
+
+    [TestMethod]
+    public void Constructor_OnlyOtherPluginInstalled_HidesSshPluginVersion()
+    {
+        TestPluginCatalog plugins = new([
+            new PluginMetadata("test.other", "Other", "2.0.0", "1.0")
+        ]);
+        using AboutDialogViewModel viewModel = new(
+            new TestProductInfoService(),
+            new TestSettingsService(),
+            new TestLocalizationService(),
+            plugins);
+
+        Assert.IsFalse(viewModel.HasSshPlugin);
+        Assert.AreEqual(string.Empty, viewModel.SshPluginVersion);
     }
 
     private sealed class TestSettingsService : ISettingsService
@@ -102,7 +141,6 @@ public sealed class AboutDialogViewModelTests
             EditorAppearanceChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public void SetSshCommand(string sshCommand) => Current.SshCommand = sshCommand;
     }
 
     private sealed class TestLocalizationService : ILocalizationService
@@ -118,5 +156,13 @@ public sealed class AboutDialogViewModelTests
         public void SetLanguage(AppLanguage language)
         {
         }
+    }
+
+    private sealed class TestPluginCatalog(
+        IReadOnlyList<PluginMetadata>? plugins = null) : IPluginCatalog
+    {
+        public IReadOnlyList<PluginMetadata> Plugins { get; } = plugins ?? [];
+
+        public IReadOnlyList<PluginLoadFailure> Failures { get; } = [];
     }
 }

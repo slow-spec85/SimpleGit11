@@ -30,6 +30,8 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        
+        <x:Double x:Key="SettingsCardWrapThreshold">600</x:Double>
     </Page.Resources>
 
     <Grid
@@ -44,7 +46,7 @@
                         <AdaptiveTrigger MinWindowWidth="0" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="PageLayout.Padding" Value="20" />
+                        <Setter Target="PageLayout.RowSpacing" Value="0" />
                         <Setter Target="HeaderCommands.(Grid.Row)" Value="1" />
                         <Setter Target="HeaderCommands.(Grid.Column)" Value="0" />
                         <Setter Target="HeaderCommands.HorizontalAlignment" Value="Left" />
@@ -63,12 +65,21 @@
                         <Setter Target="PaneSplitter.Style" Value="{StaticResource HorizontalSplitterStyle}" />
                         <Setter Target="DetailsPane.(Grid.Row)" Value="2" />
                         <Setter Target="DetailsPane.(Grid.Column)" Value="0" />
+                        <Setter Target="DetailsPane.Padding" Value="0,0,32,0" />
+                        <Setter Target="ListPane.Padding" Value="0,0,28,0" />
+                        <Setter Target="PaneSplitter.Margin" Value="0,0,32,0" />
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="WideLayout">
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="980" />
                     </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ListColumn.Width" Value="380" />
+                        <Setter Target="DetailsColumn.Width" Value="*" />
+                        <Setter Target="ListRow.Height" Value="*" />
+                        <Setter Target="DetailsRow.Height" Value="0" />
+                    </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
@@ -137,7 +148,7 @@
             Padding="32,0,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="ListColumn" Width="380" />
-                <ColumnDefinition x:Name="PaneSplitterColumn" Width="12" />
+                <ColumnDefinition x:Name="PaneSplitterColumn" Width="4" />
                 <ColumnDefinition x:Name="DetailsColumn" Width="*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -146,111 +157,120 @@
                 <RowDefinition x:Name="DetailsRow" Height="0" />
             </Grid.RowDefinitions>
 
-            <Grid x:Name="ListPane" RowSpacing="10">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <TextBox
-                    x:Uid="BranchSearchTextBox"
-                    Height="32"
-                    Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                <SelectorBar
-                    x:Name="BranchScopeSelectorBar"
-                    Grid.Row="1"
-                    SelectionChanged="BranchScopeSelectorBar_SelectionChanged">
-                    <SelectorBarItem x:Name="LocalBranchScopeSelectorBarItem" x:Uid="LocalBranchScopeSelectorBarItem" Tag="Local" />
-                    <SelectorBarItem x:Uid="RemoteBranchScopeSelectorBarItem" Tag="Remote" />
-                </SelectorBar>
-                <StackPanel Grid.Row="2" Spacing="6">
-                    <InfoBar x:Uid="NoBranchesInfoBar" IsOpen="{x:Bind ViewModel.HasNoBranchesNotice, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoBranchesNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
-                    <InfoBar x:Uid="NoTagsInfoBar" IsOpen="{x:Bind ViewModel.HasNoTagsNotice, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoTagsNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
-                    <InfoBar x:Uid="NoFilteredBranchesInfoBar" IsOpen="{x:Bind ViewModel.HasNoFilteredBranches, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoFilteredBranches, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
-                    <InfoBar x:Uid="NoFilteredTagsInfoBar" IsOpen="{x:Bind ViewModel.HasNoFilteredTags, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoFilteredTags, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
-                </StackPanel>
+            <ScrollViewer x:Name="ListPane" 
+                          VerticalScrollBarVisibility="Auto"
+                          Padding="0,0,12,0">
 
-                <ListView
-                    x:Name="BranchesListView"
-                    Grid.Row="3"
-                    AutomationProperties.AutomationId="BranchesList"
-                    ItemsSource="{x:Bind ViewModel.FilteredBranches, Mode=OneWay}"
-                    SelectedItem="{x:Bind ViewModel.SelectedBranch, Mode=TwoWay}"
-                    SelectionMode="Single"
-                    Visibility="{x:Bind ViewModel.BranchesModeVisibility, Mode=OneWay}">
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="models:GitBranch">
-                            <Grid Padding="6" ColumnSpacing="10" RightTapped="BranchItem_RightTapped">
-                                <Grid.ContextFlyout>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem x:Uid="CheckoutBranchMenuFlyoutItem" Command="{Binding DataContext.BranchPrimaryCommand, ElementName=BranchesListView}" Icon="Forward" />
-                                        <MenuFlyoutSeparator />
-                                        <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Name}" Icon="Copy" />
-                                        <MenuFlyoutItem x:Uid="RenameBranchMenuFlyoutItem" Command="{Binding DataContext.RenameBranchCommand, ElementName=BranchesListView}" Icon="Edit" Visibility="{x:Bind IsLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutItem x:Uid="AddBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.EditContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Add" Visibility="{x:Bind CanAddConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.DeleteContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Delete" Visibility="{x:Bind CanEditConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutSeparator />
-                                        <MenuFlyoutItem x:Uid="MergeBranchMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesListView}" Icon="Link" />
-                                        <MenuFlyoutItem x:Uid="MergeBranchWithoutCommitMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesListView}" CommandParameter="True" Icon="Link" />
-                                        <MenuFlyoutItem x:Uid="SquashMergeBranchMenuFlyoutItem" Command="{Binding DataContext.SquashMergeBranchCommand, ElementName=BranchesListView}" Icon="Copy" />
-                                        <MenuFlyoutItem x:Uid="RebaseBranchMenuFlyoutItem" Command="{Binding DataContext.RebaseBranchCommand, ElementName=BranchesListView}" Icon="Refresh" />
-                                        <MenuFlyoutItem x:Uid="PrepareBranchSnapshotMenuFlyoutItem" Command="{Binding DataContext.PrepareBranchSnapshotCommand, ElementName=BranchesListView}" Icon="Copy" />
-                                        <MenuFlyoutSeparator />
-                                        <MenuFlyoutItem x:Uid="DeleteBranchMenuFlyoutItem" Command="{Binding DataContext.DeleteBranchCommand, ElementName=BranchesListView}" Icon="Delete" />
-                                    </MenuFlyout>
-                                </Grid.ContextFlyout>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="28" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource MetadataIndicatorBackgroundBrush}" CornerRadius="4">
-                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind CommitMetadata, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind LastCommitMessage, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                </StackPanel>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                <Grid RowSpacing="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBox
+                        x:Uid="BranchSearchTextBox"
+                        Height="32"
+                        Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Margin="0,0,2,0"/>
+                    <SelectorBar
+                        x:Name="BranchScopeSelectorBar"
+                        Grid.Row="1"
+                        SelectionChanged="BranchScopeSelectorBar_SelectionChanged">
+                        <SelectorBarItem x:Name="LocalBranchScopeSelectorBarItem" x:Uid="LocalBranchScopeSelectorBarItem" Tag="Local" />
+                        <SelectorBarItem x:Uid="RemoteBranchScopeSelectorBarItem" Tag="Remote" />
+                    </SelectorBar>
+                    <StackPanel Grid.Row="2" Spacing="6">
+                        <InfoBar x:Uid="NoBranchesInfoBar" IsOpen="{x:Bind ViewModel.HasNoBranchesNotice, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoBranchesNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                        <InfoBar x:Uid="NoTagsInfoBar" IsOpen="{x:Bind ViewModel.HasNoTagsNotice, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoTagsNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                        <InfoBar x:Uid="NoFilteredBranchesInfoBar" IsOpen="{x:Bind ViewModel.HasNoFilteredBranches, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoFilteredBranches, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                        <InfoBar x:Uid="NoFilteredTagsInfoBar" IsOpen="{x:Bind ViewModel.HasNoFilteredTags, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoFilteredTags, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                    </StackPanel>
 
-                <ListView
-                    x:Name="TagsListView"
-                    Grid.Row="3"
-                    AutomationProperties.AutomationId="TagsList"
-                    ItemsSource="{x:Bind ViewModel.FilteredTags, Mode=OneWay}"
-                    SelectedItem="{x:Bind ViewModel.SelectedTag, Mode=TwoWay}"
-                    SelectionMode="Single"
-                    Visibility="{x:Bind ViewModel.TagsModeVisibility, Mode=OneWay}">
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="models:GitTag">
-                            <Grid Padding="6" ColumnSpacing="10" RightTapped="TagItem_RightTapped">
-                                <Grid.ContextFlyout>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem x:Uid="CheckoutTagMenuFlyoutItem" Command="{Binding DataContext.CheckoutTagCommand, ElementName=TagsListView}" Icon="Forward" />
-                                        <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Name}" Icon="Copy" />
-                                        <MenuFlyoutItem x:Uid="FetchTagMenuFlyoutItem" Command="{Binding DataContext.FetchTagCommand, ElementName=TagsListView}" Icon="Download" Visibility="{x:Bind IsRemote, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutSeparator />
-                                        <MenuFlyoutItem x:Uid="DeleteTagMenuFlyoutItem" Command="{Binding DataContext.DeleteTagCommand, ElementName=TagsListView}" Icon="Delete" />
-                                    </MenuFlyout>
-                                </Grid.ContextFlyout>
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="28" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                <Border Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource MetadataIndicatorBackgroundBrush}" CornerRadius="4">
-                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind CommitMetadata, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Subject, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                </StackPanel>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </Grid>
+                    <ListView
+                        x:Name="BranchesListView"
+                        Grid.Row="3"
+                        AutomationProperties.AutomationId="BranchesList"
+                        ItemsSource="{x:Bind ViewModel.FilteredBranches, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedBranch, Mode=TwoWay}"
+                        SelectionMode="Single"
+                        Visibility="{x:Bind ViewModel.BranchesModeVisibility, Mode=OneWay}">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:GitBranch">
+                                <Grid Padding="6" ColumnSpacing="10" RightTapped="BranchItem_RightTapped">
+                                    <Grid.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem x:Uid="CheckoutBranchMenuFlyoutItem" Command="{Binding DataContext.BranchPrimaryCommand, ElementName=BranchesListView}" Icon="Forward" />
+                                            <MenuFlyoutSeparator />
+                                            <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Name}" Icon="Copy" />
+                                            <MenuFlyoutItem x:Uid="RenameBranchMenuFlyoutItem" Command="{Binding DataContext.RenameBranchCommand, ElementName=BranchesListView}" Icon="Edit" Visibility="{x:Bind IsLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                            <MenuFlyoutItem x:Uid="AddBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.EditContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Add" Visibility="{x:Bind CanAddConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                            <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.DeleteContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Delete" Visibility="{x:Bind CanEditConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                            <MenuFlyoutSeparator />
+                                            <MenuFlyoutItem x:Uid="MergeBranchMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesListView}" Icon="Link" />
+                                            <MenuFlyoutItem x:Uid="MergeBranchWithoutCommitMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesListView}" CommandParameter="True" Icon="Link" />
+                                            <MenuFlyoutItem x:Uid="SquashMergeBranchMenuFlyoutItem" Command="{Binding DataContext.SquashMergeBranchCommand, ElementName=BranchesListView}" Icon="Copy" />
+                                            <MenuFlyoutItem x:Uid="RebaseBranchMenuFlyoutItem" Command="{Binding DataContext.RebaseBranchCommand, ElementName=BranchesListView}" Icon="Refresh" />
+                                            <MenuFlyoutItem x:Uid="PrepareBranchSnapshotMenuFlyoutItem" Command="{Binding DataContext.PrepareBranchSnapshotCommand, ElementName=BranchesListView}" Icon="Copy" />
+                                            <MenuFlyoutSeparator />
+                                            <MenuFlyoutItem x:Uid="DeleteBranchMenuFlyoutItem" Command="{Binding DataContext.DeleteBranchCommand, ElementName=BranchesListView}" Icon="Delete" />
+                                        </MenuFlyout>
+                                    </Grid.ContextFlyout>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="28" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource MetadataIndicatorBackgroundBrush}" CornerRadius="4">
+                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind CommitMetadata, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind LastCommitMessage, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <ListView
+                        x:Name="TagsListView"
+                        Grid.Row="3"
+                        AutomationProperties.AutomationId="TagsList"
+                        ItemsSource="{x:Bind ViewModel.FilteredTags, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedTag, Mode=TwoWay}"
+                        SelectionMode="Single"
+                        Visibility="{x:Bind ViewModel.TagsModeVisibility, Mode=OneWay}">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:GitTag">
+                                <Grid Padding="6" ColumnSpacing="10" RightTapped="TagItem_RightTapped">
+                                    <Grid.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem x:Uid="CheckoutTagMenuFlyoutItem" Command="{Binding DataContext.CheckoutTagCommand, ElementName=TagsListView}" Icon="Forward" />
+                                            <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Name}" Icon="Copy" />
+                                            <MenuFlyoutItem x:Uid="FetchTagMenuFlyoutItem" Command="{Binding DataContext.FetchTagCommand, ElementName=TagsListView}" Icon="Download" Visibility="{x:Bind IsRemote, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                            <MenuFlyoutSeparator />
+                                            <MenuFlyoutItem x:Uid="DeleteTagMenuFlyoutItem" Command="{Binding DataContext.DeleteTagCommand, ElementName=TagsListView}" Icon="Delete" />
+                                        </MenuFlyout>
+                                    </Grid.ContextFlyout>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="28" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource MetadataIndicatorBackgroundBrush}" CornerRadius="4">
+                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind CommitMetadata, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Subject, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </ScrollViewer>
 
             <primitives:Thumb
                 x:Name="PaneSplitter"
@@ -261,7 +281,7 @@
             <ScrollViewer x:Name="DetailsPane" 
                           Grid.Column="2" 
                           VerticalScrollBarVisibility="Auto"
-                          Padding="0,0,32,0">
+                          Padding="14,0,32,0">
                 <Grid>
                     <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasSelectedBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                         <Grid ColumnSpacing="10">
@@ -285,6 +305,8 @@
                                     TextTrimming="CharacterEllipsis">
                                     <TextBlock.ContextFlyout>
                                         <MenuFlyout>
+                                            <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranch.ConfigDescription, Mode=OneWay, FallbackValue=''}" Icon="Copy" Visibility="{x:Bind ViewModel.CanEditSelectedBranchDescriptionVisibility, Mode=OneWay}" />
+                                            <MenuFlyoutSeparator Visibility="{x:Bind ViewModel.CanEditSelectedBranchDescriptionVisibility, Mode=OneWay}" />
                                             <MenuFlyoutItem x:Uid="AddBranchDescriptionMenuFlyoutItem" Command="{x:Bind ViewModel.EditBranchDescriptionCommand, Mode=OneWay}" Visibility="{x:Bind ViewModel.CanAddSelectedBranchDescriptionVisibility, Mode=OneWay}" Icon="Add" />
                                             <MenuFlyoutItem x:Uid="EditBranchDescriptionMenuFlyoutItem" Command="{x:Bind ViewModel.EditBranchDescriptionCommand, Mode=OneWay}" Visibility="{x:Bind ViewModel.CanEditSelectedBranchDescriptionVisibility, Mode=OneWay}" Icon="Edit" />
                                             <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{x:Bind ViewModel.DeleteBranchDescriptionCommand, Mode=OneWay}" Visibility="{x:Bind ViewModel.CanEditSelectedBranchDescriptionVisibility, Mode=OneWay}" Icon="Delete" />
@@ -323,7 +345,7 @@
 
                         <toolkit:SettingsExpander x:Name="BranchSynchronizationExpander" IsExpanded="False" Expanded="BranchSynchronizationExpander_Expanded">
                             <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Globe" /></toolkit:SettingsExpander.HeaderIcon>
-                            <toolkit:SettingsExpander.Header><TextBlock Text="{x:Bind ViewModel.SelectedBranchSynchronizationTitle, Mode=OneWay}" /></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Header><TextBlock Text="{x:Bind ViewModel.SelectedBranchSynchronizationTitle, Mode=OneWay}"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchSynchronizationTitle, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock></toolkit:SettingsExpander.Header>
                             <toolkit:SettingsExpander.Items>
                                 <toolkit:SettingsCard Visibility="{x:Bind ViewModel.IsSelectedBranchRemote, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                     <toolkit:SettingsCard.Header>
@@ -331,12 +353,24 @@
                                             <TextBlock
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Text="{x:Bind ViewModel.SelectedBranchSynchronizationText, Mode=OneWay}"
-                                                TextWrapping="WrapWholeWords" />
+                                                TextWrapping="WrapWholeWords">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchSynchronizationText, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
                                             <TextBlock
                                                 Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                 Style="{ThemeResource CaptionTextBlockStyle}"
                                                 Text="{x:Bind ViewModel.LastRepositoryFetchText, Mode=OneWay}"
-                                                TextWrapping="WrapWholeWords" />
+                                                TextWrapping="WrapWholeWords">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.LastRepositoryFetchText, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
                                         </StackPanel>
                                     </toolkit:SettingsCard.Header>
                                     <Button
@@ -351,12 +385,24 @@
                                             <TextBlock
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Text="{x:Bind ViewModel.SelectedBranchIncomingStatusText, Mode=OneWay}"
-                                                TextWrapping="WrapWholeWords" />
+                                                TextWrapping="WrapWholeWords">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchIncomingStatusText, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
                                             <TextBlock
                                                 Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                 Style="{ThemeResource CaptionTextBlockStyle}"
                                                 Text="{x:Bind ViewModel.LastRepositoryFetchText, Mode=OneWay}"
-                                                TextWrapping="WrapWholeWords" />
+                                                TextWrapping="WrapWholeWords">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.LastRepositoryFetchText, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
                                         </StackPanel>
                                     </toolkit:SettingsCard.Header>
                                     <Grid ColumnSpacing="8">
@@ -364,9 +410,6 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock
-                                            x:Uid="BranchPullRemoteLabel"
-                                            VerticalAlignment="Center" />
                                         <ComboBox
                                             Grid.Column="1"
                                             x:Uid="BranchUpstreamRemoteComboBox"
@@ -385,7 +428,13 @@
                                             <TextBlock
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Text="{x:Bind ViewModel.SelectedBranchOutgoingStatusText, Mode=OneWay}"
-                                                TextWrapping="WrapWholeWords" />
+                                                TextWrapping="WrapWholeWords">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchOutgoingStatusText, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
                                         </StackPanel>
                                     </toolkit:SettingsCard.Header>
                                     <Grid ColumnSpacing="8">
@@ -393,9 +442,6 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock
-                                            x:Uid="BranchPushRemoteLabel"
-                                            VerticalAlignment="Center" />
                                         <ComboBox
                                             Grid.Column="1"
                                             x:Uid="BranchPushRemoteComboBox"
@@ -412,13 +458,22 @@
 
                         <toolkit:SettingsExpander x:Name="BranchComparisonExpander" IsExpanded="False" Expanded="BranchComparisonExpander_Expanded">
                             <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Switch" /></toolkit:SettingsExpander.HeaderIcon>
-                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="BranchComparisonExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranchRelationText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Header>
+                                <StackPanel Spacing="3">
+                                    <TextBlock x:Uid="BranchComparisonExpanderTitle" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranchRelationText, Mode=OneWay}" MaxLines="1" TextTrimming="CharacterEllipsis">
+                                        <TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchRelationText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout>
+                                    </TextBlock>
+                                </StackPanel>
+                            </toolkit:SettingsExpander.Header>
                             <toolkit:SettingsExpander.Items>
                                 <toolkit:SettingsCard>
                                     <toolkit:SettingsCard.Header>
                                         <StackPanel Spacing="3">
                                             <TextBlock x:Uid="BranchCommonCommitCardTitle" />
-                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedBranchMergeBaseText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedBranchMergeBaseText, Mode=OneWay}" TextWrapping="WrapWholeWords">
+                                                <TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchMergeBaseText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout>
+                                            </TextBlock>
                                         </StackPanel>
                                     </toolkit:SettingsCard.Header>
                                 </toolkit:SettingsCard>
@@ -426,13 +481,30 @@
                                     <toolkit:SettingsCard.Header>
                                         <StackPanel Spacing="3">
                                             <TextBlock x:Uid="BranchMergeCapabilityCardTitle" />
-                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedBranchMergeCapabilityText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedBranchMergeCapabilityText, Mode=OneWay}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis">
+                                                <TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchMergeCapabilityText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout>
+                                            </TextBlock>
                                         </StackPanel>
                                     </toolkit:SettingsCard.Header>
                                 </toolkit:SettingsCard>
-                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock Text="{x:Bind ViewModel.SelectedBranchDiffText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></toolkit:SettingsCard.Header><StackPanel Orientation="Horizontal" Spacing="8"><Button x:Uid="OpenBranchChangesButton" Command="{x:Bind ViewModel.OpenSelectedBranchChangesCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanOpenSelectedBranchChanges, Mode=OneWay}" /><Button x:Uid="ShowBranchCommitsButton" Command="{x:Bind ViewModel.ShowSelectedBranchCommitsCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanShowSelectedBranchCommits, Mode=OneWay}" /><Button x:Uid="CompareBranchButton" Command="{x:Bind ViewModel.CompareSelectedBranchCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanCompareSelectedBranch, Mode=OneWay}" /></StackPanel></toolkit:SettingsCard>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header>
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedBranchDiffText, Mode=OneWay}" TextWrapping="WrapWholeWords">
+                                            <TextBlock.ContextFlyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchDiffText, Mode=OneWay}" Icon="Copy" />
+                                                </MenuFlyout>
+                                            </TextBlock.ContextFlyout>
+                                        </TextBlock>
+                                    </toolkit:SettingsCard.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button x:Uid="OpenBranchChangesButton" Command="{x:Bind ViewModel.OpenSelectedBranchChangesCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanOpenSelectedBranchChanges, Mode=OneWay}" />
+                                        <Button x:Uid="ShowBranchCommitsButton" Command="{x:Bind ViewModel.ShowSelectedBranchCommitsCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanShowSelectedBranchCommits, Mode=OneWay}" />
+                                        <Button x:Uid="CompareBranchButton" Command="{x:Bind ViewModel.CompareSelectedBranchCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanCompareSelectedBranch, Mode=OneWay}" />
+                                    </StackPanel></toolkit:SettingsCard>
                             </toolkit:SettingsExpander.Items>
                         </toolkit:SettingsExpander>
+                        
                         <toolkit:SettingsExpander x:Name="BranchLastCommitExpander" IsExpanded="False" Expanded="BranchCommitExpander_Expanded">
                             <toolkit:SettingsExpander.HeaderIcon>
                                 <SymbolIcon Symbol="Document" />
@@ -440,7 +512,13 @@
                             <toolkit:SettingsExpander.Header>
                                 <StackPanel Spacing="3">
                                     <TextBlock x:Uid="LastCommitExpanderTitle" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedCommitTitle, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedCommitTitle, Mode=OneWay}" MaxLines="1" TextTrimming="CharacterEllipsis">
+                                        <TextBlock.ContextFlyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedCommitTitle, Mode=OneWay}" Icon="Copy" />
+                                            </MenuFlyout>
+                                        </TextBlock.ContextFlyout>
+                                    </TextBlock>
                                 </StackPanel>
                             </toolkit:SettingsExpander.Header>
                             <toolkit:SettingsExpander.Items>
@@ -451,19 +529,61 @@
                                     IsEnabled="{x:Bind ViewModel.CanOpenLastCommitBranchChanges, Mode=OneWay}">
                                     <toolkit:SettingsCard.Header>
                                         <StackPanel Spacing="3">
-                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}" />
-                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}" />
-                                            <TextBlock FontFamily="Consolas" Text="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
+                                            <TextBlock FontFamily="Consolas" Text="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" TextTrimming="CharacterEllipsis">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
                                         </StackPanel>
                                     </toolkit:SettingsCard.Header>
                                 </toolkit:SettingsCard>
                                 <toolkit:SettingsCard>
                                     <toolkit:SettingsCard.Header>
-                                        <TextBlock Text="{x:Bind ViewModel.SelectedCommitMessage, Mode=OneWay}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedCommitMessage, Mode=OneWay}" TextWrapping="Wrap">
+                                            <TextBlock.ContextFlyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedCommitMessage, Mode=OneWay}" Icon="Copy" />
+                                                </MenuFlyout>
+                                            </TextBlock.ContextFlyout>
+                                        </TextBlock>
                                     </toolkit:SettingsCard.Header>
                                 </toolkit:SettingsCard>
                             </toolkit:SettingsExpander.Items>
                         </toolkit:SettingsExpander>
+
+                        <toolkit:SettingsCard
+                            Click="BranchCommitHistoryCard_Click"
+                            IsClickEnabled="True">
+                            <toolkit:SettingsCard.HeaderIcon>
+                                <SymbolIcon Symbol="List" />
+                            </toolkit:SettingsCard.HeaderIcon>
+                            <toolkit:SettingsCard.Header>
+                                <StackPanel Spacing="3">
+                                    <TextBlock x:Uid="BranchCommitHistoryCardTitleTextBlock" />
+                                    <TextBlock
+                                        x:Uid="BranchCommitHistoryCardDescriptionTextBlock"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{ThemeResource CaptionTextBlockStyle}"
+                                        MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
 
                         <toolkit:SettingsExpander
                             x:Name="BranchHistoryExpander"
@@ -474,15 +594,15 @@
                             <toolkit:SettingsExpander.Header>
                                 <StackPanel Spacing="3">
                                     <TextBlock x:Uid="BranchHistoryExpanderTitle" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranchHistorySummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranchHistorySummary, Mode=OneWay}" MaxLines="1" TextTrimming="CharacterEllipsis" ><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchHistorySummary, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock>
                                 </StackPanel>
                             </toolkit:SettingsExpander.Header>
                             <toolkit:SettingsExpander.Items>
                                 <toolkit:SettingsCard>
                                     <toolkit:SettingsCard.Header>
                                         <StackPanel Spacing="4">
-                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedBranchHistoryAvailabilityText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
-                                            <TextBlock x:Uid="BranchHistoryLocalNotice" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="WrapWholeWords" />
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedBranchHistoryAvailabilityText, Mode=OneWay}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchHistoryAvailabilityText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock>
+                                            <TextBlock x:Uid="BranchHistoryLocalNotice" Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="5" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
                                     </toolkit:SettingsCard.Header>
                                 </toolkit:SettingsCard>
@@ -500,10 +620,10 @@
                                                                 <RowDefinition Height="Auto" />
                                                                 <RowDefinition Height="Auto" />
                                                             </Grid.RowDefinitions>
-                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Action, Mode=OneTime}" />
-                                                            <TextBlock Grid.Row="1" Text="{x:Bind Details, Mode=OneTime}" TextWrapping="WrapWholeWords" />
-                                                            <TextBlock Grid.Row="2" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Metadata, Mode=OneTime}" TextWrapping="WrapWholeWords" />
-                                                            <TextBlock Grid.Row="3" FontFamily="Consolas" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind HashTransition, Mode=OneTime}" />
+                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Action, Mode=OneTime}"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Action, Mode=OneTime}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock>
+                                                            <TextBlock Grid.Row="1" Text="{x:Bind Details, Mode=OneTime}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Details, Mode=OneTime}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock>
+                                                            <TextBlock Grid.Row="2" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Metadata, Mode=OneTime}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Metadata, Mode=OneTime}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock>
+                                                            <TextBlock Grid.Row="3" FontFamily="Consolas" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind HashTransition, Mode=OneTime}"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind HashTransition, Mode=OneTime}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock>
                                                         </Grid>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
@@ -521,7 +641,14 @@
 
                         <toolkit:SettingsExpander x:Name="BranchWorktreeExpander" IsExpanded="False" Expanded="BranchWorktreeExpander_Expanded">
                             <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Folder" /></toolkit:SettingsExpander.HeaderIcon>
-                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="WorktreeExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranchWorktreePath, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Header>
+                                <StackPanel Spacing="3">
+                                    <TextBlock x:Uid="WorktreeExpanderTitle" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedBranchWorktreePath, Mode=OneWay}" MaxLines="1" TextTrimming="CharacterEllipsis">
+                                        <TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedBranchWorktreePath, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout>
+                                    </TextBlock>
+                                </StackPanel>
+                            </toolkit:SettingsExpander.Header>
                             <toolkit:SettingsExpander.Items>
                                 <toolkit:SettingsCard>
                                     <toolkit:SettingsCard.Header><TextBlock x:Uid="OpenBranchWorktreeCardTitle" TextWrapping="WrapWholeWords" /></toolkit:SettingsCard.Header>
@@ -547,7 +674,7 @@
                                         </MenuFlyout>
                                     </TextBlock.ContextFlyout>
                                 </TextBlock>
-                                <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagScopeText, Mode=OneWay}" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="·" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagTypeText, Mode=OneWay}" /></StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagScopeText, Mode=OneWay}"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagScopeText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="·" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagTypeText, Mode=OneWay}"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagTypeText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock></StackPanel>
                             </StackPanel>
                         </Grid>
                         <CommandBar Background="Transparent" DefaultLabelPosition="Right">
@@ -557,18 +684,79 @@
 
                         <toolkit:SettingsExpander x:Name="TagRemoteStatusExpander" IsExpanded="False">
                             <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Globe" /></toolkit:SettingsExpander.HeaderIcon>
-                            <toolkit:SettingsExpander.Header><TextBlock Text="{x:Bind ViewModel.SelectedTagRemoteStatusTitle, Mode=OneWay}" /></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Header><TextBlock Text="{x:Bind ViewModel.SelectedTagRemoteStatusTitle, Mode=OneWay}"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagRemoteStatusTitle, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock></toolkit:SettingsExpander.Header>
                             <toolkit:SettingsExpander.Items>
-                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagRemoteStatusText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></toolkit:SettingsCard.Header><Button x:Uid="FetchTagButton" Command="{x:Bind ViewModel.FetchTagCommand, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsSelectedRemoteTagMissingLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" /></toolkit:SettingsCard>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagRemoteStatusText, Mode=OneWay}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagRemoteStatusText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock></toolkit:SettingsCard.Header><Button x:Uid="FetchTagButton" Command="{x:Bind ViewModel.FetchTagCommand, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsSelectedRemoteTagMissingLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" /></toolkit:SettingsCard>
                             </toolkit:SettingsExpander.Items>
                         </toolkit:SettingsExpander>
 
                         <toolkit:SettingsExpander x:Name="TagInformationExpander" IsExpanded="False" Expanded="TagInformationExpander_Expanded">
                             <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Tag" /></toolkit:SettingsExpander.HeaderIcon>
-                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagInformationExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTaggerDate, Mode=OneWay}" /></StackPanel></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Header>
+                                <StackPanel Spacing="3">
+                                    <TextBlock x:Uid="TagInformationExpanderTitle" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTaggerDate, Mode=OneWay}">
+                                        <TextBlock.ContextFlyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTaggerDate, Mode=OneWay}" Icon="Copy" />
+                                            </MenuFlyout>
+                                        </TextBlock.ContextFlyout>
+                                    </TextBlock>
+                                </StackPanel>
+                            </toolkit:SettingsExpander.Header>
                             <toolkit:SettingsExpander.Items>
-                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><StackPanel Spacing="3"><TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedTaggerText, Mode=OneWay}" /><TextBlock Text="{x:Bind ViewModel.SelectedTagMessage, Mode=OneWay}" TextWrapping="Wrap" /></StackPanel></toolkit:SettingsCard.Header></toolkit:SettingsCard>
-                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagTargetObjectLabel" /><TextBlock FontFamily="Consolas" Text="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" TextTrimming="CharacterEllipsis" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagTargetCommitText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsCard.Header><TextBlock Text="{x:Bind ViewModel.SelectedTagTargetType, Mode=OneWay}" /></toolkit:SettingsCard>
+                                <toolkit:SettingsCard>
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="3">
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedTaggerText, Mode=OneWay}">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTaggerText, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
+                                            <TextBlock Text="{x:Bind ViewModel.SelectedTagMessage, Mode=OneWay}" TextWrapping="Wrap">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagMessage, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                </toolkit:SettingsCard>
+                                <toolkit:SettingsCard
+                                    x:Uid="TagTargetObjectCard"
+                                    Click="TagTargetObjectCard_Click"
+                                    IsClickEnabled="True"
+                                    IsEnabled="{x:Bind ViewModel.CanOpenSelectedTagTargetCommit, Mode=OneWay}">
+                                    <toolkit:SettingsCard.Header>
+                                        <StackPanel Spacing="3">
+                                            <TextBlock x:Uid="TagTargetObjectLabel" />
+                                            <TextBlock FontFamily="Consolas" Text="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" TextTrimming="CharacterEllipsis">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagTargetCommitText, Mode=OneWay}" TextWrapping="WrapWholeWords">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagTargetCommitText, Mode=OneWay}" Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </toolkit:SettingsCard.Header>
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedTagTargetType, Mode=OneWay}">
+                                        <TextBlock.ContextFlyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagTargetType, Mode=OneWay}" Icon="Copy" />
+                                            </MenuFlyout>
+                                        </TextBlock.ContextFlyout>
+                                    </TextBlock>
+                                </toolkit:SettingsCard>
                             </toolkit:SettingsExpander.Items>
                         </toolkit:SettingsExpander>
 
@@ -581,15 +769,15 @@
                             <toolkit:SettingsExpander.Header>
                                 <StackPanel Spacing="3">
                                     <TextBlock x:Uid="TagSignatureExpanderTitle" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTagSignatureSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTagSignatureSummary, Mode=OneWay}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagSignatureSummary, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock>
                                 </StackPanel>
                             </toolkit:SettingsExpander.Header>
                             <toolkit:SettingsExpander.Items>
                                 <toolkit:SettingsCard>
                                     <toolkit:SettingsCard.Header>
                                         <StackPanel Spacing="4">
-                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedTagSignatureSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
-                                            <TextBlock Text="{x:Bind ViewModel.SelectedTagSignatureDetailsText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.SelectedTagSignatureSummary, Mode=OneWay}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagSignatureSummary, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock>
+                                            <TextBlock Text="{x:Bind ViewModel.SelectedTagSignatureDetailsText, Mode=OneWay}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagSignatureDetailsText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock>
                                             <TextBlock x:Uid="TagSignatureTrustNotice" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" />
                                         </StackPanel>
                                     </toolkit:SettingsCard.Header>
@@ -599,14 +787,14 @@
 
                         <toolkit:SettingsExpander x:Name="TagRelationExpander" IsExpanded="False" Expanded="TagRelationExpander_Expanded">
                             <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Switch" /></toolkit:SettingsExpander.HeaderIcon>
-                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagRelationExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTagRelationText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagRelationExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTagRelationText, Mode=OneWay}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagRelationText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock></StackPanel></toolkit:SettingsExpander.Header>
                             <toolkit:SettingsExpander.Items>
-                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagCommonCommitCardTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagMergeBaseText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsCard.Header></toolkit:SettingsCard>
+                                <toolkit:SettingsCard><toolkit:SettingsCard.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagCommonCommitCardTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagMergeBaseText, Mode=OneWay}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagMergeBaseText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock></StackPanel></toolkit:SettingsCard.Header></toolkit:SettingsCard>
                                 <toolkit:SettingsCard>
                                     <toolkit:SettingsCard.Header>
                                         <StackPanel Spacing="3">
                                             <TextBlock x:Uid="TagContainingBranchesCardTitle" />
-                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagContainingBranchesText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.SelectedTagContainingBranchesText, Mode=OneWay}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagContainingBranchesText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock>
                                             <Button x:Uid="ShowTagCommitsButton" Command="{x:Bind ViewModel.ShowSelectedTagCommitsCommand, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanShowSelectedTagCommits, Mode=OneWay}" />
                                         </StackPanel></toolkit:SettingsCard.Header>
                                 </toolkit:SettingsCard>
@@ -624,7 +812,7 @@
 
                         <toolkit:SettingsExpander x:Name="TagWorktreesExpander" IsExpanded="False" Expanded="TagWorktreeExpander_Expanded">
                             <toolkit:SettingsExpander.HeaderIcon><SymbolIcon Symbol="Folder" /></toolkit:SettingsExpander.HeaderIcon>
-                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagWorktreesExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTagWorktreeText, Mode=OneWay}" TextWrapping="WrapWholeWords" /></StackPanel></toolkit:SettingsExpander.Header>
+                            <toolkit:SettingsExpander.Header><StackPanel Spacing="3"><TextBlock x:Uid="TagWorktreesExpanderTitle" /><TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SelectedTagWorktreeText, Mode=OneWay}" TextWrapping="WrapWholeWords"><TextBlock.ContextFlyout><MenuFlyout><MenuFlyoutItem x:Uid="CopyTextMenuFlyoutItem" Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.SelectedTagWorktreeText, Mode=OneWay}" Icon="Copy" /></MenuFlyout></TextBlock.ContextFlyout></TextBlock></StackPanel></toolkit:SettingsExpander.Header>
                             <toolkit:SettingsExpander.Items>
                                 <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock x:Uid="OpenExistingTagWorktreeCardTitle" /></toolkit:SettingsCard.Header><Button x:Uid="OpenExistingTagWorktreeButton" Command="{x:Bind ViewModel.OpenTagWorktreeCommand, Mode=OneWay}" /></toolkit:SettingsCard>
                                 <toolkit:SettingsCard><toolkit:SettingsCard.Header><TextBlock x:Uid="CreateDetachedTagWorktreeCardTitle" /></toolkit:SettingsCard.Header><Button x:Uid="CreateDetachedTagWorktreeButton" Command="{x:Bind ViewModel.CreateTagWorktreeCommand, Mode=OneWay}" /></toolkit:SettingsCard>

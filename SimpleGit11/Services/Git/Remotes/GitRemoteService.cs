@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
 using SimpleGit11.Services.Git.Execution;
+using SimpleGit11.Services.Execution;
 
 namespace SimpleGit11.Services;
 
@@ -20,15 +21,18 @@ public sealed class GitRemoteService : IGitRemoteService
     private readonly IGitTagService _tagService;
     private readonly IGitConfigService _gitConfigService;
     private readonly IGitCommandRunner _commandRunner;
+    private readonly IExecutionContextService? _executionContextService;
 
     public GitRemoteService(
         IGitTagService tagService,
         IGitConfigService gitConfigService,
-        IGitCommandRunner? commandRunner = null)
+        IGitCommandRunner? commandRunner = null,
+        IExecutionContextService? executionContextService = null)
     {
         _tagService = tagService;
         _gitConfigService = gitConfigService;
         _commandRunner = commandRunner ?? new GitCommandRunner();
+        _executionContextService = executionContextService;
     }
 
     public async Task<IReadOnlyList<GitRemote>> GetRemotesAsync(
@@ -332,6 +336,7 @@ public sealed class GitRemoteService : IGitRemoteService
             false,
             cancellationToken,
             "rev-parse",
+            "--path-format=absolute",
             "--git-path",
             "FETCH_HEAD");
         string fetchHeadPath = result.Output.Trim();
@@ -340,11 +345,18 @@ public sealed class GitRemoteService : IGitRemoteService
             return null;
         }
 
+        if (_executionContextService is not null)
+        {
+            RepositoryFileMetadata? metadata = await _executionContextService.Current.Runtime.Files.GetMetadataAsync(
+                fetchHeadPath,
+                cancellationToken);
+            return metadata?.LastWriteTime.ToLocalTime();
+        }
+
         if (!Path.IsPathFullyQualified(fetchHeadPath))
         {
             fetchHeadPath = Path.GetFullPath(Path.Combine(repository.Path, fetchHeadPath));
         }
-
         return File.Exists(fetchHeadPath)
             ? new DateTimeOffset(File.GetLastWriteTimeUtc(fetchHeadPath), TimeSpan.Zero).ToLocalTime()
             : null;
@@ -585,7 +597,7 @@ public sealed class GitRemoteService : IGitRemoteService
             cancellationToken,
             "for-each-ref",
             "refs/heads",
-            $"--format=%(refname:short){UnitSeparator}%(HEAD){UnitSeparator}%(upstream:short){UnitSeparator}%(upstream:remotename){UnitSeparator}%(upstream:trackshort){UnitSeparator}%(push:remotename){UnitSeparator}%(push:short){UnitSeparator}%(push:trackshort)");
+            $"--format=%(refname:short){UnitSeparator}%(HEAD){UnitSeparator}%(upstream:short){UnitSeparator}%(upstream:remotename){UnitSeparator}%(upstream:trackshort){UnitSeparator}%(push:remotename){UnitSeparator}%(push:short){UnitSeparator}%(push:trackshort){UnitSeparator}%(worktreepath)");
 
         List<LocalBranchReference> branches = [];
         foreach (string rawLine in output.Output.Split('\n'))
@@ -610,7 +622,8 @@ public sealed class GitRemoteService : IGitRemoteService
                 fields.Length > 4 ? fields[4] : "",
                 fields.Length > 5 ? fields[5] : "",
                 fields.Length > 6 ? fields[6] : "",
-                fields.Length > 7 ? fields[7] : ""));
+                fields.Length > 7 ? fields[7] : "",
+                fields.Length > 8 ? fields[8] : ""));
         }
 
         return branches;
@@ -688,7 +701,8 @@ public sealed class GitRemoteService : IGitRemoteService
                 tracksSelectedRemote,
                 isPublishedToRemote,
                 counts.AheadCount,
-                counts.BehindCount));
+                counts.BehindCount,
+                localBranch.WorktreePath));
         }
 
         return branches
@@ -773,7 +787,8 @@ public sealed class GitRemoteService : IGitRemoteService
                     StringComparison.Ordinal),
                 isPublishedToPullRemote,
                 pullCounts.AheadCount,
-                pullCounts.BehindCount));
+                pullCounts.BehindCount,
+                localBranch.WorktreePath));
         }
 
         return branches
@@ -1393,7 +1408,8 @@ public sealed class GitRemoteService : IGitRemoteService
         string UpstreamTrackingState,
         string PushRemoteName,
         string PushTrackingBranch,
-        string PushTrackingState)
+        string PushTrackingState,
+        string WorktreePath)
     {
         public bool HasUpstream => !string.IsNullOrWhiteSpace(UpstreamBranch)
             && !string.IsNullOrWhiteSpace(UpstreamRemoteName);

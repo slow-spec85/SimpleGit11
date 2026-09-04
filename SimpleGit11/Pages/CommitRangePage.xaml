@@ -9,6 +9,26 @@
         x:Name="PageLayout"
         Padding="0,32,0,0"
         RowSpacing="20">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutStates">
+                <VisualState x:Name="NarrowLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="PageLayout.RowSpacing" Value="0" />
+                        <Setter Target="HeaderCommands.(Grid.Row)" Value="1" />
+                        <Setter Target="HeaderCommands.(Grid.Column)" Value="0" />
+                        <Setter Target="HeaderCommands.HorizontalAlignment" Value="Left" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1060" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -22,6 +42,10 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
             <StackPanel Spacing="6">
                 <TextBlock
                     Style="{ThemeResource TitleTextBlockStyle}"
@@ -34,6 +58,7 @@
             </StackPanel>
 
             <CommandBar
+                x:Name="HeaderCommands"
                 Grid.Column="1"
                 Padding="0"
                 VerticalAlignment="Center"

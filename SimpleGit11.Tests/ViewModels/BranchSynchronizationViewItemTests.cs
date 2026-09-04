@@ -44,14 +44,70 @@ public sealed class BranchSynchronizationViewItemTests
             item.Description);
     }
 
+    [TestMethod]
+    [DataRow(true, true, false)]
+    [DataRow(false, false, true)]
+    public void Constructor_ExposesMutuallyExclusiveCurrentBranchFlags(
+        bool isCurrent,
+        bool expectedCurrent,
+        bool expectedNotCurrent)
+    {
+        BranchSynchronizationItem branch = CreateBranch(
+            pushTrackingState: ">",
+            pushAheadCount: 1,
+            pushBehindCount: 0,
+            isCurrent: isCurrent);
+
+        BranchSynchronizationViewItem item = new(
+            branch,
+            new TestLocalizationService(),
+            BranchSynchronizationDirection.Outgoing);
+
+        Assert.AreEqual(expectedCurrent, item.IsCurrentBranch);
+        Assert.AreEqual(expectedNotCurrent, item.IsNotCurrentBranch);
+    }
+
+    [TestMethod]
+    [DataRow(false, "", 1, true)]
+    [DataRow(false, "C:/other worktree", 1, false)]
+    [DataRow(true, "C:/current", 1, false)]
+    [DataRow(false, "", 0, false)]
+    public void CanSwitchAndPull_RequiresIncomingBranchAvailableInThisWorktree(
+        bool isCurrent,
+        string worktreePath,
+        int behindCount,
+        bool expected)
+    {
+        BranchSynchronizationViewItem item = new(
+            CreateBranch("=", 0, 0, isCurrent, worktreePath, behindCount),
+            new TestLocalizationService(),
+            BranchSynchronizationDirection.Incoming);
+
+        Assert.AreEqual(expected, item.CanSwitchAndPull);
+        Assert.AreEqual(behindCount > 0, item.CanViewIncomingCommits);
+        const string otherWorktreeDescription =
+            "Switching is unavailable: this branch is checked out in another worktree";
+        if (!isCurrent && worktreePath.Length > 0)
+        {
+            StringAssert.Contains(item.Description, otherWorktreeDescription);
+        }
+        else
+        {
+            Assert.IsFalse(item.Description.Contains(otherWorktreeDescription));
+        }
+    }
+
     private static BranchSynchronizationItem CreateBranch(
         string pushTrackingState,
         int pushAheadCount,
-        int pushBehindCount)
+        int pushBehindCount,
+        bool isCurrent = true,
+        string worktreePath = "",
+        int behindCount = 0)
     {
         return new BranchSynchronizationItem(
             name: "main",
-            isCurrent: true,
+            isCurrent: isCurrent,
             upstreamBranch: "origin/main",
             upstreamRemoteName: "origin",
             upstreamTrackingState: "=",
@@ -66,7 +122,8 @@ public sealed class BranchSynchronizationViewItemTests
             tracksSelectedRemote: true,
             isPublishedToRemote: true,
             aheadCount: 0,
-            behindCount: 0);
+            behindCount: behindCount,
+            worktreePath: worktreePath);
     }
 
     private sealed class TestLocalizationService : ILocalizationService
@@ -81,6 +138,9 @@ public sealed class BranchSynchronizationViewItemTests
                     "Outgoing: {0}. Repository: “{1}”.",
                 "SynchronizationBranchConfiguredPushDivergedDescription" =>
                     "Diverged: {0} outgoing and {1} incoming. Repository: “{2}”.",
+                "SynchronizationBranchIncomingDescription" => "Incoming: {0} from {1}.",
+                "SynchronizationBranchInOtherWorktreeDescription" =>
+                    "Switching is unavailable: this branch is checked out in another worktree",
                 "CommitCountOne" => "commit",
                 "CommitCountMany" => "commits",
                 _ => resourceKey

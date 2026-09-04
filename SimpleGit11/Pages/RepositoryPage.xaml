@@ -404,7 +404,17 @@
                                                         <TextBlock
                                                             Text="{x:Bind Name, Mode=OneTime}"
                                                             TextTrimming="CharacterEllipsis"
-                                                            VerticalAlignment="Center" />
+                                                            VerticalAlignment="Center">
+                                                            <TextBlock.ContextFlyout>
+                                                                <MenuFlyout>
+                                                                    <MenuFlyoutItem
+                                                                        x:Uid="CopyTextMenuFlyoutItem"
+                                                                        Command="{x:Bind CopyTextCommand, Mode=OneTime}"
+                                                                        CommandParameter="{x:Bind Name, Mode=OneTime}"
+                                                                        Icon="Copy" />
+                                                                </MenuFlyout>
+                                                            </TextBlock.ContextFlyout>
+                                                        </TextBlock>
                                                         <TextBlock
                                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="·"
@@ -421,7 +431,17 @@
                                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                         Style="{ThemeResource CaptionTextBlockStyle}"
                                                         Text="{x:Bind ReferenceText, Mode=OneTime}"
-                                                        TextTrimming="CharacterEllipsis" />
+                                                        TextTrimming="CharacterEllipsis">
+                                                        <TextBlock.ContextFlyout>
+                                                            <MenuFlyout>
+                                                                <MenuFlyoutItem
+                                                                    x:Uid="CopyTextMenuFlyoutItem"
+                                                                    Command="{x:Bind CopyTextCommand, Mode=OneTime}"
+                                                                    CommandParameter="{x:Bind ReferenceText, Mode=OneTime}"
+                                                                    Icon="Copy" />
+                                                            </MenuFlyout>
+                                                        </TextBlock.ContextFlyout>
+                                                    </TextBlock>
                                                 </StackPanel>
                                             </toolkit:SettingsCard.Header>
                                             <toolkit:SettingsCard.Content>
@@ -526,7 +546,17 @@
                                                         <TextBlock
                                                             Text="{x:Bind Name, Mode=OneTime}"
                                                             TextTrimming="CharacterEllipsis"
-                                                            VerticalAlignment="Center" />
+                                                            VerticalAlignment="Center">
+                                                            <TextBlock.ContextFlyout>
+                                                                <MenuFlyout>
+                                                                    <MenuFlyoutItem
+                                                                        x:Uid="CopyTextMenuFlyoutItem"
+                                                                        Command="{x:Bind CopyTextCommand, Mode=OneTime}"
+                                                                        CommandParameter="{x:Bind Name, Mode=OneTime}"
+                                                                        Icon="Copy" />
+                                                                </MenuFlyout>
+                                                            </TextBlock.ContextFlyout>
+                                                        </TextBlock>
                                                         <TextBlock
                                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="·"
@@ -570,7 +600,17 @@
                                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                         Style="{ThemeResource CaptionTextBlockStyle}"
                                                         Text="{x:Bind Path, Mode=OneTime}"
-                                                        TextTrimming="CharacterEllipsis" />
+                                                        TextTrimming="CharacterEllipsis">
+                                                        <TextBlock.ContextFlyout>
+                                                            <MenuFlyout>
+                                                                <MenuFlyoutItem
+                                                                    x:Uid="CopyTextMenuFlyoutItem"
+                                                                    Command="{x:Bind CopyTextCommand, Mode=OneTime}"
+                                                                    CommandParameter="{x:Bind Path, Mode=OneTime}"
+                                                                    Icon="Copy" />
+                                                            </MenuFlyout>
+                                                        </TextBlock.ContextFlyout>
+                                                    </TextBlock>
                                                 </StackPanel>
                                             </toolkit:SettingsCard.Header>
                                             <toolkit:SettingsCard.Content>
@@ -721,7 +761,17 @@
                                                         <TextBlock
                                                             Text="{x:Bind Name, Mode=OneTime}"
                                                             TextTrimming="CharacterEllipsis"
-                                                            VerticalAlignment="Center" />
+                                                            VerticalAlignment="Center">
+                                                            <TextBlock.ContextFlyout>
+                                                                <MenuFlyout>
+                                                                    <MenuFlyoutItem
+                                                                        x:Uid="CopyTextMenuFlyoutItem"
+                                                                        Command="{x:Bind CopyTextCommand, Mode=OneTime}"
+                                                                        CommandParameter="{x:Bind Name, Mode=OneTime}"
+                                                                        Icon="Copy" />
+                                                                </MenuFlyout>
+                                                            </TextBlock.ContextFlyout>
+                                                        </TextBlock>
                                                         <TextBlock
                                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="·"
@@ -753,7 +803,17 @@
                                                             Style="{ThemeResource CaptionTextBlockStyle}"
                                                             Text="{x:Bind Url, Mode=OneTime}"
                                                             TextTrimming="CharacterEllipsis"
-                                                            ToolTipService.ToolTip="{x:Bind Url, Mode=OneTime}" />
+                                                            ToolTipService.ToolTip="{x:Bind Url, Mode=OneTime}">
+                                                            <TextBlock.ContextFlyout>
+                                                                <MenuFlyout>
+                                                                    <MenuFlyoutItem
+                                                                        x:Uid="CopyTextMenuFlyoutItem"
+                                                                        Command="{x:Bind CopyTextCommand, Mode=OneTime}"
+                                                                        CommandParameter="{x:Bind Url, Mode=OneTime}"
+                                                                        Icon="Copy" />
+                                                                </MenuFlyout>
+                                                            </TextBlock.ContextFlyout>
+                                                        </TextBlock>
                                                         <TextBlock
                                                             Grid.Column="1"
                                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -900,33 +960,35 @@
                                 <toolkit:SettingsCard Padding="60,10,16,10">
                                     <toolkit:SettingsCard.Header>
                                         <StackPanel Spacing="2">
-                                            <StackPanel.ContextFlyout>
-                                                <MenuFlyout>
-                                                    <MenuFlyoutItem
-                                                        x:Uid="OpenFoundRepositoryMenuFlyoutItem"
-                                                        Command="{x:Bind OpenCommand, Mode=OneTime}"
-                                                        Icon="OpenFile" />
-                                                    <MenuFlyoutItem
-                                                        x:Uid="CopyFoundRepositoryNameMenuFlyoutItem"
-                                                        Command="{x:Bind CopyNameCommand, Mode=OneTime}"
-                                                        Icon="Copy" />
-                                                    <MenuFlyoutItem
-                                                        x:Uid="CopyFoundRepositoryPathMenuFlyoutItem"
-                                                        Command="{x:Bind CopyPathCommand, Mode=OneTime}"
-                                                        Icon="Copy" />
-                                                </MenuFlyout>
-                                            </StackPanel.ContextFlyout>
                                             <TextBlock
                                                 MaxLines="1"
                                                 Text="{x:Bind Name, Mode=OneTime}"
-                                                TextTrimming="CharacterEllipsis" />
+                                                TextTrimming="CharacterEllipsis">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem
+                                                            x:Uid="CopyTextMenuFlyoutItem"
+                                                            Command="{x:Bind CopyNameCommand, Mode=OneTime}"
+                                                            Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
                                             <TextBlock
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 MaxLines="1"
                                                 Style="{ThemeResource CaptionTextBlockStyle}"
                                                 Text="{x:Bind Path, Mode=OneTime}"
                                                 TextTrimming="CharacterEllipsis"
-                                                ToolTipService.ToolTip="{x:Bind Path, Mode=OneTime}" />
+                                                ToolTipService.ToolTip="{x:Bind Path, Mode=OneTime}">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem
+                                                            x:Uid="CopyTextMenuFlyoutItem"
+                                                            Command="{x:Bind CopyPathCommand, Mode=OneTime}"
+                                                            Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
                                         </StackPanel>
                                     </toolkit:SettingsCard.Header>
                                     <toolkit:SettingsCard.Content>
@@ -941,6 +1003,9 @@
                                                 <AppBarButton
                                                     x:Uid="OpenFoundRepositoryAppBarButton"
                                                     Command="{x:Bind OpenCommand, Mode=OneTime}" />
+                                                <AppBarButton
+                                                    x:Uid="OpenFoundRepositoryFolderAppBarButton"
+                                                    Command="{x:Bind OpenFolderCommand, Mode=OneTime}" />
                                             </CommandBar.SecondaryCommands>
                                         </CommandBar>
                                     </toolkit:SettingsCard.Content>

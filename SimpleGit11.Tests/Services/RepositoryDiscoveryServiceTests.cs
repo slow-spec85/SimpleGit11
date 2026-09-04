@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
+using SimpleGit11.Services.Execution;
+using SimpleGit11.Services.Execution.Local;
+using SimpleGit11.Services.Git.Execution;
 using SimpleGit11.Tests.TestInfrastructure;
 
 namespace SimpleGit11.Tests.Services;
@@ -101,9 +104,15 @@ public sealed class RepositoryDiscoveryServiceTests
             "main/SimpleGit11/.git/worktrees/SimpleGit11-privatedocs/HEAD",
             "ref: refs/heads/privatedocs");
 
+        TestExecutionContextService context = new(
+            new LocalRepositoryFileSystem(),
+            RepositoryPathStyle.Windows,
+            isLocal: true);
         RepositorySearchService service = new(
             new RepositoryDiscoveryService(),
-            new EmptyLocalSettingsStore());
+            new ExecutionRepositoryDiscoveryService(new GitCommandRunner(), context),
+            new EmptyLocalSettingsStore(),
+            context);
 
         IReadOnlyList<RepositoryInfo> repositories = await service.SearchAsync(
             temporaryDirectory.GetPath("search"));

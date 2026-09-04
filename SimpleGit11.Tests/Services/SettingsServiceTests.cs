@@ -79,19 +79,6 @@ public sealed class SettingsServiceTests
         Assert.AreEqual("True", store.GetString("IncludePrereleaseVersions"));
     }
 
-    [TestMethod]
-    public void SetSshCommand_PersistsValueAcrossServiceInstances()
-    {
-        MemoryLocalSettingsStore store = new();
-        SettingsService service = CreateService(store);
-
-        service.SetSshCommand(" C:/Windows/System32/OpenSSH/ssh.exe ");
-        SettingsService reloadedService = CreateService(store);
-
-        Assert.AreEqual("C:/Windows/System32/OpenSSH/ssh.exe", service.Current.SshCommand);
-        Assert.AreEqual("C:/Windows/System32/OpenSSH/ssh.exe", reloadedService.Current.SshCommand);
-    }
-
     private static SettingsService CreateService(
         ILocalSettingsStore store,
         string currentVersion = "1.0.0")

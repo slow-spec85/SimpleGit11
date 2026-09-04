@@ -85,7 +85,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
     private bool CanDiscardAllUnstaged() => UnstagedChanges.Count > 0 && CanRunWhenIdle();
 
     private bool CanCleanUntracked() =>
-        UnstagedChanges.Any(change => change.Status == "Untracked") && CanRunWhenIdle();
+        UnstagedChanges.Any(change => change.IsUntracked) && CanRunWhenIdle();
 
     private bool CanCreateStash() =>
         (StagedChanges.Count > 0 || UnstagedChanges.Count > 0) && CanRunWhenIdle();
@@ -170,6 +170,10 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
     [RelayCommand(CanExecute = nameof(CanRunWhenIdle), FlowExceptionsToTaskScheduler = true)]
     private Task OnDiscardChangeAsync(GitChangedFile? change) =>
         _asyncCommandExecutor.ExecuteAsync(() => DiscardChangeAsync(change));
+
+    [RelayCommand(CanExecute = nameof(CanRunWhenIdle), FlowExceptionsToTaskScheduler = true)]
+    private Task OnIgnoreChangeAsync(GitChangedFile? change) =>
+        _asyncCommandExecutor.ExecuteAsync(() => IgnoreChangeAsync(change));
 
     [RelayCommand(CanExecute = nameof(CanRunWhenIdle), FlowExceptionsToTaskScheduler = true)]
     private Task OnToggleChangeDisplayModeAsync(GitChangedFile? change) =>
@@ -1249,6 +1253,37 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
             _localizationService.GetString("DiscardAllUnstagedSucceeded"));
     }
 
+    private async Task IgnoreChangeAsync(GitChangedFile? change)
+    {
+        if (_mainWindowViewModel.CurrentRepository is not RepositoryInfo repository
+            || change is null
+            || !change.IsUntracked)
+        {
+            return;
+        }
+
+        await RunGitOperationAsync(async () =>
+        {
+            try
+            {
+                ClearResultMessages();
+                await RunMutationAndRefreshStatusAsync(
+                    () => _gitService.Ignore.AddAsync(repository, change));
+                ShowSuccess(string.Format(
+                    _localizationService.GetString("IgnoreFileSucceeded"),
+                    change.Path));
+            }
+            catch (IOException exception)
+            {
+                ShowError(_localizationService.GetString("IgnoreFileFailed"), exception.Message);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                ShowError(_localizationService.GetString("IgnoreFileFailed"), exception.Message);
+            }
+        });
+    }
+
     private async Task CleanUntrackedAsync()
     {
         if (_mainWindowViewModel.CurrentRepository is null)
@@ -1311,7 +1346,8 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
 
         await RunDangerousOperationAsync(
             () => _gitService.Stashes.ApplyStashAsync(repository, stash),
-            string.Format(_localizationService.GetString("ApplyStashSucceeded"), stash.Reference));
+            string.Format(_localizationService.GetString("ApplyStashSucceeded"), stash.Reference),
+            mayCreateConflicts: true);
     }
 
     private async Task PopStashAsync()
@@ -1337,7 +1373,8 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
 
         await RunDangerousOperationAsync(
             () => _gitService.Stashes.PopStashAsync(repository, stash),
-            string.Format(_localizationService.GetString("PopStashSucceeded"), stash.Reference));
+            string.Format(_localizationService.GetString("PopStashSucceeded"), stash.Reference),
+            mayCreateConflicts: true);
     }
 
     private async Task DropStashAsync()
@@ -1485,7 +1522,10 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
             }
             catch (GitCommandException exception)
             {
-                ShowError(_localizationService.GetString("GitCommitCommandFailed"), exception.Message);
+                if (!await _mainWindowViewModel.TryShowConflictWarningAsync(repository, this, exception))
+                {
+                    ShowError(_localizationService.GetString("GitCommitCommandFailed"), exception.Message);
+                }
             }
         });
     }
@@ -1588,6 +1628,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
         System.Func<Task> operation,
         string successMessage)
     {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
         await RunGitOperationAsync(async () =>
         {
             try
@@ -1606,9 +1647,12 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
             }
             catch (GitCommandException exception)
             {
-                ShowError(
-                    _localizationService.GetString("GitOperationCommandFailed"),
-                    exception.Message);
+                if (!await _mainWindowViewModel.TryShowConflictWarningAsync(repository, this, exception))
+                {
+                    ShowError(
+                        _localizationService.GetString("GitOperationCommandFailed"),
+                        exception.Message);
+                }
             }
         });
     }
@@ -1644,8 +1688,12 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
         });
     }
 
-    private async Task RunDangerousOperationAsync(System.Func<Task> operation, string successMessage)
+    private async Task RunDangerousOperationAsync(
+        System.Func<Task> operation,
+        string successMessage,
+        bool mayCreateConflicts = false)
     {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
         await RunGitOperationAsync(async () =>
         {
             try
@@ -1664,7 +1712,11 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
             }
             catch (GitCommandException exception)
             {
-                ShowError(_localizationService.GetString("GitDangerousOperationFailed"), exception.Message);
+                if (!mayCreateConflicts
+                    || !await _mainWindowViewModel.TryShowConflictWarningAsync(repository, this, exception))
+                {
+                    ShowError(_localizationService.GetString("GitDangerousOperationFailed"), exception.Message);
+                }
             }
         });
     }

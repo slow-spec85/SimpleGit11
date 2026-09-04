@@ -16,6 +16,8 @@ public sealed partial class WorktreeViewItem
     private readonly Func<WorktreeViewItem, Task> _move;
     private readonly Func<WorktreeViewItem, Task> _remove;
     private readonly Func<WorktreeViewItem, Task> _toggleLock;
+    private readonly Action<string> _copy;
+    private readonly bool _canOpenLocalFolder;
 
     public WorktreeViewItem(
         GitWorktree worktree,
@@ -25,7 +27,9 @@ public sealed partial class WorktreeViewItem
         Func<WorktreeViewItem, Task> open,
         Func<WorktreeViewItem, Task> move,
         Func<WorktreeViewItem, Task> remove,
-        Func<WorktreeViewItem, Task> toggleLock)
+        Func<WorktreeViewItem, Task> toggleLock,
+        Action<string> copy,
+        bool canOpenLocalFolder = true)
     {
         Worktree = worktree;
         _asyncCommandExecutor = asyncCommandExecutor
@@ -35,6 +39,8 @@ public sealed partial class WorktreeViewItem
         _move = move ?? throw new ArgumentNullException(nameof(move));
         _remove = remove ?? throw new ArgumentNullException(nameof(remove));
         _toggleLock = toggleLock ?? throw new ArgumentNullException(nameof(toggleLock));
+        _copy = copy ?? throw new ArgumentNullException(nameof(copy));
+        _canOpenLocalFolder = canOpenLocalFolder;
         ReferenceText = string.IsNullOrWhiteSpace(worktree.BranchName)
             ? string.Format(localizationService.GetString("WorktreeDetachedHead"), worktree.ShortHeadHash)
             : worktree.BranchName;
@@ -77,7 +83,7 @@ public sealed partial class WorktreeViewItem
 
     public bool CanOpen => !Worktree.IsCurrent && !Worktree.IsBare && !Worktree.IsPrunable;
 
-    public bool CanOpenFolder => !Worktree.IsBare && !Worktree.IsPrunable;
+    public bool CanOpenFolder => _canOpenLocalFolder && !Worktree.IsBare && !Worktree.IsPrunable;
 
     public bool CanMove => !Worktree.IsMain && !Worktree.IsLocked && !Worktree.IsPrunable;
 
@@ -117,5 +123,14 @@ public sealed partial class WorktreeViewItem
     private Task OnToggleLockAsync()
     {
         return _asyncCommandExecutor.ExecuteAsync(() => _toggleLock(this));
+    }
+
+    [RelayCommand]
+    private void OnCopyText(string? text)
+    {
+        if (text is not null)
+        {
+            _copy(text);
+        }
     }
 }

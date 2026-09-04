@@ -51,6 +51,11 @@ public sealed class GitBranchService : IGitBranchService
         return RunGitAsync(repository, "checkout", branch.Name);
     }
 
+    public Task SwitchAsync(RepositoryInfo repository, string branchName)
+    {
+        return RunGitAsync(repository, "switch", "--", branchName);
+    }
+
     public Task CheckoutCommitAsync(RepositoryInfo repository, string commitHash)
     {
         return RunGitAsync(repository, "switch", "--detach", "--", commitHash);

@@ -13,6 +13,11 @@ jobs:
     name: Validate release tag
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      reuse-ci: ${{ steps.ci.outputs.reuse }}
 
     steps:
       - name: Checkout release history
@@ -21,6 +26,7 @@ jobs:
           fetch-depth: 0
 
       - name: Validate tag and main ancestry
+        id: tag
         shell: pwsh
         run: |
           $releaseTag = $env:GITHUB_REF_NAME
@@ -41,10 +47,37 @@ jobs:
           }
 
           Write-Host "Validated release tag: $releaseTag"
+          $commitSha = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to resolve the release commit."
+          }
+          "sha=$commitSha" >> $env:GITHUB_OUTPUT
+
+      - name: Check previous CI for the release commit
+        id: ci
+        # A lookup failure must fall back to CI, never skip validation.
+        continue-on-error: true
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT_SHA: ${{ steps.tag.outputs.sha }}
+        run: |
+          "reuse=false" >> $env:GITHUB_OUTPUT
+          $result = & ./SimpleGit11/Build/Get-ReleaseCiReuse.ps1 `
+            -Repository $env:GITHUB_REPOSITORY -CommitSha $env:RELEASE_COMMIT_SHA
+          Write-Host $result.Reason
+          if ($result.Reuse -eq $true) {
+            "reuse=true" >> $env:GITHUB_OUTPUT
+            "Reused successful CI: $($result.RunUrl)" >> $env:GITHUB_STEP_SUMMARY
+          }
+          else {
+            "Release build and tests will run: $($result.Reason)" >> $env:GITHUB_STEP_SUMMARY
+          }
 
   build-and-test:
     name: Build and test release
     needs: validate-release-tag
+    if: needs.validate-release-tag.outputs.reuse-ci != 'true'
     permissions:
       contents: read
     uses: ./.github/workflows/ci.yml

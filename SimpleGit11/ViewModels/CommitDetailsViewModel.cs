@@ -312,6 +312,12 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
 
     private Task LoadSelectedFileAsync(GitCommit commit, GitChangedFile changedFile)
     {
+        if (!changedFile.CanShowFileContent)
+        {
+            IsFullFileMode = false;
+            return LoadDiffAsync(commit, changedFile);
+        }
+
         return IsFullFileMode
             ? ShowFullFileCoreAsync(commit, changedFile)
             : LoadDiffAsync(commit, changedFile);
@@ -358,7 +364,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
     private bool CanShowFullFile()
     {
         return SelectedCommit is not null
-            && SelectedChangedFile is not null
+            && SelectedChangedFile?.CanShowFileContent == true
             && !IsCommitDetailsOperationRunning;
     }
 
@@ -376,6 +382,13 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
     {
         if (_mainWindowViewModel.CurrentRepository is null)
         {
+            return;
+        }
+
+        if (!changedFile.CanShowFileContent)
+        {
+            IsFullFileMode = false;
+            await LoadDiffAsync(commit, changedFile);
             return;
         }
 
@@ -445,6 +458,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
     private bool CanShowChangedFileFullFile(GitChangedFile? changedFile)
     {
         return changedFile is not null
+            && changedFile.CanShowFileContent
             && SelectedCommit is not null
             && !IsCommitDetailsOperationRunning;
     }
@@ -495,7 +509,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
     private bool CanToggleFullFile()
     {
         return SelectedCommit is not null
-            && SelectedChangedFile is not null
+            && SelectedChangedFile?.CanShowFileContent == true
             && !IsCommitDetailsOperationRunning;
     }
 
@@ -520,7 +534,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
 
     private bool CanToggleChangeDisplayMode(GitChangedFile? change)
     {
-        return change is not null && !IsCommitDetailsOperationRunning;
+        return change?.CanShowFileContent == true && !IsCommitDetailsOperationRunning;
     }
 
     private Task ToggleChangeDisplayModeCoreAsync(GitChangedFile? change)

@@ -24,6 +24,8 @@ public interface IGitService
 
     IGitHistoryService History { get; }
 
+    IGitIgnoreService Ignore { get; }
+
     IGitReferenceDetailsService ReferenceDetails { get; }
 
     IGitRevisionService Revisions { get; }

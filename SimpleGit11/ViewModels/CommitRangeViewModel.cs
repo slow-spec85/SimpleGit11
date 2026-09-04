@@ -573,12 +573,8 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
             }
             catch (GitCommandException exception)
             {
-                GitOperationState operationState = await _gitService.GetOperationStateAsync(repository);
-                if (operationState.Kind == GitOperationKind.CherryPick)
+                if (await _mainWindowViewModel.TryShowConflictWarningAsync(repository, this, exception))
                 {
-                    _mainWindowViewModel.RequestChangesNavigation(
-                        _localizationService.GetString("CherryPickConflictResolutionRequired"),
-                        exception.Message);
                     return;
                 }
 

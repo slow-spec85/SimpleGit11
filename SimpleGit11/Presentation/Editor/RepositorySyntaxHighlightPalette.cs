@@ -18,8 +18,17 @@ internal static class RepositorySyntaxHighlightPalette
             [SyntaxHighlightRole.Function] = "SyntaxFunctionForegroundBrush",
             [SyntaxHighlightRole.String] = "SyntaxStringForegroundBrush",
             [SyntaxHighlightRole.Number] = "SyntaxNumberForegroundBrush",
+            [SyntaxHighlightRole.Constant] = "SyntaxConstantForegroundBrush",
             [SyntaxHighlightRole.MarkupName] = "SyntaxMarkupNameForegroundBrush",
             [SyntaxHighlightRole.AttributeName] = "SyntaxAttributeNameForegroundBrush",
+            [SyntaxHighlightRole.Operator] = "SyntaxOperatorForegroundBrush",
+            [SyntaxHighlightRole.Punctuation] = "SyntaxPunctuationForegroundBrush",
+            [SyntaxHighlightRole.Directive] = "SyntaxDirectiveForegroundBrush",
+            [SyntaxHighlightRole.Variable] = "SyntaxVariableForegroundBrush",
+            [SyntaxHighlightRole.Label] = "SyntaxLabelForegroundBrush",
+            [SyntaxHighlightRole.Key] = "SyntaxKeyForegroundBrush",
+            // Value colors remain language-defined because CSV columns and diagnostics use
+            // distinct colors within the same semantic role.
         };
 
     public static SyntaxHighlightPalette Create()

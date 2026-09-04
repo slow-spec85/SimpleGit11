@@ -47,5 +47,5 @@ jobs:
       - name: Build
         run: msbuild SimpleGit11.slnx /t:Build /m /warnaserror /p:Configuration=Release /p:Platform=x64
 
-      - name: Test
-        run: dotnet test SimpleGit11.Tests\SimpleGit11.Tests.csproj --configuration Release --no-build --no-restore --verbosity normal -p:Platform=x64
+      - name: Test application and SSH plugin
+        run: dotnet test --solution SimpleGit11.slnx --configuration Release --no-build --no-restore --verbosity normal -p:Platform=x64

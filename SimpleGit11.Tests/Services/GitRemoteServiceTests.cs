@@ -10,6 +10,44 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitRemoteServiceTests
 {
     [TestMethod]
+    public async Task SynchronizationSnapshot_TracksWorktreeOccupancyAndReleasesBranchAfterRemoval()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        using TemporaryDirectory linkedDirectory = new();
+        string worktreePath = linkedDirectory.GetPath("linked worktree");
+        repository.WriteFile("tracked.txt", "initial");
+        await repository.CommitAllAsync();
+        await repository.RunGitAsync("remote", "add", "origin", ".");
+        await repository.RunGitAsync("branch", "available");
+        await repository.RunGitAsync("worktree", "add", "-b", "occupied", worktreePath);
+
+        GitRemoteService service = new(new GitTagService(), new GitConfigService());
+        GitRemote remote = new("origin", ".", ".");
+        SynchronizationSnapshot snapshot = await service.GetLocalConfiguredSynchronizationSnapshotAsync(
+            repository.Repository, remote, []);
+
+        BranchSynchronizationItem occupied = snapshot.Branches.Single(branch => branch.Name == "occupied");
+        Assert.IsTrue(occupied.IsInOtherWorktree);
+        Assert.AreEqual(worktreePath.Replace('\\', '/'), occupied.WorktreePath.Replace('\\', '/'));
+        Assert.IsFalse(snapshot.Branches.Single(branch => branch.Name == "available").IsInOtherWorktree);
+        Assert.IsFalse(snapshot.CurrentBranch!.IsInOtherWorktree);
+
+        RepositoryInfo linkedRepository = new(worktreePath, "linked", "occupied");
+        SynchronizationSnapshot linkedSnapshot = await service.GetLocalConfiguredSynchronizationSnapshotAsync(
+            linkedRepository, remote, []);
+        Assert.IsFalse(linkedSnapshot.CurrentBranch!.IsInOtherWorktree);
+        Assert.IsTrue(linkedSnapshot.Branches.Single(branch => branch.Name == "main").IsInOtherWorktree);
+
+        SynchronizationSnapshot selectedRemoteSnapshot = await service.GetLocalSynchronizationSnapshotAsync(
+            repository.Repository, remote, []);
+        Assert.IsTrue(selectedRemoteSnapshot.Branches.Single(branch => branch.Name == "occupied").IsInOtherWorktree);
+
+        await repository.RunGitAsync("worktree", "remove", worktreePath);
+        snapshot = await service.GetLocalConfiguredSynchronizationSnapshotAsync(repository.Repository, remote, []);
+        Assert.IsFalse(snapshot.Branches.Single(branch => branch.Name == "occupied").IsInOtherWorktree);
+    }
+
+    [TestMethod]
     public async Task GetCurrentBranchRemoteStatusAsync_SeparatesUpstreamAndPushDefault()
     {
         await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
@@ -203,6 +241,8 @@ public sealed class GitRemoteServiceTests
 
         Assert.HasCount(2, firstPage.Commits);
         Assert.AreEqual("range commit 5", firstPage.Commits[0].Title);
+        Assert.IsNull(firstPage.Commits[0].IsSynchronized);
+        Assert.IsFalse(firstPage.Commits[0].NeedsSynchronization);
         Assert.IsTrue(firstPage.HasMore);
         Assert.HasCount(2, secondPage.Commits);
         Assert.AreEqual("range commit 3", secondPage.Commits[0].Title);

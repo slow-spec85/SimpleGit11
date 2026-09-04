@@ -1,0 +1,93 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+    <!-- ProgramFiles64Folder is already redirected in a per-user session. Read the
+         native x64 system location separately for switching scope in the UI. -->
+    <Property Id="MACHINEPROGRAMFILES">
+      <RegistrySearch Id="FindMachineProgramFiles" Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion" Name="ProgramFilesDir" Type="raw" Bitness="always64" />
+    </Property>
+    <SetProperty Id="MachineInstallFolder" Value="[MACHINEPROGRAMFILES]\SimpleGit11" Before="CostFinalize" Sequence="ui" />
+    <SetProperty Id="UserInstallFolder" Value="[LocalAppDataFolder]Programs\SimpleGit11" Before="CostFinalize" Sequence="ui" />
+    <SetProperty Id="INSTALLSCOPE" Value="machine" Before="CostFinalize" Sequence="ui" Condition="ALLUSERS = &quot;1&quot; OR (ALLUSERS = &quot;2&quot; AND NOT MSIINSTALLPERUSER)" />
+    <SetProperty Id="PreviousInstallScope" Value="[INSTALLSCOPE]" After="SetINSTALLSCOPE" Sequence="ui" />
+    <!-- Compose the existing WixUI dialogs without a license-acceptance page.
+         Keep installation, maintenance and patch navigation separate. -->
+    <UI Id="InstallerUI">
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
+      <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+      <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+      <Property Id="INSTALLSCOPE" Value="user" />
+
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalError" />
+      <DialogRef Id="UserExit" />
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse" />
+      <DialogRef Id="PrepareDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="ResumeDlg" />
+      <DialogRef Id="DiskCostDlg" />
+
+      <!-- Unlike the stock InstallScopeDlg, allow a standard user to choose machine
+           installation and supply administrator credentials at the UAC prompt. -->
+      <Dialog Id="SimpleGit11ScopeDlg" Width="370" Height="270" Title="!(loc.ScopeTitle)">
+        <Control Id="Title" Type="Text" X="15" Y="15" Width="340" Height="25" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}!(loc.ScopeTitle)" />
+        <Control Id="Description" Type="Text" X="20" Y="48" Width="330" Height="30" Text="!(loc.ScopeDescription)" />
+        <Control Id="Scope" Type="RadioButtonGroup" X="20" Y="90" Width="330" Height="95" Property="INSTALLSCOPE">
+          <RadioButtonGroup Property="INSTALLSCOPE">
+            <RadioButton Value="user" X="0" Y="0" Width="325" Height="20" Text="!(loc.ScopeUser)" />
+            <RadioButton Value="machine" X="0" Y="50" Width="325" Height="20" Text="!(loc.ScopeMachine)" />
+          </RadioButtonGroup>
+        </Control>
+        <Control Id="UserDescription" Type="Text" X="37" Y="113" Width="310" Height="25" Text="!(loc.ScopeUserDescription)" />
+        <Control Id="MachineDescription" Type="Text" X="37" Y="163" Width="310" Height="50" Text="!(loc.ScopeMachineDescription)" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)" />
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)" />
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="SimpleGit11ScopeDlg" Order="1" Condition="NOT Installed AND NOT EXISTINGUSERFOLDER AND NOT EXISTINGMACHINEFOLDER" />
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="CustomizeDlg" Order="2" Condition="NOT Installed AND (EXISTINGUSERFOLDER OR EXISTINGMACHINEFOLDER)" />
+      <Publish Dialog="SimpleGit11ScopeDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" />
+      <Publish Dialog="SimpleGit11ScopeDlg" Control="Next" Property="ALLUSERS" Value="{}" Order="1" Condition="INSTALLSCOPE = &quot;user&quot;" />
+      <Publish Dialog="SimpleGit11ScopeDlg" Control="Next" Property="MSIINSTALLPERUSER" Value="1" Order="2" Condition="INSTALLSCOPE = &quot;user&quot;" />
+      <Publish Dialog="SimpleGit11ScopeDlg" Control="Next" Property="ALLUSERS" Value="1" Order="3" Condition="INSTALLSCOPE = &quot;machine&quot;" />
+      <Publish Dialog="SimpleGit11ScopeDlg" Control="Next" Property="MSIINSTALLPERUSER" Value="{}" Order="4" Condition="INSTALLSCOPE = &quot;machine&quot;" />
+      <Publish Dialog="SimpleGit11ScopeDlg" Control="Next" Property="INSTALLFOLDER" Value="[UserInstallFolder]" Order="5" Condition="INSTALLSCOPE = &quot;user&quot; AND PreviousInstallScope &lt;&gt; INSTALLSCOPE" />
+      <Publish Dialog="SimpleGit11ScopeDlg" Control="Next" Property="INSTALLFOLDER" Value="[MachineInstallFolder]" Order="6" Condition="INSTALLSCOPE = &quot;machine&quot; AND PreviousInstallScope &lt;&gt; INSTALLSCOPE" />
+      <Publish Dialog="SimpleGit11ScopeDlg" Control="Next" Property="PreviousInstallScope" Value="[INSTALLSCOPE]" Order="7" />
+      <Publish Dialog="SimpleGit11ScopeDlg" Control="Next" Event="SetTargetPath" Value="INSTALLFOLDER" Order="8" />
+      <Publish Dialog="SimpleGit11ScopeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="9" />
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="SimpleGit11ScopeDlg" />
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="CheckTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1" />
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="3" />
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="CustomizeDlg" Order="4" />
+      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1" />
+      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2" />
+      <Publish Dialog="CustomizeDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="1" Condition="NOT Installed AND NOT EXISTINGUSERFOLDER AND NOT EXISTINGMACHINEFOLDER" />
+      <Publish Dialog="CustomizeDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2" Condition="Installed" />
+      <Publish Dialog="CustomizeDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="3" Condition="NOT Installed AND (EXISTINGUSERFOLDER OR EXISTINGMACHINEFOLDER)" />
+      <Publish Dialog="CustomizeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="CustomizeDlg" Order="1" Condition="NOT Installed OR WixUI_InstallMode = &quot;Change&quot;" />
+
+      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="ChangeButton" Event="NewDialog" Value="CustomizeDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2" Condition="Installed AND NOT PATCH" />
+
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Condition="Installed AND PATCH" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="3" Condition="Installed AND PATCH" />
+      <Publish Dialog="BrowseDlg" Control="OK" Event="CheckTargetPath" Value="[_BrowseProperty]" Order="1" />
+      <Publish Dialog="BrowseDlg" Control="OK" Event="SetTargetPath" Value="[_BrowseProperty]" Order="3" />
+      <Publish Dialog="BrowseDlg" Control="OK" Event="EndDialog" Value="Return" Order="4" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999" />
+    </UI>
+    <UIRef Id="WixUI_Common" />
+  </Fragment>
+</Wix>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="SshConnectionDialogTitle" xml:space="preserve"><value>Connect to a machine over SSH</value></data>
+  <data name="SshHostHeader" xml:space="preserve"><value>Host</value></data>
+  <data name="SshPortHeader" xml:space="preserve"><value>Port</value></data>
+  <data name="SshUsernameHeader" xml:space="preserve"><value>User name</value></data>
+  <data name="SshPasswordHeader" xml:space="preserve"><value>Password (when not using a key)</value></data>
+  <data name="SshPrivateKeyPathHeader" xml:space="preserve"><value>Private key path (optional)</value></data>
+  <data name="SshPrivateKeyPassphraseHeader" xml:space="preserve"><value>Private key passphrase (optional)</value></data>
+  <data name="SshConnectButton" xml:space="preserve"><value>Connect</value></data>
+  <data name="SshHostKeyDialogTitle" xml:space="preserve"><value>Verify SSH host</value></data>
+  <data name="SshHostKeyDialogMessage" xml:space="preserve"><value>The identity of {0} is not trusted yet. Verify this SHA-256 fingerprint before connecting:\n\n{1}</value></data>
+  <data name="SshTrustHostKeyButton" xml:space="preserve"><value>Trust and connect</value></data>
+  <data name="SshRememberProfileCheckBox" xml:space="preserve"><value>Remember connection settings (passwords are never saved)</value></data>
+  <data name="SshConnectionNavigationItem" xml:space="preserve"><value>SSH connection</value></data>
+  <data name="SshConnectionBusyStatus" xml:space="preserve"><value>Connection settings are being processed</value></data>
+  <data name="SshConnectionActiveStatusFormat" xml:space="preserve"><value>Connected to {0}. Select to disconnect.</value></data>
+  <data name="SshConnectionInactiveStatus" xml:space="preserve"><value>Not connected. Select to configure a connection.</value></data>
+  <data name="SshDisconnectDialogTitle" xml:space="preserve"><value>Disconnect SSH?</value></data>
+  <data name="SshDisconnectDialogMessage" xml:space="preserve"><value>Disconnect from {0} and return to working on the local machine?</value></data>
+  <data name="SshDisconnectConfirmButton" xml:space="preserve"><value>Disconnect</value></data>
+  <data name="SshSavedProfileHeader" xml:space="preserve"><value>Saved connection</value></data>
+  <data name="SshNewConnectionOption" xml:space="preserve"><value>New connection</value></data>
+  <data name="SshDeleteProfileButton" xml:space="preserve"><value>Delete profile</value></data>
+  <data name="SshDeleteProfileDialogTitle" xml:space="preserve"><value>Delete SSH profile?</value></data>
+  <data name="SshDeleteProfileDialogMessage" xml:space="preserve"><value>The saved profile {0}@{1}:{2} will be deleted. Passwords and passphrases were not stored.</value></data>
+  <data name="SshDeleteProfileConfirmButton" xml:space="preserve"><value>Delete</value></data>
+  <data name="SshCancelButton" xml:space="preserve"><value>Cancel</value></data>
+  <data name="SshHostPlaceholder" xml:space="preserve"><value>server.example.com</value></data>
+  <data name="SshPrivateKeyPathPlaceholder" xml:space="preserve"><value>C:\Users\user\.ssh\id_ed25519</value></data>
+</root>

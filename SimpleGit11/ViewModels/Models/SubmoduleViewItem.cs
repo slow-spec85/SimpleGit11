@@ -15,6 +15,8 @@ public sealed partial class SubmoduleViewItem
     private readonly Func<string, Task> _open;
     private readonly Action<string> _openFolder;
     private readonly Func<SubmoduleViewItem, SubmoduleAction, Task> _executeAction;
+    private readonly Action<string> _copy;
+    private readonly bool _canOpenLocalFolder;
 
     public SubmoduleViewItem(
         GitSubmodule submodule,
@@ -23,7 +25,9 @@ public sealed partial class SubmoduleViewItem
         Func<string, Task> open,
         Action<string> openFolder,
         Func<SubmoduleViewItem, SubmoduleAction, Task> executeAction,
-        string ownerRepositoryPath)
+        Action<string> copy,
+        string ownerRepositoryPath,
+        bool canOpenLocalFolder = true)
     {
         Submodule = submodule ?? throw new ArgumentNullException(nameof(submodule));
         ArgumentNullException.ThrowIfNull(localizationService);
@@ -32,6 +36,8 @@ public sealed partial class SubmoduleViewItem
         _open = open ?? throw new ArgumentNullException(nameof(open));
         _openFolder = openFolder ?? throw new ArgumentNullException(nameof(openFolder));
         _executeAction = executeAction ?? throw new ArgumentNullException(nameof(executeAction));
+        _copy = copy ?? throw new ArgumentNullException(nameof(copy));
+        _canOpenLocalFolder = canOpenLocalFolder;
         OwnerRepositoryPath = ownerRepositoryPath;
 
         BranchText = string.IsNullOrWhiteSpace(submodule.Branch)
@@ -55,7 +61,9 @@ public sealed partial class SubmoduleViewItem
                 open,
                 openFolder,
                 executeAction,
-                submodule.FullPath));
+                copy,
+                submodule.FullPath,
+                canOpenLocalFolder));
         }
     }
 
@@ -89,7 +97,7 @@ public sealed partial class SubmoduleViewItem
 
     public bool CanOpen => Submodule.IsInitialized && !Submodule.HasError;
 
-    public bool CanOpenFolder => Directory.Exists(Submodule.FullPath);
+    public bool CanOpenFolder => _canOpenLocalFolder && Directory.Exists(Submodule.FullPath);
 
     [RelayCommand(CanExecute = nameof(CanOpen), FlowExceptionsToTaskScheduler = true)]
     private Task OnOpenAsync()
@@ -126,6 +134,15 @@ public sealed partial class SubmoduleViewItem
 
     [RelayCommand(FlowExceptionsToTaskScheduler = true)]
     private Task OnRemoveAsync() => ExecuteActionAsync(SubmoduleAction.Remove);
+
+    [RelayCommand]
+    private void OnCopyText(string? text)
+    {
+        if (text is not null)
+        {
+            _copy(text);
+        }
+    }
 
     private bool CanInitialize() => !Submodule.IsInitialized;
 

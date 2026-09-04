@@ -5,6 +5,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:SimpleGit11.Controls"
+    xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
     xmlns:toolkit="using:CommunityToolkit.WinUI">
 
     <Grid RowSpacing="12">
@@ -53,9 +54,6 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <controls:RepositoryEditorZoomControl
-                    VerticalAlignment="Center"
-                    EditorSurface="{x:Bind EditorSurface}" />
                 <TextBlock
                     Grid.Column="1"
                     x:Name="DiffHeading"
@@ -78,9 +76,72 @@
                 x:Name="ControlsContainer"
                 HorizontalAlignment="Right">
                 <StackPanel
-                    
                     Orientation="Horizontal" 
                     Spacing="4">
+                    <ToggleButton
+                        x:Name="DiffSearchToggleButton"
+                        x:Uid="DiffSearchToggleButton"
+                        Width="32"
+                        Height="32"
+                        MinWidth="0"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="DiffViewerSearchToggle"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="DiffSearchToggleButton_Click"
+                        Padding="5">
+                        <SymbolIcon Symbol="Find" />
+                        <primitives:FlyoutBase.AttachedFlyout>
+                            <Flyout
+                                Placement="BottomEdgeAlignedRight"
+                                Opening="DiffSearchFlyout_Opening">
+                                <Grid
+                                    Width="332"
+                                    ColumnSpacing="4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox
+                                        x:Name="DiffSearchTextBox"
+                                        x:Uid="DiffSearchTextBox"
+                                        AutomationProperties.AutomationId="DiffViewerSearchTextBox"
+                                        TextChanged="DiffSearchTextBox_TextChanged" />
+                                    <Button
+                                        Grid.Column="1"
+                                        x:Name="PreviousDiffSearchMatchButton"
+                                        x:Uid="PreviousDiffSearchMatchButton"
+                                        Width="32"
+                                        Height="32"
+                                        MinWidth="0"
+                                        AutomationProperties.AutomationId="DiffViewerPreviousSearchMatchButton"
+                                        Click="PreviousDiffSearchMatchButton_Click"
+                                        IsEnabled="False"
+                                        Padding="0">
+                                        <FontIcon
+                                            FontSize="12"
+                                            Glyph="&#xE70E;" />
+                                    </Button>
+                                    <Button
+                                        Grid.Column="2"
+                                        x:Name="NextDiffSearchMatchButton"
+                                        x:Uid="NextDiffSearchMatchButton"
+                                        Width="32"
+                                        Height="32"
+                                        MinWidth="0"
+                                        AutomationProperties.AutomationId="DiffViewerNextSearchMatchButton"
+                                        Click="NextDiffSearchMatchButton_Click"
+                                        IsEnabled="False"
+                                        Padding="0">
+                                        <FontIcon
+                                            FontSize="12"
+                                            Glyph="&#xE70D;" />
+                                    </Button>
+                                </Grid>
+                            </Flyout>
+                        </primitives:FlyoutBase.AttachedFlyout>
+                    </ToggleButton>
                     <ToggleSwitch 
                         x:Name="IgnoreWhitespaceToggleSwitch"
                         x:Uid="IgnoreWhitespaceToggleSwitch"
@@ -99,20 +160,21 @@
                             <ToolTip x:Uid="SyntaxHighlightingTooltip" />
                         </ToolTipService.ToolTip>
                     </ComboBox>
+                    <controls:RepositoryEditorZoomControl
+                        VerticalAlignment="Center"
+                        EditorSurface="{x:Bind EditorSurface}" />
                     <ToggleButton
                         x:Name="FullFileModeButton"
                         Width="32"
                         Height="32"
                         MinWidth="0"
-                        Background="Transparent"
-                        BorderThickness="0"
                         AutomationProperties.Name="{Binding DiffModeToggleText}"
                         AutomationProperties.AutomationId="DiffViewerFullFileToggle"
                         Command="{Binding ToggleFullFileCommand}"
                         IsChecked="{Binding IsFullFileMode, Mode=TwoWay}"
                         ToolTipService.ToolTip="{Binding DiffModeToggleText}"
                         VerticalAlignment="Center"
-                        Padding="5">
+                        Padding="1">
                         <SymbolIcon Symbol="Document" />
                     </ToggleButton>
                     <Button
@@ -121,11 +183,9 @@
                         Width="32"
                         Height="32"
                         MinWidth="0"
-                        Background="Transparent"
-                        BorderThickness="0"
                         AutomationProperties.AutomationId="DiffViewerEditFileButton"
                         Command="{Binding EditFileCommand, ElementName=Root}"
-                        Padding="5"
+                        Padding="1"
                         VerticalAlignment="Center"
                         Visibility="{Binding EditActionVisibility, ElementName=Root}">
                         <SymbolIcon Symbol="Edit" />
@@ -137,11 +197,9 @@
                         Width="32"
                         Height="32"
                         MinWidth="0"
-                        Padding="5"
+                        Padding="1"
                         VerticalAlignment="Center"
                         Margin="8,0,0,0"
-                        Background="Transparent"
-                        BorderThickness="0"
                         Click="SaveEditButton_Click">
                         <SymbolIcon Symbol="Save" />
                     </Button>
@@ -152,10 +210,8 @@
                         Width="32"
                         Height="32"
                         MinWidth="0"
-                        Padding="5"
+                        Padding="1"
                         VerticalAlignment="Center"
-                        Background="Transparent"
-                        BorderThickness="0"
                         Click="CancelEditButton_Click">
                         <SymbolIcon Symbol="Cancel" />
                     </Button>
@@ -181,7 +237,8 @@
                     LineGutterWidth="24"
                     ShowCurrentLine="False"
                     ShowLineGutter="True"
-                    ShowLineNumbers="False">
+                    ShowLineNumbers="False"
+                    SpaceBetweenLineNumberAndText="16">
                     <controls:RepositoryEditorSurface.ContextFlyout>
                         <MenuFlyout Opening="DiffContextFlyout_Opening">
                             <MenuFlyoutItem

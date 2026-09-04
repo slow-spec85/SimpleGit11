@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
 using SimpleGit11.Services.Git.Execution;
+using SimpleGit11.Services.Execution;
 using SimpleGit11.Tests.TestInfrastructure;
 
 namespace SimpleGit11.Tests.Services;
@@ -36,6 +37,29 @@ public sealed class GitRepositoryOperationServiceTests
             new List<string>(runner.Arguments));
     }
 
+    [TestMethod]
+    public async Task CloneAsync_RemoteContext_UsesRemotePathAndDiscovery()
+    {
+        RecordingGitCommandRunner runner = new();
+        DirectoryFileSystem files = new("/srv");
+        TestExecutionContextService context = new(files);
+        RepositoryInfo clonedRepository = new("/srv/project", "project", "main");
+        RecordingExecutionDiscoveryService discovery = new(clonedRepository);
+        GitRepositoryOperationService service = new(
+            new StubRepositoryDiscoveryService(clonedRepository),
+            runner,
+            context,
+            discovery);
+
+        RepositoryInfo result = await service.CloneAsync(
+            "/srv",
+            "https://example.test/project.git");
+
+        Assert.AreSame(clonedRepository, result);
+        Assert.AreEqual("/srv", runner.WorkingDirectory);
+        Assert.AreEqual("/srv/project", discovery.RequestedPath);
+    }
+
     private sealed class StubRepositoryDiscoveryService(RepositoryInfo repository)
         : IGitRepositoryDiscoveryService
     {
@@ -44,6 +68,7 @@ public sealed class GitRepositoryOperationServiceTests
 
     private sealed class RecordingGitCommandRunner : IGitCommandRunner
     {
+        public string WorkingDirectory { get; private set; } = "";
         public IReadOnlyList<string> Arguments { get; private set; } = [];
 
         public Task<GitCommandResult> RunAsync(
@@ -52,8 +77,37 @@ public sealed class GitRepositoryOperationServiceTests
             GitCommandOptions? options = null,
             CancellationToken cancellationToken = default)
         {
+            WorkingDirectory = workingDirectory;
             Arguments = arguments;
             return Task.FromResult(new GitCommandResult(0, "", ""));
         }
+    }
+
+    private sealed class RecordingExecutionDiscoveryService(RepositoryInfo repository)
+        : IExecutionRepositoryDiscoveryService
+    {
+        public string? RequestedPath { get; private set; }
+
+        public Task<RepositoryInfo?> TryOpenRepositoryAsync(
+            string path,
+            CancellationToken cancellationToken = default)
+        {
+            RequestedPath = path;
+            return Task.FromResult<RepositoryInfo?>(repository);
+        }
+    }
+
+    private sealed class DirectoryFileSystem(string existingPath) : IRepositoryFileSystem
+    {
+        public Task<bool> FileExistsAsync(string path, CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+        public Task<bool> DirectoryExistsAsync(string path, CancellationToken cancellationToken = default) =>
+            Task.FromResult(path == existingPath);
+        public Task<byte[]> ReadAllBytesAsync(string path, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+        public Task WriteAllBytesAtomicAsync(string path, byte[] content, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+        public Task<RepositoryFileMetadata?> GetMetadataAsync(string path, CancellationToken cancellationToken = default) =>
+            Task.FromResult<RepositoryFileMetadata?>(null);
     }
 }

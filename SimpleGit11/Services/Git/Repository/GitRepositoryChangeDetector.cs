@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
 using SimpleGit11.Services.Git.Execution;
+using SimpleGit11.Services.Execution;
 
 namespace SimpleGit11.Services;
 
@@ -31,16 +32,19 @@ public sealed class GitRepositoryChangeDetector : IGitRepositoryChangeDetector
 
     private readonly IGitCommandRunner _commandRunner;
     private readonly IGitStatusService _statusService;
+    private readonly IExecutionContextService? _executionContextService;
     private readonly object _syncRoot = new();
     private readonly Dictionary<string, string> _snapshots =
-        new(StringComparer.OrdinalIgnoreCase);
+        new(StringComparer.Ordinal);
 
     public GitRepositoryChangeDetector(
         IGitCommandRunner commandRunner,
-        IGitStatusService statusService)
+        IGitStatusService statusService,
+        IExecutionContextService? executionContextService = null)
     {
         _commandRunner = commandRunner ?? throw new ArgumentNullException(nameof(commandRunner));
         _statusService = statusService ?? throw new ArgumentNullException(nameof(statusService));
+        _executionContextService = executionContextService;
     }
 
     public async Task EnsureBaselineAsync(
@@ -49,7 +53,7 @@ public sealed class GitRepositoryChangeDetector : IGitRepositoryChangeDetector
     {
         ArgumentNullException.ThrowIfNull(repository);
 
-        string repositoryPath = NormalizePath(repository.Path);
+        string repositoryPath = GetSnapshotKey(repository.Path);
         lock (_syncRoot)
         {
             if (_snapshots.ContainsKey(repositoryPath))
@@ -74,7 +78,7 @@ public sealed class GitRepositoryChangeDetector : IGitRepositoryChangeDetector
     {
         ArgumentNullException.ThrowIfNull(repository);
         string snapshot = await CreateSnapshotAsync(repository, cancellationToken);
-        string repositoryPath = NormalizePath(repository.Path);
+        string repositoryPath = GetSnapshotKey(repository.Path);
 
         lock (_syncRoot)
         {
@@ -116,8 +120,22 @@ public sealed class GitRepositoryChangeDetector : IGitRepositoryChangeDetector
             operationState.PreparedCommitMessage);
     }
 
-    private static string NormalizePath(string path)
+    private string GetSnapshotKey(string path)
     {
-        return Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+        if (_executionContextService is null)
+        {
+            return Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)).ToUpperInvariant();
+        }
+
+        SimpleGit11.Services.Execution.ExecutionContext context = _executionContextService.Current;
+        IRepositoryPathService paths = context.Runtime.Paths;
+        char separator = paths.Style == RepositoryPathStyle.Windows ? '\\' : '/';
+        string normalizedPath = paths.Normalize(path).TrimEnd(separator);
+        if (paths.Style == RepositoryPathStyle.Windows)
+        {
+            normalizedPath = normalizedPath.ToUpperInvariant();
+        }
+
+        return $"{context.Id:N}:{normalizedPath}";
     }
 }

@@ -271,6 +271,7 @@
                         Style="{ThemeResource CaptionTextBlockStyle}" />
                     <ListView
                         x:Name="RecentRepositoriesList"
+                        Height="{x:Bind RecentRepositoriesList.MaxHeight, Mode=OneWay}"
                         ItemsSource="{x:Bind ViewModel.RecentRepositories, Mode=OneWay}"
                         MaxHeight="168"
                         SelectedItem="{x:Bind ViewModel.SelectedRecentRepository, Mode=TwoWay}"

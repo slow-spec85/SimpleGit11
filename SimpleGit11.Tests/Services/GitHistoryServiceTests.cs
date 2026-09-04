@@ -28,6 +28,8 @@ public sealed class GitHistoryServiceTests
         Assert.AreEqual("commit 5", firstPage.Commits[0].Title);
         Assert.AreEqual("commit 4", firstPage.Commits[1].Title);
         Assert.IsTrue(firstPage.Commits[0].ChangedFilePaths.Contains("file-5.txt"));
+        Assert.IsFalse(firstPage.Commits[0].IsSynchronized);
+        Assert.IsTrue(firstPage.Commits[0].NeedsSynchronization);
         Assert.IsTrue(firstPage.HasMore);
 
         Assert.HasCount(2, secondPage.Commits);
@@ -63,5 +65,41 @@ public sealed class GitHistoryServiceTests
         Assert.AreEqual("Committer Name", commit.CommitterName);
         Assert.AreEqual("committer@example.invalid", commit.CommitterEmail);
         Assert.IsTrue(commit.HasDistinctCommitter);
+    }
+
+    [TestMethod]
+    public async Task GetChangedFilesAsync_SubmoduleChange_IsMarkedAsSubmodule()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile("target.txt", "old");
+        await repository.CommitAllAsync("old target");
+        string oldTargetCommit = await repository.RunGitAsync("rev-parse", "HEAD");
+        repository.WriteFile("target.txt", "new");
+        await repository.CommitAllAsync("new target");
+        string newTargetCommit = await repository.RunGitAsync("rev-parse", "HEAD");
+        await repository.RunGitAsync(
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            $"160000,{oldTargetCommit},External/Library");
+        await repository.RunGitAsync("commit", "-m", "add submodule");
+        await repository.RunGitAsync(
+            "update-index",
+            "--cacheinfo",
+            $"160000,{newTargetCommit},External/Library");
+        await repository.RunGitAsync("commit", "-m", "update submodule");
+        GitHistoryService service = new();
+        GitCommit commit = await service.GetLastCommitAsync(repository.Repository);
+
+        IReadOnlyList<GitChangedFile> files = await service.GetChangedFilesAsync(
+            repository.Repository,
+            commit);
+
+        Assert.HasCount(1, files);
+        GitChangedFile file = files[0];
+        Assert.AreEqual("External/Library", file.Path);
+        Assert.AreEqual("Modified", file.Status);
+        Assert.IsTrue(file.IsSubmodule);
+        Assert.IsFalse(file.CanShowFileContent);
     }
 }

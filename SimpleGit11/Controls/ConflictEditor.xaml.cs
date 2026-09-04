@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
@@ -36,6 +37,7 @@ public sealed partial class ConflictEditor : UserControl
     private bool _isApplyingEditorChange;
     private bool _isDocumentRenderQueued;
     private bool _isOverviewDragging;
+    private bool _hasSearchMatches;
 
     public ConflictEditor()
     {
@@ -168,6 +170,7 @@ public sealed partial class ConflictEditor : UserControl
         ApplySyntaxHighlighting();
         ApplyDecorations();
         UpdateEditorState();
+        ApplyCurrentSearch();
     }
 
     private void ApplySyntaxHighlighting()
@@ -295,6 +298,68 @@ public sealed partial class ConflictEditor : UserControl
         RedoEditButton.IsEnabled = EditorSurface.CanRedo || ViewModel?.CanRedo == true;
     }
 
+    private void ConflictSearchToggleButton_Click(object sender, RoutedEventArgs args)
+    {
+        ConflictSearchToggleButton.IsChecked = !string.IsNullOrEmpty(ConflictSearchTextBox.Text);
+        FlyoutBase.ShowAttachedFlyout(ConflictSearchToggleButton);
+    }
+
+    private void ConflictSearchFlyout_Opening(object sender, object args)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            ConflictSearchTextBox.Focus(FocusState.Programmatic);
+            ConflictSearchTextBox.SelectAll();
+        });
+    }
+
+    private void ConflictSearchTextBox_TextChanged(object sender, TextChangedEventArgs args)
+    {
+        ApplyCurrentSearch();
+    }
+
+    private void PreviousConflictSearchMatchButton_Click(object sender, RoutedEventArgs args)
+    {
+        EditorSurface.SelectPreviousSearchMatch();
+    }
+
+    private void NextConflictSearchMatchButton_Click(object sender, RoutedEventArgs args)
+    {
+        EditorSurface.SelectNextSearchMatch();
+    }
+
+    private void ApplyCurrentSearch()
+    {
+        if (EditorSurface is null || ConflictSearchTextBox is null || ConflictSearchToggleButton is null)
+        {
+            return;
+        }
+
+        string query = ConflictSearchTextBox.Text;
+        ConflictSearchToggleButton.IsChecked = !string.IsNullOrEmpty(query);
+        if (string.IsNullOrEmpty(query))
+        {
+            _hasSearchMatches = false;
+            EditorSurface.ClearSearch();
+            UpdateSearchNavigationState();
+            return;
+        }
+
+        _hasSearchMatches = EditorSurface.SearchAndSelectFirst(query);
+        UpdateSearchNavigationState();
+    }
+
+    private void UpdateSearchNavigationState()
+    {
+        if (PreviousConflictSearchMatchButton is null || NextConflictSearchMatchButton is null)
+        {
+            return;
+        }
+
+        PreviousConflictSearchMatchButton.IsEnabled = _hasSearchMatches;
+        NextConflictSearchMatchButton.IsEnabled = _hasSearchMatches;
+    }
+
     private void UndoEditButton_Click(object sender, RoutedEventArgs args)
     {
         Undo();
@@ -343,11 +408,6 @@ public sealed partial class ConflictEditor : UserControl
         }
 
         UpdateEditorState();
-    }
-
-    private void AcceptAllCurrentSplitButton_Click(SplitButton sender, SplitButtonClickEventArgs args)
-    {
-        ExecuteAcceptCommand(viewModel => viewModel.AcceptAllCurrentCommand);
     }
 
     private void AcceptAllCurrentMenuFlyoutItem_Click(object sender, RoutedEventArgs args)

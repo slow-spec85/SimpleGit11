@@ -12,6 +12,47 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitChangeServicesIntegrationTests
 {
     [TestMethod]
+    public async Task AddAsync_MissingGitIgnore_CreatesFileWithRootedRule()
+    {
+        await using TemporaryGitRepository repository =
+            await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile("draft.txt", "draft");
+        GitIgnoreService service = new();
+        GitChangedFile changedFile = new(
+            "draft.txt",
+            "Untracked",
+            state: GitChangeState.Unstaged);
+
+        await service.AddAsync(repository.Repository, changedFile);
+
+        Assert.AreEqual(
+            $"/draft.txt{Environment.NewLine}",
+            repository.ReadFile(".gitignore"));
+    }
+
+    [TestMethod]
+    public async Task AddAsync_UntrackedFile_AppendsLiteralRuleAndHidesFileFromStatus()
+    {
+        await using TemporaryGitRepository repository =
+            await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile(".gitignore", "*.tmp");
+        repository.WriteFile("notes/[draft].txt", "draft");
+        GitIgnoreService service = new();
+        GitChangedFile changedFile = new(
+            "notes/[draft].txt",
+            "Untracked",
+            state: GitChangeState.Unstaged);
+
+        await service.AddAsync(repository.Repository, changedFile);
+
+        string expectedRule = $"*.tmp{Environment.NewLine}/notes/\\[draft\\].txt{Environment.NewLine}";
+        Assert.AreEqual(expectedRule, repository.ReadFile(".gitignore"));
+
+        GitStatusSnapshot status = await new GitStatusService().GetStatusAsync(repository.Repository);
+        Assert.IsFalse(status.UnstagedChanges.Any(change => change.Path == changedFile.Path));
+    }
+
+    [TestMethod]
     public async Task DiscardFileAsync_UntrackedPathBeginningWithDash_RemovesOnlySelectedFile()
     {
         await using TemporaryGitRepository repository =

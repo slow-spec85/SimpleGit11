@@ -64,6 +64,8 @@ public sealed class GitChangedFile
 
     public bool IsUnstaged => State == GitChangeState.Unstaged;
 
+    public bool IsUntracked => Status == "Untracked";
+
     public bool IsConflicted => State == GitChangeState.Conflicted;
 
     public bool IsNotConflicted => !IsConflicted;

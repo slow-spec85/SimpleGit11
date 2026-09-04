@@ -15,6 +15,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SimpleGit11.Extensibility\SimpleGit11.Extensibility.csproj" />
     <ProjectReference Include="..\SimpleGit11\SimpleGit11.csproj" />
+    <ProjectReference Include="..\SimpleGit11.Plugin.Ssh\SimpleGit11.Plugin.Ssh.csproj" ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
+  <Target Name="CopySshPluginFixture" AfterTargets="Build">
+    <MSBuild Projects="..\SimpleGit11.Plugin.Ssh\SimpleGit11.Plugin.Ssh.csproj" Targets="GetPluginLayoutFiles" BuildInParallel="false">
+      <Output TaskParameter="TargetOutputs" ItemName="_SshFixture" />
+    </MSBuild>
+    <Error Condition="'@(_SshFixture)' == ''" Text="The SSH plugin test fixture has not been built." />
+    <Copy SourceFiles="@(_SshFixture)" DestinationFolder="$(TargetDir)PluginFixtures\Ssh" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

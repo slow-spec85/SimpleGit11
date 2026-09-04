@@ -13,6 +13,10 @@ public sealed class BranchSynchronizationViewItem
         Branch = branch;
         Name = branch.Name;
         Description = CreateDescription(branch, localizationService, direction);
+        if (direction == BranchSynchronizationDirection.Incoming && branch.IsInOtherWorktree)
+        {
+            Description += " " + localizationService.GetString("SynchronizationBranchInOtherWorktreeDescription");
+        }
     }
 
     public BranchSynchronizationItem Branch { get; }
@@ -27,7 +31,13 @@ public sealed class BranchSynchronizationViewItem
 
     public bool CanViewIncomingCommits => Branch.HasIncomingCommits;
 
+    public bool CanSwitchAndPull => IsNotCurrentBranch
+        && CanViewIncomingCommits
+        && !Branch.IsInOtherWorktree;
+
     public bool IsCurrentBranch => Branch.IsCurrent;
+
+    public bool IsNotCurrentBranch => !Branch.IsCurrent;
 
     public string CurrentIndicator => IsCurrentBranch ? "*" : "";
 

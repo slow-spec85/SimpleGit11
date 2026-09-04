@@ -1,9 +1,11 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using SimpleGit11.Extensibility.Plugins;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
 
@@ -22,7 +24,8 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
     public AboutDialogViewModel(
         IProductInfoService productInfoService,
         ISettingsService settingsService,
-        ILocalizationService localizationService)
+        ILocalizationService localizationService,
+        IPluginCatalog pluginCatalog)
     {
         _productInfoService = productInfoService;
         _settingsService = settingsService;
@@ -31,6 +34,10 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
         CurrentVersion = productInfoService.CurrentVersion;
         RepositoryUri = productInfoService.RepositoryUri;
         RepositoryDisplayUri = productInfoService.RepositoryUri.AbsoluteUri.TrimEnd('/');
+        PluginMetadata? sshPlugin = pluginCatalog.Plugins.FirstOrDefault(static plugin =>
+            string.Equals(plugin.Id, "simplegit11.ssh", StringComparison.OrdinalIgnoreCase));
+        HasSshPlugin = sshPlugin is not null;
+        SshPluginVersion = sshPlugin?.Version ?? "";
         LatestReleaseVersion = "";
         ReleaseStatusMessage = "";
         IncludePrereleaseVersions = settingsService.Current.IncludePrereleaseVersions;
@@ -44,6 +51,10 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
     public Uri RepositoryUri { get; }
 
     public string RepositoryDisplayUri { get; }
+
+    public bool HasSshPlugin { get; }
+
+    public string SshPluginVersion { get; }
 
     [ObservableProperty]
     public partial bool IncludePrereleaseVersions { get; set; }

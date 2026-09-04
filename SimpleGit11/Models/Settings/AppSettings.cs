@@ -19,6 +19,4 @@ public sealed class AppSettings
     public int EditorFontSize { get; set; } = DefaultEditorFontSize;
 
     public int EditorLineSpacing { get; set; } = DefaultEditorLineSpacing;
-
-    public string SshCommand { get; set; } = "";
 }

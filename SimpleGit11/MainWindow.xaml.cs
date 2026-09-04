@@ -4,16 +4,21 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using CommunityToolkit.Mvvm.Messaging;
 using SimpleGit11.Extensions;
+using SimpleGit11.Extensibility.Presentation;
 using SimpleGit11.Models;
 using SimpleGit11.Pages;
+using SimpleGit11.Presentation.Execution;
 using SimpleGit11.Presentation.Navigation;
 using SimpleGit11.Presentation.Theming;
 using SimpleGit11.Services;
 using SimpleGit11.Services.Git;
+using SimpleGit11.Services.Execution;
 using SimpleGit11.ViewModels;
 using System;
 using System.ComponentModel;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -29,14 +34,21 @@ namespace SimpleGit11;
 /// </summary>
 public sealed partial class MainWindow : Window
 {
+    private const double ShortWindowHeight = 760;
+    private const double TallWindowHeight = 820;
+    private const double OneRecentRepositoryHeight = 56;
+    private const double TwoRecentRepositoriesHeight = 112;
+    private const double ThreeRecentRepositoriesHeight = 168;
     private const double RepositoryMenuMaxHeight = 480;
     private static readonly TimeSpan MinimumWindowInactiveDuration = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan AutomaticRefreshCooldown = TimeSpan.FromSeconds(10);
     private readonly ILocalizationService _localizationService;
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly IDialogService _dialogService;
+    private readonly ExecutionContextShellCoordinator _executionContextCoordinator;
     private readonly IGitRepositoryChangeDetector _gitRepositoryChangeDetector;
     private readonly IGitService _gitService;
+    private readonly PluginMenuHost _pluginMenuHost;
     private readonly WindowActivationRefreshGate _activationRefreshGate = new(
         MinimumWindowInactiveDuration,
         AutomaticRefreshCooldown);
@@ -44,6 +56,7 @@ public sealed partial class MainWindow : Window
     private bool _allowClose;
     private bool _isCloseDialogOpen;
     private bool _isRefreshingCurrentPage;
+    private bool _isChangingExecutionContext;
     private bool _isSynchronizingNavigationSelection;
     private long _latestPageRefreshRequest;
 
@@ -58,8 +71,12 @@ public sealed partial class MainWindow : Window
         ILocalizationService localizationService,
         IAsyncCommandExecutor asyncCommandExecutor,
         IDialogService dialogService,
+        IExecutionContextService executionContextService,
         IGitRepositoryChangeDetector gitRepositoryChangeDetector,
-        IGitService gitService)
+        IGitService gitService,
+        IMessenger messenger,
+        IEnumerable<IMainMenuContribution> menuContributions,
+        IAsyncCommandExceptionHandler exceptionHandler)
     {
         ViewModel = viewModel;
         _localizationService = localizationService;
@@ -70,8 +87,17 @@ public sealed partial class MainWindow : Window
         RepositoryViewModel = App.GetService<RepositoryViewModel>();
         BranchesViewModel = App.GetService<BranchesViewModel>();
         InitializeComponent();
+        _pluginMenuHost = new PluginMenuHost(
+            ShellNavigation, menuContributions, asyncCommandExecutor, exceptionHandler);
+        Closed += MainWindow_Closed;
+        _executionContextCoordinator = new ExecutionContextShellCoordinator(
+            executionContextService, DispatchExecutionContextAction, asyncCommandExecutor,
+            ResetRepositoryForExecutionContext, () => RefreshCurrentPageAsync(),
+            messenger, localizationService);
         ConfigureTitleBar();
         AppWindow.Closing += AppWindow_Closing;
+        SizeChanged += MainWindow_SizeChanged;
+        UpdateRecentRepositoriesMaxHeight(Bounds.Height);
         RootLayout.ActualThemeChanged += RootLayout_ActualThemeChanged;
         ShellNavigation.RegisterPropertyChangedCallback(NavigationView.IsPaneOpenProperty, OnPaneOpenChanged);
         UpdatePaneFooterVisibility();
@@ -79,6 +105,38 @@ public sealed partial class MainWindow : Window
         ViewModel.NavigationRequested += ViewModel_NavigationRequested;
         Activated += MainWindow_Activated;
         NavigateToTopLevelPage(typeof(RepositoryPage));
+    }
+
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        _executionContextCoordinator.Dispose();
+        _pluginMenuHost.Dispose();
+    }
+
+    private void DispatchExecutionContextAction(Action action)
+    {
+        if (DispatcherQueue.HasThreadAccess)
+        {
+            action();
+        }
+        else
+        {
+            _ = DispatcherQueue.TryEnqueue(() => action());
+        }
+    }
+
+    private void ResetRepositoryForExecutionContext()
+    {
+        _isChangingExecutionContext = true;
+        try
+        {
+            RepositoryViewModel.CloseForExecutionContextChange();
+            ViewModel.RefreshRecentRepositoriesForExecutionContext();
+        }
+        finally
+        {
+            _isChangingExecutionContext = false;
+        }
     }
 
     private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
@@ -89,6 +147,21 @@ public sealed partial class MainWindow : Window
             _ = _asyncCommandExecutor.ExecuteAsync(
                 RefreshCurrentPageAfterWindowActivationAsync);
         }
+    }
+
+    private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs e)
+    {
+        UpdateRecentRepositoriesMaxHeight(e.Size.Height);
+    }
+
+    private void UpdateRecentRepositoriesMaxHeight(double windowHeight)
+    {
+        RecentRepositoriesList.MaxHeight = windowHeight switch
+        {
+            < ShortWindowHeight => OneRecentRepositoryHeight,
+            < TallWindowHeight => TwoRecentRepositoriesHeight,
+            _ => ThreeRecentRepositoriesHeight
+        };
     }
 
     private async Task RefreshCurrentPageAfterWindowActivationAsync()
@@ -119,7 +192,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        _ = RepositoryViewModel.RefreshCurrentRepositoryIdentity();
+        await RepositoryViewModel.RefreshCurrentRepositoryIdentityAsync();
         await RefreshCurrentPageAsync(
             refreshRepositoryIdentity: true,
             repositoryIdentityAlreadyRefreshed: true);
@@ -179,6 +252,7 @@ public sealed partial class MainWindow : Window
             && ContentFrame.Content is ChangesPage;
         NavigationViewItem? navigationItem = ShellNavigation.MenuItems
             .OfType<NavigationViewItem>()
+            .Where(item => item.Tag is not PluginMenuItem)
             .FirstOrDefault(item => GetPageType(item.Tag) == pageType);
         if (navigationItem is not null)
         {
@@ -207,6 +281,11 @@ public sealed partial class MainWindow : Window
 
     private async void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (_isChangingExecutionContext)
+        {
+            return;
+        }
+
         if (e.PropertyName == nameof(MainWindowViewModel.CurrentRepository))
         {
             RepositoryInfo? repository = ViewModel.CurrentRepository;
@@ -419,7 +498,7 @@ public sealed partial class MainWindow : Window
                 && !repositoryIdentityAlreadyRefreshed
                 && requestedPage is not RepositoryPage)
             {
-                _ = RepositoryViewModel.RefreshCurrentRepositoryIdentity();
+                await RepositoryViewModel.RefreshCurrentRepositoryIdentityAsync();
             }
 
             await refreshTarget.RefreshAsync();
@@ -496,6 +575,11 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        if (selectedItem.Tag is PluginMenuItem)
+        {
+            return;
+        }
+
         NavigateToTopLevelPage(GetPageType(selectedItem.Tag));
     }
 
@@ -503,6 +587,11 @@ public sealed partial class MainWindow : Window
         NavigationView sender,
         NavigationViewItemInvokedEventArgs args)
     {
+        if (_pluginMenuHost.TryInvoke(args.InvokedItemContainer))
+        {
+            return;
+        }
+
         if (args.InvokedItemContainer is NavigationViewItem navigationItem
             && string.Equals(navigationItem.Tag as string, "About", StringComparison.Ordinal))
         {
@@ -570,6 +659,7 @@ public sealed partial class MainWindow : Window
     {
         NavigationViewItem? navigationItem = ShellNavigation.MenuItems
             .OfType<NavigationViewItem>()
+            .Where(item => item.Tag is not PluginMenuItem)
             .FirstOrDefault(item => GetPageType(item.Tag) == e.SourcePageType);
         if (navigationItem is not null
             && !ReferenceEquals(ShellNavigation.SelectedItem, navigationItem))

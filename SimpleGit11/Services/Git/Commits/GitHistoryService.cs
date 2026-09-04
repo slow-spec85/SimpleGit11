@@ -91,10 +91,16 @@ public sealed class GitHistoryService : IGitHistoryService
             : ["--format=", commit.Hash];
         string[] nameStatusArguments = [command, "--name-status", "--find-renames", .. revisionArguments];
         string[] numstatArguments = [command, "--numstat", "--find-renames", .. revisionArguments];
-        var nameStatusOutput = await RunGitAsync(repository, nameStatusArguments);
-        var numstatOutput = await RunGitAsync(repository, numstatArguments);
+        string[] rawArguments = [command, "--raw", "--find-renames", .. revisionArguments];
+        Task<string> nameStatusTask = RunGitAsync(repository, nameStatusArguments);
+        Task<string> numstatTask = RunGitAsync(repository, numstatArguments);
+        Task<string> rawTask = RunGitAsync(repository, rawArguments);
+        await Task.WhenAll(nameStatusTask, numstatTask, rawTask);
 
-        return ParseChangedFiles(nameStatusOutput, ParseNumstat(numstatOutput));
+        return ParseChangedFiles(
+            await nameStatusTask,
+            ParseNumstat(await numstatTask),
+            ParseSubmodulePaths(await rawTask));
     }
 
     public async Task<bool> HasLocalCommits(RepositoryInfo repository)
@@ -314,7 +320,8 @@ public sealed class GitHistoryService : IGitHistoryService
 
     private static IReadOnlyList<GitChangedFile> ParseChangedFiles(
         string output,
-        IReadOnlyDictionary<string, DiffStat> stats)
+        IReadOnlyDictionary<string, DiffStat> stats,
+        IReadOnlySet<string> submodulePaths)
     {
         var files = new List<GitChangedFile>();
         foreach (var rawLine in output.Split('\n'))
@@ -337,10 +344,41 @@ public sealed class GitHistoryService : IGitHistoryService
                 : parts[1];
 
             path = path.Trim().Trim('"');
-            files.Add(new GitChangedFile(path, status, GetStat(stats, path)));
+            files.Add(new GitChangedFile(
+                path,
+                status,
+                GetStat(stats, path),
+                isSubmodule: submodulePaths.Contains(path)));
         }
 
         return files;
+    }
+
+    private static IReadOnlySet<string> ParseSubmodulePaths(string output)
+    {
+        HashSet<string> paths = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string rawLine in output.Split('\n'))
+        {
+            string line = rawLine.TrimEnd('\r');
+            int tabIndex = line.IndexOf('\t');
+            if (tabIndex <= 1 || line[0] != ':')
+            {
+                continue;
+            }
+
+            string[] metadata = line[1..tabIndex]
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (metadata.Length < 5
+                || (metadata[0] != "160000" && metadata[1] != "160000"))
+            {
+                continue;
+            }
+
+            string[] pathFields = line[(tabIndex + 1)..].Split('\t');
+            paths.Add(NormalizePath(pathFields[^1]));
+        }
+
+        return paths;
     }
 
     private static IReadOnlyDictionary<string, DiffStat> ParseNumstat(string output)

@@ -134,6 +134,7 @@ function Remove-DirectoryUnderRoot {
             throw "Expected a directory: $safePath"
         }
 
+        Assert-NoReparsePointsInTree -Path $safePath -Root $Root | Out-Null
         Remove-Item -LiteralPath $safePath -Recurse -Force
     }
 }

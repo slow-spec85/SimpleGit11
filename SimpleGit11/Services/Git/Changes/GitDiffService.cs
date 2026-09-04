@@ -14,13 +14,16 @@ public sealed class GitDiffService : IGitDiffService
 {
     private readonly ISettingsService _settingsService;
     private readonly IGitCommandRunner _commandRunner;
+    private readonly ITextFileService? _textFileService;
 
     public GitDiffService(
         ISettingsService settingsService,
-        IGitCommandRunner? commandRunner = null)
+        IGitCommandRunner? commandRunner = null,
+        ITextFileService? textFileService = null)
     {
         _settingsService = settingsService;
         _commandRunner = commandRunner ?? new GitCommandRunner();
+        _textFileService = textFileService;
     }
 
     public async Task<DiffResult> GetDiffAsync(RepositoryInfo repository, GitChangedFile statusEntry)
@@ -51,6 +54,18 @@ public sealed class GitDiffService : IGitDiffService
 
     public async Task<string> GetFullFileTextAsync(RepositoryInfo repository, GitChangedFile statusEntry)
     {
+        if (_textFileService is not null)
+        {
+            try
+            {
+                return (await _textFileService.ReadAsync(repository, statusEntry.Path)).Text;
+            }
+            catch (FileNotFoundException)
+            {
+                return "";
+            }
+        }
+
         var filePath = GetSafeFilePath(repository, statusEntry.Path);
         if (!File.Exists(filePath))
         {
@@ -103,6 +118,11 @@ public sealed class GitDiffService : IGitDiffService
         GitCommit commit,
         GitChangedFile changedFile)
     {
+        if (!changedFile.CanShowFileContent)
+        {
+            return "";
+        }
+
         var revision = changedFile.Status == "Deleted"
             ? $"{(commit.HasDiffBaseRevision ? commit.DiffBaseRevision : commit.Hash + "^")}:{changedFile.Path}"
             : $"{commit.Hash}:{changedFile.Path}";
@@ -133,8 +153,35 @@ public sealed class GitDiffService : IGitDiffService
             return;
         }
 
-        var filePath = GetSafeFilePath(repository, statusEntry.Path);
-        if (!File.Exists(filePath))
+        TextFileDocument? document = null;
+        string filePath;
+        string currentText;
+        if (_textFileService is not null)
+        {
+            try
+            {
+                document = await _textFileService.ReadAsync(repository, statusEntry.Path);
+            }
+            catch (FileNotFoundException)
+            {
+                return;
+            }
+
+            filePath = document.Path;
+            currentText = document.Text;
+        }
+        else
+        {
+            filePath = GetSafeFilePath(repository, statusEntry.Path);
+            if (!File.Exists(filePath))
+            {
+                return;
+            }
+
+            currentText = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
+        }
+
+        if (string.IsNullOrEmpty(filePath))
         {
             return;
         }
@@ -146,7 +193,6 @@ public sealed class GitDiffService : IGitDiffService
             return;
         }
 
-        var currentText = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
         var currentLines = SplitPreservingLineEndings(currentText).ToList();
         var startIndex = System.Math.Max(1, changeBlock.NewStart) - 1;
         if (startIndex < 0 || startIndex > currentLines.Count)
@@ -164,7 +210,15 @@ public sealed class GitDiffService : IGitDiffService
         currentLines.RemoveRange(startIndex, removeCount);
         currentLines.InsertRange(startIndex, replacementLines);
 
-        await File.WriteAllTextAsync(filePath, string.Concat(currentLines), Encoding.UTF8);
+        string updatedText = string.Concat(currentLines);
+        if (_textFileService is not null && document is not null)
+        {
+            await _textFileService.WriteAsync(document, updatedText);
+        }
+        else
+        {
+            await File.WriteAllTextAsync(filePath, updatedText, Encoding.UTF8);
+        }
     }
 
     private static DiffChangeBlock? FindChangeBlock(string diff, int lineNumber)
@@ -285,8 +339,23 @@ public sealed class GitDiffService : IGitDiffService
         return int.TryParse(value, out lineNumber);
     }
 
-    private static async Task<DiffResult> GetConflictFileAsync(RepositoryInfo repository, GitChangedFile statusEntry)
+    private async Task<DiffResult> GetConflictFileAsync(RepositoryInfo repository, GitChangedFile statusEntry)
     {
+        if (_textFileService is not null)
+        {
+            try
+            {
+                string conflictText = (await _textFileService.ReadAsync(repository, statusEntry.Path)).Text;
+                return string.IsNullOrWhiteSpace(conflictText)
+                    ? new DiffResult([], false, true, "No textual diff is available for this file.")
+                    : new DiffResult(ParseConflictFile(conflictText), false, false, "");
+            }
+            catch (FileNotFoundException)
+            {
+                return new DiffResult([], false, true, "Conflict file is not available in the working tree.");
+            }
+        }
+
         var filePath = Path.GetFullPath(Path.Combine(repository.Path, statusEntry.Path));
 
         if (!IsFilePathInsideRepository(repository, filePath) || !File.Exists(filePath))

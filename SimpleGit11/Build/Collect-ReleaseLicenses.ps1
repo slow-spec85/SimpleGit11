@@ -12,7 +12,9 @@ param(
     [string]$SourceComponentsPath,
 
     [Parameter(Mandatory)]
-    [string]$PublishedDirectory
+    [string]$PublishedDirectory,
+
+    [switch]$Plugin
 )
 
 Set-StrictMode -Version Latest
@@ -188,13 +190,16 @@ $sourceComponentsDocument = Get-Content `
     -LiteralPath $fullSourceComponentsPath `
     -Raw | ConvertFrom-Json
 $sourceComponentDefinitions = New-Object 'System.Collections.Generic.List[object]'
-if ($sourceComponentsDocument -is [System.Array]) {
-    foreach ($componentDefinition in $sourceComponentsDocument) {
-        $sourceComponentDefinitions.Add($componentDefinition)
+# A plugin ships only its private dependencies, not the host's source components.
+if (-not $Plugin) {
+    if ($sourceComponentsDocument -is [System.Array]) {
+        foreach ($componentDefinition in $sourceComponentsDocument) {
+            $sourceComponentDefinitions.Add($componentDefinition)
+        }
     }
-}
-else {
-    $sourceComponentDefinitions.Add($sourceComponentsDocument)
+    else {
+        $sourceComponentDefinitions.Add($sourceComponentsDocument)
+    }
 }
 $runtimeTarget = $assets.targets.PSObject.Properties |
     Where-Object { $_.Name.EndsWith('/win-x64', [System.StringComparison]::OrdinalIgnoreCase) } |
@@ -370,26 +375,28 @@ foreach ($libraryProperty in $runtimeTarget.Value.PSObject.Properties) {
 
 # Microsoft.WindowsAppSDK is a meta-package whose license governs runtime
 # components copied by its self-contained deployment targets.
-Add-PackageById `
-    -PackageId "Microsoft.WindowsAppSDK" `
-    -Assets $assets `
-    -PackageNames $includedPackages
+if (-not $Plugin) {
+    Add-PackageById `
+        -PackageId "Microsoft.WindowsAppSDK" `
+        -Assets $assets `
+        -PackageNames $includedPackages
 
-$framework = $assets.project.frameworks.PSObject.Properties |
-    Select-Object -First 1
-foreach ($runtimePackageId in @(
-    "Microsoft.NETCore.App.Runtime.win-x64",
-    "Microsoft.WindowsDesktop.App.Runtime.win-x64"
-)) {
-    $downloadDependency = $framework.Value.downloadDependencies |
-        Where-Object { $_.name -eq $runtimePackageId } |
+    $framework = $assets.project.frameworks.PSObject.Properties |
         Select-Object -First 1
-    if ($null -eq $downloadDependency) {
-        throw "Required self-contained runtime pack is missing: $runtimePackageId"
-    }
+    foreach ($runtimePackageId in @(
+        "Microsoft.NETCore.App.Runtime.win-x64",
+        "Microsoft.WindowsDesktop.App.Runtime.win-x64"
+    )) {
+        $downloadDependency = $framework.Value.downloadDependencies |
+            Where-Object { $_.name -eq $runtimePackageId } |
+            Select-Object -First 1
+        if ($null -eq $downloadDependency) {
+            throw "Required self-contained runtime pack is missing: $runtimePackageId"
+        }
 
-    [string]$runtimeVersion = $downloadDependency.version.Trim('[', ']').Split(',')[0].Trim()
-    [void]$includedPackages.Add("$runtimePackageId/$runtimeVersion")
+        [string]$runtimeVersion = $downloadDependency.version.Trim('[', ']').Split(',')[0].Trim()
+        [void]$includedPackages.Add("$runtimePackageId/$runtimeVersion")
+    }
 }
 
 [string]$licensesDirectory = Join-Path $fullPublishedDirectory "Licenses"
@@ -470,8 +477,8 @@ foreach ($libraryName in @($includedPackages | Sort-Object)) {
         }
     }
 
-    [string]$copyright = [string]$metadata.copyright
-    [string]$projectUrl = [string]$metadata.projectUrl
+    [string]$copyright = $metadata.CreateNavigator().Evaluate("string(*[local-name()='copyright'])")
+    [string]$projectUrl = $metadata.CreateNavigator().Evaluate("string(*[local-name()='projectUrl'])")
     $packageIndex.Add("Package: $($identity.Id)")
     $packageIndex.Add("Version: $($identity.Version)")
     $packageIndex.Add("License: $licenseValue")

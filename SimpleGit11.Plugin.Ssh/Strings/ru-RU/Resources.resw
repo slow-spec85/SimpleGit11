@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="SshConnectionDialogTitle" xml:space="preserve"><value>Подключение к машине по SSH</value></data>
+  <data name="SshHostHeader" xml:space="preserve"><value>Узел</value></data>
+  <data name="SshPortHeader" xml:space="preserve"><value>Порт</value></data>
+  <data name="SshUsernameHeader" xml:space="preserve"><value>Имя пользователя</value></data>
+  <data name="SshPasswordHeader" xml:space="preserve"><value>Пароль (если не используется ключ)</value></data>
+  <data name="SshPrivateKeyPathHeader" xml:space="preserve"><value>Путь к закрытому ключу (необязательно)</value></data>
+  <data name="SshPrivateKeyPassphraseHeader" xml:space="preserve"><value>Пароль закрытого ключа (необязательно)</value></data>
+  <data name="SshConnectButton" xml:space="preserve"><value>Подключиться</value></data>
+  <data name="SshHostKeyDialogTitle" xml:space="preserve"><value>Проверка SSH-узла</value></data>
+  <data name="SshHostKeyDialogMessage" xml:space="preserve"><value>Подлинность узла {0} ещё не подтверждена. Перед подключением проверьте отпечаток SHA-256:\n\n{1}</value></data>
+  <data name="SshTrustHostKeyButton" xml:space="preserve"><value>Доверять и подключиться</value></data>
+  <data name="SshRememberProfileCheckBox" xml:space="preserve"><value>Запомнить параметры подключения (пароли не сохраняются)</value></data>
+  <data name="SshConnectionNavigationItem" xml:space="preserve"><value>Подключение по SSH</value></data>
+  <data name="SshConnectionBusyStatus" xml:space="preserve"><value>Выполняется настройка подключения</value></data>
+  <data name="SshConnectionActiveStatusFormat" xml:space="preserve"><value>Подключено к {0}. Нажмите для отключения.</value></data>
+  <data name="SshConnectionInactiveStatus" xml:space="preserve"><value>Нет подключения. Нажмите для настройки подключения.</value></data>
+  <data name="SshDisconnectDialogTitle" xml:space="preserve"><value>Отключиться от SSH?</value></data>
+  <data name="SshDisconnectDialogMessage" xml:space="preserve"><value>Отключиться от {0} и вернуться к работе на локальной машине?</value></data>
+  <data name="SshDisconnectConfirmButton" xml:space="preserve"><value>Отключиться</value></data>
+  <data name="SshSavedProfileHeader" xml:space="preserve"><value>Сохранённое подключение</value></data>
+  <data name="SshNewConnectionOption" xml:space="preserve"><value>Новое подключение</value></data>
+  <data name="SshDeleteProfileButton" xml:space="preserve"><value>Удалить профиль</value></data>
+  <data name="SshDeleteProfileDialogTitle" xml:space="preserve"><value>Удалить профиль SSH?</value></data>
+  <data name="SshDeleteProfileDialogMessage" xml:space="preserve"><value>Сохранённый профиль {0}@{1}:{2} будет удалён. Пароли и парольные фразы не сохранялись.</value></data>
+  <data name="SshDeleteProfileConfirmButton" xml:space="preserve"><value>Удалить</value></data>
+  <data name="SshCancelButton" xml:space="preserve"><value>Отмена</value></data>
+  <data name="SshHostPlaceholder" xml:space="preserve"><value>server.example.com</value></data>
+  <data name="SshPrivateKeyPathPlaceholder" xml:space="preserve"><value>C:\Users\user\.ssh\id_ed25519</value></data>
+</root>

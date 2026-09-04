@@ -10,10 +10,11 @@ using SimpleGit11.Models;
 using SimpleGit11.Services;
 using SimpleGit11.Services.Git;
 using SimpleGit11.ViewModels;
+using SimpleGit11.Extensibility.Presentation;
 
 namespace SimpleGit11.Presentation.Services;
 
-public sealed class DialogService : IDialogService
+public sealed class DialogService : IDialogService, IPluginDialogHost
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILocalizationService _localizationService;
@@ -56,6 +57,15 @@ public sealed class DialogService : IDialogService
         {
             _isAboutDialogOpen = false;
         }
+    }
+
+    public async Task<ContentDialogResult> ShowAsync(ContentDialog dialog)
+    {
+        ArgumentNullException.ThrowIfNull(dialog);
+        EnsureWindowRegistered();
+        dialog.XamlRoot = _window!.Content.XamlRoot;
+        ApplyTheme(dialog);
+        return await dialog.ShowAsync();
     }
 
     public async Task<bool> ConfirmAsync(string title, string message, string primaryButtonText)

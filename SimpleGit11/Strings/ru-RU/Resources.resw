@@ -150,6 +150,9 @@
   <data name="AboutCurrentVersionLabelTextBlock.Text" xml:space="preserve">
     <value>Текущая версия</value>
   </data>
+  <data name="AboutSshPluginLabelTextBlock.Text" xml:space="preserve">
+    <value>Плагин SSH</value>
+  </data>
   <data name="AboutRepositoryLabelTextBlock.Text" xml:space="preserve">
     <value>Репозиторий</value>
   </data>
@@ -200,9 +203,6 @@
   </data>
   <data name="RefreshStatusAppBarButton.Label" xml:space="preserve">
     <value>Обновить</value>
-  </data>
-  <data name="MarkResolvedAppBarButton.Label" xml:space="preserve">
-    <value>Пометить решенным</value>
   </data>
   <data name="CommitDialogTitle" xml:space="preserve">
     <value>Сохранение подготовленных изменений</value>
@@ -420,9 +420,6 @@
   <data name="ConflictFileUnavailable" xml:space="preserve">
     <value>Конфликтный файл недоступен в рабочем дереве.</value>
   </data>
-  <data name="SaveConflictFileAppBarButton.Label" xml:space="preserve">
-    <value>Сохранить</value>
-  </data>
   <data name="ConflictFileSaved" xml:space="preserve">
     <value>Конфликтный файл сохранен.</value>
   </data>
@@ -458,6 +455,75 @@
   </data>
   <data name="HistorySearchTextBox.PlaceholderText" xml:space="preserve">
     <value>Поиск</value>
+  </data>
+  <data name="CommitFilterToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Поиск и фильтрация коммитов</value>
+  </data>
+  <data name="CommitFilterToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Поиск и фильтрация коммитов</value>
+  </data>
+  <data name="MainlineOnlyToggleSwitch.OnContent" xml:space="preserve">
+    <value>Только основная линия</value>
+  </data>
+  <data name="MainlineOnlyToggleSwitch.OffContent" xml:space="preserve">
+    <value>Только основная линия</value>
+  </data>
+  <data name="MainlineOnlyToggleSwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Только основная линия</value>
+  </data>
+  <data name="CommitDateFilterHeaderTextBlock.Text" xml:space="preserve">
+    <value>Дата и время</value>
+  </data>
+  <data name="CommitDateFromTextBlock.Text" xml:space="preserve">
+    <value>От</value>
+  </data>
+  <data name="CommitDateToTextBlock.Text" xml:space="preserve">
+    <value>До</value>
+  </data>
+  <data name="CommitDateFromPicker.PlaceholderText" xml:space="preserve">
+    <value>Дата</value>
+  </data>
+  <data name="CommitDateToPicker.PlaceholderText" xml:space="preserve">
+    <value>Дата</value>
+  </data>
+  <data name="ClearCommitDateFromButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Сбросить начальную дату и время</value>
+  </data>
+  <data name="ClearCommitDateFromButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Сбросить начальную дату и время</value>
+  </data>
+  <data name="ClearCommitDateToButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Сбросить конечную дату и время</value>
+  </data>
+  <data name="ClearCommitDateToButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Сбросить конечную дату и время</value>
+  </data>
+  <data name="ResetCommitFiltersButton.Content" xml:space="preserve">
+    <value>Сбросить все фильтры</value>
+  </data>
+  <data name="DiffSearchToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Поиск в различиях</value>
+  </data>
+  <data name="DiffSearchToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Поиск в различиях</value>
+  </data>
+  <data name="DiffSearchTextBox.PlaceholderText" xml:space="preserve">
+    <value>Поиск</value>
+  </data>
+  <data name="DiffSearchTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Поиск в различиях</value>
+  </data>
+  <data name="PreviousDiffSearchMatchButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Предыдущее совпадение</value>
+  </data>
+  <data name="PreviousDiffSearchMatchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Предыдущее совпадение</value>
+  </data>
+  <data name="NextDiffSearchMatchButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Следующее совпадение</value>
+  </data>
+  <data name="NextDiffSearchMatchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Следующее совпадение</value>
   </data>
   <data name="RefreshHistoryAppBarButton.Label" xml:space="preserve">
     <value>Обновить</value>
@@ -1093,9 +1159,6 @@
   <data name="RepositorySettingsTitleTextBlock.Text" xml:space="preserve">
     <value>Настройки текущего репозитория</value>
   </data>
-  <data name="RepositoryDefaultsTitleTextBlock.Text" xml:space="preserve">
-    <value>Параметры Git</value>
-  </data>
   <data name="InitialBranchNameSettingsCardHeaderTextBlock.Text" xml:space="preserve">
     <value>Начальная ветка по умолчанию</value>
   </data>
@@ -1444,15 +1507,6 @@
   <data name="CopyRepositoryPathMenuFlyoutItem.Text" xml:space="preserve">
     <value>Копировать путь</value>
   </data>
-  <data name="OpenFoundRepositoryMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Открыть</value>
-  </data>
-  <data name="CopyFoundRepositoryPathMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать путь</value>
-  </data>
-  <data name="CopyFoundRepositoryNameMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать название</value>
-  </data>
   <data name="OpenRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Открыть</value>
   </data>
@@ -1602,6 +1656,15 @@
   </data>
   <data name="DiscardChangeMenuFlyoutItem.Text" xml:space="preserve">
     <value>Отменить изменения</value>
+  </data>
+  <data name="IgnoreChangeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Добавить в .gitignore</value>
+  </data>
+  <data name="IgnoreFileSucceeded" xml:space="preserve">
+    <value>{0} добавлен в .gitignore</value>
+  </data>
+  <data name="IgnoreFileFailed" xml:space="preserve">
+    <value>Не удалось добавить файл в .gitignore</value>
   </data>
   <data name="CheckoutBranchMenuFlyoutItem.Text" xml:space="preserve">
     <value>Переключиться</value>
@@ -1859,10 +1922,28 @@
     <value>Входящие коммиты</value>
   </data>
   <data name="SynchronizationIncomingExpanderDescriptionTextBlock.Text" xml:space="preserve">
-    <value>Откройте ветку для просмотра коммитов. Pull доступен для текущей ветки.</value>
+    <value>Откройте ветку для просмотра коммитов. Текущую ветку можно вытянуть сразу, а на другую — сначала переключиться.</value>
   </data>
   <data name="SynchronizationPullBranchButton.Content" xml:space="preserve">
     <value>Получить</value>
+  </data>
+  <data name="SynchronizationSwitchAndPullBranchButton.Content" xml:space="preserve">
+    <value>Переключиться и вытянуть</value>
+  </data>
+  <data name="SwitchAndPullDialogTitle" xml:space="preserve">
+    <value>Переключиться на «{0}» и вытянуть изменения?</value>
+  </data>
+  <data name="SwitchAndPullDialogMessage" xml:space="preserve">
+    <value>SimpleGit сначала переключит рабочую папку на ветку «{0}». Если переключение завершится успешно, затем будут вытянуты входящие коммиты из «{1}».</value>
+  </data>
+  <data name="SwitchAndPullDialogPrimaryButton" xml:space="preserve">
+    <value>Переключиться и вытянуть</value>
+  </data>
+  <data name="SwitchingAndPullingProgress" xml:space="preserve">
+    <value>Переключение на «{0}» и вытягивание входящих коммитов...</value>
+  </data>
+  <data name="SwitchAndPullSucceeded" xml:space="preserve">
+    <value>Выполнено переключение на «{0}» и вытягивание входящих коммитов.</value>
   </data>
   <data name="SynchronizationLocalSubmodulesExpanderTitleTextBlock.Text" xml:space="preserve">
     <value>Подмодули</value>
@@ -1932,6 +2013,9 @@
   </data>
   <data name="SynchronizationBranchIncomingDescription" xml:space="preserve">
     <value>Входящие из {1}: {0}.</value>
+  </data>
+  <data name="SynchronizationBranchInOtherWorktreeDescription" xml:space="preserve">
+    <value>Переключение недоступно: ветка занята другим рабочим деревом</value>
   </data>
   <data name="SynchronizationTagConflictDescription" xml:space="preserve">
     <value>Локальный и удалённый теги указывают на разные объекты. Автоматическая замена отключена.</value>
@@ -2104,10 +2188,16 @@
   <data name="ResetSplitButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Сбросить текущую ветку</value>
   </data>
-  <data name="SaveConflictFileAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SaveConflictFileButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Сохранить конфликтующий файл</value>
+  </data>
+  <data name="SaveConflictFileButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Сохранить выбранный конфликтующий файл</value>
   </data>
-  <data name="MarkResolvedAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="MarkResolvedButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Пометить конфликт как разрешённый</value>
+  </data>
+  <data name="MarkResolvedButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Пометить выбранный файл как разрешённый</value>
   </data>
   <data name="ChangeOverviewBar.AutomationProperties.Name" xml:space="preserve">
@@ -2167,17 +2257,50 @@
   <data name="ConflictEditorTextControl.AutomationProperties.Name" xml:space="preserve">
     <value>Содержимое файла с конфликтом</value>
   </data>
-  <data name="UndoConflictEditAppBarButton.Label" xml:space="preserve">
+  <data name="UndoConflictEditButton.AutomationProperties.Name" xml:space="preserve">
     <value>Отменить</value>
   </data>
-  <data name="RedoConflictEditAppBarButton.Label" xml:space="preserve">
+  <data name="UndoConflictEditButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отменить</value>
+  </data>
+  <data name="RedoConflictEditButton.AutomationProperties.Name" xml:space="preserve">
     <value>Повторить</value>
   </data>
-  <data name="ReloadConflictFileAppBarButton.Label" xml:space="preserve">
+  <data name="RedoConflictEditButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
+  <data name="ReloadConflictFileButton.AutomationProperties.Name" xml:space="preserve">
     <value>Перезагрузить</value>
+  </data>
+  <data name="ReloadConflictFileButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Перезагрузить конфликтующий файл</value>
   </data>
   <data name="ConflictEditorSyntaxHighlightingComboBox.AutomationProperties.Name" xml:space="preserve">
     <value>Подсветка синтаксиса</value>
+  </data>
+  <data name="ConflictSearchToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Поиск в конфликтующем файле</value>
+  </data>
+  <data name="ConflictSearchToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Поиск в конфликтующем файле</value>
+  </data>
+  <data name="ConflictSearchTextBox.PlaceholderText" xml:space="preserve">
+    <value>Поиск</value>
+  </data>
+  <data name="ConflictSearchTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Поиск в конфликтующем файле</value>
+  </data>
+  <data name="PreviousConflictSearchMatchButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Предыдущее совпадение</value>
+  </data>
+  <data name="PreviousConflictSearchMatchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Предыдущее совпадение</value>
+  </data>
+  <data name="NextConflictSearchMatchButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Следующее совпадение</value>
+  </data>
+  <data name="NextConflictSearchMatchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Следующее совпадение</value>
   </data>
   <data name="DeleteConflictLinesMenuFlyoutItem.Text" xml:space="preserve">
     <value>Удалить строку</value>
@@ -2201,15 +2324,21 @@
     <value>Бинарные конфликтные файлы нельзя редактировать здесь.</value>
   </data>
   <data name="ConflictResolutionRequiredOnChangesPage" xml:space="preserve">
-    <value>Операция создала конфликты. Разрешите их на странице «Изменения».</value>
+    <value>Перейдите на страницу «Изменения», разрешите конфликты и добавьте исправленные файлы в индекс. Если операция приостановлена, продолжите её там же.</value>
+  </data>
+  <data name="GitOperationConflictsTitle" xml:space="preserve">
+    <value>Необходимо разрешить конфликты в файлах</value>
+  </data>
+  <data name="OpenChangesForConflictsButtonText" xml:space="preserve">
+    <value>Перейти к изменениям</value>
   </data>
   <data name="EditConflictLineMenuFlyoutItem.Text" xml:space="preserve">
     <value>Редактировать строку</value>
   </data>
-  <data name="AcceptConflictSplitButton.Content" xml:space="preserve">
-    <value>Принять текущие</value>
+  <data name="AcceptConflictButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Принять изменения конфликта</value>
   </data>
-  <data name="AcceptConflictSplitButton.AutomationProperties.Name" xml:space="preserve">
+  <data name="AcceptConflictButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Принять изменения конфликта</value>
   </data>
   <data name="ConflictOverviewBar.AutomationProperties.Name" xml:space="preserve">
@@ -2548,7 +2677,7 @@
   <data name="BranchUpstreamAndRemoteStateTitle" xml:space="preserve">
     <value>Связь с удалённой веткой</value>
   </data>
-  <data name="BranchPullRemoteLabel.Text" xml:space="preserve">
+  <data name="BranchUpstreamRemoteComboBox.ToolTipService.ToolTip" xml:space="preserve">
     <value>Удалённый репозиторий:</value>
   </data>
   <data name="BranchUpstreamRemoteComboBox.PlaceholderText" xml:space="preserve">
@@ -2557,8 +2686,8 @@
   <data name="BranchUpstreamRemoteComboBox.AutomationProperties.Name" xml:space="preserve">
     <value>Репозиторий для получения изменений</value>
   </data>
-  <data name="BranchPushRemoteLabel.Text" xml:space="preserve">
-    <value>Удалённый репозиторий:</value>
+  <data name="BranchPushRemoteComboBox.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Удалённый репозиторий</value>
   </data>
   <data name="BranchPushRemoteComboBox.PlaceholderText" xml:space="preserve">
     <value>Выберите репозиторий</value>
@@ -2682,7 +2811,22 @@ Push будет выполнен в настроенные направлени�
     <value>Описание ветки удалено.</value>
   </data>
   <data name="BranchHistoryExpanderTitle.Text" xml:space="preserve">
-    <value>История ветки</value>
+    <value>Журнал ветки</value>
+  </data>
+  <data name="BranchCommitHistoryCardTitleTextBlock.Text" xml:space="preserve">
+    <value>История коммитов</value>
+  </data>
+  <data name="BranchCommitHistoryCardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Просмотреть полную историю коммитов выбранной ветки.</value>
+  </data>
+  <data name="BranchFullHistoryTitle" xml:space="preserve">
+    <value>История ветки {0}</value>
+  </data>
+  <data name="BranchFullHistoryDescription" xml:space="preserve">
+    <value>Полная история коммитов, доступных из ветки {0}.</value>
+  </data>
+  <data name="NoBranchHistoryCommits" xml:space="preserve">
+    <value>В выбранной ветке нет коммитов.</value>
   </data>
   <data name="BranchHistoryNotLoadedSummary" xml:space="preserve">
     <value>Разверните раздел, чтобы загрузить локальную историю ветки.</value>
@@ -2865,6 +3009,15 @@ Push будет выполнен в настроенные направлени�
   <data name="TagTargetCommitSummary" xml:space="preserve">
     <value>{0} · {1}
 {2} · {3}</value>
+  </data>
+  <data name="TagTargetObjectCard.AutomationProperties.Name" xml:space="preserve">
+    <value>Открыть изменения целевого коммита</value>
+  </data>
+  <data name="TagTargetCommitChangesTitle" xml:space="preserve">
+    <value>Целевой коммит тега {0}</value>
+  </data>
+  <data name="TagTargetCommitChangesDescription" xml:space="preserve">
+    <value>Изменения в коммите {0}: {1}</value>
   </data>
   <data name="TagRelationExpanderTitle.Text" xml:space="preserve">
     <value>Положение относительно текущей ветки</value>
@@ -3355,6 +3508,12 @@ Push будет выполнен в настроенные направлени�
   <data name="OpenFoundRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Открыть</value>
   </data>
+  <data name="OpenFoundRepositoryFolderAppBarButton.Label" xml:space="preserve">
+    <value>Расположение</value>
+  </data>
+  <data name="FoundRepositoryFolderOpenFailed" xml:space="preserve">
+    <value>Не удалось открыть папку репозитория.</value>
+  </data>
   <data name="RemotesCardTitleTextBlock.Text" xml:space="preserve">
     <value>Удаленные репозитории</value>
   </data>
@@ -3471,9 +3630,6 @@ Push будет выполнен в настроенные направлени�
   </data>
   <data name="CherryPickWithoutCommitSucceeded" xml:space="preserve">
     <value>Выбранные изменения применены без создания коммитов.</value>
-  </data>
-  <data name="CherryPickConflictResolutionRequired" xml:space="preserve">
-    <value>Для продолжения cherry-pick необходимо разрешить конфликты.</value>
   </data>
   <data name="CherryPickFailed" xml:space="preserve">
     <value>Не удалось выполнить cherry-pick.</value>
@@ -3914,5 +4070,100 @@ Push будет выполнен в настроенные направлени�
   </data>
   <data name="GitUrlRewriteSaveFailed" xml:space="preserve">
     <value>Не удалось изменить глобальные правила перенаправления URL Git.</value>
+  </data>
+  <data name="GlobalGitSettingsTitleFormat" xml:space="preserve">
+    <value>Параметры Git на {0}</value>
+  </data>
+  <data name="OpenRemoteRepositoryDialogTitle" xml:space="preserve">
+    <value>Открытие удалённого репозитория</value>
+  </data>
+  <data name="RemoteRepositoryPathHeader" xml:space="preserve">
+    <value>Путь к репозиторию на удалённой машине</value>
+  </data>
+  <data name="OpenRemoteRepositoryButton" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="CreateRemoteRepositoryDialogTitle" xml:space="preserve">
+    <value>Создание репозитория на удалённой машине</value>
+  </data>
+  <data name="CreateRemoteRepositoryButton" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="CloneRemoteRepositoryDialogTitle" xml:space="preserve">
+    <value>Клонирование репозитория на удалённой машине</value>
+  </data>
+  <data name="CloneRemoteRepositoryButton" xml:space="preserve">
+    <value>Клонировать</value>
+  </data>
+  <data name="RemoteParentPathHeader" xml:space="preserve">
+    <value>Путь к каталогу на удалённой машине</value>
+  </data>
+  <data name="ExecutionConnectionLostMessage" xml:space="preserve">
+    <value>Подключение к {0} потеряно. Восстановлен локальный режим.</value>
+  </data>
+  <data name="SearchRemoteRepositoriesDialogTitle" xml:space="preserve">
+    <value>Выбор каталога поиска на удалённой машине</value>
+  </data>
+  <data name="SearchRemoteRepositoriesButton" xml:space="preserve">
+    <value>Найти</value>
+  </data>
+  <data name="PullRebaseHeaderTextBlock.Text" xml:space="preserve">
+    <value>Стратегия pull (pull.rebase)</value>
+  </data>
+  <data name="PullRebaseDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Объединение веток: false — слияние (рекомендуется); true — rebase.
+merges — rebase со слияниями; interactive — интерактивно; «Не задано» — наследовать.</value>
+  </data>
+  <data name="PullRebaseDetailsTextBlock.Text" xml:space="preserve">
+    <value>Рекомендуется false — слияние без переписывания существующих коммитов. Rebase переписывает локальные коммиты; интерактивный режим требует редактора. Настройка branch.&lt;name&gt;.rebase для конкретной ветки имеет приоритет. «Не задано» удаляет параметр из этого уровня после сохранения; Git использует другие уровни конфигурации.</value>
+  </data>
+  <data name="PullFastForwardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Fast-forward при pull (pull.ff)</value>
+  </data>
+  <data name="PullFastForwardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Fast-forward при pull: true — разрешить (рекомендуется); false — коммит слияния.
+only — только fast-forward; «Не задано» — наследовать.</value>
+  </data>
+  <data name="PullFastForwardDetailsTextBlock.Text" xml:space="preserve">
+    <value>Рекомендуется true вместе с pull.rebase=false: fast-forward, когда возможно, иначе слияние. При pull.rebase=true разошедшиеся ветки объединяются через rebase. Значение only запрещает объединение разошедшихся веток, даже при включённом rebase. Конфликты могут потребовать ручного разрешения. «Не задано» удаляет параметр из этого уровня после сохранения; Git использует другие уровни конфигурации.</value>
+  </data>
+  <data name="PullRebaseComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Стратегия pull (pull.rebase)</value>
+  </data>
+  <data name="PullFastForwardComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Fast-forward при pull (pull.ff)</value>
+  </data>
+  <data name="PullRebaseComboBox.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Рекомендуется false — слияние без переписывания существующих коммитов. Rebase переписывает локальные коммиты; интерактивный режим требует редактора. Настройка branch.&lt;name&gt;.rebase для конкретной ветки имеет приоритет. «Не задано» удаляет параметр из этого уровня после сохранения; Git использует другие уровни конфигурации.</value>
+  </data>
+  <data name="PullFastForwardComboBox.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Рекомендуется true вместе с pull.rebase=false: fast-forward, когда возможно, иначе слияние. При pull.rebase=true разошедшиеся ветки объединяются через rebase. Значение only запрещает объединение разошедшихся веток, даже при включённом rebase. Конфликты могут потребовать ручного разрешения. «Не задано» удаляет параметр из этого уровня после сохранения; Git использует другие уровни конфигурации.</value>
+  </data>
+  <data name="PullNotSetOption" xml:space="preserve">
+    <value>Не задано</value>
+  </data>
+  <data name="PullMergeOption" xml:space="preserve">
+    <value>false</value>
+  </data>
+  <data name="PullRebaseOption" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="PullRebaseMergesOption" xml:space="preserve">
+    <value>merges</value>
+  </data>
+  <data name="PullRebaseInteractiveOption" xml:space="preserve">
+    <value>interactive</value>
+  </data>
+  <data name="PullFastForwardOption" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="PullNoFastForwardOption" xml:space="preserve">
+    <value>false</value>
+  </data>
+  <data name="PullFastForwardOnlyOption" xml:space="preserve">
+    <value>only</value>
+  </data>
+  <data name="PullEmptyValue" xml:space="preserve">
+    <value>(пустое значение)</value>
   </data>
 </root>

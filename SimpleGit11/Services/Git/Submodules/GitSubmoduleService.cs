@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
 using SimpleGit11.Services.Git.Execution;
+using SimpleGit11.Services.Execution;
 
 namespace SimpleGit11.Services;
 
@@ -13,10 +14,14 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
 {
     private const int MaximumRecursionDepth = 32;
     private readonly IGitCommandRunner _commandRunner;
+    private readonly IExecutionContextService? _executionContextService;
 
-    public GitSubmoduleService(IGitCommandRunner? commandRunner = null)
+    public GitSubmoduleService(
+        IGitCommandRunner? commandRunner = null,
+        IExecutionContextService? executionContextService = null)
     {
         _commandRunner = commandRunner ?? new GitCommandRunner();
+        _executionContextService = executionContextService;
     }
 
     public Task<IReadOnlyList<GitSubmodule>> GetSubmodulesAsync(
@@ -24,7 +29,10 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(repository);
-        HashSet<string> visitedPaths = new(StringComparer.OrdinalIgnoreCase);
+        StringComparer pathComparer = _executionContextService?.Current.Runtime.Paths.Style == RepositoryPathStyle.Posix
+            ? StringComparer.Ordinal
+            : StringComparer.OrdinalIgnoreCase;
+        HashSet<string> visitedPaths = new(pathComparer);
         return GetSubmodulesAsync(repository.Path, visitedPaths, 0, cancellationToken);
     }
 
@@ -225,8 +233,8 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
             return [];
         }
 
-        string configurationPath = System.IO.Path.Combine(repositoryPath, ".gitmodules");
-        if (!File.Exists(configurationPath))
+        string configurationPath = Combine(repositoryPath, ".gitmodules");
+        if (!await FileExistsAsync(configurationPath, cancellationToken))
         {
             return [];
         }
@@ -264,9 +272,8 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
         int depth,
         CancellationToken cancellationToken)
     {
-        string fullPath = System.IO.Path.GetFullPath(
-            System.IO.Path.Combine(repositoryPath, configuration.Path));
-        if (!RepositoryPathGuard.IsPathInsideRepository(repositoryPath, fullPath))
+        string fullPath = NormalizePath(Combine(repositoryPath, configuration.Path));
+        if (!IsPathInsideRepository(repositoryPath, fullPath))
         {
             throw new GitCommandException(
                 $"Submodule path is outside the repository: {configuration.Path}",
@@ -285,7 +292,7 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
 
         string headCommit = ParseTreeCommit((await headCommitTask).StandardOutput);
         GitSubmoduleIndexState indexState = ParseIndexState((await indexCommitTask).StandardOutput);
-        bool isInitialized = IsGitWorkingTree(fullPath);
+        bool isInitialized = await IsGitWorkingTreeAsync(fullPath, cancellationToken);
         string checkedOutCommit = "";
         bool hasTrackedChanges = false;
         bool hasUntrackedFiles = false;
@@ -474,15 +481,21 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
         ArgumentException.ThrowIfNullOrWhiteSpace(submodulePath);
     }
 
-    private static bool IsGitWorkingTree(string path)
+    private async Task<bool> IsGitWorkingTreeAsync(string path, CancellationToken cancellationToken)
     {
-        if (!Directory.Exists(path))
+        bool directoryExists = _executionContextService is null
+            ? Directory.Exists(path)
+            : await _executionContextService.Current.Runtime.Files.DirectoryExistsAsync(path, cancellationToken);
+        if (!directoryExists)
         {
             return false;
         }
 
-        string dotGitPath = System.IO.Path.Combine(path, ".git");
-        return Directory.Exists(dotGitPath) || File.Exists(dotGitPath);
+        string dotGitPath = Combine(path, ".git");
+        return _executionContextService is null
+            ? Directory.Exists(dotGitPath) || File.Exists(dotGitPath)
+            : await _executionContextService.Current.Runtime.Files.DirectoryExistsAsync(dotGitPath, cancellationToken)
+                || await _executionContextService.Current.Runtime.Files.FileExistsAsync(dotGitPath, cancellationToken);
     }
 
     private static string ParseTreeCommit(string output)
@@ -549,9 +562,35 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
         }
     }
 
-    private static string NormalizePath(string path)
+    private string NormalizePath(string path)
     {
-        return System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(path));
+        return _executionContextService?.Current.Runtime.Paths.Normalize(path).TrimEnd('/', '\\')
+            ?? System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(path));
+    }
+
+    private string Combine(string left, string right) =>
+        _executionContextService?.Current.Runtime.Paths.Combine(left, right)
+        ?? System.IO.Path.Combine(left, right);
+
+    private Task<bool> FileExistsAsync(string path, CancellationToken cancellationToken) =>
+        _executionContextService is null
+            ? Task.FromResult(File.Exists(path))
+            : _executionContextService.Current.Runtime.Files.FileExistsAsync(path, cancellationToken);
+
+    private bool IsPathInsideRepository(string repositoryPath, string fullPath)
+    {
+        if (_executionContextService is null)
+        {
+            return RepositoryPathGuard.IsPathInsideRepository(repositoryPath, fullPath);
+        }
+
+        IRepositoryPathService paths = _executionContextService.Current.Runtime.Paths;
+        string root = paths.Normalize(repositoryPath).TrimEnd('/', '\\');
+        char separator = paths.Style == RepositoryPathStyle.Windows ? '\\' : '/';
+        StringComparison comparison = paths.Style == RepositoryPathStyle.Windows
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        return fullPath.StartsWith(root + separator, comparison);
     }
 
     private sealed record GitSubmoduleIndexState(string Commit, bool HasConflict);

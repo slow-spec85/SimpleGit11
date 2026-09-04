@@ -98,6 +98,13 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
     [RelayCommand(CanExecute = nameof(CanPull), FlowExceptionsToTaskScheduler = true)]
     private Task OnPullAsync() => _asyncCommandExecutor.ExecuteAsync(PullAsync);
 
+    [RelayCommand(CanExecute = nameof(CanSwitchAndPull), FlowExceptionsToTaskScheduler = true)]
+    private Task OnSwitchAndPullAsync(BranchSynchronizationViewItem? branch) =>
+        _asyncCommandExecutor.ExecuteAsync(() => SwitchAndPullAsync(branch));
+
+    private bool CanSwitchAndPull(BranchSynchronizationViewItem? branch) =>
+        CanRunRemoteOperation && branch is { CanSwitchAndPull: true };
+
     [RelayCommand(CanExecute = nameof(CanPushAllChanges), FlowExceptionsToTaskScheduler = true)]
     private Task OnPushAsync() =>
         _asyncCommandExecutor.ExecuteAsync(() => PushAllChangesAsync(GitPushMode.Regular));
@@ -645,7 +652,56 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
                 OnPropertyChanged(nameof(LastSuccessfulFetchText));
                 return result;
             },
-            _localizationService.GetString("PullSucceeded"));
+            _localizationService.GetString("PullSucceeded"),
+            mayCreateConflicts: true);
+    }
+
+    private async Task SwitchAndPullAsync(BranchSynchronizationViewItem? item)
+    {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        GitRemote? defaultRemote = SelectedRemote;
+        if (repository is null
+            || defaultRemote is null
+            || item is not { CanSwitchAndPull: true })
+        {
+            return;
+        }
+
+        BranchSynchronizationItem branch = item.Branch;
+        await BranchSwitchAndPullOperation.RunWhenConfirmedAsync(
+            () => _dialogService.ConfirmAsync(
+                string.Format(
+                    _localizationService.GetString("SwitchAndPullDialogTitle"),
+                    branch.Name),
+                string.Format(
+                    _localizationService.GetString("SwitchAndPullDialogMessage"),
+                    branch.Name,
+                    branch.HasUpstream ? branch.UpstreamBranch : $"{defaultRemote.Name}/{branch.Name}"),
+                _localizationService.GetString("SwitchAndPullDialogPrimaryButton")),
+            () => RunRemoteOperationAsync(
+                string.Format(_localizationService.GetString("SwitchingAndPullingProgress"), branch.Name),
+                async cancellationToken =>
+                {
+                    GitRemoteOperationResult result = await BranchSwitchAndPullOperation.ExecuteAsync(
+                        _gitService.Branches,
+                        _gitService.Remotes,
+                        repository,
+                        branch,
+                        defaultRemote,
+                        branchName =>
+                        {
+                            if (_mainWindowViewModel.CurrentRepository == repository)
+                            {
+                                _mainWindowViewModel.UpdateCurrentBranch(branchName);
+                            }
+                        },
+                        cancellationToken);
+                    _lastSuccessfulFetch = await _gitService.GetLastFetchTimeAsync(repository, cancellationToken);
+                    OnPropertyChanged(nameof(LastSuccessfulFetchText));
+                    return result;
+                },
+                string.Format(_localizationService.GetString("SwitchAndPullSucceeded"), branch.Name),
+                mayCreateConflicts: true));
     }
 
     private Task PushAllChangesAsync(GitPushMode mode)
@@ -1023,8 +1079,10 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
     private Task RunRemoteOperationAsync(
         string progressMessage,
         Func<CancellationToken, Task<GitRemoteOperationResult>> operation,
-        string successMessage)
+        string successMessage,
+        bool mayCreateConflicts = false)
     {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
         return RunGitOperationAsync(progressMessage, async cancellationToken =>
         {
             try
@@ -1037,13 +1095,13 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
             catch (Exception exception) when (IsExpectedGitException(exception))
             {
                 await RefreshSnapshotAsync(cancellationToken);
-                ShowGitError(exception);
-                if (exception is GitRemoteOperationException { Kind: GitRemoteOperationErrorKind.Conflict })
+                if (mayCreateConflicts && exception is GitCommandException gitException
+                    && await _mainWindowViewModel.TryShowConflictWarningAsync(repository, this, gitException))
                 {
-                    _mainWindowViewModel.RequestChangesNavigation(
-                        _localizationService.GetString("ConflictResolutionRequiredOnChangesPage"),
-                        exception.Message);
+                    return;
                 }
+
+                ShowGitError(exception);
             }
         }, canCancel: true);
     }
@@ -1184,6 +1242,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
     {
         RefreshSynchronizationCommand.NotifyCanExecuteChanged();
         PullCommand.NotifyCanExecuteChanged();
+        SwitchAndPullCommand.NotifyCanExecuteChanged();
         PushCommand.NotifyCanExecuteChanged();
         AtomicPushCommand.NotifyCanExecuteChanged();
         PushAllBranchesCommand.NotifyCanExecuteChanged();

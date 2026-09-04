@@ -309,6 +309,7 @@ public sealed class DialogValidationViewModelTests
         public IGitConfigService Configuration => throw new NotSupportedException();
         public IGitDiffService Diff => throw new NotSupportedException();
         public IGitHistoryService History => throw new NotSupportedException();
+        public IGitIgnoreService Ignore => throw new NotSupportedException();
         public IGitReferenceDetailsService ReferenceDetails => throw new NotSupportedException();
         public IGitRevisionService Revisions { get; }
         public IGitRemoteService Remotes => throw new NotSupportedException();

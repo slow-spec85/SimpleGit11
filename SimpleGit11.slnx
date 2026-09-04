@@ -5,10 +5,19 @@
   <Project Path="External/TextControlBox-WinUI/TextControlBox/TextControlBox.csproj">
     <Platform Project="x64" />
   </Project>
+  <Project Path="SimpleGit11.Extensibility/SimpleGit11.Extensibility.csproj">
+    <Platform Project="x64" />
+  </Project>
   <Project Path="SimpleGit11.Tests/SimpleGit11.Tests.csproj">
     <Platform Project="x64" />
   </Project>
   <Project Path="SimpleGit11/SimpleGit11.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="SimpleGit11.Plugin.Ssh/SimpleGit11.Plugin.Ssh.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="SimpleGit11.Plugin.Ssh.Tests/SimpleGit11.Plugin.Ssh.Tests.csproj">
     <Platform Project="x64" />
   </Project>
 </Solution>

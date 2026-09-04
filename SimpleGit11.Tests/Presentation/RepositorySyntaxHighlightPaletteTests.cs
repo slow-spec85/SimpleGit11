@@ -26,8 +26,15 @@ public sealed class RepositorySyntaxHighlightPaletteTests
             [SyntaxHighlightRole.Function] = "SyntaxFunctionForegroundBrush",
             [SyntaxHighlightRole.String] = "SyntaxStringForegroundBrush",
             [SyntaxHighlightRole.Number] = "SyntaxNumberForegroundBrush",
+            [SyntaxHighlightRole.Constant] = "SyntaxConstantForegroundBrush",
             [SyntaxHighlightRole.MarkupName] = "SyntaxMarkupNameForegroundBrush",
             [SyntaxHighlightRole.AttributeName] = "SyntaxAttributeNameForegroundBrush",
+            [SyntaxHighlightRole.Operator] = "SyntaxOperatorForegroundBrush",
+            [SyntaxHighlightRole.Punctuation] = "SyntaxPunctuationForegroundBrush",
+            [SyntaxHighlightRole.Directive] = "SyntaxDirectiveForegroundBrush",
+            [SyntaxHighlightRole.Variable] = "SyntaxVariableForegroundBrush",
+            [SyntaxHighlightRole.Label] = "SyntaxLabelForegroundBrush",
+            [SyntaxHighlightRole.Key] = "SyntaxKeyForegroundBrush",
         };
         List<(string Theme, string Resource)> requests = [];
 
@@ -49,8 +56,18 @@ public sealed class RepositorySyntaxHighlightPaletteTests
             CollectionAssert.Contains(requests, ("Dark", expected.Value));
         }
 
-        Assert.IsFalse(palette.TryGetColors(SyntaxHighlightRole.Operator, out _));
         Assert.HasCount(expectedResources.Count * 2, requests);
+    }
+
+    [TestMethod]
+    public void ValueRole_PreservesLanguageSpecificColors()
+    {
+        SyntaxHighlightPalette palette = RepositorySyntaxHighlightPalette.Create(
+            isHighContrast: false,
+            (_, _) => Light,
+            _ => HighContrast);
+
+        Assert.IsFalse(palette.TryGetColors(SyntaxHighlightRole.Value, out _));
     }
 
     [TestMethod]
@@ -72,6 +89,6 @@ public sealed class RepositorySyntaxHighlightPaletteTests
             out SyntaxHighlightPaletteEntry colors));
         Assert.AreEqual(HighContrast, colors.Light);
         Assert.AreEqual(HighContrast, colors.Dark);
-        Assert.AreEqual(9, currentColorRequests);
+        Assert.AreEqual(16, currentColorRequests);
     }
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SimpleGit11.Tests.Build;
@@ -7,19 +8,46 @@ namespace SimpleGit11.Tests.Build;
 public sealed class PublishPathSafetyTests
 {
     [TestMethod]
-    public async Task PublicationPaths_RejectReparsePoints()
+    public void CiWorkflow_RunsAllSolutionTestsIncludingSshPlugin()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string workflowPath = Path.Combine(repositoryRoot, ".github", "workflows", "ci.yml");
+        string[] testCommands = File.ReadLines(workflowPath)
+            .Select(line => line.Trim())
+            .Where(line => line.StartsWith("run: dotnet test ", StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.AreEqual(1, testCommands.Length, "CI must have one solution-wide test invocation.");
+        StringAssert.Contains(testCommands[0], "--solution SimpleGit11.slnx");
+        StringAssert.Contains(testCommands[0], "--configuration Release");
+        StringAssert.Contains(testCommands[0], "-p:Platform=x64");
+
+        XDocument solution = XDocument.Load(Path.Combine(repositoryRoot, "SimpleGit11.slnx"));
+        string[] projectPaths = solution.Descendants("Project")
+            .Select(project => (string?)project.Attribute("Path") ?? string.Empty)
+            .ToArray();
+        CollectionAssert.Contains(projectPaths, "SimpleGit11.Tests/SimpleGit11.Tests.csproj");
+        CollectionAssert.Contains(projectPaths, "SimpleGit11.Plugin.Ssh.Tests/SimpleGit11.Plugin.Ssh.Tests.csproj");
+    }
+
+    [TestMethod]
+    [DataRow("PublishPathSafety.Tests.ps1", "-PathSafetyScript", "Publish-PathSafety.ps1")]
+    [DataRow("InstallerPayload.Tests.ps1", "-PayloadScript", "Installer-Payload.ps1")]
+    [DataRow("PublishRelease.Tests.ps1", "-PublishScript", "Publish-Release.ps1")]
+    [DataRow("ReleaseCiReuse.Tests.ps1", "-CiReuseScript", "Get-ReleaseCiReuse.ps1")]
+    public async Task PublicationScripts_ValidateSafetyAndPayload(string testFile, string parameter, string buildFile)
     {
         string repositoryRoot = FindRepositoryRoot();
         string testScript = Path.Combine(
             repositoryRoot,
             "SimpleGit11.Tests",
             "Build",
-            "PublishPathSafety.Tests.ps1");
+            testFile);
         string pathSafetyScript = Path.Combine(
             repositoryRoot,
             "SimpleGit11",
             "Build",
-            "Publish-PathSafety.ps1");
+            buildFile);
 
         ProcessStartInfo startInfo = new("powershell.exe")
         {
@@ -33,7 +61,7 @@ public sealed class PublishPathSafetyTests
         startInfo.ArgumentList.Add("Bypass");
         startInfo.ArgumentList.Add("-File");
         startInfo.ArgumentList.Add(testScript);
-        startInfo.ArgumentList.Add("-PathSafetyScript");
+        startInfo.ArgumentList.Add(parameter);
         startInfo.ArgumentList.Add(pathSafetyScript);
 
         using Process process = Process.Start(startInfo)

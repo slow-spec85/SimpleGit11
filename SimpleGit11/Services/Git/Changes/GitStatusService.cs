@@ -8,21 +8,26 @@ using System.Text;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
 using SimpleGit11.Services.Git.Execution;
+using SimpleGit11.Services.Execution;
 
 namespace SimpleGit11.Services;
 
 public sealed class GitStatusService : IGitStatusService
 {
     private readonly IGitCommandRunner _commandRunner;
+    private readonly IExecutionContextService? _executionContextService;
 
-    public GitStatusService(IGitCommandRunner? commandRunner = null)
+    public GitStatusService(
+        IGitCommandRunner? commandRunner = null,
+        IExecutionContextService? executionContextService = null)
     {
         _commandRunner = commandRunner ?? new GitCommandRunner();
+        _executionContextService = executionContextService;
     }
 
     public async Task<GitStatusSnapshot> GetStatusAsync(RepositoryInfo repository)
     {
-        if (!Directory.Exists(repository.Path))
+        if (!await DirectoryExistsAsync(repository.Path))
         {
             throw new DirectoryNotFoundException(repository.Path);
         }
@@ -44,31 +49,31 @@ public sealed class GitStatusService : IGitStatusService
 
     public async Task<GitOperationState> GetOperationStateAsync(RepositoryInfo repository)
     {
-        string gitDirectory = (await RunGitAsync(repository, "rev-parse", "--git-dir")).Trim();
-        if (!Path.IsPathRooted(gitDirectory))
-        {
-            gitDirectory = Path.GetFullPath(Path.Combine(repository.Path, gitDirectory));
-        }
+        string gitDirectory = (await RunGitAsync(
+            repository,
+            "rev-parse",
+            "--path-format=absolute",
+            "--git-dir")).Trim();
 
-        if (Directory.Exists(Path.Combine(gitDirectory, "rebase-merge"))
-            || File.Exists(Path.Combine(gitDirectory, "rebase-apply", "rebasing")))
+        if (await DirectoryExistsAsync(Combine(gitDirectory, "rebase-merge"))
+            || await FileExistsAsync(Combine(Combine(gitDirectory, "rebase-apply"), "rebasing")))
         {
             return new GitOperationState(GitOperationKind.Rebase);
         }
 
-        if (File.Exists(Path.Combine(gitDirectory, "MERGE_HEAD")))
+        if (await FileExistsAsync(Combine(gitDirectory, "MERGE_HEAD")))
         {
             string preparedMessage = await ReadPreparedCommitMessageAsync(gitDirectory);
             return new GitOperationState(GitOperationKind.Merge, preparedMessage);
         }
 
-        if (File.Exists(Path.Combine(gitDirectory, "CHERRY_PICK_HEAD")))
+        if (await FileExistsAsync(Combine(gitDirectory, "CHERRY_PICK_HEAD")))
         {
             string preparedMessage = await ReadPreparedCommitMessageAsync(gitDirectory);
             return new GitOperationState(GitOperationKind.CherryPick, preparedMessage);
         }
 
-        if (File.Exists(Path.Combine(gitDirectory, "REVERT_HEAD")))
+        if (await FileExistsAsync(Combine(gitDirectory, "REVERT_HEAD")))
         {
             string preparedMessage = await ReadPreparedCommitMessageAsync(gitDirectory);
             return new GitOperationState(GitOperationKind.Revert, preparedMessage);
@@ -103,12 +108,43 @@ public sealed class GitStatusService : IGitStatusService
         return ParseNumstat(output);
     }
 
-    private static async Task<string> ReadPreparedCommitMessageAsync(string gitDirectory)
+    private async Task<string> ReadPreparedCommitMessageAsync(string gitDirectory)
     {
-        string messagePath = Path.Combine(gitDirectory, "MERGE_MSG");
-        return File.Exists(messagePath)
-            ? (await File.ReadAllTextAsync(messagePath)).Trim()
+        string messagePath = Combine(gitDirectory, "MERGE_MSG");
+        return await FileExistsAsync(messagePath)
+            ? (await ReadAllTextAsync(messagePath)).Trim()
             : "";
+    }
+
+    private string Combine(string left, string right)
+    {
+        return _executionContextService?.Current.Runtime.Paths.Combine(left, right)
+            ?? Path.Combine(left, right);
+    }
+
+    private Task<bool> FileExistsAsync(string path)
+    {
+        return _executionContextService is null
+            ? Task.FromResult(File.Exists(path))
+            : _executionContextService.Current.Runtime.Files.FileExistsAsync(path);
+    }
+
+    private Task<bool> DirectoryExistsAsync(string path)
+    {
+        return _executionContextService is null
+            ? Task.FromResult(Directory.Exists(path))
+            : _executionContextService.Current.Runtime.Files.DirectoryExistsAsync(path);
+    }
+
+    private async Task<string> ReadAllTextAsync(string path)
+    {
+        if (_executionContextService is null)
+        {
+            return await File.ReadAllTextAsync(path);
+        }
+
+        byte[] content = await _executionContextService.Current.Runtime.Files.ReadAllBytesAsync(path);
+        return Encoding.UTF8.GetString(content);
     }
 
     private static GitStatusSnapshot ParseStatus(

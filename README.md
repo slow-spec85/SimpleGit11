@@ -63,21 +63,21 @@ to perform every repository operation.
 
 The ready-to-use build is distributed as an **unpackaged, self-contained,
 win-x64** application. .NET and the Windows App SDK are included, so a separate
-.NET Runtime, certificate installation, and administrator rights are not
-required.
+.NET Runtime or certificate installation is not required. Administrator rights
+are needed only when installing for all users or into a protected folder.
 
 ## Installation
 
-1. Download `SimpleGit11-<version>-win-x64.zip` and its matching `.sha256` file
-   from the repository's Releases page.
-2. Optionally verify the checksum.
-3. Extract the entire ZIP archive to a permanent folder.
-4. Run `SimpleGit11.exe`.
+1. Download `SimpleGit11-<version>-win-x64-en-US.msi` (or `ru-RU`) and its
+   matching `.sha256` file from the repository's Releases page.
+2. Optionally verify the checksum, then run the MSI.
+3. Choose current-user or all-users installation and the installation folder.
+4. Choose whether to install SSH support and a desktop shortcut.
+5. Start SimpleGit11 from the Start menu.
 
-Do not run the application directly from the ZIP archive: all distributed
-files are required. Automatic updates are not implemented yet. See
-[PUBLISHING.md](PUBLISHING.md) for detailed installation, update, and checksum
-verification instructions.
+Current-user installation is the default. Re-run the original MSI to modify, repair or uninstall.
+Automatic updates are not implemented yet. See [PUBLISHING.md](PUBLISHING.md)
+for installation, updating and optional removal of application data.
 
 ## Building from source
 
@@ -89,7 +89,7 @@ dotnet build .\SimpleGit11.slnx -c Debug -p:Platform=x64
 ```
 
 The project supports `x64` builds only. See [PUBLISHING.md](PUBLISHING.md) for
-local build details and release ZIP preparation.
+local build details and MSI release preparation.
 
 ## Technology
 

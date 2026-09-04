@@ -3,13 +3,17 @@
 [CmdletBinding()]
 param(
     [switch]$DevelopmentBuild,
-    [switch]$StopRunningApp
+    [switch]$StopRunningApp,
+    [switch]$Interactive,
+    [string]$InstallerVersion,
+    [switch]$AcceptWixEula
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-. (Join-Path $PSScriptRoot "Publish-PathSafety.ps1")
+. (Join-Path $PSScriptRoot 'Installer-Payload.ps1')
+$AcceptWixEula = Confirm-WixEula -Accepted:$AcceptWixEula -Interactive:$Interactive
 
 [string]$projectDirectory = [System.IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 [string]$repositoryRoot = [System.IO.Path]::GetFullPath((Split-Path -Parent $projectDirectory))
@@ -124,6 +128,13 @@ else {
     Write-Host "Release tag: $releaseTag"
 }
 
+[string]$installerReleaseVersion = if ($DevelopmentBuild) { $developmentVersionOverride } else { $expectedVersion }
+[string]$msiVersion = Get-InstallerVersion -ReleaseVersion $installerReleaseVersion -Override $InstallerVersion
+Write-Host "MSI product version: $msiVersion (application: $installerReleaseVersion)"
+if ($installerReleaseVersion -match '-') {
+    Write-Warning 'MSI ignores prerelease suffixes. Uninstall an existing package with the same or a higher numeric version before installing this build, or explicitly choose a higher -InstallerVersion.'
+}
+
 $runningProcesses = @(Get-Process -Name "SimpleGit11" -ErrorAction SilentlyContinue)
 if ($runningProcesses.Count -gt 0) {
     if (-not $StopRunningApp) {
@@ -158,7 +169,7 @@ if ($DevelopmentBuild) {
     $publishArguments += "-p:MinVerVersionOverride=$developmentVersionOverride"
 }
 
-& dotnet @publishArguments
+& dotnet @publishArguments | Out-Host
 
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish exited with code $LASTEXITCODE."
@@ -216,68 +227,23 @@ if ($DevelopmentBuild -and $artifactVersion -ne $developmentVersionOverride) {
     throw "Published EXE version ($artifactVersion) does not match the development override ($developmentVersionOverride)."
 }
 
-[string]$artifactBaseName = "SimpleGit11-$artifactVersion-win-x64"
-[string]$publishedApplicationDirectory = Join-Path $artifactDirectory $artifactBaseName
-[string]$archivePath = Join-Path $artifactDirectory "$artifactBaseName.zip"
-[string]$checksumPath = "$archivePath.sha256"
-
-Remove-DirectoryUnderRoot -Path $publishedApplicationDirectory -Root $repositoryRoot
-Remove-FileUnderRoot -Path $archivePath -Root $repositoryRoot
-Remove-FileUnderRoot -Path $checksumPath -Root $repositoryRoot
-
-Move-Item -LiteralPath $stagingDirectory -Destination $publishedApplicationDirectory
-Assert-NoReparsePointsInTree `
-    -Path $publishedApplicationDirectory `
-    -Root $repositoryRoot | Out-Null
-
-Write-Host "Creating ZIP archive..."
-Assert-NoReparsePointUnderRoot -Path $archivePath -Root $repositoryRoot | Out-Null
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::CreateFromDirectory(
-    $publishedApplicationDirectory,
-    $archivePath,
-    [System.IO.Compression.CompressionLevel]::Optimal,
-    $false)
-
-if (-not (Test-Path -LiteralPath $archivePath -PathType Leaf) -or
-    (Get-Item -LiteralPath $archivePath).Length -eq 0) {
-    throw "ZIP archive was not created: $archivePath"
-}
-
-$archive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
-try {
-    [string[]]$archiveEntries = @($archive.Entries | ForEach-Object {
-        $_.FullName.Replace('\', '/')
-    })
-    [string[]]$missingArchiveEntries = @($requiredFiles | Where-Object {
-        $archiveEntries -notcontains $_.Replace('\', '/')
-    })
-}
-finally {
-    $archive.Dispose()
-}
-
-if ($missingArchiveEntries.Count -gt 0) {
-    throw "Required ZIP entries are missing: $($missingArchiveEntries -join ', ')"
-}
-
-[string]$sha256 = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash
-[string]$archiveFileName = Split-Path -Leaf $archivePath
-Set-Content -LiteralPath $checksumPath -Value "$sha256  $archiveFileName" -Encoding Ascii
+# The published directory is an internal MSI payload, not a separate distribution.
+[string[]]$installerPaths = @(& (Join-Path $PSScriptRoot 'Build-Installer.ps1') `
+    -CoreDirectory $stagingDirectory -ReleaseVersion $artifactVersion `
+    -InstallerVersion $msiVersion -AcceptWixEula:$AcceptWixEula)
+[string[]]$checksumPaths = @($installerPaths | ForEach-Object { "$_.sha256" })
 
 Write-Host ""
 Write-Host "Publication artifacts are ready:" -ForegroundColor Green
-Write-Host "  Version:     $artifactVersion"
-Write-Host "  Application: $publishedApplicationDirectory"
-Write-Host "  ZIP:         $archivePath"
-Write-Host "  SHA-256:     $checksumPath"
-Write-Host "  Hash:        $sha256"
+Write-Host "  Application version: $artifactVersion"
+Write-Host "  MSI product version: $msiVersion"
+Write-Host "  MSI:                 $($installerPaths -join ', ')"
+Write-Host "  SHA-256:             $($checksumPaths -join ', ')"
 
 [pscustomobject]@{
     Version = $artifactVersion
     ProductVersion = $productVersion
-    PublishDirectory = $publishedApplicationDirectory
-    Archive = $archivePath
-    ChecksumFile = $checksumPath
-    Sha256 = $sha256
+    InstallerVersion = $msiVersion
+    Installers = $installerPaths
+    ChecksumFiles = $checksumPaths
 }

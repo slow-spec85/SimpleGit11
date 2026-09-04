@@ -76,6 +76,23 @@ public sealed class GitRepositoryChangeDetectorTests
     }
 
     [TestMethod]
+    public async Task HasChangedAsync_PosixPathsWithDifferentCase_UseIndependentSnapshots()
+    {
+        FakeGitCommandRunner runner = new();
+        TestExecutionContextService context = new(new InMemoryRepositoryFileSystem());
+        GitRepositoryChangeDetector detector = new(
+            runner,
+            new GitStatusService(runner),
+            context);
+
+        _ = await detector.HasChangedAsync(new RepositoryInfo("/srv/Repo", "Repo", "main"));
+        bool hasChanged = await detector.HasChangedAsync(
+            new RepositoryInfo("/srv/repo", "repo", "main"));
+
+        Assert.IsTrue(hasChanged);
+    }
+
+    [TestMethod]
     public async Task EnsureBaselineAsync_FirstComparisonDoesNotReportChange()
     {
         FakeGitCommandRunner runner = new();

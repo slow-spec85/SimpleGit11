@@ -1,4 +1,5 @@
 using System.Text;
+using System;
 
 namespace SimpleGit11.Models;
 
@@ -9,13 +10,15 @@ public sealed class TextFileDocument
         string text,
         Encoding encoding,
         bool emitByteOrderMark,
-        string newLine)
+        string newLine,
+        Guid? executionContextId = null)
     {
         Path = path;
         Text = text;
         Encoding = encoding;
         EmitByteOrderMark = emitByteOrderMark;
         NewLine = newLine;
+        ExecutionContextId = executionContextId;
     }
 
     public string Path { get; }
@@ -27,4 +30,6 @@ public sealed class TextFileDocument
     public bool EmitByteOrderMark { get; }
 
     public string NewLine { get; }
+
+    public Guid? ExecutionContextId { get; }
 }

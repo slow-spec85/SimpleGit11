@@ -51,7 +51,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
 
     public bool CanEditSelectedCommitMessage =>
         SelectedCommit is not null
-        && !SelectedCommit.IsSynchronized
+        && SelectedCommit.IsSynchronized == false
         && AllCommits.FirstOrDefault()?.Hash == SelectedCommit.Hash
         && !IsGitOperationRunning;
 
@@ -419,7 +419,8 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
 
         await RunDangerousOperationAsync(
             () => _gitService.ChangeRecovery.RevertCommitAsync(repository, commit),
-            string.Format(_localizationService.GetString("RevertCommitSucceeded"), commit.ShortHash));
+            string.Format(_localizationService.GetString("RevertCommitSucceeded"), commit.ShortHash),
+            mayCreateConflicts: true);
     }
 
     private async Task CheckoutCommitCoreAsync()
@@ -453,7 +454,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
                     _localizationService.GetString("CheckoutCommitProgressMessage"),
                     commit.ShortHash);
                 await _gitService.Branches.CheckoutCommitAsync(repository, commit.Hash);
-                _repositoryViewModel.RefreshCurrentRepositoryIdentity();
+                await _repositoryViewModel.RefreshCurrentRepositoryIdentityAsync();
                 await RefreshHistoryCoreAsync();
                 ShowSuccess(string.Format(
                     _localizationService.GetString("CheckoutCommitSucceeded"),
@@ -582,8 +583,12 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
         ShowError(_localizationService.GetString("GitLogCommandFailed"), exception.Message);
     }
 
-    private async Task RunDangerousOperationAsync(System.Func<Task> operation, string successMessage)
+    private async Task RunDangerousOperationAsync(
+        System.Func<Task> operation,
+        string successMessage,
+        bool mayCreateConflicts = false)
     {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
         await RunGitOperationAsync(async () =>
         {
             try
@@ -603,7 +608,11 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
             }
             catch (GitCommandException exception)
             {
-                ShowError(_localizationService.GetString("GitDangerousOperationFailed"), exception.Message);
+                if (!mayCreateConflicts
+                    || !await _mainWindowViewModel.TryShowConflictWarningAsync(repository, this, exception))
+                {
+                    ShowError(_localizationService.GetString("GitDangerousOperationFailed"), exception.Message);
+                }
             }
         });
     }

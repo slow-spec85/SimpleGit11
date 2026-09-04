@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+    <WindowsPackageType>None</WindowsPackageType>
+    <AppxGeneratePriEnabled>false</AppxGeneratePriEnabled>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+
+  <Import Project="..\Versioning.props" />
+  <ItemGroup>
+    <ProjectReference Include="..\SimpleGit11.Extensibility\SimpleGit11.Extensibility.csproj" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
+    <EmbeddedResource Include="Strings\en-US\Resources.resw" LogicalName="Ssh.Strings.en-US.Resources.resw" />
+    <EmbeddedResource Include="Strings\ru-RU\Resources.resw" LogicalName="Ssh.Strings.ru-RU.Resources.resw" />
+    <InternalsVisibleTo Include="SimpleGit11.Plugin.Ssh.Tests" />
+  </ItemGroup>
+  <!-- Only plugin-owned runtime files are installed. WinUI, Toolkit and contracts come from the host. -->
+  <Target Name="GeneratePluginManifest" AfterTargets="Build">
+    <ItemGroup>
+      <_PluginManifestLine Include="{" />
+      <_PluginManifestLine Include="  &quot;id&quot;: &quot;simplegit11.ssh&quot;," />
+      <_PluginManifestLine Include="  &quot;name&quot;: &quot;SSH&quot;," />
+      <_PluginManifestLine Include="  &quot;version&quot;: &quot;$(Version)&quot;," />
+      <_PluginManifestLine Include="  &quot;apiVersion&quot;: &quot;1.0&quot;," />
+      <_PluginManifestLine Include="  &quot;minimumHostVersion&quot;: &quot;1.0.0&quot;," />
+      <_PluginManifestLine Include="  &quot;entryAssembly&quot;: &quot;SimpleGit11.Plugin.Ssh.dll&quot;," />
+      <_PluginManifestLine Include="  &quot;entryType&quot;: &quot;SimpleGit11.Plugin.Ssh.SshPlugin&quot;" />
+      <_PluginManifestLine Include="}" />
+    </ItemGroup>
+    <WriteLinesToFile
+      File="$(TargetDir)plugin.json"
+      Lines="@(_PluginManifestLine)"
+      Overwrite="true"
+      Encoding="UTF-8" />
+  </Target>
+  <Target Name="StagePluginLayout" AfterTargets="GeneratePluginManifest">
+    <ItemGroup>
+      <_PluginFile Include="$(TargetDir)plugin.json;$(TargetPath);$(TargetDir)$(TargetName).deps.json;$(TargetDir)Renci.SshNet.dll;$(TargetDir)BouncyCastle.Cryptography.dll;$(TargetDir)Microsoft.Extensions.Logging.Abstractions.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_PluginFile)" DestinationFolder="$(TargetDir)Plugin" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="GetPluginLayoutFiles" DependsOnTargets="StagePluginLayout" Returns="@(_PluginLayoutFile)">
+    <ItemGroup>
+      <_PluginLayoutFile Include="$(TargetDir)Plugin\*" />
+    </ItemGroup>
+  </Target>
+</Project>

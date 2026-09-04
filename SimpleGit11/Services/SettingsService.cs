@@ -16,7 +16,6 @@ public sealed class SettingsService : ISettingsService
     private const string EditorFontFamilyKey = "EditorFontFamily";
     private const string EditorFontSizeKey = "EditorFontSize";
     private const string EditorLineSpacingKey = "EditorLineSpacing";
-    private const string SshCommandKey = "SshCommand";
     private readonly ILocalSettingsStore _localSettingsStore;
 
     public SettingsService(
@@ -47,8 +46,7 @@ public sealed class SettingsService : ISettingsService
                 EditorLineSpacingKey,
                 AppSettings.DefaultEditorLineSpacing,
                 MinimumEditorLineSpacing,
-                MaximumEditorLineSpacing),
-            SshCommand = LoadString(SshCommandKey, "")
+                MaximumEditorLineSpacing)
         };
     }
 
@@ -115,13 +113,6 @@ public sealed class SettingsService : ISettingsService
         Current.EditorLineSpacing = normalizedSpacing;
         _localSettingsStore.SetString(EditorLineSpacingKey, normalizedSpacing.ToString());
         EditorAppearanceChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    public void SetSshCommand(string sshCommand)
-    {
-        string normalizedCommand = sshCommand.Trim();
-        Current.SshCommand = normalizedCommand;
-        _localSettingsStore.SetString(SshCommandKey, normalizedCommand);
     }
 
     private T LoadEnum<T>(string key, T fallback)

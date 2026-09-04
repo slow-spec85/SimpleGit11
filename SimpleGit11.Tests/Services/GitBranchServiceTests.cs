@@ -25,6 +25,19 @@ public sealed class GitBranchServiceTests
     }
 
     [TestMethod]
+    public async Task SwitchAsync_SwitchesToNamedBranchAfterEndOfOptions()
+    {
+        RecordingGitCommandRunner runner = new();
+        GitBranchService service = new(runner);
+
+        await service.SwitchAsync(CreateRepository(), "feature/test");
+
+        CollectionAssert.AreEqual(
+            new[] { "switch", "--", "feature/test" },
+            runner.Arguments.ToArray());
+    }
+
+    [TestMethod]
     public async Task MergeAsync_Default_AddsNoFastForwardArgument()
     {
         RecordingGitCommandRunner runner = new();

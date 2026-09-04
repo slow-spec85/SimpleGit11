@@ -19,6 +19,9 @@ public interface IGitConfigService
     Task<string> GetCredentialHelperAsync(ConfigScope level, RepositoryInfo? repository);
     Task<string> GetInitialBranchNameAsync(ConfigScope level, RepositoryInfo? repository);
     Task<string> GetPushDefaultRemoteAsync(ConfigScope level, RepositoryInfo? repository);
+    Task<GitPullSettings> GetPullSettingsAsync(ConfigScope level, RepositoryInfo? repository);
+    Task SetPullRebaseAsync(ConfigScope level, RepositoryInfo? repository, string? value);
+    Task SetPullFastForwardAsync(ConfigScope level, RepositoryInfo? repository, string? value);
     Task<string> GetGlobalSshCommandAsync();
     Task<IReadOnlyList<GitUrlRewrite>> GetGlobalUrlRewritesAsync();
     Task<bool> IsGlobalCredentialHelperManagerConfiguredAsync();

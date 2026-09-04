@@ -27,7 +27,30 @@ public sealed class GitCommitTests
         Assert.IsTrue(commit.HasDistinctCommitter);
     }
 
+    [TestMethod]
+    public void Constructor_WithoutSynchronizationStatus_DoesNotRequireSynchronization()
+    {
+        GitCommit commit = CreateCommit();
+
+        Assert.IsNull(commit.IsSynchronized);
+        Assert.IsFalse(commit.NeedsSynchronization);
+    }
+
+    [TestMethod]
+    [DataRow(false, true)]
+    [DataRow(true, false)]
+    public void KnownSynchronizationStatus_ControlsSynchronizationIndicator(
+        bool isSynchronized,
+        bool expectedNeedsSynchronization)
+    {
+        GitCommit commit = CreateCommit(isSynchronized: isSynchronized);
+
+        Assert.AreEqual(isSynchronized, commit.IsSynchronized);
+        Assert.AreEqual(expectedNeedsSynchronization, commit.NeedsSynchronization);
+    }
+
     private static GitCommit CreateCommit(
+        bool? isSynchronized = null,
         string? committerName = null,
         string? committerEmail = null) => new(
         "hash",
@@ -37,6 +60,7 @@ public sealed class GitCommitTests
         null,
         "Title",
         "Message",
+        isSynchronized,
         committerName: committerName,
         committerEmail: committerEmail);
 }

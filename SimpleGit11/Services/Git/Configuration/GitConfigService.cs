@@ -16,6 +16,8 @@ public sealed class GitConfigService : IGitConfigService
     private const string CredentialHelperKey = "credential.helper";
     private const string CredentialManagerHelperValue = "manager";
     private const string PushDefaultRemoteKey = "remote.pushDefault";
+    private const string PullRebaseKey = "pull.rebase";
+    private const string PullFastForwardKey = "pull.ff";
     private const string SshCommandKey = "core.sshCommand";
     private const string UrlRewriteKeyPrefix = "url.";
     private const string UrlRewriteKeySuffix = ".insteadof";
@@ -91,6 +93,87 @@ public sealed class GitConfigService : IGitConfigService
             ["config", "--global", "--get", SshCommandKey],
             repoNeeded: false,
             throwOnError: false);
+    }
+
+    public async Task<GitPullSettings> GetPullSettingsAsync(ConfigScope level, RepositoryInfo? repository)
+    {
+        string? rebase = await ReadPullValueAsync(level, repository, PullRebaseKey);
+        string? fastForward = await ReadPullValueAsync(level, repository, PullFastForwardKey);
+        return new GitPullSettings(rebase, fastForward);
+    }
+
+    public Task SetPullRebaseAsync(ConfigScope level, RepositoryInfo? repository, string? value)
+    {
+        if (value is not (null or "false" or "true" or "merges" or "interactive"))
+        {
+            throw new ArgumentException("Unsupported pull.rebase value.", nameof(value));
+        }
+
+        return WritePullValueAsync(level, repository, PullRebaseKey, value);
+    }
+
+    public Task SetPullFastForwardAsync(ConfigScope level, RepositoryInfo? repository, string? value)
+    {
+        if (value is not (null or "false" or "true" or "only"))
+        {
+            throw new ArgumentException("Unsupported pull.ff value.", nameof(value));
+        }
+
+        return WritePullValueAsync(level, repository, PullFastForwardKey, value);
+    }
+
+    private async Task<string?> ReadPullValueAsync(ConfigScope level, RepositoryInfo? repository, string key)
+    {
+        GitCommandResult result = await RunPullConfigAsync(level, repository, ["--null", "--get", key]);
+        if (result.ExitCode == 1)
+        {
+            return null;
+        }
+
+        EnsurePullConfigSucceeded(result);
+        return result.StandardOutput.TrimEnd('\0');
+    }
+
+    private async Task WritePullValueAsync(
+        ConfigScope level, RepositoryInfo? repository, string key, string? value)
+    {
+        string[] arguments = value is null ? ["--unset-all", key] : ["--replace-all", key, value];
+        GitCommandResult result = await RunPullConfigAsync(level, repository, arguments);
+        // Git returns 5 when an unset key is already absent; other failures must be surfaced.
+        if (value is null && result.ExitCode == 5)
+        {
+            return;
+        }
+
+        EnsurePullConfigSucceeded(result);
+    }
+
+    private Task<GitCommandResult> RunPullConfigAsync(
+        ConfigScope level, RepositoryInfo? repository, string[] arguments)
+    {
+        string scope = level switch
+        {
+            ConfigScope.Global => "--global",
+            ConfigScope.Local => "--local",
+            _ => throw new ArgumentOutOfRangeException(nameof(level))
+        };
+        if (level == ConfigScope.Local)
+        {
+            ArgumentNullException.ThrowIfNull(repository);
+        }
+
+        return _commandRunner.RunAsync(
+            level == ConfigScope.Local ? repository!.Path : Environment.CurrentDirectory,
+            ["config", scope, .. arguments],
+            new GitCommandOptions(ThrowOnError: false, UseDefaultWorkingDirectory: level == ConfigScope.Global));
+    }
+
+    private static void EnsurePullConfigSucceeded(GitCommandResult result)
+    {
+        if (!result.IsSuccess)
+        {
+            throw new GitCommandException(result.CombinedOutput, result.ExitCode);
+        }
     }
 
     public async Task<IReadOnlyList<GitUrlRewrite>> GetGlobalUrlRewritesAsync()
@@ -356,20 +439,30 @@ public sealed class GitConfigService : IGitConfigService
 
     public Task UnsetUserNameAsync(ConfigScope level, RepositoryInfo? repository)
     {
-        List<string> args = ["config", level == ConfigScope.Global ? "--global" : level == ConfigScope.Local ? "--local" : "--unset"];
-        if (level > ConfigScope.None)
-            args.Add("--unset");
-
-        return RunGitAsync(repository, [.. args, "user.name"], level != ConfigScope.Global);
+        return UnsetIdentityValueAsync(level, repository, "user.name");
     }
 
     public Task UnsetUserEmailAsync(ConfigScope level, RepositoryInfo? repository)
     {
-        List<string> args = ["config", level == ConfigScope.Global ? "--global" : level == ConfigScope.Local ? "--local" : "--unset"];
-        if (level > ConfigScope.None)
-            args.Add("--unset");
+        return UnsetIdentityValueAsync(level, repository, "user.email");
+    }
 
-        return RunGitAsync(repository, [.. args, "user.email"], level != ConfigScope.Global);
+    private async Task UnsetIdentityValueAsync(ConfigScope level, RepositoryInfo? repository, string key)
+    {
+        List<string> arguments = ["config"];
+        if (level != ConfigScope.None)
+        {
+            arguments.Add(level == ConfigScope.Global ? "--global" : "--local");
+        }
+
+        try
+        {
+            await RunGitAsync(repository, [.. arguments, "--unset-all", key], level != ConfigScope.Global);
+        }
+        catch (GitCommandException exception) when (exception.ExitCode == 5)
+        {
+            // Saving other settings must also work when no identity is configured in this scope.
+        }
     }
 
     public Task UnsetCredentialHelperAsync(ConfigScope level, RepositoryInfo? repository)
@@ -422,7 +515,9 @@ public sealed class GitConfigService : IGitConfigService
         GitCommandResult result = await _commandRunner.RunAsync(
             workingDirectory,
             arguments,
-            new GitCommandOptions(ThrowOnError: throwOnError));
+            new GitCommandOptions(
+                ThrowOnError: throwOnError,
+                UseDefaultWorkingDirectory: !repoNeeded));
         return trimOutput ? result.StandardOutput.Trim() : result.StandardOutput;
     }
 

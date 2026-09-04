@@ -17,11 +17,16 @@ public sealed class BranchSynchronizationItem(
     bool tracksSelectedRemote,
     bool isPublishedToRemote,
     int aheadCount,
-    int behindCount)
+    int behindCount,
+    string worktreePath = "")
 {
     public string Name { get; } = name;
 
     public bool IsCurrent { get; } = isCurrent;
+
+    public string WorktreePath { get; } = worktreePath;
+
+    public bool IsInOtherWorktree => !IsCurrent && !string.IsNullOrWhiteSpace(WorktreePath);
 
     public string UpstreamBranch { get; } = upstreamBranch;
 

@@ -38,13 +38,27 @@ public sealed class SubmoduleViewItemTests
         Assert.AreEqual("2222222 → 3333333", item.CommitText);
     }
 
-    private static SubmoduleViewItem CreateItem(GitSubmodule submodule) => new(
+    [TestMethod]
+    public void CopyTextCommand_CopiesProvidedValue()
+    {
+        string? copiedText = null;
+        SubmoduleViewItem item = CreateItem(CreateSubmodule(), text => copiedText = text);
+
+        item.CopyTextCommand.Execute(item.Url);
+
+        Assert.AreEqual(item.Url, copiedText);
+    }
+
+    private static SubmoduleViewItem CreateItem(
+        GitSubmodule submodule,
+        Action<string>? copy = null) => new(
         submodule,
         new TestLocalizationService(),
         new ImmediateAsyncCommandExecutor(),
         _ => Task.CompletedTask,
         _ => { },
         (_, _) => Task.CompletedTask,
+        copy ?? (_ => { }),
         "D:\\Repository");
 
     private static GitSubmodule CreateSubmodule() => new(

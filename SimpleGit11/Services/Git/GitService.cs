@@ -19,6 +19,7 @@ internal sealed class GitService : IGitService
         IGitConfigService configService,
         IGitDiffService diffService,
         IGitHistoryService historyService,
+        IGitIgnoreService ignoreService,
         IGitOperationQueue operationQueue,
         IGitReferenceDetailsService referenceDetailsService,
         IGitRevisionService revisionService,
@@ -42,6 +43,7 @@ internal sealed class GitService : IGitService
         Configuration = configService;
         Diff = diffService;
         History = historyService;
+        Ignore = ignoreService;
         _operationQueue = operationQueue;
         ReferenceDetails = referenceDetailsService;
         Revisions = revisionService;
@@ -73,6 +75,8 @@ internal sealed class GitService : IGitService
     public IGitDiffService Diff { get; }
 
     public IGitHistoryService History { get; }
+
+    public IGitIgnoreService Ignore { get; }
 
     public IGitReferenceDetailsService ReferenceDetails { get; }
 

@@ -1,0 +1,23 @@
+<WixLocalization xmlns="http://wixtoolset.org/schemas/v4/wxl" Culture="en-US">
+  <String Id="Language" Value="1033" />
+  <String Id="NewerVersionInstalled" Value="A newer or identical version of SimpleGit11 is already installed. Use the original installer to modify or repair it." />
+  <String Id="InstallScopeConflict" Value="An installation already exists in another scope. Uninstall it before changing between current-user and all-users installation." />
+  <String Id="ScopeTitle" Value="Installation scope" />
+  <String Id="ScopeDescription" Value="Choose who can use SimpleGit11. You can change the installation folder on the next page." />
+  <String Id="ScopeUser" Value="Only for me (current user)" />
+  <String Id="ScopeMachine" Value="For all users of this computer" />
+  <String Id="ScopeUserDescription" Value="Installs in your profile. Administrator rights are not required." />
+  <String Id="ScopeMachineDescription" Value="Installs in Program Files. Administrator approval is required. Personal settings remain separate for each user." />
+  <String Id="CoreTitle" Value="SimpleGit11" />
+  <String Id="CoreDescription" Value="Application, local Git support, and required runtime libraries. Git is installed separately." />
+  <String Id="SshTitle" Value="SSH support" />
+  <String Id="SshDescription" Value="Adds Connection via SSH to the main menu and connection settings. Git must be installed on the remote machine." />
+  <String Id="DesktopTitle" Value="Desktop shortcut" />
+  <String Id="DesktopDescription" Value="Create a desktop shortcut for the selected installation scope." />
+  <String Id="PurgeTitle" Value="Remove SimpleGit11" />
+  <String Id="PurgeDescription" Value="The application and its installed components will be removed. By default, your settings are kept for a future installation." />
+  <String Id="PurgeCheckbox" Value="Also delete all SimpleGit11 settings and application data" />
+  <String Id="PurgeWarning" Value="Deletes the contents of [LocalAppDataFolder]SimpleGit11, including SSH profiles, history, logs and subfolders. Back up anything you need. Repositories and SSH keys outside this folder are not affected. Linked directories are not traversed." />
+  <String Id="RemoveButton" Value="Remove" />
+  <String Id="CancelButton" Value="Cancel" />
+</WixLocalization>

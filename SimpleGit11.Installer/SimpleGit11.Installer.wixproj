@@ -1,0 +1,27 @@
+<Project Sdk="WixToolset.Sdk/7.0.0">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <Platforms>x64</Platforms>
+    <Cultures Condition="'$(Cultures)' == ''">en-US</Cultures>
+    <OutputName>SimpleGit11-$(ReleaseVersion)-win-x64-$(Cultures)</OutputName>
+    <DefineConstants>$(DefineConstants);MsiVersion=$(MsiVersion);CoreSource=$(CoreSource);PayloadFile=$(PayloadFile)</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AcceptEula Condition="'$(AcceptWixEula)' == 'true'">wix7</AcceptEula>
+    <!-- ICE03 and ICE57 are re-run below with narrow allowances for WinAppSDK
+         language metadata and the two context-redirectable shortcuts. -->
+    <SuppressIces>ICE03;ICE57</SuppressIces>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="7.0.0" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="7.0.0" />
+    <Compile Include="$(PayloadFile)" />
+  </ItemGroup>
+  <Target Name="ValidateInstallerInputs" BeforeTargets="BeforeBuild">
+    <Error Condition="'$(AcceptWixEula)' != 'true'" Text="Read https://docs.firegiant.com/wix/osmf/ and explicitly pass -AcceptWixEula to Publish-Release.ps1." />
+    <Error Condition="'$(MsiVersion)' == '' or !Exists('$(PayloadFile)') or !Exists('$(CoreSource)\SimpleGit11.exe')" Text="Build the installer through SimpleGit11/Build/Publish-Release.ps1 -AcceptWixEula." />
+  </Target>
+  <Target Name="ValidateInstallerDatabase" AfterTargets="Build">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\SimpleGit11\Build\Test-InstallerPackage.ps1&quot; -Path &quot;$(TargetPath)&quot; -WixDirectory &quot;$(WixBinDir).&quot;" />
+  </Target>
+</Project>

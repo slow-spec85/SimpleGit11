@@ -21,7 +21,7 @@
                         <AdaptiveTrigger MinWindowWidth="0" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="PageLayout.Padding" Value="24,20" />
+                        <Setter Target="PageLayout.Padding" Value="0,20,0,0" />
                         <Setter Target="HeaderCommands.(Grid.Row)" Value="1" />
                         <Setter Target="HeaderCommands.(Grid.Column)" Value="0" />
                         <Setter Target="HeaderCommands.Margin" Value="0,12,0,0" />
@@ -37,7 +37,10 @@
                         <Setter Target="DiffSplitter.(Grid.Column)" Value="0" />
                         <Setter Target="DiffSplitter.(Grid.ColumnSpan)" Value="3" />
                         <Setter Target="DiffSplitter.Style" Value="{StaticResource HorizontalSplitterStyle}" />
+                        <Setter Target="DiffSplitter.Margin" Value="0,0,32,0" />
                         <Setter Target="ChangesContentGrid.ColumnSpacing" Value="0" />
+                        <Setter Target="ChangedFilesHeader.Padding" Value="0,0,32,0" />
+                        <Setter Target="ChangedFilesListView.Padding" Value="0,0,28,0" />
                         <Setter Target="DiffPane.(Grid.Row)" Value="2" />
                         <Setter Target="DiffPane.(Grid.Column)" Value="0" />
                         <Setter Target="DiffPane.(Grid.ColumnSpan)" Value="3" />
@@ -52,6 +55,12 @@
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="1060" />
                     </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="FileListsColumn.Width" Value="400" />
+                        <Setter Target="DiffColumn.Width" Value="*" />
+                        <Setter Target="FileListsRow.Height" Value="*" />
+                        <Setter Target="DiffRow.Height" Value="0" />
+                    </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
@@ -278,6 +287,7 @@
                 </Grid.RowDefinitions>
 
                 <Grid
+                    x:Name="ChangedFilesHeader"
                     Padding="0,0,12,0"
                     ColumnSpacing="10">
                     <Grid.ColumnDefinitions>
@@ -351,6 +361,12 @@
                                             CommandParameter="{x:Bind}"
                                             Icon="Undo"
                                             Visibility="{x:Bind CanDiscard, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        <MenuFlyoutItem
+                                            x:Uid="IgnoreChangeMenuFlyoutItem"
+                                            Command="{Binding DataContext.IgnoreChangeCommand, ElementName=ChangedFilesListView}"
+                                            CommandParameter="{x:Bind}"
+                                            Icon="Cancel"
+                                            Visibility="{x:Bind IsUntracked, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
                                         <MenuFlyoutItem
                                             Command="{Binding DataContext.ToggleChangeDisplayModeCommand, ElementName=ChangedFilesListView}"
                                             CommandParameter="{x:Bind}"

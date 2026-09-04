@@ -1,0 +1,84 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+  <Package Name="SimpleGit11" Manufacturer="SimpleGit11 contributors"
+           UpgradeCode="2DBB44F0-1B39-4A09-9D63-52DFDDC73441"
+           Version="$(var.MsiVersion)" Language="!(loc.Language)" Scope="perUserOrMachine">
+    <MajorUpgrade DowngradeErrorMessage="!(loc.NewerVersionInstalled)" Schedule="afterInstallInitialize" />
+    <MediaTemplate EmbedCab="yes" />
+    <!-- Do not gate on WindowsBuild/VersionNT: MSI can expose compatibility versions.
+         The x64 package template supplies the native architecture check. -->
+    <Property Id="INSTALLFOLDER" Secure="yes" />
+    <Property Id="EXISTINGUSERFOLDER" Secure="yes">
+      <RegistrySearch Id="FindUserInstallFolder" Root="HKCU" Key="Software\SimpleGit11\Installer" Name="InstallFolder" Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="EXISTINGMACHINEFOLDER" Secure="yes">
+      <RegistrySearch Id="FindMachineInstallFolder" Root="HKLM" Key="Software\SimpleGit11\Installer" Name="InstallFolder" Type="raw" Bitness="always64" />
+    </Property>
+    <!-- Restore the context before related-product detection, including silent upgrades.
+         Changing context requires uninstalling first; never mix two installations. -->
+    <SetProperty Id="ALLUSERS" Value="1" Action="RestoreMachineScope" After="AppSearch" Sequence="both" Condition="NOT Installed AND EXISTINGMACHINEFOLDER AND NOT EXISTINGUSERFOLDER" />
+    <Launch Condition="Installed OR (NOT (EXISTINGUSERFOLDER AND EXISTINGMACHINEFOLDER) AND (NOT EXISTINGUSERFOLDER OR ALLUSERS &lt;&gt; &quot;1&quot;) AND (NOT EXISTINGMACHINEFOLDER OR ALLUSERS = &quot;1&quot;))" Message="!(loc.InstallScopeConflict)" />
+    <SetProperty Id="INSTALLFOLDER" Value="[EXISTINGUSERFOLDER]" Action="RestoreUserFolder" Before="CostFinalize" Sequence="both" Condition="EXISTINGUSERFOLDER AND ALLUSERS &lt;&gt; &quot;1&quot;" />
+    <SetProperty Id="INSTALLFOLDER" Value="[EXISTINGMACHINEFOLDER]" Action="RestoreMachineFolder" Before="RestoreUserFolder" Sequence="both" Condition="EXISTINGMACHINEFOLDER AND ALLUSERS = &quot;1&quot;" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Upgrade Id="2DBB44F0-1B39-4A09-9D63-52DFDDC73441">
+      <UpgradeVersion Minimum="$(var.MsiVersion)" Maximum="$(var.MsiVersion)" IncludeMinimum="yes" IncludeMaximum="yes" OnlyDetect="yes" Property="SAMEVERSIONINSTALLED" />
+    </Upgrade>
+    <Launch Condition="Installed OR NOT SAMEVERSIONINSTALLED" Message="!(loc.NewerVersionInstalled)" />
+    <Property Id="MSIRESTARTMANAGERCONTROL" Value="DisableShutdown" />
+    <Property Id="INSTALLLEVEL" Value="1" />
+    <!-- Never persist this opt-in. It is only meaningful for a complete uninstall. -->
+    <Property Id="PURGEUSERDATA" Secure="yes" />
+    <Icon Id="AppIcon" SourceFile="$(var.CoreSource)\Assets\AppIcon.ico" />
+    <!-- MSI redirects this standard directory to LocalAppData\Programs for per-user installs. -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="SimpleGit11">
+        <Directory Id="PluginsFolder" Name="Plugins">
+          <Directory Id="SshFolder" Name="Ssh" />
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut" Guid="*">
+        <Shortcut Id="StartMenuShortcut" Name="SimpleGit11" Target="[INSTALLFOLDER]SimpleGit11.exe" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
+        <RegistryValue Root="HKMU" Key="Software\SimpleGit11\Installer" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="*">
+        <Shortcut Id="DesktopShortcut" Name="SimpleGit11" Target="[INSTALLFOLDER]SimpleGit11.exe" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
+        <RegistryValue Root="HKMU" Key="Software\SimpleGit11\Installer" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+    <Component Id="InstallationRegistration" Directory="INSTALLFOLDER" Guid="*">
+      <RegistryValue Root="HKMU" Key="Software\SimpleGit11\Installer" Name="InstallFolder" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+      <RemoveRegistryKey Root="HKMU" Key="Software\SimpleGit11\Installer" Action="removeOnUninstall" />
+      <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
+      <RemoveFolder Id="RemovePluginsFolder" Directory="PluginsFolder" On="uninstall" />
+      <util:RemoveFolderEx Id="PurgeUserData" Property="SimpleGit11UserDataPath" On="uninstall"
+                           Condition="Installed AND NOT ALLUSERS AND PURGEUSERDATA = &quot;1&quot; AND REMOVE ~= &quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+    </Component>
+    <!-- The cleanup target is fixed, not taken from INSTALLFOLDER, the registry, or a public path property. -->
+    <SetProperty Id="SimpleGit11UserDataPath" Value="[LocalAppDataFolder]SimpleGit11" Before="Wix4RemoveFoldersEx_X64" Sequence="execute" Condition="NOT ALLUSERS" />
+    <Feature Id="Core" Title="!(loc.CoreTitle)" Description="!(loc.CoreDescription)" Level="1" AllowAbsent="no" AllowAdvertise="no">
+      <ComponentGroupRef Id="CoreFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="InstallationRegistration" />
+    </Feature>
+    <Feature Id="Ssh" Title="!(loc.SshTitle)" Description="!(loc.SshDescription)" Level="2" AllowAdvertise="no">
+      <ComponentGroupRef Id="SshFiles" />
+    </Feature>
+    <Feature Id="Desktop" Title="!(loc.DesktopTitle)" Description="!(loc.DesktopDescription)" Level="2" AllowAdvertise="no">
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+    <UIRef Id="InstallerUI" />
+    <UIRef Id="PurgeUserDataUI" />
+    <InstallUISequence>
+      <FindRelatedProducts After="RestoreMachineScope" />
+      <Show Dialog="PurgeUserDataDlg" Before="ExecuteAction" Condition="Installed AND NOT ALLUSERS AND REMOVE ~= &quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+    </InstallUISequence>
+    <InstallExecuteSequence>
+      <FindRelatedProducts After="RestoreMachineScope" />
+    </InstallExecuteSequence>
+  </Package>
+</Wix>

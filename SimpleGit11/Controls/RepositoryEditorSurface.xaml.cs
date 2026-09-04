@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using SimpleGit11.Messages;
+using SimpleGit11.Presentation.Editor;
 using SimpleGit11.Services;
 using TextControlBoxNS;
 using TextControlBoxNS.Models;
@@ -74,6 +75,12 @@ public sealed partial class RepositoryEditorSurface : UserControl
         typeof(double),
         typeof(RepositoryEditorSurface),
         new PropertyMetadata(24d, OnEditorOptionChanged));
+
+    public static readonly DependencyProperty SpaceBetweenLineNumberAndTextProperty = DependencyProperty.Register(
+        nameof(SpaceBetweenLineNumberAndText),
+        typeof(double),
+        typeof(RepositoryEditorSurface),
+        new PropertyMetadata(30d, OnEditorOptionChanged));
 
     public static readonly DependencyProperty ZoomFactorProperty = DependencyProperty.Register(
         nameof(ZoomFactor),
@@ -145,6 +152,12 @@ public sealed partial class RepositoryEditorSurface : UserControl
     {
         get => (double)GetValue(LineGutterWidthProperty);
         set => SetValue(LineGutterWidthProperty, value);
+    }
+
+    public double SpaceBetweenLineNumberAndText
+    {
+        get => (double)GetValue(SpaceBetweenLineNumberAndTextProperty);
+        set => SetValue(SpaceBetweenLineNumberAndTextProperty, value);
     }
 
     public int ZoomFactor
@@ -259,6 +272,39 @@ public sealed partial class RepositoryEditorSurface : UserControl
         Editor.Copy();
     }
 
+    public bool SearchAndSelectFirst(string query)
+    {
+        return EditorSearchNavigator.StartSearch(
+            query,
+            Editor.EndSearch,
+            searchText => Editor.BeginSearch(searchText, wholeWord: false, matchCase: false),
+            (line, character) => Editor.SetCursorPosition(line, character, scrollIntoView: false),
+            Editor.FindNext);
+    }
+
+    public bool SelectNextSearchMatch()
+    {
+        return EditorSearchNavigator.SelectNext(
+            Editor.CurrentSelectionOrdered,
+            (line, character) => Editor.SetCursorPosition(line, character, scrollIntoView: false),
+            Editor.FindNext);
+    }
+
+    public bool SelectPreviousSearchMatch()
+    {
+        return EditorSearchNavigator.SelectPrevious(
+            Editor.CurrentSelectionOrdered,
+            Editor.NumberOfLines,
+            line => Editor.GetLineText(line).Length,
+            (line, character) => Editor.SetCursorPosition(line, character, scrollIntoView: false),
+            Editor.FindPrevious);
+    }
+
+    public void ClearSearch()
+    {
+        Editor.EndSearch();
+    }
+
     public void ScrollLineToCenter(int line)
     {
         Editor.ScrollLineToCenter(line);
@@ -310,6 +356,7 @@ public sealed partial class RepositoryEditorSurface : UserControl
         Editor.RightGutterContent = RightGutterContent!;
         Editor.ShowLineGutter = ShowLineGutter;
         Editor.LineGutterWidth = LineGutterWidth;
+        Editor.SpaceBetweenLineNumberAndText = (float)SpaceBetweenLineNumberAndText;
     }
 
     private void Editor_DocumentChanged(object? sender, DocumentChangedEventArgs args)

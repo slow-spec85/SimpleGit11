@@ -183,6 +183,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         _ = LoadUserNameAsync(null);
     }
 
+    public void RefreshRecentRepositoriesForExecutionContext()
+    {
+        RecentRepositories.Clear();
+        foreach (RepositoryInfo repository in _recentRepositoriesService.Load())
+        {
+            RecentRepositories.Add(repository);
+        }
+    }
+
     public void SelectRemote(string? remoteName)
     {
         SelectedRemoteName = remoteName ?? _localizationService.GetString("NoRemote");
@@ -233,6 +242,60 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         _pendingChangesNotice = message;
         _pendingChangesNoticeDetails = details;
         RequestNavigation(AppNavigationTarget.Changes);
+    }
+
+    public async Task<bool> TryShowConflictWarningAsync(
+        RepositoryInfo? repository,
+        object source,
+        GitCommandException exception)
+    {
+        if (repository is null || !ReferenceEquals(CurrentRepository, repository))
+        {
+            return false;
+        }
+
+        if (exception is GitRemoteOperationException
+            { Kind: GitRemoteOperationErrorKind.Authentication
+                or GitRemoteOperationErrorKind.NonFastForward
+                or GitRemoteOperationErrorKind.AtomicNotSupported })
+        {
+            return false;
+        }
+
+        try
+        {
+            GitStatusSnapshot status = await _gitService.GetStatusAsync(repository);
+            if (status.ConflictedChanges.Count == 0 || !ReferenceEquals(CurrentRepository, repository))
+            {
+                return false;
+            }
+        }
+        catch (Exception statusException) when (statusException is GitCommandException
+            or System.IO.IOException or UnauthorizedAccessException)
+        {
+            // A failed status check must not replace the original operation error.
+            return false;
+        }
+
+        string message = _localizationService.GetString("GitOperationConflictsTitle")
+            + Environment.NewLine
+            + _localizationService.GetString("ConflictResolutionRequiredOnChangesPage");
+        Receive(new AppNotificationMessage(
+            source,
+            AppNotificationSeverity.Warning,
+            message,
+            exception.Message,
+            new RelayCommand(
+                () =>
+                {
+                    if (ReferenceEquals(CurrentRepository, repository))
+                    {
+                        RequestChangesNavigation(message, exception.Message);
+                    }
+                },
+                () => ReferenceEquals(CurrentRepository, repository)),
+            _localizationService.GetString("OpenChangesForConflictsButtonText")));
+        return true;
     }
 
     public void RequestNavigation(AppNavigationTarget target, object? parameter = null)

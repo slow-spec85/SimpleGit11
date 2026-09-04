@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
@@ -25,6 +26,7 @@ public sealed partial class DiffViewer : UserControl
     private const string DiffLineGutterDecorationGroup = "diff-line-markers";
     private const float InlineDiffCornerRadius = 2;
     private const float InlineDiffHorizontalPadding = 1;
+    private bool _hasSearchMatches;
 
     public static readonly DependencyProperty CopyTextCommandProperty = RegisterCommand(
         nameof(CopyTextCommand));
@@ -390,6 +392,7 @@ public sealed partial class DiffViewer : UserControl
         EditorSurface.IsReadOnly = !IsEditing;
         EditorSurface.ShowCurrentLine = IsEditing;
 
+        bool documentLoaded = false;
         _isApplyingDocument = true;
         try
         {
@@ -399,11 +402,13 @@ public sealed partial class DiffViewer : UserControl
                 {
                     EditorSurface.LoadText(EditableText, true);
                     _editingDocumentLoaded = true;
+                    documentLoaded = true;
                 }
             }
             else
             {
                 EditorSurface.LoadLines(_projection.Lines, false, TextControlBoxNS.LineEnding.LF);
+                documentLoaded = true;
             }
         }
         finally
@@ -416,6 +421,10 @@ public sealed partial class DiffViewer : UserControl
         ApplyDecorations();
         UpdateChangeOverview();
         UpdateModeChrome();
+        if (documentLoaded)
+        {
+            ApplyCurrentSearch();
+        }
     }
 
     private void ApplyLineNumberPresentation()
@@ -580,10 +589,73 @@ public sealed partial class DiffViewer : UserControl
         UpdateRevertActionVisibility();
 
         bool showEmptyState = HasEmptyState && !IsEditing;
+        DiffSearchToggleButton.IsEnabled = !showEmptyState;
         DiffEmptyInfoBar.Message = EmptyMessage;
         DiffEmptyInfoBar.IsOpen = showEmptyState;
         DiffEmptyInfoBar.Visibility = showEmptyState ? Visibility.Visible : Visibility.Collapsed;
         EditorHostGrid.Visibility = showEmptyState ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void DiffSearchToggleButton_Click(object sender, RoutedEventArgs args)
+    {
+        DiffSearchToggleButton.IsChecked = !string.IsNullOrEmpty(DiffSearchTextBox.Text);
+        FlyoutBase.ShowAttachedFlyout(DiffSearchToggleButton);
+    }
+
+    private void DiffSearchFlyout_Opening(object sender, object args)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            DiffSearchTextBox.Focus(FocusState.Programmatic);
+            DiffSearchTextBox.SelectAll();
+        });
+    }
+
+    private void DiffSearchTextBox_TextChanged(object sender, TextChangedEventArgs args)
+    {
+        ApplyCurrentSearch();
+    }
+
+    private void PreviousDiffSearchMatchButton_Click(object sender, RoutedEventArgs args)
+    {
+        EditorSurface.SelectPreviousSearchMatch();
+    }
+
+    private void NextDiffSearchMatchButton_Click(object sender, RoutedEventArgs args)
+    {
+        EditorSurface.SelectNextSearchMatch();
+    }
+
+    private void ApplyCurrentSearch()
+    {
+        if (EditorSurface is null || DiffSearchTextBox is null || DiffSearchToggleButton is null)
+        {
+            return;
+        }
+
+        string query = DiffSearchTextBox.Text;
+        DiffSearchToggleButton.IsChecked = !string.IsNullOrEmpty(query);
+        if (string.IsNullOrEmpty(query))
+        {
+            _hasSearchMatches = false;
+            EditorSurface.ClearSearch();
+            UpdateSearchNavigationState();
+            return;
+        }
+
+        _hasSearchMatches = EditorSurface.SearchAndSelectFirst(query);
+        UpdateSearchNavigationState();
+    }
+
+    private void UpdateSearchNavigationState()
+    {
+        if (PreviousDiffSearchMatchButton is null || NextDiffSearchMatchButton is null)
+        {
+            return;
+        }
+
+        PreviousDiffSearchMatchButton.IsEnabled = _hasSearchMatches;
+        NextDiffSearchMatchButton.IsEnabled = _hasSearchMatches;
     }
 
     private void EditorSurface_DocumentChanged(object? sender, DocumentChangedEventArgs args)

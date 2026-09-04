@@ -13,7 +13,7 @@ public sealed class GitCommit
         DateTimeOffset? authoredAt,
         string title,
         string message,
-        bool isSynchronized = false,
+        bool? isSynchronized = null,
         IReadOnlyList<string>? changedFilePaths = null,
         IReadOnlyList<GitCommitReference>? references = null,
         IReadOnlyList<string>? parentHashes = null,
@@ -58,9 +58,9 @@ public sealed class GitCommit
     public string Title { get; }
     public string Message { get; }
 
-    public bool IsSynchronized { get; }
+    public bool? IsSynchronized { get; }
 
-    public bool NeedsSynchronization => !IsSynchronized;
+    public bool NeedsSynchronization => IsSynchronized == false;
 
     public IReadOnlyList<string> ParentHashes { get; }
 

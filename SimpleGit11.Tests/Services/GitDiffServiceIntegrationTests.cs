@@ -42,6 +42,36 @@ public sealed class GitDiffServiceIntegrationTests
         Assert.AreEqual("before\r\nold value\r\nafter\r\n", repository.ReadFile("file.txt"));
     }
 
+    [TestMethod]
+    public async Task GetCommitFileTextAsync_Submodule_DoesNotReadGitlinkAsFile()
+    {
+        await using TemporaryGitRepository repository =
+            await TemporaryGitRepository.CreateAsync();
+        SettingsService settingsService = new(
+            new InMemoryLocalSettingsStore(),
+            new TestProductInfoService());
+        GitDiffService service = new(settingsService);
+        GitCommit missingCommit = new(
+            "0000000000000000000000000000000000000000",
+            "0000000",
+            "",
+            "",
+            null,
+            "",
+            "");
+        GitChangedFile submodule = new(
+            "External/Library",
+            "Modified",
+            isSubmodule: true);
+
+        string text = await service.GetCommitFileTextAsync(
+            repository.Repository,
+            missingCommit,
+            submodule);
+
+        Assert.AreEqual("", text);
+    }
+
     private sealed class InMemoryLocalSettingsStore : ILocalSettingsStore
     {
         private readonly Dictionary<string, string> _values = [];

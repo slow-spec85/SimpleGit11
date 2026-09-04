@@ -27,7 +27,7 @@ public sealed partial class ChangesPage : Page, IPageRefreshTarget
 
     private void DiffSplitter_DragDelta(object sender, DragDeltaEventArgs e)
     {
-        if (DiffSplitterRow.ActualHeight > 0)
+        if (LayoutStates.CurrentState?.Name == "NarrowLayout")
         {
             ResizeNarrowDiffPanels(e.VerticalChange);
             return;

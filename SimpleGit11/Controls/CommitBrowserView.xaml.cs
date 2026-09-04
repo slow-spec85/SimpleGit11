@@ -103,6 +103,23 @@ public sealed partial class CommitBrowserView : UserControl
             : ListViewSelectionMode.Single;
     }
 
+    private void CommitFilterToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleButton button)
+        {
+            button.IsChecked = ViewModel?.IsCommitFilterApplied == true;
+            FlyoutBase.ShowAttachedFlyout(button);
+        }
+    }
+
+    private void TimeFilterButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement element)
+        {
+            FlyoutBase.ShowAttachedFlyout(element);
+        }
+    }
+
     private void HistoryCommitsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         ViewModel?.SetSelectedCommits(
@@ -190,7 +207,7 @@ public sealed partial class CommitBrowserView : UserControl
 
     private void DiffSplitter_DragDelta(object sender, DragDeltaEventArgs e)
     {
-        if (HistoryDiffSplitterRow.ActualHeight > 0)
+        if (LayoutStates.CurrentState?.Name == "NarrowLayout")
         {
             ResizeNarrowDiffPanels(e.VerticalChange);
             return;

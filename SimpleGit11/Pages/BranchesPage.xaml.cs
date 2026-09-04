@@ -132,7 +132,7 @@ public sealed partial class BranchesPage : Page, IPageRefreshTarget, IRemoteSele
 
     private void PaneSplitter_DragDelta(object sender, DragDeltaEventArgs e)
     {
-        if (PaneSplitterRow.ActualHeight > 0)
+        if (LayoutStates.CurrentState?.Name == "NarrowLayout")
         {
             ResizeNarrowPanes(e.VerticalChange);
             return;
@@ -181,6 +181,11 @@ public sealed partial class BranchesPage : Page, IPageRefreshTarget, IRemoteSele
         }
     }
 
+    private void BranchCommitHistoryCard_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.OpenSelectedBranchCommitHistoryCommand.Execute(null);
+    }
+
     private async void BranchSynchronizationExpander_Expanded(object sender, EventArgs e)
     {
         await ViewModel.EnsureBranchSynchronizationLoadedAsync();
@@ -209,6 +214,11 @@ public sealed partial class BranchesPage : Page, IPageRefreshTarget, IRemoteSele
     private async void TagInformationExpander_Expanded(object sender, EventArgs e)
     {
         await ViewModel.EnsureSelectedTagDetailsLoadedAsync();
+    }
+
+    private void TagTargetObjectCard_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.OpenSelectedTagTargetCommitCommand.Execute(null);
     }
 
     private async void TagRelationExpander_Expanded(object sender, EventArgs e)

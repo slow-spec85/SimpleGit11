@@ -6,7 +6,8 @@ cd /d "%~dp0"
 powershell.exe -NoProfile -ExecutionPolicy Bypass ^
   -File "%~dp0SimpleGit11\Build\Publish-Release.ps1" ^
   -DevelopmentBuild ^
-  -StopRunningApp
+  -Interactive ^
+  -StopRunningApp %*
 
 set "exitCode=%ERRORLEVEL%"
 

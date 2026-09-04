@@ -20,6 +20,4 @@ public interface ISettingsService
     void SetEditorFont(string fontFamily, int fontSize);
 
     void SetEditorLineSpacing(int lineSpacing);
-
-    void SetSshCommand(string sshCommand);
 }

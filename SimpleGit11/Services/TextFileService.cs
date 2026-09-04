@@ -4,17 +4,33 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
+using SimpleGit11.Services.Execution;
+using AppExecutionContext = SimpleGit11.Services.Execution.ExecutionContext;
 
 namespace SimpleGit11.Services;
 
 public sealed class TextFileService : ITextFileService
 {
     private static readonly UTF8Encoding Utf8WithoutBom = new(false, true);
+    private readonly IExecutionContextService? _executionContextService;
+
+    public TextFileService(IExecutionContextService? executionContextService = null)
+    {
+        _executionContextService = executionContextService;
+    }
 
     public async Task<TextFileDocument> ReadAsync(RepositoryInfo repository, string relativePath)
     {
-        string path = GetSafeFilePath(repository, relativePath);
-        byte[] bytes = await File.ReadAllBytesAsync(path);
+        AppExecutionContext? context = _executionContextService?.Current;
+        string path = await GetSafeFilePathAsync(repository, relativePath, context);
+        byte[] bytes = context is null
+            ? await File.ReadAllBytesAsync(path)
+            : await context.Runtime.Files.ReadAllBytesAsync(path);
+        if (context is not null && _executionContextService?.Current.Id != context.Id)
+        {
+            throw new InvalidOperationException(
+                "The execution context changed while the file was being opened.");
+        }
         (Encoding encoding, bool emitBom, int preambleLength) = DetectEncoding(bytes);
         if (preambleLength == 0 && LooksBinary(bytes))
         {
@@ -27,11 +43,19 @@ public sealed class TextFileService : ITextFileService
             text,
             encoding,
             emitBom,
-            DetectNewLine(text));
+            DetectNewLine(text),
+            context?.Id);
     }
 
     public async Task WriteAsync(TextFileDocument document, string text)
     {
+        AppExecutionContext? context = _executionContextService?.Current;
+        if (document.ExecutionContextId is Guid contextId && context?.Id != contextId)
+        {
+            throw new InvalidOperationException(
+                "The execution context changed after the file was opened.");
+        }
+
         string normalizedText = NormalizeNewLines(text, document.NewLine);
         byte[] content = document.Encoding.GetBytes(normalizedText);
         byte[] preamble = document.EmitByteOrderMark
@@ -40,27 +64,74 @@ public sealed class TextFileService : ITextFileService
 
         if (preamble.Length == 0)
         {
-            await File.WriteAllBytesAsync(document.Path, content);
+            await WriteAllBytesAsync(document.Path, content, context);
             return;
         }
 
         byte[] output = new byte[preamble.Length + content.Length];
         Buffer.BlockCopy(preamble, 0, output, 0, preamble.Length);
         Buffer.BlockCopy(content, 0, output, preamble.Length, content.Length);
-        await File.WriteAllBytesAsync(document.Path, output);
+        await WriteAllBytesAsync(document.Path, output, context);
     }
 
-    private static string GetSafeFilePath(RepositoryInfo repository, string relativePath)
+    private async Task<string> GetSafeFilePathAsync(
+        RepositoryInfo repository,
+        string relativePath,
+        AppExecutionContext? context)
     {
-        string repositoryPath = Path.GetFullPath(repository.Path)
-            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-            + Path.DirectorySeparatorChar;
-        string filePath = Path.GetFullPath(Path.Combine(repository.Path, relativePath));
-
-        if (!filePath.StartsWith(repositoryPath, StringComparison.OrdinalIgnoreCase))
+        if (context is not null)
         {
-            throw new ArgumentException("File path is outside of the repository.", nameof(relativePath));
+            IRepositoryPathService paths = context.Runtime.Paths;
+            if (IsRooted(relativePath, paths.Style))
+            {
+                throw new ArgumentException("File path is outside of the repository.", nameof(relativePath));
+            }
+
+            string contextualRepositoryPath = paths.Normalize(repository.Path).TrimEnd('/', '\\');
+            string contextualFilePath = paths.Normalize(paths.Combine(contextualRepositoryPath, relativePath));
+            char separator = paths.Style == RepositoryPathStyle.Windows ? '\\' : '/';
+            StringComparison comparison = paths.Style == RepositoryPathStyle.Windows
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            if (!contextualFilePath.StartsWith(contextualRepositoryPath + separator, comparison))
+            {
+                throw new ArgumentException("File path is outside of the repository.", nameof(relativePath));
+            }
+
+
+            string currentPath = contextualRepositoryPath;
+            char[] separators = paths.Style == RepositoryPathStyle.Windows
+                ? ['\\', '/']
+                : ['/'];
+            foreach (string component in relativePath.Split(
+                separators,
+                StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (component == ".")
+                {
+                    continue;
+                }
+
+                currentPath = paths.Combine(currentPath, component);
+                if (await context.Runtime.Files.IsSymbolicLinkAsync(currentPath))
+                {
+                    throw new FileNotFoundException(
+                        "Symbolic links cannot be opened through the repository file editor.",
+                        contextualFilePath);
+                }
+            }
+
+            if (!await context.Runtime.Files.FileExistsAsync(contextualFilePath))
+            {
+                throw new FileNotFoundException(
+                    "The selected file is not available in the working tree.",
+                    contextualFilePath);
+            }
+
+            return contextualFilePath;
         }
+
+        string filePath = RepositoryPathGuard.GetSafeFilePath(repository.Path, relativePath);
 
         if (!File.Exists(filePath))
         {
@@ -68,6 +139,23 @@ public sealed class TextFileService : ITextFileService
         }
 
         return filePath;
+    }
+
+    private static Task WriteAllBytesAsync(
+        string path,
+        byte[] content,
+        AppExecutionContext? context)
+    {
+        return context is null
+            ? File.WriteAllBytesAsync(path, content)
+            : context.Runtime.Files.WriteAllBytesAtomicAsync(path, content);
+    }
+
+    private static bool IsRooted(string path, RepositoryPathStyle style)
+    {
+        return style == RepositoryPathStyle.Windows
+            ? Path.IsPathRooted(path)
+            : path.StartsWith('/');
     }
 
     private static (Encoding Encoding, bool EmitBom, int PreambleLength) DetectEncoding(byte[] bytes)

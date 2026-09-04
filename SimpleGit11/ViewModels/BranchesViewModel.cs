@@ -8,6 +8,7 @@ using SimpleGit11.Messages;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
 using SimpleGit11.Services.Git;
+using SimpleGit11.Services.Execution;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -42,6 +43,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
     private readonly IClipboardService _clipboardService;
     private readonly IDialogService _dialogService;
     private readonly IGitService _gitService;
+    private readonly IExecutionContextService _executionContextService;
     private readonly Dictionary<string, IReadOnlyList<GitTag>> _remoteTagCache = new(StringComparer.Ordinal);
     private readonly HashSet<string> _remoteTagLoadAttempts = new(StringComparer.Ordinal);
     private CancellationTokenSource? _remoteOperationCancellationTokenSource;
@@ -86,7 +88,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         IClipboardService clipboardService,
         IDialogService dialogService,
         IMessenger messenger,
-        IAsyncCommandExecutor asyncCommandExecutor)
+        IAsyncCommandExecutor asyncCommandExecutor,
+        IExecutionContextService executionContextService)
         : base(messenger)
     {
         _mainWindowViewModel = mainWindowViewModel;
@@ -95,6 +98,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         _localizationService = localizationService;
         _clipboardService = clipboardService;
         _dialogService = dialogService;
+        _executionContextService = executionContextService;
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
         Remotes = [];
@@ -267,10 +271,23 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
     private void OnShowSelectedBranchCommits() => ShowSelectedBranchCommits(compareBothSides: false);
 
     [RelayCommand]
+    private void OnOpenSelectedBranchCommitHistory() => OpenSelectedBranchCommitHistory();
+
+    [RelayCommand]
     private void OnCompareSelectedBranch() => ShowSelectedBranchCommits(compareBothSides: true);
 
     [RelayCommand]
     private void OnShowSelectedTagCommits() => ShowSelectedTagCommits();
+
+    [RelayCommand(CanExecute = nameof(CanOpenSelectedTagTargetCommit))]
+    private void OnOpenSelectedTagTargetCommit()
+    {
+        CommitDiffNavigationArgs? arguments = CreateSelectedTagTargetCommitChangesDiffArgs();
+        if (arguments is not null)
+        {
+            _mainWindowViewModel.RequestNavigation(AppNavigationTarget.CommitRange, arguments);
+        }
+    }
 
     [RelayCommand]
     private void OnCopyText(string? text)
@@ -1105,6 +1122,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
                     commit.DisplayDate);
         }
     }
+
+    public bool CanOpenSelectedTagTargetCommit => SelectedTagDetails?.TargetCommit is not null;
 
     public string SelectedTagSignatureSummary
     {
@@ -2800,7 +2819,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
                 ShowSuccess(string.Format(
                     _localizationService.GetString(successMessageKey),
                     branch.Name));
-            });
+            },
+            mayCreateConflicts: true);
     }
 
     private async Task SquashMergeSelectedBranchAsync()
@@ -2832,7 +2852,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
             {
                 await RefreshBranchesCoreAsync();
                 ShowSuccess(string.Format(_localizationService.GetString("SquashMergeBranchSucceeded"), branch.Name));
-            });
+            },
+            mayCreateConflicts: true);
     }
 
     private async Task PrepareSelectedBranchSnapshotAsync()
@@ -2965,10 +2986,15 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
                 ShowSuccess(string.Format(
                     _localizationService.GetString(messageKey),
                     branch.Name));
-            });
+            },
+            mayCreateConflicts: true);
     }
 
-    private async Task ExecuteBranchOperationAsync(string progressMessage, System.Func<Task> operation, System.Func<Task> onSuccess)
+    private async Task ExecuteBranchOperationAsync(
+        string progressMessage,
+        System.Func<Task> operation,
+        System.Func<Task> onSuccess,
+        bool mayCreateConflicts = false)
     {
         await ExecuteBranchOperationAsync(
             progressMessage,
@@ -2977,17 +3003,19 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
                 await operation();
                 return true;
             },
-            onSuccess);
+            onSuccess,
+            mayCreateConflicts);
     }
 
     private async Task ExecuteBranchOperationAsync(
         string progressMessage,
         System.Func<Task<bool>> operation,
-        System.Func<Task> onSuccess)
+        System.Func<Task> onSuccess,
+        bool mayCreateConflicts = false)
     {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
         await RunGitOperationAsync(progressMessage, async () =>
         {
-            bool gitCommandFailed = false;
             try
             {
                 ClearResultMessages();
@@ -3006,18 +3034,15 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
             }
             catch (GitCommandException exception)
             {
-                gitCommandFailed = true;
-                ShowError(_localizationService.GetString("GitBranchCommandFailed"), exception.Message);
+                if (!mayCreateConflicts
+                    || !await _mainWindowViewModel.TryShowConflictWarningAsync(repository, this, exception))
+                {
+                    ShowError(_localizationService.GetString("GitBranchCommandFailed"), exception.Message);
+                }
             }
             finally
             {
                 await RefreshBranchOperationStateAsync();
-            }
-
-            if (gitCommandFailed && (IsMergeInProgress || IsRebaseInProgress))
-            {
-                _mainWindowViewModel.RequestChangesNavigation(
-                    _localizationService.GetString("ConflictResolutionRequiredOnChangesPage"));
             }
         });
     }
@@ -3309,15 +3334,20 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
             });
     }
 
-    private static string CreateDefaultWorktreePath(RepositoryInfo repository, string name)
+    private string CreateDefaultWorktreePath(RepositoryInfo repository, string name)
     {
+        IRepositoryPathService paths = _executionContextService.Current.Runtime.Paths;
         string safeName = string.Concat(name.Select(character =>
-            Path.GetInvalidFileNameChars().Contains(character) || character is '/' or '\\'
+            IsInvalidFileNameCharacter(character, paths.Style)
                 ? '-'
                 : character));
-        string parentPath = Directory.GetParent(repository.Path)?.FullName ?? repository.Path;
-        return Path.Combine(parentPath, $"{repository.Name}-{safeName}");
+        string parentPath = paths.GetParent(repository.Path.TrimEnd('/', '\\')) ?? repository.Path;
+        return paths.Combine(parentPath, $"{repository.Name}-{safeName}");
     }
+
+    private static bool IsInvalidFileNameCharacter(char character, RepositoryPathStyle style) =>
+        character == '\0' || character == '/' ||
+        (style == RepositoryPathStyle.Windows && character is '\\' or '<' or '>' or ':' or '"' or '|' or '?' or '*');
 
     public RevisionRangeNavigationArgs? CreateSelectedBranchCommitRange(bool compareBothSides)
     {
@@ -3391,6 +3421,31 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         }
     }
 
+    private void OpenSelectedBranchCommitHistory()
+    {
+        GitBranch? branch = SelectedBranch;
+        if (branch is null)
+        {
+            return;
+        }
+
+        if (branch.IsCurrent)
+        {
+            _mainWindowViewModel.RequestNavigation(AppNavigationTarget.History);
+            return;
+        }
+
+        string reference = branch.IsRemote
+            ? $"refs/remotes/{branch.Name}"
+            : $"refs/heads/{branch.Name}";
+        RevisionRangeNavigationArgs arguments = new(
+            string.Format(_localizationService.GetString("BranchFullHistoryTitle"), branch.Name),
+            string.Format(_localizationService.GetString("BranchFullHistoryDescription"), branch.Name),
+            _localizationService.GetString("NoBranchHistoryCommits"),
+            reference);
+        _mainWindowViewModel.RequestNavigation(AppNavigationTarget.CommitRange, arguments);
+    }
+
     private void ShowSelectedTagCommits()
     {
         RevisionRangeNavigationArgs? arguments = CreateSelectedTagCommitRange();
@@ -3424,6 +3479,26 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
             string.Format(_localizationService.GetString("LastCommitBranchChangesTitle"), SelectedBranch.Name),
             string.Format(_localizationService.GetString("LastCommitBranchChangesDescription"), SelectedBranch.ShortCommitHash, SelectedBranch.LastCommitMessage),
             SelectedBranchCommit);
+    }
+
+    public CommitDiffNavigationArgs? CreateSelectedTagTargetCommitChangesDiffArgs()
+    {
+        GitTag? tag = SelectedTag;
+        GitCommit? commit = SelectedTagDetails?.TargetCommit;
+        if (tag is null || commit is null)
+        {
+            return null;
+        }
+
+        return new CommitDiffNavigationArgs(
+            string.Format(
+                _localizationService.GetString("TagTargetCommitChangesTitle"),
+                tag.Name),
+            string.Format(
+                _localizationService.GetString("TagTargetCommitChangesDescription"),
+                commit.ShortHash,
+                commit.Title),
+            commit);
     }
 
 
@@ -3885,6 +3960,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         OnPropertyChanged(nameof(SelectedTagMessage));
         OnPropertyChanged(nameof(SelectedTagTargetType));
         OnPropertyChanged(nameof(SelectedTagTargetCommitText));
+        OnPropertyChanged(nameof(CanOpenSelectedTagTargetCommit));
+        OpenSelectedTagTargetCommitCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(SelectedTagSignatureSummary));
         OnPropertyChanged(nameof(SelectedTagSignatureDetailsText));
         OnPropertyChanged(nameof(SelectedTagRelationText));

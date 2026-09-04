@@ -15,6 +15,7 @@ public sealed partial class RemoteViewItem
     private readonly Func<RemoteViewItem, Task> _rename;
     private readonly Func<RemoteViewItem, Task> _edit;
     private readonly Func<RemoteViewItem, Task> _remove;
+    private readonly Action<string> _copy;
     private bool _isCurrent;
 
     public RemoteViewItem(GitRemote remote,
@@ -24,6 +25,7 @@ public sealed partial class RemoteViewItem
                             Func<RemoteViewItem, Task> rename,
                             Func<RemoteViewItem, Task> edit,
                             Func<RemoteViewItem, Task> remove,
+                            Action<string> copy,
                             bool isCurrent)
     {
         Remote = remote;
@@ -32,6 +34,7 @@ public sealed partial class RemoteViewItem
         _rename = rename ?? throw new ArgumentNullException(nameof(edit));
         _edit = edit ?? throw new ArgumentNullException(nameof(edit));
         _remove = remove ?? throw new ArgumentNullException(nameof(remove));
+        _copy = copy ?? throw new ArgumentNullException(nameof(copy));
         _isCurrent = isCurrent;
         ReferenceText = remote.DisplayUrl;
         CurrentStatusText = _isCurrent ? localizationService.GetString("RemoteCurrentStatus") : "";
@@ -79,5 +82,14 @@ public sealed partial class RemoteViewItem
     private Task OnRemoveAsync()
     {
         return _asyncCommandExecutor.ExecuteAsync(() => _remove(this));
+    }
+
+    [RelayCommand]
+    private void OnCopyText(string? text)
+    {
+        if (text is not null)
+        {
+            _copy(text);
+        }
     }
 }

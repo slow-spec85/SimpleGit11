@@ -1,0 +1,23 @@
+<WixLocalization xmlns="http://wixtoolset.org/schemas/v4/wxl" Culture="ru-RU">
+  <String Id="Language" Value="1049" />
+  <String Id="NewerVersionInstalled" Value="Уже установлена такая же или более новая версия SimpleGit11. Для изменения или восстановления используйте исходный установщик." />
+  <String Id="InstallScopeConflict" Value="Уже существует установка с другой областью действия. Перед сменой установки для текущего пользователя на установку для всех пользователей или обратно удалите её." />
+  <String Id="ScopeTitle" Value="Область установки" />
+  <String Id="ScopeDescription" Value="Выберите, кто сможет использовать SimpleGit11. На следующем шаге можно изменить папку установки." />
+  <String Id="ScopeUser" Value="Только для меня (текущий пользователь)" />
+  <String Id="ScopeMachine" Value="Для всех пользователей компьютера" />
+  <String Id="ScopeUserDescription" Value="Установка в ваш профиль. Права администратора не требуются." />
+  <String Id="ScopeMachineDescription" Value="Установка в Program Files. Потребуется подтверждение администратора. Личные настройки у каждого пользователя свои." />
+  <String Id="CoreTitle" Value="SimpleGit11" />
+  <String Id="CoreDescription" Value="Приложение, работа с локальным Git и необходимые библиотеки среды выполнения. Git устанавливается отдельно." />
+  <String Id="SshTitle" Value="Поддержка SSH" />
+  <String Id="SshDescription" Value="Добавляет пункт «Подключение по SSH» в главное меню и настройки подключения. На удалённой машине должен быть установлен Git." />
+  <String Id="DesktopTitle" Value="Ярлык на рабочем столе" />
+  <String Id="DesktopDescription" Value="Создать ярлык на рабочем столе в выбранной области установки." />
+  <String Id="PurgeTitle" Value="Удаление SimpleGit11" />
+  <String Id="PurgeDescription" Value="Приложение и установленные компоненты будут удалены. По умолчанию настройки сохраняются для последующей установки." />
+  <String Id="PurgeCheckbox" Value="Также удалить все настройки и данные SimpleGit11" />
+  <String Id="PurgeWarning" Value="Будет удалено содержимое [LocalAppDataFolder]SimpleGit11: SSH-профили, история, журналы и вложенные папки. Сохраните нужные данные заранее. Репозитории и SSH-ключи вне этой папки не затрагиваются. Переход по ссылкам на каталоги не выполняется." />
+  <String Id="RemoveButton" Value="Удалить" />
+  <String Id="CancelButton" Value="Отмена" />
+</WixLocalization>

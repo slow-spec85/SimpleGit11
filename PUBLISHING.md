@@ -18,8 +18,10 @@ application:
 Each published version provides the following files on its Releases page:
 
 ```text
-SimpleGit11-<version>-win-x64.zip
-SimpleGit11-<version>-win-x64.zip.sha256
+SimpleGit11-<version>-win-x64-en-US.msi
+SimpleGit11-<version>-win-x64-en-US.msi.sha256
+SimpleGit11-<version>-win-x64-ru-RU.msi
+SimpleGit11-<version>-win-x64-ru-RU.msi.sha256
 ```
 
 The automatically generated GitHub `Source code (zip)` and
@@ -42,35 +44,38 @@ Building from source additionally requires:
 
 ## Installation
 
-1. Open the required published version on the Releases page.
-2. Download `SimpleGit11-<version>-win-x64.zip`.
-3. Optionally verify its SHA-256 checksum as described below.
-4. Create a permanent directory, for example:
+### MSI with optional SSH
 
-```text
-%LOCALAPPDATA%\Programs\SimpleGit11
-```
+Choose `SimpleGit11-<version>-win-x64-en-US.msi` (or `ru-RU`).
+Choose current-user installation (default: `%LOCALAPPDATA%\Programs\SimpleGit11`)
+or all-users installation (default: `%ProgramFiles%\SimpleGit11`, administrator
+approval required). The next page allows changing the folder. Core is
+required; SSH and the desktop shortcut are optional, off by default. Re-run the
+original MSI to modify, repair or uninstall. Close the app first. Upgrades preserve
+feature selection, installation scope, custom folder and settings. Uninstall first
+to change scope or move an existing installation. Do not install over a portable copy.
 
-5. Extract the entire ZIP archive into this directory.
-6. Run `SimpleGit11.exe`.
-7. Optionally create a shortcut manually.
-
-Do not run the application directly from the ZIP archive or copy only the EXE
-file.
+Current-user uninstall offers an unchecked option to delete all application data in
+`%LOCALAPPDATA%\SimpleGit11`: settings, SSH profiles, history, logs and subfolders.
+Back up needed data first. Repository/key paths outside that folder are not touched.
+Junction directories are not traversed and may remain. Other users' profiles and
+unknown third-party files in the binary directory remain. Feature removal, repairs
+and upgrades never purge settings. All-users uninstall preserves every user's
+personal data; it does not offer profile deletion, even with `PURGEUSERDATA=1`.
 
 ## Verifying SHA-256
 
-Place the ZIP archive and its matching `.sha256` file in the same directory,
+Place the MSI and its matching `.sha256` file in the same directory,
 then run the following in PowerShell:
 
 ```powershell
-$archive = ".\SimpleGit11-1.0.0-win-x64.zip"
-$checksum = "$archive.sha256"
+$installerPath = ".\SimpleGit11-1.0.0-win-x64-en-US.msi"
+$checksum = "$installerPath.sha256"
 
 $expected = (Get-Content $checksum).Split(
     " ",
     [System.StringSplitOptions]::RemoveEmptyEntries)[0]
-$actual = (Get-FileHash $archive -Algorithm SHA256).Hash
+$actual = (Get-FileHash $installerPath -Algorithm SHA256).Hash
 
 if ($actual -ne $expected) {
     throw "SHA-256 checksum mismatch."
@@ -88,10 +93,9 @@ Automatic updates are not implemented yet.
 To update the application manually:
 
 1. Close every running SimpleGit11 instance.
-2. Download the ZIP archive for the new version.
+2. Download the MSI for the new version.
 3. Optionally verify its SHA-256 checksum.
-4. Completely replace the files in the application directory with the
-   contents of the new ZIP archive.
+4. Run the MSI and complete the upgrade.
 5. Run `SimpleGit11.exe`.
 
 Settings and the recent repository list are stored separately:
@@ -100,7 +104,7 @@ Settings and the recent repository list are stored separately:
 %LOCALAPPDATA%\SimpleGit11\settings.json
 ```
 
-Replacing the application directory does not remove user settings.
+MSI upgrades preserve user settings and feature selection.
 
 ## Building from source
 
@@ -133,106 +137,98 @@ Run the built application:
 & ".\SimpleGit11\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\SimpleGit11.exe"
 ```
 
-## Preparing a ZIP archive and SHA-256 checksum
+## Preparing MSI packages and SHA-256 checksums
 
-The repository contains scripts that perform a self-contained publish, verify
-required WinUI files, and create ready-to-distribute artifacts in the
-`artifacts` directory.
-
-For a stable or prerelease build, run:
+Publishing produces installers only. The script performs a self-contained
+publish, collects licenses, checks required WinUI files, and builds English and
+Russian MSI packages. WiX SDK 7 and its UI/Util extensions are build dependencies.
+Read the [WiX terms](https://docs.firegiant.com/wix/osmf/) before passing
+`-AcceptWixEula`.
 
 ```powershell
+# Tagged stable release
 .\Publish-Release.cmd.bat
-```
 
-Release mode requires:
+# Tagged preview/rc: the numeric application version is used automatically
+.\Publish-Release.cmd.bat
 
-- a clean working tree;
-- exactly one `vMAJOR.MINOR.PATCH[-PRERELEASE]` tag pointing to `HEAD`;
-- the built EXE version to match the tag version.
-
-Examples of valid release tags:
-
-```text
-v1.0.0-preview.1
-v1.0.0-rc.1
-v1.0.0
-```
-
-The public release workflow accepts stable tags and prerelease tags using the
-`preview.N` and `rc.N` channels.
-
-Numeric prerelease identifiers must not contain leading zeroes: `preview.1` is
-valid, while `preview.01` is not.
-
-For a test build from any branch, run:
-
-```powershell
+# Development build from any branch
 .\Publish-Release-dev.cmd.bat
 ```
 
-Development mode does not require a clean working tree or a tag on `HEAD`. The
-artifact receives a unique prerelease version in the form
-`<next-patch>-dev.local.<timestamp>`.
+Release mode requires a clean working tree, exactly one
+`vMAJOR.MINOR.PATCH[-PRERELEASE]` tag on `HEAD`, and an EXE version matching
+that tag. The public release workflow accepts stable tags and the `preview.N`
+and `rc.N` channels. Numeric prerelease identifiers cannot contain leading zeroes.
 
-Both BAT files close a running SimpleGit11 instance before publishing and
-create:
+Development mode allows uncommitted changes and requires no tag. Its application
+version is `<next-patch>-dev.local.<timestamp>`. MSI automatically uses the numeric
+core: `1.0.0-dev.local.20260831...` becomes `1.0.0`. Windows Installed apps shows
+that numeric version. Stable versions match exactly; all MSI versions must fit
+`255.255.65535`.
 
-```text
-artifacts\SimpleGit11-<version>-win-x64\
-artifacts\SimpleGit11-<version>-win-x64.zip
-artifacts\SimpleGit11-<version>-win-x64.zip.sha256
-```
+Different packages with the same numeric version, and downgrades, remain blocked.
+To replace a test build with another build of the same core version (including
+stable), uninstall the previous package first; settings are preserved by default.
+An optional `-InstallerVersion` override is still available for prereleases when
+an increasing test version is needed. Stable versions cannot be overridden.
 
-The application directory and ZIP archive also contain `LICENSE`,
-`THIRD-PARTY-NOTICES.txt`, and a `Licenses` directory with exact package
-versions, source component revisions, and original license files for the
-components that are actually redistributed. Publishing fails if a required
-license cannot be collected automatically.
+All BAT launchers work without arguments: they enable `-Interactive` and ask for
+WiX consent in the console. Enter `y` or `yes` to accept for that build; Enter or
+any other response cancels before building or stopping the application. Consent
+is not saved. `-AcceptWixEula` remains available for unattended PowerShell calls
+and skips the prompt when explicitly supplied to a BAT launcher.
 
-To run the PowerShell script directly without the BAT wrapper:
-
-```powershell
-# Stable or prerelease build
-powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File .\SimpleGit11\Build\Publish-Release.ps1 `
-  -StopRunningApp
-
-# Development build
-powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File .\SimpleGit11\Build\Publish-Release.ps1 `
-  -DevelopmentBuild `
-  -StopRunningApp
-```
-
-The scripts only prepare local artifacts. They do not create commits or tags,
-run `push`, or create a GitHub Release.
-
-## Local self-contained publish
-
-If a ZIP archive and checksum are not required, publish directly:
+Both BAT wrappers stop running SimpleGit11 instances. To require the application
+to be closed manually, call PowerShell without `-StopRunningApp`:
 
 ```powershell
-dotnet publish .\SimpleGit11\SimpleGit11.csproj `
-  -c Release `
-  -p:Platform=x64 `
-  -p:PublishProfile=win-x64
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\SimpleGit11\Build\Publish-Release.ps1 `
+  -DevelopmentBuild -AcceptWixEula
 ```
 
-Published directory:
+The distributable artifacts under `artifacts` are:
 
 ```text
-SimpleGit11\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\
+SimpleGit11-<version>-win-x64-en-US.msi
+SimpleGit11-<version>-win-x64-en-US.msi.sha256
+SimpleGit11-<version>-win-x64-ru-RU.msi
+SimpleGit11-<version>-win-x64-ru-RU.msi.sha256
 ```
 
-The publish profile adds the required WinUI resources:
+The `.publish-staging-win-x64` and `.installer-staging-win-x64` directories
+inside `artifacts` are internal build inputs, not separate distributions.
+Older artifacts are not deleted automatically. The obsolete `-Installer` switch
+has been removed: MSI generation is always enabled.
 
-- XBF files;
-- `SimpleGit11.pri`;
-- the `Assets` directory;
-- the .NET and Windows App SDK runtimes.
+MSI payloads retain `LICENSE`, `THIRD-PARTY-NOTICES.txt` and `Licenses`.
+Private SSH dependencies and their licenses belong to the optional feature.
+Publishing fails if required files or licenses are missing. MSI tables, SSH
+isolation and data-removal guards are validated during the build.
 
-Distribute the entire contents of the `publish` directory.
+The scripts do not create commits, tags or GitHub Releases, push, install the MSI
+or launch the application. Packages are currently unsigned. Before public
+distribution, sign them with a production certificate and timestamp, verify the
+signature and regenerate SHA-256.
+See [the installer guide](SimpleGit11.Installer/README.md) for details.
+
+## CI and release-tag validation
+
+CI builds Release x64 and runs all solution tests, including the SSH plugin.
+On a release tag, the tag format and the commit's membership in `main` are always
+checked. The latest `ci.yml` run triggered by a push to `main` may be reused only
+for the exact same commit SHA, after its successful Release x64 build and
+application/SSH test steps have been confirmed through the GitHub API.
+
+Older successes cannot hide a newer failed, cancelled or running CI. Missing
+results, skipped steps, incomplete history or API errors cause the normal build
+and tests to run again. The workflow summary links to the reused run attempt or
+explains why a fresh check is needed. Only read access to Actions is required.
+
+MSI generation and GitHub Release publication remain manual. A tag affects the
+version calculated by MinVer, so reusing source-code test results does not replace
+building and checking the actual tagged distribution locally.
 
 ## Versioning
 

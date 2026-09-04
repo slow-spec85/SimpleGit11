@@ -34,8 +34,7 @@
         <Grid
             ColumnDefinitions="Auto,*"
             ColumnSpacing="20"
-            RowDefinitions="Auto,Auto,Auto"
-            RowSpacing="12">
+            RowDefinitions="Auto,Auto,Auto,Auto">
             <TextBlock
                 x:Uid="AboutCurrentVersionLabelTextBlock"
                 VerticalAlignment="Center"
@@ -47,26 +46,47 @@
                 TextWrapping="WrapWholeWords" />
 
             <TextBlock
-                x:Uid="AboutRepositoryLabelTextBlock"
+                x:Uid="AboutSshPluginLabelTextBlock"
                 Grid.Row="1"
+                Margin="0,12,0,0"
+                VerticalAlignment="Top"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Visibility="{x:Bind ViewModel.HasSshPlugin, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+            <TextBlock
+                Grid.Row="1"
+                Grid.Column="1"
+                Margin="0,12,0,0"
+                Text="{x:Bind ViewModel.SshPluginVersion, Mode=OneTime}"
+                TextWrapping="WrapWholeWords"
+                Visibility="{x:Bind ViewModel.HasSshPlugin, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+
+            <TextBlock
+                x:Uid="AboutRepositoryLabelTextBlock"
+                Grid.Row="2"
+                Margin="0,12,0,0"
                 VerticalAlignment="Center"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             <HyperlinkButton
-                Grid.Row="1"
+                Grid.Row="2"
                 Grid.Column="1"
                 x:Name="RepositoryHyperlinkButton"
                 AutomationProperties.AutomationId="AboutRepositoryLink"
                 HorizontalAlignment="Left"
+                Margin="0,12,0,0"
                 NavigateUri="{x:Bind ViewModel.RepositoryUri, Mode=OneTime}"
                 Padding="0"
                 Content="{x:Bind ViewModel.RepositoryDisplayUri, Mode=OneTime}" />
 
             <TextBlock
                 x:Uid="AboutLatestVersionLabelTextBlock"
-                Grid.Row="2"
+                Grid.Row="3"
+                Margin="0,12,0,0"
                 VerticalAlignment="Top"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-            <Grid Grid.Row="2" Grid.Column="1">
+            <Grid
+                Grid.Row="3"
+                Grid.Column="1"
+                Margin="0,12,0,0">
                 <StackPanel
                     Orientation="Horizontal"
                     Spacing="8"

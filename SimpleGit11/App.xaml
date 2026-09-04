@@ -31,8 +31,15 @@
                     <SolidColorBrush x:Key="SyntaxFunctionForegroundBrush" Color="#795E26" />
                     <SolidColorBrush x:Key="SyntaxStringForegroundBrush" Color="#A31515" />
                     <SolidColorBrush x:Key="SyntaxNumberForegroundBrush" Color="#098658" />
+                    <SolidColorBrush x:Key="SyntaxConstantForegroundBrush" Color="#0000FF" />
                     <SolidColorBrush x:Key="SyntaxMarkupNameForegroundBrush" Color="#800000" />
                     <SolidColorBrush x:Key="SyntaxAttributeNameForegroundBrush" Color="#FF0000" />
+                    <SolidColorBrush x:Key="SyntaxOperatorForegroundBrush" Color="#000000" />
+                    <SolidColorBrush x:Key="SyntaxPunctuationForegroundBrush" Color="#8E3AA7" />
+                    <SolidColorBrush x:Key="SyntaxDirectiveForegroundBrush" Color="#0000FF" />
+                    <SolidColorBrush x:Key="SyntaxVariableForegroundBrush" Color="#001080" />
+                    <SolidColorBrush x:Key="SyntaxLabelForegroundBrush" Color="#795E26" />
+                    <SolidColorBrush x:Key="SyntaxKeyForegroundBrush" Color="#0451A5" />
 
                     <SolidColorBrush x:Key="DiffAddedStatTextBrush" Color="#00A240" />
                     <SolidColorBrush x:Key="DiffRemovedStatTextBrush" Color="#E02E2A" />
@@ -68,8 +75,15 @@
                     <SolidColorBrush x:Key="SyntaxFunctionForegroundBrush" Color="#DCDCAA" />
                     <SolidColorBrush x:Key="SyntaxStringForegroundBrush" Color="#CE9178" />
                     <SolidColorBrush x:Key="SyntaxNumberForegroundBrush" Color="#B5CEA8" />
+                    <SolidColorBrush x:Key="SyntaxConstantForegroundBrush" Color="#569CD6" />
                     <SolidColorBrush x:Key="SyntaxMarkupNameForegroundBrush" Color="#569CD6" />
                     <SolidColorBrush x:Key="SyntaxAttributeNameForegroundBrush" Color="#9CDCFE" />
+                    <SolidColorBrush x:Key="SyntaxOperatorForegroundBrush" Color="#D4D4D4" />
+                    <SolidColorBrush x:Key="SyntaxPunctuationForegroundBrush" Color="#998AD5" />
+                    <SolidColorBrush x:Key="SyntaxDirectiveForegroundBrush" Color="#C586C0" />
+                    <SolidColorBrush x:Key="SyntaxVariableForegroundBrush" Color="#9CDCFE" />
+                    <SolidColorBrush x:Key="SyntaxLabelForegroundBrush" Color="#DCDCAA" />
+                    <SolidColorBrush x:Key="SyntaxKeyForegroundBrush" Color="#9CDCFE" />
 
                     <SolidColorBrush x:Key="DiffAddedStatTextBrush" Color="#40C877" />
                     <SolidColorBrush x:Key="DiffRemovedStatTextBrush" Color="#C83B38" />
@@ -105,8 +119,15 @@
                     <SolidColorBrush x:Key="SyntaxFunctionForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
                     <SolidColorBrush x:Key="SyntaxStringForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
                     <SolidColorBrush x:Key="SyntaxNumberForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxConstantForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
                     <SolidColorBrush x:Key="SyntaxMarkupNameForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
                     <SolidColorBrush x:Key="SyntaxAttributeNameForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxOperatorForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxPunctuationForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxDirectiveForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxVariableForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxLabelForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="SyntaxKeyForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
                     <SolidColorBrush x:Key="DiffAddedStatTextBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
                     <SolidColorBrush x:Key="DiffRemovedStatTextBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
                     <SolidColorBrush x:Key="SuccessfulOperationColor" Color="{ThemeResource SystemColorHighlightTextColor}" />

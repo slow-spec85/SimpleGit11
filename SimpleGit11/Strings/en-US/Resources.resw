@@ -150,6 +150,9 @@
   <data name="AboutCurrentVersionLabelTextBlock.Text" xml:space="preserve">
     <value>Current version</value>
   </data>
+  <data name="AboutSshPluginLabelTextBlock.Text" xml:space="preserve">
+    <value>SSH plugin</value>
+  </data>
   <data name="AboutRepositoryLabelTextBlock.Text" xml:space="preserve">
     <value>Repository</value>
   </data>
@@ -200,9 +203,6 @@
   </data>
   <data name="RefreshStatusAppBarButton.Label" xml:space="preserve">
     <value>Refresh</value>
-  </data>
-  <data name="MarkResolvedAppBarButton.Label" xml:space="preserve">
-    <value>Mark resolved</value>
   </data>
   <data name="CommitDialogTitle" xml:space="preserve">
     <value>Commit staged changes</value>
@@ -420,9 +420,6 @@
   <data name="ConflictFileUnavailable" xml:space="preserve">
     <value>The conflict file is not available in the working tree.</value>
   </data>
-  <data name="SaveConflictFileAppBarButton.Label" xml:space="preserve">
-    <value>Save</value>
-  </data>
   <data name="ConflictFileSaved" xml:space="preserve">
     <value>Conflict file saved.</value>
   </data>
@@ -458,6 +455,75 @@
   </data>
   <data name="HistorySearchTextBox.PlaceholderText" xml:space="preserve">
     <value>Search</value>
+  </data>
+  <data name="CommitFilterToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Search and filter commits</value>
+  </data>
+  <data name="CommitFilterToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Search and filter commits</value>
+  </data>
+  <data name="MainlineOnlyToggleSwitch.OnContent" xml:space="preserve">
+    <value>Mainline only</value>
+  </data>
+  <data name="MainlineOnlyToggleSwitch.OffContent" xml:space="preserve">
+    <value>Mainline only</value>
+  </data>
+  <data name="MainlineOnlyToggleSwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Mainline only</value>
+  </data>
+  <data name="CommitDateFilterHeaderTextBlock.Text" xml:space="preserve">
+    <value>Date and time</value>
+  </data>
+  <data name="CommitDateFromTextBlock.Text" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="CommitDateToTextBlock.Text" xml:space="preserve">
+    <value>To</value>
+  </data>
+  <data name="CommitDateFromPicker.PlaceholderText" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="CommitDateToPicker.PlaceholderText" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="ClearCommitDateFromButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Clear start date and time</value>
+  </data>
+  <data name="ClearCommitDateFromButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Clear start date and time</value>
+  </data>
+  <data name="ClearCommitDateToButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Clear end date and time</value>
+  </data>
+  <data name="ClearCommitDateToButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Clear end date and time</value>
+  </data>
+  <data name="ResetCommitFiltersButton.Content" xml:space="preserve">
+    <value>Reset all filters</value>
+  </data>
+  <data name="DiffSearchToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Search in diff</value>
+  </data>
+  <data name="DiffSearchToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Search in diff</value>
+  </data>
+  <data name="DiffSearchTextBox.PlaceholderText" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="DiffSearchTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Search in diff</value>
+  </data>
+  <data name="PreviousDiffSearchMatchButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Previous match</value>
+  </data>
+  <data name="PreviousDiffSearchMatchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Previous match</value>
+  </data>
+  <data name="NextDiffSearchMatchButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Next match</value>
+  </data>
+  <data name="NextDiffSearchMatchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Next match</value>
   </data>
   <data name="RefreshHistoryAppBarButton.Label" xml:space="preserve">
     <value>Refresh</value>
@@ -1093,9 +1159,6 @@
   <data name="RepositorySettingsTitleTextBlock.Text" xml:space="preserve">
     <value>Current repository settings</value>
   </data>
-  <data name="RepositoryDefaultsTitleTextBlock.Text" xml:space="preserve">
-    <value>Git settings</value>
-  </data>
   <data name="InitialBranchNameSettingsCardHeaderTextBlock.Text" xml:space="preserve">
     <value>Default initial branch</value>
   </data>
@@ -1444,15 +1507,6 @@
   <data name="CopyRepositoryPathMenuFlyoutItem.Text" xml:space="preserve">
     <value>Copy path</value>
   </data>
-  <data name="OpenFoundRepositoryMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Open</value>
-  </data>
-  <data name="CopyFoundRepositoryPathMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy path</value>
-  </data>
-  <data name="CopyFoundRepositoryNameMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy name</value>
-  </data>
   <data name="OpenRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Open</value>
   </data>
@@ -1602,6 +1656,15 @@
   </data>
   <data name="DiscardChangeMenuFlyoutItem.Text" xml:space="preserve">
     <value>Discard changes</value>
+  </data>
+  <data name="IgnoreChangeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Add to .gitignore</value>
+  </data>
+  <data name="IgnoreFileSucceeded" xml:space="preserve">
+    <value>{0} was added to .gitignore</value>
+  </data>
+  <data name="IgnoreFileFailed" xml:space="preserve">
+    <value>Failed to add the file to .gitignore</value>
   </data>
   <data name="CheckoutBranchMenuFlyoutItem.Text" xml:space="preserve">
     <value>Checkout</value>
@@ -1859,10 +1922,28 @@
     <value>Incoming commits</value>
   </data>
   <data name="SynchronizationIncomingExpanderDescriptionTextBlock.Text" xml:space="preserve">
-    <value>Open a branch to review its commits. Pull is available for the current branch.</value>
+    <value>Open a branch to review its commits. Pull the current branch, or switch to another branch and pull it.</value>
   </data>
   <data name="SynchronizationPullBranchButton.Content" xml:space="preserve">
     <value>Pull</value>
+  </data>
+  <data name="SynchronizationSwitchAndPullBranchButton.Content" xml:space="preserve">
+    <value>Switch and pull</value>
+  </data>
+  <data name="SwitchAndPullDialogTitle" xml:space="preserve">
+    <value>Switch to '{0}' and pull?</value>
+  </data>
+  <data name="SwitchAndPullDialogMessage" xml:space="preserve">
+    <value>SimpleGit will first switch the working directory to branch '{0}'. If switching succeeds, it will then pull incoming commits from '{1}'.</value>
+  </data>
+  <data name="SwitchAndPullDialogPrimaryButton" xml:space="preserve">
+    <value>Switch and pull</value>
+  </data>
+  <data name="SwitchingAndPullingProgress" xml:space="preserve">
+    <value>Switching to '{0}' and pulling incoming commits...</value>
+  </data>
+  <data name="SwitchAndPullSucceeded" xml:space="preserve">
+    <value>Switched to '{0}' and pulled incoming commits.</value>
   </data>
   <data name="SynchronizationLocalSubmodulesExpanderTitleTextBlock.Text" xml:space="preserve">
     <value>Submodules</value>
@@ -1932,6 +2013,9 @@
   </data>
   <data name="SynchronizationBranchIncomingDescription" xml:space="preserve">
     <value>Incoming: {0} from {1}.</value>
+  </data>
+  <data name="SynchronizationBranchInOtherWorktreeDescription" xml:space="preserve">
+    <value>Switching is unavailable: this branch is checked out in another worktree</value>
   </data>
   <data name="SynchronizationTagConflictDescription" xml:space="preserve">
     <value>The local and remote tags point to different objects. Automatic replacement is disabled.</value>
@@ -2104,10 +2188,16 @@
   <data name="ResetSplitButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Reset the current branch</value>
   </data>
-  <data name="SaveConflictFileAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SaveConflictFileButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Save conflict file</value>
+  </data>
+  <data name="SaveConflictFileButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Save the selected conflict file</value>
   </data>
-  <data name="MarkResolvedAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="MarkResolvedButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Mark conflict as resolved</value>
+  </data>
+  <data name="MarkResolvedButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Mark the selected file as resolved</value>
   </data>
   <data name="ChangeOverviewBar.AutomationProperties.Name" xml:space="preserve">
@@ -2167,17 +2257,50 @@
   <data name="ConflictEditorTextControl.AutomationProperties.Name" xml:space="preserve">
     <value>Conflict file contents</value>
   </data>
-  <data name="UndoConflictEditAppBarButton.Label" xml:space="preserve">
+  <data name="UndoConflictEditButton.AutomationProperties.Name" xml:space="preserve">
     <value>Undo</value>
   </data>
-  <data name="RedoConflictEditAppBarButton.Label" xml:space="preserve">
+  <data name="UndoConflictEditButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="RedoConflictEditButton.AutomationProperties.Name" xml:space="preserve">
     <value>Redo</value>
   </data>
-  <data name="ReloadConflictFileAppBarButton.Label" xml:space="preserve">
+  <data name="RedoConflictEditButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Redo</value>
+  </data>
+  <data name="ReloadConflictFileButton.AutomationProperties.Name" xml:space="preserve">
     <value>Reload</value>
+  </data>
+  <data name="ReloadConflictFileButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Reload conflict file</value>
   </data>
   <data name="ConflictEditorSyntaxHighlightingComboBox.AutomationProperties.Name" xml:space="preserve">
     <value>Syntax highlighting</value>
+  </data>
+  <data name="ConflictSearchToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Search in conflict file</value>
+  </data>
+  <data name="ConflictSearchToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Search in conflict file</value>
+  </data>
+  <data name="ConflictSearchTextBox.PlaceholderText" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="ConflictSearchTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Search in conflict file</value>
+  </data>
+  <data name="PreviousConflictSearchMatchButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Previous match</value>
+  </data>
+  <data name="PreviousConflictSearchMatchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Previous match</value>
+  </data>
+  <data name="NextConflictSearchMatchButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Next match</value>
+  </data>
+  <data name="NextConflictSearchMatchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Next match</value>
   </data>
   <data name="DeleteConflictLinesMenuFlyoutItem.Text" xml:space="preserve">
     <value>Delete line</value>
@@ -2201,15 +2324,21 @@
     <value>Binary conflict files cannot be edited here.</value>
   </data>
   <data name="ConflictResolutionRequiredOnChangesPage" xml:space="preserve">
-    <value>The operation created conflicts. Resolve them on the Changes page.</value>
+    <value>Open the Changes page, resolve the conflicts, and stage the resolved files. If the operation is paused, continue it there.</value>
+  </data>
+  <data name="GitOperationConflictsTitle" xml:space="preserve">
+    <value>File conflicts require resolution</value>
+  </data>
+  <data name="OpenChangesForConflictsButtonText" xml:space="preserve">
+    <value>Go to Changes</value>
   </data>
   <data name="EditConflictLineMenuFlyoutItem.Text" xml:space="preserve">
     <value>Edit line</value>
   </data>
-  <data name="AcceptConflictSplitButton.Content" xml:space="preserve">
-    <value>Accept current</value>
+  <data name="AcceptConflictButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Accept conflict changes</value>
   </data>
-  <data name="AcceptConflictSplitButton.AutomationProperties.Name" xml:space="preserve">
+  <data name="AcceptConflictButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Accept conflict changes</value>
   </data>
   <data name="ConflictOverviewBar.AutomationProperties.Name" xml:space="preserve">
@@ -2548,7 +2677,7 @@
   <data name="BranchUpstreamAndRemoteStateTitle" xml:space="preserve">
     <value>Connection to a remote branch</value>
   </data>
-  <data name="BranchPullRemoteLabel.Text" xml:space="preserve">
+  <data name="BranchUpstreamRemoteComboBox.ToolTipService.ToolTip" xml:space="preserve">
     <value>Remote repository:</value>
   </data>
   <data name="BranchUpstreamRemoteComboBox.PlaceholderText" xml:space="preserve">
@@ -2557,7 +2686,7 @@
   <data name="BranchUpstreamRemoteComboBox.AutomationProperties.Name" xml:space="preserve">
     <value>Repository for pulling changes</value>
   </data>
-  <data name="BranchPushRemoteLabel.Text" xml:space="preserve">
+  <data name="BranchPushRemoteComboBox.ToolTipService.ToolTip" xml:space="preserve">
     <value>Remote repository:</value>
   </data>
   <data name="BranchPushRemoteComboBox.PlaceholderText" xml:space="preserve">
@@ -2682,7 +2811,22 @@ Push will use the configured destinations, not the selected remote.</value>
     <value>The branch description was deleted.</value>
   </data>
   <data name="BranchHistoryExpanderTitle.Text" xml:space="preserve">
-    <value>Branch history</value>
+    <value>Branch log</value>
+  </data>
+  <data name="BranchCommitHistoryCardTitleTextBlock.Text" xml:space="preserve">
+    <value>Commit history</value>
+  </data>
+  <data name="BranchCommitHistoryCardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>View the complete commit history of the selected branch.</value>
+  </data>
+  <data name="BranchFullHistoryTitle" xml:space="preserve">
+    <value>History of {0}</value>
+  </data>
+  <data name="BranchFullHistoryDescription" xml:space="preserve">
+    <value>The complete history of commits reachable from {0}.</value>
+  </data>
+  <data name="NoBranchHistoryCommits" xml:space="preserve">
+    <value>There are no commits in the selected branch.</value>
   </data>
   <data name="BranchHistoryNotLoadedSummary" xml:space="preserve">
     <value>Expand this section to load the local branch history.</value>
@@ -2865,6 +3009,15 @@ Push will use the configured destinations, not the selected remote.</value>
   <data name="TagTargetCommitSummary" xml:space="preserve">
     <value>{0} · {1}
 {2} · {3}</value>
+  </data>
+  <data name="TagTargetObjectCard.AutomationProperties.Name" xml:space="preserve">
+    <value>Open target commit changes</value>
+  </data>
+  <data name="TagTargetCommitChangesTitle" xml:space="preserve">
+    <value>Target commit of tag {0}</value>
+  </data>
+  <data name="TagTargetCommitChangesDescription" xml:space="preserve">
+    <value>Changes in commit {0}: {1}</value>
   </data>
   <data name="TagRelationExpanderTitle.Text" xml:space="preserve">
     <value>Position relative to the current branch</value>
@@ -3355,6 +3508,12 @@ Push will use the configured destinations, not the selected remote.</value>
   <data name="OpenFoundRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Open</value>
   </data>
+  <data name="OpenFoundRepositoryFolderAppBarButton.Label" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="FoundRepositoryFolderOpenFailed" xml:space="preserve">
+    <value>Could not open the repository folder.</value>
+  </data>
   <data name="RemotesCardTitleTextBlock.Text" xml:space="preserve">
     <value>Remote repositories</value>
   </data>
@@ -3471,9 +3630,6 @@ Push will use the configured destinations, not the selected remote.</value>
   </data>
   <data name="CherryPickWithoutCommitSucceeded" xml:space="preserve">
     <value>The selected changes were applied without creating commits.</value>
-  </data>
-  <data name="CherryPickConflictResolutionRequired" xml:space="preserve">
-    <value>Cherry-pick requires conflict resolution.</value>
   </data>
   <data name="CherryPickFailed" xml:space="preserve">
     <value>Cherry-pick could not be completed.</value>
@@ -3914,5 +4070,100 @@ The rule has been quarantined for this editor session and will be skipped until 
   </data>
   <data name="GitUrlRewriteSaveFailed" xml:space="preserve">
     <value>Could not change the global Git URL redirect rules.</value>
+  </data>
+  <data name="GlobalGitSettingsTitleFormat" xml:space="preserve">
+    <value>Git settings on {0}</value>
+  </data>
+  <data name="OpenRemoteRepositoryDialogTitle" xml:space="preserve">
+    <value>Open remote repository</value>
+  </data>
+  <data name="RemoteRepositoryPathHeader" xml:space="preserve">
+    <value>Repository path on the remote machine</value>
+  </data>
+  <data name="OpenRemoteRepositoryButton" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="CreateRemoteRepositoryDialogTitle" xml:space="preserve">
+    <value>Create repository on remote machine</value>
+  </data>
+  <data name="CreateRemoteRepositoryButton" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="CloneRemoteRepositoryDialogTitle" xml:space="preserve">
+    <value>Clone repository on remote machine</value>
+  </data>
+  <data name="CloneRemoteRepositoryButton" xml:space="preserve">
+    <value>Clone</value>
+  </data>
+  <data name="RemoteParentPathHeader" xml:space="preserve">
+    <value>Directory path on the remote machine</value>
+  </data>
+  <data name="ExecutionConnectionLostMessage" xml:space="preserve">
+    <value>The connection to {0} was lost. Local mode has been restored.</value>
+  </data>
+  <data name="SearchRemoteRepositoriesDialogTitle" xml:space="preserve">
+    <value>Select search directory on remote machine</value>
+  </data>
+  <data name="SearchRemoteRepositoriesButton" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="PullRebaseHeaderTextBlock.Text" xml:space="preserve">
+    <value>Pull strategy (pull.rebase)</value>
+  </data>
+  <data name="PullRebaseDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Reconcile branches: false — merge (recommended); true — rebase.
+merges — rebase with merges; interactive — interactive rebase; Not set — inherit.</value>
+  </data>
+  <data name="PullRebaseDetailsTextBlock.Text" xml:space="preserve">
+    <value>Recommended: false (merge, without rewriting existing commits). Rebase rewrites local commits; interactive mode requires an editor. A branch-specific branch.&lt;name&gt;.rebase setting takes precedence. Not set removes this key from this scope after saving; Git then uses other configuration levels.</value>
+  </data>
+  <data name="PullFastForwardHeaderTextBlock.Text" xml:space="preserve">
+    <value>Fast-forward on pull (pull.ff)</value>
+  </data>
+  <data name="PullFastForwardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Fast-forward on pull: true — allow (recommended); false — create a merge commit.
+only — fast-forward only; Not set — inherit.</value>
+  </data>
+  <data name="PullFastForwardDetailsTextBlock.Text" xml:space="preserve">
+    <value>Recommended: true with pull.rebase=false — fast-forward when possible, otherwise merge. With pull.rebase=true, divergent branches use rebase instead. The value only rejects divergent branches, even with rebase enabled. Conflicts may still need manual resolution. Not set removes this key from this scope after saving; Git then uses other configuration levels.</value>
+  </data>
+  <data name="PullRebaseComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Pull strategy (pull.rebase)</value>
+  </data>
+  <data name="PullFastForwardComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Fast-forward on pull (pull.ff)</value>
+  </data>
+  <data name="PullRebaseComboBox.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Recommended: false (merge, without rewriting existing commits). Rebase rewrites local commits; interactive mode requires an editor. A branch-specific branch.&lt;name&gt;.rebase setting takes precedence. Not set removes this key from this scope after saving; Git then uses other configuration levels.</value>
+  </data>
+  <data name="PullFastForwardComboBox.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Recommended: true with pull.rebase=false — fast-forward when possible, otherwise merge. With pull.rebase=true, divergent branches use rebase instead. The value only rejects divergent branches, even with rebase enabled. Conflicts may still need manual resolution. Not set removes this key from this scope after saving; Git then uses other configuration levels.</value>
+  </data>
+  <data name="PullNotSetOption" xml:space="preserve">
+    <value>Not set</value>
+  </data>
+  <data name="PullMergeOption" xml:space="preserve">
+    <value>false</value>
+  </data>
+  <data name="PullRebaseOption" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="PullRebaseMergesOption" xml:space="preserve">
+    <value>merges</value>
+  </data>
+  <data name="PullRebaseInteractiveOption" xml:space="preserve">
+    <value>interactive</value>
+  </data>
+  <data name="PullFastForwardOption" xml:space="preserve">
+    <value>true</value>
+  </data>
+  <data name="PullNoFastForwardOption" xml:space="preserve">
+    <value>false</value>
+  </data>
+  <data name="PullFastForwardOnlyOption" xml:space="preserve">
+    <value>only</value>
+  </data>
+  <data name="PullEmptyValue" xml:space="preserve">
+    <value>(empty value)</value>
   </data>
 </root>

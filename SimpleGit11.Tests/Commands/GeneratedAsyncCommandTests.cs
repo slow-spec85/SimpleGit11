@@ -64,6 +64,7 @@ public sealed class GeneratedAsyncCommandTests
             new RepositoryInfo(@"D:\Repository", "Repository", "main"),
             executor,
             open,
+            _ => { },
             _ => { });
     }
 

@@ -170,9 +170,9 @@
 
                 <StackPanel Spacing="12">
                     <TextBlock
-                        x:Uid="RepositoryDefaultsTitleTextBlock"
                         Margin="2,0,0,0"
-                        Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                        Text="{x:Bind ViewModel.GlobalGitSettingsTitle, Mode=OneWay}" />
 
                     <controls:SettingsExpander IsExpanded="False">
                         <controls:SettingsExpander.HeaderIcon>
@@ -224,6 +224,63 @@
                                     AutomationProperties.AutomationId="GlobalPushDefaultRemote"
                                     Text="{x:Bind ViewModel.GlobalPushDefaultRemote, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             </controls:SettingsCard>
+
+                            <controls:SettingsCard IsEnabled="{x:Bind ViewModel.IsGlobalPullSettingsLoaded, Mode=OneWay}">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip MaxWidth="480">
+                                        <TextBlock
+                                            x:Uid="PullRebaseDetailsTextBlock"
+                                            TextWrapping="WrapWholeWords" />
+                                    </ToolTip>
+                                </ToolTipService.ToolTip>
+                                <controls:SettingsCard.Header>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Uid="PullRebaseHeaderTextBlock" />
+                                        <TextBlock
+                                            x:Uid="PullRebaseDescriptionTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+                                </controls:SettingsCard.Header>
+                                <ComboBox
+                                    x:Name="GlobalPullRebaseComboBox"
+                                    x:Uid="PullRebaseComboBox"
+                                    Width="180"
+                                    AutomationProperties.AutomationId="GlobalPullRebase"
+                                    DisplayMemberPath="DisplayName"
+                                    ItemsSource="{x:Bind ViewModel.GlobalPullRebaseOptions}"
+                                    SelectedItem="{x:Bind ViewModel.SelectedGlobalPullRebase, Mode=TwoWay}" />
+                            </controls:SettingsCard>
+
+                            <controls:SettingsCard IsEnabled="{x:Bind ViewModel.IsGlobalPullSettingsLoaded, Mode=OneWay}">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip MaxWidth="480">
+                                        <TextBlock
+                                            x:Uid="PullFastForwardDetailsTextBlock"
+                                            TextWrapping="WrapWholeWords" />
+                                    </ToolTip>
+                                </ToolTipService.ToolTip>
+                                <controls:SettingsCard.Header>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Uid="PullFastForwardHeaderTextBlock" />
+                                        <TextBlock
+                                            x:Uid="PullFastForwardDescriptionTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+                                </controls:SettingsCard.Header>
+                                <ComboBox
+                                    x:Name="GlobalPullFastForwardComboBox"
+                                    x:Uid="PullFastForwardComboBox"
+                                    Width="180"
+                                    AutomationProperties.AutomationId="GlobalPullFastForward"
+                                    DisplayMemberPath="DisplayName"
+                                    ItemsSource="{x:Bind ViewModel.GlobalPullFastForwardOptions}"
+                                    SelectedItem="{x:Bind ViewModel.SelectedGlobalPullFastForward, Mode=TwoWay}" />
+                            </controls:SettingsCard>
+
 
                             <controls:SettingsCard>
                                 <controls:SettingsCard.Header>
@@ -387,6 +444,63 @@
                                     AutomationProperties.AutomationId="RepositoryPushDefaultRemote"
                                     Text="{x:Bind ViewModel.RepositoryPushDefaultRemote, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             </controls:SettingsCard>
+
+                            <controls:SettingsCard IsEnabled="{x:Bind ViewModel.IsRepositoryPullSettingsLoaded, Mode=OneWay}">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip MaxWidth="480">
+                                        <TextBlock
+                                            x:Uid="PullRebaseDetailsTextBlock"
+                                            TextWrapping="WrapWholeWords" />
+                                    </ToolTip>
+                                </ToolTipService.ToolTip>
+                                <controls:SettingsCard.Header>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Uid="PullRebaseHeaderTextBlock" />
+                                        <TextBlock
+                                            x:Uid="PullRebaseDescriptionTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+                                </controls:SettingsCard.Header>
+                                <ComboBox
+                                    x:Name="RepositoryPullRebaseComboBox"
+                                    x:Uid="PullRebaseComboBox"
+                                    Width="180"
+                                    AutomationProperties.AutomationId="RepositoryPullRebase"
+                                    DisplayMemberPath="DisplayName"
+                                    ItemsSource="{x:Bind ViewModel.RepositoryPullRebaseOptions}"
+                                    SelectedItem="{x:Bind ViewModel.SelectedRepositoryPullRebase, Mode=TwoWay}" />
+                            </controls:SettingsCard>
+
+                            <controls:SettingsCard IsEnabled="{x:Bind ViewModel.IsRepositoryPullSettingsLoaded, Mode=OneWay}">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip MaxWidth="480">
+                                        <TextBlock
+                                            x:Uid="PullFastForwardDetailsTextBlock"
+                                            TextWrapping="WrapWholeWords" />
+                                    </ToolTip>
+                                </ToolTipService.ToolTip>
+                                <controls:SettingsCard.Header>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Uid="PullFastForwardHeaderTextBlock" />
+                                        <TextBlock
+                                            x:Uid="PullFastForwardDescriptionTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+                                </controls:SettingsCard.Header>
+                                <ComboBox
+                                    x:Name="RepositoryPullFastForwardComboBox"
+                                    x:Uid="PullFastForwardComboBox"
+                                    Width="180"
+                                    AutomationProperties.AutomationId="RepositoryPullFastForward"
+                                    DisplayMemberPath="DisplayName"
+                                    ItemsSource="{x:Bind ViewModel.RepositoryPullFastForwardOptions}"
+                                    SelectedItem="{x:Bind ViewModel.SelectedRepositoryPullFastForward, Mode=TwoWay}" />
+                            </controls:SettingsCard>
+
 
                             <controls:SettingsCard>
                                 <controls:SettingsCard.Header>

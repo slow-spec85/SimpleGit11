@@ -1,14 +1,22 @@
 ﻿using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using CommunityToolkit.Mvvm.Messaging;
+using SimpleGit11.Extensibility.Plugins;
+using SimpleGit11.Extensibility.Presentation;
 using SimpleGit11.Models;
 using SimpleGit11.Presentation.Services;
 using SimpleGit11.Services;
+using SimpleGit11.Services.Execution;
+using SimpleGit11.Services.Execution.Local;
 using SimpleGit11.Services.Git;
 using SimpleGit11.Services.Git.Execution;
+using SimpleGit11.Services.Plugins;
 using SimpleGit11.ViewModels;
 
 namespace SimpleGit11;
@@ -35,8 +43,12 @@ public partial class App : Application
                 GetService<ILocalizationService>(),
                 GetService<IAsyncCommandExecutor>(),
                 GetService<IDialogService>(),
+                GetService<IExecutionContextService>(),
                 GetService<IGitRepositoryChangeDetector>(),
-                GetService<IGitService>());
+                GetService<IGitService>(),
+                GetService<IMessenger>(),
+                GetService<IEnumerable<IMainMenuContribution>>(),
+                GetService<IAsyncCommandExceptionHandler>());
             GetService<ThemeService>().RegisterWindow(_window);
             GetService<StoragePickerService>().RegisterWindow(_window);
             GetService<DialogService>().RegisterWindow(_window);
@@ -65,7 +77,17 @@ public partial class App : Application
     {
         ServiceCollection services = new();
 
-        services.AddSingleton<IGitCommandRunner, GitCommandRunner>();
+        services.AddSingleton<GitCommandRunner>();
+        services.AddSingleton<LocalRepositoryFileSystem>();
+        services.AddSingleton<LocalRepositoryPathService>();
+        services.AddSingleton<LocalRepositoryFileTransfer>();
+        services.AddSingleton<LocalExecutionRuntime>();
+        services.AddSingleton<IExecutionProvider, LocalExecutionProvider>();
+        services.AddSingleton<IExecutionProviderRegistry, ExecutionProviderRegistry>();
+        services.AddSingleton<ExecutionContextService>();
+        services.AddSingleton<IExecutionContextService>(provider =>
+            provider.GetRequiredService<ExecutionContextService>());
+        services.AddSingleton<IGitCommandRunner, ContextualGitCommandRunner>();
         services.AddSingleton<IGitRepositoryChangeDetector, GitRepositoryChangeDetector>();
         services.AddSingleton(static _ => new HttpClient
         {
@@ -83,6 +105,7 @@ public partial class App : Application
         services.AddSingleton<StoragePickerService>();
         services.AddSingleton<IStoragePickerService>(provider => provider.GetRequiredService<StoragePickerService>());
         services.AddSingleton<IGitRepositoryDiscoveryService, RepositoryDiscoveryService>();
+        services.AddSingleton<IExecutionRepositoryDiscoveryService, ExecutionRepositoryDiscoveryService>();
         services.AddSingleton<IGitRepositoryOperationService, GitRepositoryOperationService>();
         services.AddSingleton<IGitRepositorySearchService, RepositorySearchService>();
         services.AddSingleton<IRecentRepositoriesService, RecentRepositoriesService>();
@@ -91,6 +114,7 @@ public partial class App : Application
         services.AddSingleton<IGitDiffService, GitDiffService>();
         services.AddSingleton<IGitOperationQueue, GitOperationQueue>();
         services.AddSingleton<IGitStagingService, GitStagingService>();
+        services.AddSingleton<IGitIgnoreService, GitIgnoreService>();
         services.AddSingleton<IGitCommitService, GitCommitService>();
         services.AddSingleton<IGitCommitWorkflowService, GitCommitWorkflowService>();
         services.AddSingleton<IGitHistoryService, GitHistoryService>();
@@ -98,6 +122,7 @@ public partial class App : Application
         services.AddSingleton<IGitTagService, GitTagService>();
         services.AddSingleton<DialogService>();
         services.AddSingleton<IDialogService>(provider => provider.GetRequiredService<DialogService>());
+        services.AddSingleton<IPluginDialogHost>(provider => provider.GetRequiredService<DialogService>());
         services.AddSingleton<IGitRemoteService, GitRemoteService>();
         services.AddSingleton<IGitWorktreeService, GitWorktreeService>();
         services.AddSingleton<IGitRevisionService, GitRevisionService>();
@@ -123,6 +148,23 @@ public partial class App : Application
         services.AddTransient<CommitDialogViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<AboutDialogViewModel>();
+
+        PluginCatalog pluginCatalog = new PluginLoader(new PluginAssemblyActivator()).Load(
+            services,
+            Path.Combine(AppContext.BaseDirectory, "Plugins"),
+            typeof(App).Assembly.GetName().Version ?? new Version(1, 0));
+        services.AddSingleton<IPluginCatalog>(pluginCatalog);
+        if (pluginCatalog.Failures.Count > 0)
+        {
+            string failureDetails = string.Join(
+                Environment.NewLine,
+                pluginCatalog.Failures.Select(static failure =>
+                    $"{failure.PluginDirectory}: {failure.Message}"));
+            ExceptionLogWriter.Write(
+                "SimpleGit11-plugins.log",
+                new InvalidOperationException(
+                    $"One or more plugins could not be loaded.{Environment.NewLine}{failureDetails}"));
+        }
 
         return services.BuildServiceProvider();
     }

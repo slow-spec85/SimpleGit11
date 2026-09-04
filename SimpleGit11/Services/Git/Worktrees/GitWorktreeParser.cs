@@ -2,15 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using SimpleGit11.Models;
+using SimpleGit11.Services.Execution;
+using SimpleGit11.Services.Execution.Local;
 
 namespace SimpleGit11.Services;
 
 internal static class GitWorktreeParser
 {
-    public static IReadOnlyList<GitWorktree> Parse(string output, RepositoryInfo repository)
+    public static IReadOnlyList<GitWorktree> Parse(
+        string output,
+        RepositoryInfo repository,
+        IRepositoryPathService? pathService = null)
     {
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(repository);
+        pathService ??= new LocalRepositoryPathService();
 
         List<GitWorktree> worktrees = [];
         WorktreeBuilder? current = null;
@@ -21,7 +27,10 @@ internal static class GitWorktreeParser
             {
                 if (current is not null)
                 {
-                    worktrees.Add(current.Build(repository, worktrees.Count == 0));
+                    worktrees.Add(current.Build(
+                        repository,
+                        worktrees.Count == 0,
+                        pathService));
                 }
 
                 current = new WorktreeBuilder { Path = field[9..] };
@@ -33,7 +42,10 @@ internal static class GitWorktreeParser
 
         if (current is not null)
         {
-            worktrees.Add(current.Build(repository, worktrees.Count == 0));
+            worktrees.Add(current.Build(
+                repository,
+                worktrees.Count == 0,
+                pathService));
         }
 
         return worktrees;
@@ -89,12 +101,16 @@ internal static class GitWorktreeParser
             }
         }
 
-        public GitWorktree Build(RepositoryInfo repository, bool isFirst)
+        public GitWorktree Build(
+            RepositoryInfo repository,
+            bool isFirst,
+            IRepositoryPathService pathService)
         {
-            bool isMain = !IsBare && (PathsEqual(Path, repository.MainWorktreePath) || isFirst);
-            string worktreePath = isMain && !string.IsNullOrWhiteSpace(repository.MainWorktreePath)
+            bool isMain = !IsBare
+                && (PathsEqual(Path, repository.MainWorktreePath, pathService) || isFirst);
+            string worktreePath = pathService.Normalize(isMain && !string.IsNullOrWhiteSpace(repository.MainWorktreePath)
                 ? repository.MainWorktreePath
-                : Path;
+                : Path);
 
             return new GitWorktree(
                 worktreePath,
@@ -105,17 +121,24 @@ internal static class GitWorktreeParser
                 IsLocked,
                 IsPrunable,
                 isMain,
-                PathsEqual(worktreePath, repository.Path),
+                PathsEqual(worktreePath, repository.Path, pathService),
                 LockReason,
                 PrunableReason);
         }
 
-        private static bool PathsEqual(string left, string right)
+        private static bool PathsEqual(
+            string left,
+            string right,
+            IRepositoryPathService pathService)
         {
+            char separator = pathService.Style == RepositoryPathStyle.Windows ? '\\' : '/';
+            StringComparison comparison = pathService.Style == RepositoryPathStyle.Windows
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
             return string.Equals(
-                System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(left)),
-                System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(right)),
-                StringComparison.OrdinalIgnoreCase);
+                pathService.Normalize(left).TrimEnd(separator),
+                pathService.Normalize(right).TrimEnd(separator),
+                comparison);
         }
     }
 }

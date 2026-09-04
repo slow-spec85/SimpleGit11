@@ -7,22 +7,30 @@ using System.Text;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
 using SimpleGit11.Services.Git.Execution;
+using SimpleGit11.Services.Execution;
 
 namespace SimpleGit11.Services;
 
 public sealed class GitWorktreeService : IGitWorktreeService
 {
     private readonly IGitCommandRunner _commandRunner;
+    private readonly IExecutionContextService? _executionContextService;
 
-    public GitWorktreeService(IGitCommandRunner? commandRunner = null)
+    public GitWorktreeService(
+        IGitCommandRunner? commandRunner = null,
+        IExecutionContextService? executionContextService = null)
     {
         _commandRunner = commandRunner ?? new GitCommandRunner();
+        _executionContextService = executionContextService;
     }
 
     public async Task<IReadOnlyList<GitWorktree>> GetWorktreesAsync(RepositoryInfo repository)
     {
         string output = await RunGitAsync(repository, "worktree", "list", "--porcelain", "-z");
-        return GitWorktreeParser.Parse(output, repository);
+        return GitWorktreeParser.Parse(
+            output,
+            repository,
+            _executionContextService?.Current.Runtime.Paths);
     }
 
     public Task AddAsync(RepositoryInfo repository, WorktreeCreationRequest request)
@@ -95,7 +103,11 @@ public sealed class GitWorktreeService : IGitWorktreeService
 
     private async Task<string> RunGitAsync(RepositoryInfo repository, params string[] arguments)
     {
-        string workingDirectory = Directory.Exists(repository.MainWorktreePath)
+        bool mainWorktreeExists = _executionContextService is null
+            ? Directory.Exists(repository.MainWorktreePath)
+            : await _executionContextService.Current.Runtime.Files.DirectoryExistsAsync(
+                repository.MainWorktreePath);
+        string workingDirectory = mainWorktreeExists
             ? repository.MainWorktreePath
             : repository.Path;
         GitCommandResult result = await _commandRunner.RunAsync(workingDirectory, arguments);

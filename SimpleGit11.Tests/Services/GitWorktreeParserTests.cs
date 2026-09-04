@@ -3,6 +3,7 @@ using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
+using SimpleGit11.Services.Execution;
 using SimpleGit11.Tests.TestInfrastructure;
 
 namespace SimpleGit11.Tests.Services;
@@ -10,6 +11,23 @@ namespace SimpleGit11.Tests.Services;
 [TestClass]
 public sealed class GitWorktreeParserTests
 {
+    [TestMethod]
+    public void Parse_WindowsGitPaths_NormalizesMainAndLinkedWorktreePaths()
+    {
+        RepositoryInfo repository = new(
+            @"D:\repos\feature", "feature", "feature", mainWorktreePath: "D:/repos/main");
+        string output = "worktree D:/repos/main\0branch refs/heads/main\0"
+            + "worktree D:/repos/feature\0branch refs/heads/feature\0";
+
+        IReadOnlyList<GitWorktree> result = GitWorktreeParser.Parse(output, repository);
+
+        Assert.AreEqual(@"D:\repos\main", result[0].Path);
+        Assert.AreEqual(@"D:\repos\feature", result[1].Path);
+        Assert.IsTrue(result[0].IsMain);
+        Assert.IsFalse(result[0].IsCurrent);
+        Assert.IsTrue(result[1].IsCurrent);
+    }
+
     [TestMethod]
     public void Parse_MultipleWorktrees_MapsFlagsAndReasons()
     {
@@ -82,9 +100,36 @@ public sealed class GitWorktreeParserTests
         IReadOnlyList<GitWorktree> result = GitWorktreeParser.Parse(output, repository);
 
         Assert.HasCount(1, result);
-        Assert.AreEqual(submodulePath, result[0].Path);
+        Assert.AreEqual(Path.GetFullPath(submodulePath), result[0].Path);
         Assert.AreEqual("TextControlBox-WinUI", result[0].DisplayName);
         Assert.IsTrue(result[0].IsMain);
         Assert.IsTrue(result[0].IsCurrent);
+    }
+
+    [TestMethod]
+    public void Parse_PosixPaths_UsesCaseSensitiveComparison()
+    {
+        RepositoryInfo repository = new(
+            "/srv/Feature",
+            "Feature",
+            "main",
+            mainWorktreePath: "/srv/Main");
+        string output =
+            "worktree /srv/Main\0" +
+            "HEAD 1111111111111111111111111111111111111111\0" +
+            "branch refs/heads/main\0" +
+            "worktree /srv/feature\0" +
+            "HEAD 2222222222222222222222222222222222222222\0" +
+            "branch refs/heads/feature\0";
+
+        IReadOnlyList<GitWorktree> result = GitWorktreeParser.Parse(
+            output,
+            repository,
+            new TestRepositoryPathService(RepositoryPathStyle.Posix));
+
+        Assert.HasCount(2, result);
+        Assert.AreEqual("/srv/Main", result[0].Path);
+        Assert.AreEqual("/srv/feature", result[1].Path);
+        Assert.IsFalse(result[1].IsCurrent);
     }
 }

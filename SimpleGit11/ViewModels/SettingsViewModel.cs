@@ -11,6 +11,7 @@ using SimpleGit11.Messages;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
 using SimpleGit11.Services.Git;
+using SimpleGit11.Services.Execution;
 
 namespace SimpleGit11.ViewModels;
 
@@ -23,6 +24,9 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     private readonly IGitService _gitService;
     private readonly ISettingsService _settingsService;
     private readonly IDialogService _dialogService;
+    private readonly IExecutionContextService _executionContextService;
+    private GitPullSettings? _savedGlobalPullSettings;
+    private GitPullSettings? _savedRepositoryPullSettings;
     private bool _isInitializing = true;
     public SettingsViewModel(
         MainWindowViewModel mainWindowViewModel,
@@ -31,6 +35,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         ISettingsService settingsService,
         IGitService gitService,
         IDialogService dialogService,
+        IExecutionContextService executionContextService,
         IMessenger messenger,
         IAsyncCommandExecutor asyncCommandExecutor)
         : base(messenger)
@@ -41,6 +46,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         _settingsService = settingsService;
         _gitService = gitService;
         _dialogService = dialogService;
+        _executionContextService = executionContextService;
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
         ThemeOptions =
@@ -76,11 +82,19 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         GlobalRepositoryEmail = "";
         InitialBranchName = "";
         GlobalPushDefaultRemote = "";
-        SshCommand = _settingsService.Current.SshCommand;
+        SshCommand = "";
         RepositoryPushDefaultRemote = "";
         CredentialHelperStatus = "";
         RepositorySettingsStatus = "";
         GlobalUrlRewrites = [];
+        GlobalPullRebaseOptions = CreatePullRebaseOptions();
+        GlobalPullFastForwardOptions = CreatePullFastForwardOptions();
+        RepositoryPullRebaseOptions = CreatePullRebaseOptions();
+        RepositoryPullFastForwardOptions = CreatePullFastForwardOptions();
+        SelectedGlobalPullRebase = GlobalPullRebaseOptions[0];
+        SelectedGlobalPullFastForward = GlobalPullFastForwardOptions[0];
+        SelectedRepositoryPullRebase = RepositoryPullRebaseOptions[0];
+        SelectedRepositoryPullFastForward = RepositoryPullFastForwardOptions[0];
         _isInitializing = false;
 
     }
@@ -88,6 +102,34 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     public ObservableCollection<DisplayOption<AppThemeMode>> ThemeOptions { get; }
     public ObservableCollection<DisplayOption<AppLanguage>> LanguageOptions { get; }
     public ObservableCollection<string> EditorFontFamilyOptions { get; }
+    public sealed record ConfigOption(string? Value, string DisplayName);
+
+    public ObservableCollection<ConfigOption> GlobalPullRebaseOptions { get; }
+    public ObservableCollection<ConfigOption> GlobalPullFastForwardOptions { get; }
+    public ObservableCollection<ConfigOption> RepositoryPullRebaseOptions { get; }
+    public ObservableCollection<ConfigOption> RepositoryPullFastForwardOptions { get; }
+
+    [ObservableProperty]
+    public partial ConfigOption SelectedGlobalPullRebase { get; set; }
+
+    [ObservableProperty]
+    public partial ConfigOption SelectedGlobalPullFastForward { get; set; }
+
+    [ObservableProperty]
+    public partial ConfigOption SelectedRepositoryPullRebase { get; set; }
+
+    [ObservableProperty]
+    public partial ConfigOption SelectedRepositoryPullFastForward { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsGlobalPullSettingsLoaded { get; private set; }
+
+    [ObservableProperty]
+    public partial bool IsRepositoryPullSettingsLoaded { get; private set; }
+
+    public string GlobalGitSettingsTitle => string.Format(
+        _localizationService.GetString("GlobalGitSettingsTitleFormat"),
+        _executionContextService.Current.DisplayMachineName);
 
     [ObservableProperty]
     public partial DisplayOption<AppThemeMode> SelectedTheme { get; set; }
@@ -207,6 +249,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     private async Task ReadGitConfig()
     {
         ClearNotification();
+        ResetPullSettings();
 
         try
         {
@@ -218,21 +261,15 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
                 null) ?? "";
             string configuredSshCommand = await _gitService.Configuration.GetGlobalSshCommandAsync();
             UseSshCommandOverride = !string.IsNullOrWhiteSpace(configuredSshCommand);
-            if (UseSshCommandOverride)
-            {
-                SshCommand = configuredSshCommand;
-                _settingsService.SetSshCommand(SshCommand);
-            }
-            else
-            {
-                SshCommand = _settingsService.Current.SshCommand;
-            }
+            SshCommand = configuredSshCommand;
             UseCredentialHelperManager = await _gitService.Configuration.IsGlobalCredentialHelperManagerConfiguredAsync();
             GlobalUrlRewrites = await _gitService.Configuration.GetGlobalUrlRewritesAsync();
+            await LoadPullSettingsAsync(ConfigScope.Global, null);
 
             RepositoryInfo? currentRepository = _mainWindowViewModel.CurrentRepository;
             if (currentRepository is not null)
             {
+                await LoadPullSettingsAsync(ConfigScope.Local, currentRepository);
                 RepositoryUserName = await _gitService.Configuration.GetUserNameAsync(ConfigScope.Local, currentRepository) ?? "";
                 RepositoryEmail = await _gitService.Configuration.GetUserEmailAsync(ConfigScope.Local, currentRepository) ?? "";
                 RepositoryPushDefaultRemote = await _gitService.Configuration.GetPushDefaultRemoteAsync(
@@ -254,7 +291,117 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     public Task RefreshSettingsAsync()
     {
+        OnPropertyChanged(nameof(GlobalGitSettingsTitle));
         return ReadGitConfig();
+    }
+
+    private ObservableCollection<ConfigOption> CreatePullRebaseOptions() =>
+    [
+        CreatePullOption(null, "PullNotSetOption"),
+        CreatePullOption("false", "PullMergeOption"),
+        CreatePullOption("true", "PullRebaseOption"),
+        CreatePullOption("merges", "PullRebaseMergesOption"),
+        CreatePullOption("interactive", "PullRebaseInteractiveOption")
+    ];
+
+    private ObservableCollection<ConfigOption> CreatePullFastForwardOptions() =>
+    [
+        CreatePullOption(null, "PullNotSetOption"),
+        CreatePullOption("true", "PullFastForwardOption"),
+        CreatePullOption("false", "PullNoFastForwardOption"),
+        CreatePullOption("only", "PullFastForwardOnlyOption")
+    ];
+
+    private ConfigOption CreatePullOption(string? value, string resourceKey) =>
+        new(value, _localizationService.GetString(resourceKey));
+
+    private ConfigOption FindPullOption(ObservableCollection<ConfigOption> options, string? value, int standardCount)
+    {
+        while (options.Count > standardCount)
+        {
+            options.RemoveAt(options.Count - 1);
+        }
+
+        ConfigOption? option = options.FirstOrDefault(item => item.Value == value);
+        if (option is null)
+        {
+            string displayValue = value!.Length == 0 ? _localizationService.GetString("PullEmptyValue") : value;
+            option = new ConfigOption(value, displayValue);
+            options.Add(option);
+        }
+
+        return option;
+    }
+
+    private void ResetPullSettings()
+    {
+        IsGlobalPullSettingsLoaded = false;
+        IsRepositoryPullSettingsLoaded = false;
+        _savedGlobalPullSettings = null;
+        _savedRepositoryPullSettings = null;
+        SelectedGlobalPullRebase = GlobalPullRebaseOptions[0];
+        SelectedGlobalPullFastForward = GlobalPullFastForwardOptions[0];
+        SelectedRepositoryPullRebase = RepositoryPullRebaseOptions[0];
+        SelectedRepositoryPullFastForward = RepositoryPullFastForwardOptions[0];
+    }
+
+    private async Task LoadPullSettingsAsync(ConfigScope scope, RepositoryInfo? repository)
+    {
+        GitPullSettings settings = await _gitService.Configuration.GetPullSettingsAsync(scope, repository);
+        if (scope == ConfigScope.Global)
+        {
+            SelectedGlobalPullRebase = FindPullOption(GlobalPullRebaseOptions, settings.Rebase, 5);
+            SelectedGlobalPullFastForward = FindPullOption(GlobalPullFastForwardOptions, settings.FastForward, 4);
+            _savedGlobalPullSettings = settings;
+            IsGlobalPullSettingsLoaded = true;
+        }
+        else
+        {
+            SelectedRepositoryPullRebase = FindPullOption(RepositoryPullRebaseOptions, settings.Rebase, 5);
+            SelectedRepositoryPullFastForward = FindPullOption(RepositoryPullFastForwardOptions, settings.FastForward, 4);
+            _savedRepositoryPullSettings = settings;
+            IsRepositoryPullSettingsLoaded = true;
+        }
+    }
+
+    private async Task SavePullSettingsAsync(ConfigScope scope, RepositoryInfo? repository)
+    {
+        GitPullSettings? savedSettings = scope == ConfigScope.Global
+            ? _savedGlobalPullSettings
+            : _savedRepositoryPullSettings;
+        if (savedSettings is null)
+        {
+            return;
+        }
+
+        string? rebase = scope == ConfigScope.Global ? SelectedGlobalPullRebase.Value : SelectedRepositoryPullRebase.Value;
+        string? fastForward = scope == ConfigScope.Global ? SelectedGlobalPullFastForward.Value : SelectedRepositoryPullFastForward.Value;
+        // Preserve absent and nonstandard values until explicitly changed by the user.
+        if (rebase != savedSettings.Rebase)
+        {
+            await _gitService.Configuration.SetPullRebaseAsync(scope, repository, rebase);
+            savedSettings = savedSettings with { Rebase = rebase };
+            UpdateSavedPullSettings(scope, savedSettings);
+        }
+
+        if (fastForward != savedSettings.FastForward)
+        {
+            await _gitService.Configuration.SetPullFastForwardAsync(scope, repository, fastForward);
+            savedSettings = savedSettings with { FastForward = fastForward };
+            UpdateSavedPullSettings(scope, savedSettings);
+        }
+    }
+
+    private void UpdateSavedPullSettings(ConfigScope scope, GitPullSettings settings)
+    {
+        if (scope == ConfigScope.Global)
+        {
+            _savedGlobalPullSettings = settings;
+        }
+        else
+        {
+            _savedRepositoryPullSettings = settings;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanManageGlobalUrlRewrites), FlowExceptionsToTaskScheduler = true)]
@@ -434,8 +581,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     private async Task SaveGlobalGitSettingsAsync()
     {
-        _settingsService.SetSshCommand(SshCommand);
-        SshCommand = _settingsService.Current.SshCommand;
+        await SavePullSettingsAsync(ConfigScope.Global, null);
         if (UseSshCommandOverride && !string.IsNullOrWhiteSpace(SshCommand))
         {
             await _gitService.Configuration.SetGlobalSshCommandAsync(SshCommand);
@@ -498,6 +644,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         RepositoryInfo? currentRepository = _mainWindowViewModel.CurrentRepository;
         if (currentRepository is not null)
         {
+            await SavePullSettingsAsync(ConfigScope.Local, currentRepository);
             if (string.IsNullOrWhiteSpace(RepositoryPushDefaultRemote))
             {
                 await _gitService.Configuration.UnsetPushDefaultRemoteAsync(

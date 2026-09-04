@@ -8,6 +8,7 @@ using SimpleGit11.Messages;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
 using SimpleGit11.Services.Git;
+using SimpleGit11.Services.Execution;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -29,6 +30,8 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     private readonly IDialogService _dialogService;
     private readonly MainWindowViewModel _mainWindowViewModel;
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
+    private readonly IExecutionContextService _executionContextService;
+    private readonly IExecutionRepositoryDiscoveryService _executionRepositoryDiscoveryService;
     private readonly List<FoundRepositoryViewItem> _foundRepositoryItems = [];
     private IReadOnlyList<GitRemote> _remotes = [];
 
@@ -42,7 +45,9 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         IDialogService dialogService,
         MainWindowViewModel mainWindowViewModel,
         IMessenger messenger,
-        IAsyncCommandExecutor asyncCommandExecutor)
+        IAsyncCommandExecutor asyncCommandExecutor,
+        IExecutionContextService executionContextService,
+        IExecutionRepositoryDiscoveryService executionRepositoryDiscoveryService)
         : base(messenger)
     {
         _storagePickerService = storagePickerService;
@@ -55,6 +60,9 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         _mainWindowViewModel = mainWindowViewModel;
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
+        _executionContextService = executionContextService;
+        _executionRepositoryDiscoveryService = executionRepositoryDiscoveryService;
+        _executionContextService.CurrentChanged += OnExecutionContextChanged;
         RepositoryName = _localizationService.GetString("NoRepositoryOpen");
         RepositoryPath = "";
         CurrentBranch = _localizationService.GetString("NoBranch");
@@ -370,13 +378,23 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     {
         ClearResultMessages();
 
-        string? selectedPath = await _storagePickerService.PickFolderAsync();
+        string? selectedPath = _executionContextService.Current.IsLocal
+            ? await _storagePickerService.PickFolderAsync()
+            : await _dialogService.ShowTextInputAsync(new TextInputDialogRequest(
+                _localizationService.GetString("OpenRemoteRepositoryDialogTitle"),
+                _localizationService.GetString("RemoteRepositoryPathHeader"),
+                "",
+                _localizationService.GetString("OpenRemoteRepositoryButton"),
+                _localizationService.GetString("ConfirmationDialogCancelButton"),
+                _executionContextService.Current.Runtime.Paths.Style == RepositoryPathStyle.Windows
+                    ? @"C:\Source\Repository"
+                    : "/srv/repository"));
         if (string.IsNullOrWhiteSpace(selectedPath))
         {
             return;
         }
 
-        RepositoryInfo? repository = _gitService.RepositoryDiscovery.TryOpenRepository(selectedPath);
+        RepositoryInfo? repository = await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(selectedPath);
         if (repository is null)
         {
             ShowError(_localizationService.GetString("SelectedFolderNotGitRepository"));
@@ -390,7 +408,11 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     {
         ClearResultMessages();
 
-        string? selectedPath = await _storagePickerService.PickFolderAsync();
+        string? selectedPath = _executionContextService.Current.IsLocal
+            ? await _storagePickerService.PickFolderAsync()
+            : await ShowRemotePathDialogAsync(
+                "CreateRemoteRepositoryDialogTitle",
+                "CreateRemoteRepositoryButton");
         if (string.IsNullOrWhiteSpace(selectedPath))
         {
             return;
@@ -505,7 +527,11 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             return;
         }
 
-        string? selectedPath = await _storagePickerService.PickFolderAsync();
+        string? selectedPath = _executionContextService.Current.IsLocal
+            ? await _storagePickerService.PickFolderAsync()
+            : await ShowRemotePathDialogAsync(
+                "CloneRemoteRepositoryDialogTitle",
+                "CloneRemoteRepositoryButton");
         if (string.IsNullOrWhiteSpace(selectedPath))
         {
             return;
@@ -758,7 +784,11 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
 
     private async Task BrowseRepositorySearchStartPathAsync()
     {
-        string? selectedPath = await _storagePickerService.PickFolderAsync();
+        string? selectedPath = _executionContextService.Current.IsLocal
+            ? await _storagePickerService.PickFolderAsync()
+            : await ShowRemotePathDialogAsync(
+                "SearchRemoteRepositoriesDialogTitle",
+                "SearchRemoteRepositoriesButton");
         if (!string.IsNullOrWhiteSpace(selectedPath))
         {
             RepositorySearchStartPath = selectedPath;
@@ -812,10 +842,12 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
 
         ClearResultMessages();
 
-        RepositoryInfo? refreshedRepository = _gitService.RepositoryDiscovery.TryOpenRepository(repository.Path);
+        RepositoryInfo? refreshedRepository =
+            await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(repository.Path);
         if (refreshedRepository is null && !string.IsNullOrWhiteSpace(repository.MainWorktreePath))
         {
-            refreshedRepository = _gitService.RepositoryDiscovery.TryOpenRepository(repository.MainWorktreePath);
+            refreshedRepository = await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(
+                repository.MainWorktreePath);
         }
         if (refreshedRepository is null)
         {
@@ -836,7 +868,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             return;
         }
 
-        RepositoryInfo? refreshedRepository = RefreshCurrentRepositoryIdentity();
+        RepositoryInfo? refreshedRepository = await RefreshCurrentRepositoryIdentityAsync();
         if (refreshedRepository is null)
         {
             ShowError(_localizationService.GetString("RecentRepositoryCannotBeOpened"));
@@ -846,7 +878,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         await LoadRepositoryDetailsAsync(refreshedRepository);
     }
 
-    public RepositoryInfo? RefreshCurrentRepositoryIdentity()
+    public async Task<RepositoryInfo?> RefreshCurrentRepositoryIdentityAsync()
     {
         RepositoryInfo? currentRepository = _mainWindowViewModel.CurrentRepository;
         if (currentRepository is null)
@@ -854,7 +886,8 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             return null;
         }
 
-        RepositoryInfo? refreshedRepository = _gitService.RepositoryDiscovery.TryOpenRepository(currentRepository.Path);
+        RepositoryInfo? refreshedRepository =
+            await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(currentRepository.Path);
         if (refreshedRepository is null)
         {
             return null;
@@ -892,7 +925,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
 
     public async Task<bool> OpenRepositoryPathAsync(string path)
     {
-        RepositoryInfo? repository = _gitService.RepositoryDiscovery.TryOpenRepository(path);
+        RepositoryInfo? repository = await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(path);
         if (repository is null)
         {
             ShowError(_localizationService.GetString("RecentRepositoryCannotBeOpened"));
@@ -953,6 +986,26 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         }
     }
 
+    private Task<string?> ShowRemotePathDialogAsync(
+        string titleResourceKey,
+        string primaryButtonResourceKey)
+    {
+        return _dialogService.ShowTextInputAsync(new TextInputDialogRequest(
+            _localizationService.GetString(titleResourceKey),
+            _localizationService.GetString("RemoteParentPathHeader"),
+            RepositorySearchStartPath,
+            _localizationService.GetString(primaryButtonResourceKey),
+            _localizationService.GetString("ConfirmationDialogCancelButton"),
+            _executionContextService.Current.Runtime.Paths.Style == RepositoryPathStyle.Windows
+                ? @"C:\Source"
+                : "/srv"));
+    }
+
+    public void CloseForExecutionContextChange()
+    {
+        CloseRepository();
+    }
+
     private void ReplaceSubmodules(
         string repositoryPath,
         IReadOnlyList<GitSubmodule> submodules)
@@ -967,7 +1020,9 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
                 OpenRepositoryPathAsync,
                 OpenSubmoduleFolder,
                 ExecuteSubmoduleActionAsync,
-                repositoryPath));
+                _clipboardService.SetText,
+                repositoryPath,
+                CanOpenLocalFolders));
         }
 
         OnPropertyChanged(nameof(HasSubmodules));
@@ -1233,7 +1288,9 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
                                                         item => OpenWorktreeAsync(item),
                                                         item => MoveWorktreeAsync(item),
                                                         item => RemoveWorktreeAsync(item),
-                                                        item => ToggleWorktreeLockAsync(item));
+                                                        item => ToggleWorktreeLockAsync(item),
+                                                        _clipboardService.SetText,
+                                                        CanOpenLocalFolders);
                 Worktrees.Add(worktreeItem);
                 if (worktree.IsCurrent)
                     CurrentWorktreeItem = worktreeItem;
@@ -1260,9 +1317,11 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         string mainWorktreePath = string.IsNullOrWhiteSpace(repository.MainWorktreePath)
             ? repository.Path
             : repository.MainWorktreePath;
-        string parentPath = Directory.GetParent(mainWorktreePath)?.FullName ?? mainWorktreePath;
-        string repositoryName = Path.GetFileName(Path.TrimEndingDirectorySeparator(mainWorktreePath));
-        string defaultPath = Path.Combine(parentPath, $"{repositoryName}-worktree");
+        IRepositoryPathService paths = _executionContextService.Current.Runtime.Paths;
+        string trimmedMainWorktreePath = mainWorktreePath.TrimEnd('/', '\\');
+        string parentPath = paths.GetParent(trimmedMainWorktreePath) ?? mainWorktreePath;
+        string repositoryName = paths.GetFileName(trimmedMainWorktreePath);
+        string defaultPath = paths.Combine(parentPath, $"{repositoryName}-worktree");
         string detachedStartPoint = repository.CurrentBranch.StartsWith("Detached at ", StringComparison.Ordinal)
             ? repository.CurrentBranch["Detached at ".Length..]
             : "HEAD";
@@ -1648,6 +1707,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
                                                 item => RenameRemoteAsync(item),
                                                 item => EditRemoteUrlAsync(item),
                                                 item => RemoveRemoteAsync(item),
+                                                _clipboardService.SetText,
                                                 selectedRemoteName?.Equals(remote.Name) ?? false);
             RemoteViewItems.Add(remoteItem);
             if (remoteItem.IsCurrent)
@@ -1691,8 +1751,8 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         string mainRepositoryPath = string.IsNullOrWhiteSpace(repository.MainWorktreePath)
             ? repository.Path
             : repository.MainWorktreePath;
-        DirectoryInfo mainRepositoryDirectory = new(Path.TrimEndingDirectorySeparator(mainRepositoryPath));
-        RepositoryName = mainRepositoryDirectory.Name;
+        RepositoryName = _executionContextService.Current.Runtime.Paths.GetFileName(
+            mainRepositoryPath.TrimEnd('/', '\\'));
         RepositoryPath = mainRepositoryPath;
     }
 
@@ -1801,7 +1861,9 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
                 repository,
                 _asyncCommandExecutor,
                 async path => await OpenRepositoryPathAsync(path),
-                _clipboardService.SetText));
+                OpenFoundRepositoryFolder,
+                _clipboardService.SetText,
+                CanOpenLocalFolders));
         }
 
         SelectedFoundRepository = FoundRepositories.FirstOrDefault(
@@ -1809,6 +1871,30 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         ApplyFoundRepositoryFilter();
         OnPropertyChanged(nameof(HasNoFoundRepositories));
     }
+
+    private void OnExecutionContextChanged(object? sender, ExecutionContextChangedEventArgs e)
+    {
+        RepositorySearchStartPath = _gitService.RepositorySearch.LoadStartPath();
+        LoadPersistedFoundRepositories();
+        UpdateCommandStates();
+    }
+
+    private void OpenFoundRepositoryFolder(string path)
+    {
+        try
+        {
+            _fileExplorerService.OpenFolder(path);
+        }
+        catch (Exception exception) when (exception is Win32Exception or DirectoryNotFoundException)
+        {
+            ShowError(
+                _localizationService.GetString("FoundRepositoryFolderOpenFailed"),
+                exception.Message);
+        }
+    }
+
+    private bool CanOpenLocalFolders => _executionContextService.Current.Runtime.Capabilities.HasFlag(
+        ExecutionCapabilities.OpenInLocalFileExplorer);
 
     private void ApplyFoundRepositoryFilter()
     {

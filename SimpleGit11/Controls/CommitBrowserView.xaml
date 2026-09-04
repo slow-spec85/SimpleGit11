@@ -7,7 +7,6 @@
     xmlns:controls="using:SimpleGit11.Controls"
     xmlns:models="using:SimpleGit11.Models"
     xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives" 
-    xmlns:toolkit="using:CommunityToolkit.WinUI"
     xmlns:viewmodels="using:SimpleGit11.ViewModels" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -38,33 +37,28 @@
                         <Setter Target="HistoryDiffSplitter.(Grid.Column)" Value="0" />
                         <Setter Target="HistoryDiffSplitter.(Grid.ColumnSpan)" Value="3" />
                         <Setter Target="HistoryDiffSplitter.Style" Value="{StaticResource HorizontalSplitterStyle}" />
+                        <Setter Target="HistoryDiffSplitter.Margin" Value="0,0,32,0" />
+                        <Setter Target="HistoryContentGrid.ColumnSpacing" Value="0" />
+                        <Setter Target="CommitListSplitter.Margin" Value="0,0,32,0" />
                         <Setter Target="HistoryDiffPane.(Grid.Row)" Value="2" />
                         <Setter Target="HistoryDiffPane.(Grid.Column)" Value="0" />
                         <Setter Target="HistoryDiffPane.Padding" Value="0" />
+                        <Setter Target="CommitListHeader.Padding" Value="0,0,32,0" />
+                        <Setter Target="HistoryCommitsListView.Padding" Value="0,0,28,0" />
+                        <Setter Target="ChangedFilesHeader.Padding" Value="0,0,32,0" />
+                        <Setter Target="HistoryChangedFilesListView.Padding" Value="0,0,28,0" />
+                        <Setter Target="CommitDetailsHeader.Padding" Value="0,0,32,0" />
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="WideLayout">
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="1060" />
                     </VisualState.StateTriggers>
-                </VisualState>
-            </VisualStateGroup>
-            <VisualStateGroup x:Name="CommitListHeaderLayoutStates">
-                <VisualState x:Name="WideCommitListHeader">
-                    <VisualState.StateTriggers>
-                        <toolkit:ControlSizeTrigger MinWidth="300" TargetElement="{Binding ElementName=CommitListGrid}" />
-                    </VisualState.StateTriggers>
-                </VisualState>
-                <VisualState x:Name="NarrowCommitListHeader">
-                    <VisualState.StateTriggers>
-                        <toolkit:ControlSizeTrigger MaxWidth="300" TargetElement="{Binding ElementName=CommitListGrid}" />
-                    </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="NarrowCommitListHeaderFilterRow.Height" Value="Auto" />
-                        <Setter Target="HistorySearchTextBox.(Grid.Row)" Value="1" />
-                        <Setter Target="HistorySearchTextBox.(Grid.Column)" Value="0" />
-                        <Setter Target="HistorySearchTextBox.(Grid.ColumnSpan)" Value="2" />
-                        <Setter Target="HistorySearchColumn.Width" Value="0" />
+                        <Setter Target="HistoryListsColumn.Width" Value="400" />
+                        <Setter Target="HistoryDiffColumn.Width" Value="*" />
+                        <Setter Target="HistoryListsRow.Height" Value="*" />
+                        <Setter Target="HistoryDiffRow.Height" Value="0" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
@@ -76,6 +70,7 @@
         </Grid.RowDefinitions>
 
         <Grid
+            x:Name="HistoryContentGrid"
             Grid.RowSpan="3"
             ColumnSpacing="4">
             <Grid.ColumnDefinitions>
@@ -102,29 +97,154 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid
+                        x:Name="CommitListHeader"
                         MinHeight="40"
                         ColumnSpacing="12"
                         RowSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition x:Name="HistorySearchColumn" Width="160" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition x:Name="NarrowCommitListHeaderFilterRow" Height="0" />
-                        </Grid.RowDefinitions>
                         <TextBlock
                             MaxLines="1" TextWrapping="WrapWholeWords"
                             VerticalAlignment="Center"
                             Style="{ThemeResource SubtitleTextBlockStyle}"
                             Text="{x:Bind ViewModel.CommitsTitle, Mode=OneWay}" />
-                        <TextBox
-                            x:Name="HistorySearchTextBox"
+                        <ToggleButton
                             Grid.Column="1"
-                            x:Uid="HistorySearchTextBox"
+                            x:Name="CommitFilterToggleButton"
+                            x:Uid="CommitFilterToggleButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            HorizontalAlignment="Right"
                             VerticalAlignment="Center"
-                            Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            Visibility="{Binding IsCommitListVisible, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            Click="CommitFilterToggleButton_Click"
+                            IsChecked="{x:Bind ViewModel.IsCommitFilterApplied, Mode=OneWay}"
+                            Visibility="{Binding IsCommitListVisible, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <SymbolIcon Symbol="Find" />
+                            <primitives:FlyoutBase.AttachedFlyout>
+                                <Flyout Placement="BottomEdgeAlignedRight">
+                                    <Flyout.FlyoutPresenterStyle>
+                                        <Style TargetType="FlyoutPresenter">
+                                            <Setter Property="CornerRadius" Value="{ThemeResource OverlayCornerRadius}" />
+                                            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+                                        </Style>
+                                    </Flyout.FlyoutPresenterStyle>
+                                    <StackPanel Spacing="16">
+                                        <TextBox
+                                            x:Name="HistorySearchTextBox"
+                                            x:Uid="HistorySearchTextBox"
+                                            AutomationProperties.AutomationId="HistorySearchTextBox"
+                                            Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <ToggleSwitch
+                                            x:Uid="MainlineOnlyToggleSwitch"
+                                            AutomationProperties.AutomationId="MainlineOnlyToggleSwitch"
+                                            IsOn="{x:Bind ViewModel.IsMainlineOnly, Mode=TwoWay}" />
+                                        <StackPanel Spacing="8">
+                                            <TextBlock
+                                                x:Uid="CommitDateFilterHeaderTextBlock"
+                                                Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                            <Grid ColumnSpacing="8" RowSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="28" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <TextBlock
+                                                    x:Name="CommitDateFromTextBlock"
+                                                    x:Uid="CommitDateFromTextBlock"
+                                                    VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                                    <CalendarDatePicker
+                                                        x:Uid="CommitDateFromPicker"
+                                                        AutomationProperties.AutomationId="CommitDateFromPicker"
+                                                        AutomationProperties.LabeledBy="{Binding ElementName=CommitDateFromTextBlock}"
+                                                        Date="{x:Bind ViewModel.FilterFromDate, Mode=TwoWay}" 
+                                                        Width="110" />
+                                                    <Button
+                                                        x:Uid="CommitTimeFromPicker"
+                                                        Width="80"
+                                                        Height="32"
+                                                        HorizontalContentAlignment="Center"
+                                                        AutomationProperties.AutomationId="CommitTimeFromPicker"
+                                                        AutomationProperties.LabeledBy="{Binding ElementName=CommitDateFromTextBlock}"
+                                                        Click="TimeFilterButton_Click"
+                                                        Content="{x:Bind ViewModel.FilterFromTimeText, Mode=OneWay}"
+                                                        IsEnabled="{x:Bind ViewModel.IsFilterFromTimeEnabled, Mode=OneWay}"
+                                                        Padding="8,0">
+                                                        <primitives:FlyoutBase.AttachedFlyout>
+                                                            <TimePickerFlyout
+                                                                ClockIdentifier="24HourClock"
+                                                                Time="{x:Bind ViewModel.FilterFromTime, Mode=TwoWay}" />
+                                                        </primitives:FlyoutBase.AttachedFlyout>
+                                                    </Button>
+                                                    <Button
+                                                        x:Uid="ClearCommitDateFromButton"
+                                                        Width="32"
+                                                        Height="32"
+                                                        AutomationProperties.AutomationId="ClearCommitDateFromButton"
+                                                        Command="{x:Bind ViewModel.ClearFilterFromDateCommand, Mode=OneWay}"
+                                                        IsEnabled="{x:Bind ViewModel.IsFilterFromTimeEnabled, Mode=OneWay}"
+                                                        Padding="0">
+                                                        <FontIcon FontSize="12" Glyph="&#xE711;" />
+                                                    </Button>
+                                                </StackPanel>
+                                                <TextBlock
+                                                    Grid.Row="1"
+                                                    x:Name="CommitDateToTextBlock"
+                                                    x:Uid="CommitDateToTextBlock"
+                                                    VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Horizontal" Spacing="4">
+                                                    <CalendarDatePicker
+                                                        x:Uid="CommitDateToPicker"
+                                                        AutomationProperties.AutomationId="CommitDateToPicker"
+                                                        AutomationProperties.LabeledBy="{Binding ElementName=CommitDateToTextBlock}"
+                                                        Date="{x:Bind ViewModel.FilterToDate, Mode=TwoWay}"
+                                                        Width="110"/>
+                                                    <Button
+                                                        x:Uid="CommitTimeToPicker"
+                                                        Width="80"
+                                                        Height="32"
+                                                        HorizontalContentAlignment="Center"
+                                                        AutomationProperties.AutomationId="CommitTimeToPicker"
+                                                        AutomationProperties.LabeledBy="{Binding ElementName=CommitDateToTextBlock}"
+                                                        Click="TimeFilterButton_Click"
+                                                        Content="{x:Bind ViewModel.FilterToTimeText, Mode=OneWay}"
+                                                        IsEnabled="{x:Bind ViewModel.IsFilterToTimeEnabled, Mode=OneWay}"
+                                                        Padding="8,0">
+                                                        <primitives:FlyoutBase.AttachedFlyout>
+                                                            <TimePickerFlyout
+                                                                ClockIdentifier="24HourClock"
+                                                                Time="{x:Bind ViewModel.FilterToTime, Mode=TwoWay}" />
+                                                        </primitives:FlyoutBase.AttachedFlyout>
+                                                    </Button>
+                                                    <Button
+                                                        x:Uid="ClearCommitDateToButton"
+                                                        Width="32"
+                                                        Height="32"
+                                                        AutomationProperties.AutomationId="ClearCommitDateToButton"
+                                                        Command="{x:Bind ViewModel.ClearFilterToDateCommand, Mode=OneWay}"
+                                                        IsEnabled="{x:Bind ViewModel.IsFilterToTimeEnabled, Mode=OneWay}"
+                                                        Padding="0">
+                                                        <FontIcon FontSize="12" Glyph="&#xE711;" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                        <Button
+                                            x:Uid="ResetCommitFiltersButton"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            AutomationProperties.AutomationId="ResetCommitFiltersButton"
+                                            Command="{x:Bind ViewModel.ResetCommitFiltersCommand, Mode=OneWay}"
+                                            IsEnabled="{x:Bind ViewModel.IsCommitFilterApplied, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Flyout>
+                            </primitives:FlyoutBase.AttachedFlyout>
+                        </ToggleButton>
                     </Grid>
                     <ListView
                         x:Name="HistoryCommitsListView"
@@ -274,6 +394,7 @@
                 </Grid>
 
                 <primitives:Thumb
+                    x:Name="CommitListSplitter"
                     Grid.Row="1"
                     DragDelta="FilesSplitter_DragDelta"
                     Style="{StaticResource HorizontalSplitterStyle}" />
@@ -287,7 +408,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Grid Padding="0,0,16,0">
+                    <Grid x:Name="ChangedFilesHeader" Padding="0,0,16,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -449,7 +570,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Grid>
+                    <Grid x:Name="CommitDetailsHeader">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />

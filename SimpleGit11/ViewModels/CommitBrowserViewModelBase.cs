@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using SimpleGit11.Messages;
 using SimpleGit11.Models;
+using SimpleGit11.Presentation.Commits;
 using SimpleGit11.Services;
 using SimpleGit11.Services.Git;
 
@@ -45,6 +46,8 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
             openRepositoryMessageKey)
     {
         SearchText = "";
+        FilterFromTime = TimeSpan.Zero;
+        FilterToTime = new TimeSpan(23, 59, 0);
     }
 
     public ObservableCollection<GitCommit> Commits { get; } = [];
@@ -54,6 +57,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     public ObservableCollection<CommitParentViewItem> ParentCommits { get; } = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCommitFilterApplied))]
     public partial string SearchText { get; set; }
 
     partial void OnSearchTextChanged(string value)
@@ -64,8 +68,85 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
             _exactFilePathSearchText = "";
         }
 
-        ApplySearch();
+        ApplyFilters();
         RefreshChangedFilesFilter();
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCommitFilterApplied))]
+    public partial bool IsMainlineOnly { get; set; }
+
+    partial void OnIsMainlineOnlyChanged(bool value)
+    {
+        ApplyFilters();
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCommitFilterApplied))]
+    [NotifyPropertyChangedFor(nameof(IsFilterFromTimeEnabled))]
+    public partial DateTimeOffset? FilterFromDate { get; set; }
+
+    partial void OnFilterFromDateChanged(DateTimeOffset? value)
+    {
+        ApplyFilters();
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FilterFromTimeText))]
+    public partial TimeSpan FilterFromTime { get; set; }
+
+    partial void OnFilterFromTimeChanged(TimeSpan value)
+    {
+        ApplyFilters();
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCommitFilterApplied))]
+    [NotifyPropertyChangedFor(nameof(IsFilterToTimeEnabled))]
+    public partial DateTimeOffset? FilterToDate { get; set; }
+
+    partial void OnFilterToDateChanged(DateTimeOffset? value)
+    {
+        ApplyFilters();
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FilterToTimeText))]
+    public partial TimeSpan FilterToTime { get; set; }
+
+    partial void OnFilterToTimeChanged(TimeSpan value)
+    {
+        ApplyFilters();
+    }
+
+    public bool IsFilterFromTimeEnabled => FilterFromDate.HasValue;
+
+    public bool IsFilterToTimeEnabled => FilterToDate.HasValue;
+
+    public string FilterFromTimeText => FilterFromTime.ToString(@"hh\:mm");
+
+    public string FilterToTimeText => FilterToTime.ToString(@"hh\:mm");
+
+    public bool IsCommitFilterApplied => CreateFilterCriteria().IsApplied;
+
+    [RelayCommand]
+    private void OnClearFilterFromDate()
+    {
+        FilterFromDate = null;
+        FilterFromTime = TimeSpan.Zero;
+    }
+
+    [RelayCommand]
+    private void OnClearFilterToDate()
+    {
+        FilterToDate = null;
+        FilterToTime = new TimeSpan(23, 59, 0);
+    }
+
+    [RelayCommand]
+    private void OnResetCommitFilters()
+    {
+        ClearCommitFilters();
     }
 
     public bool HasParentCommits => ParentCommits.Count > 0;
@@ -104,7 +185,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     {
         _allCommits.Clear();
         _allCommits.AddRange(commits);
-        ApplySearch();
+        ApplyFilters();
     }
 
     protected void ClearCommits()
@@ -132,15 +213,9 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
             }
 
             _allCommits.Add(commit);
-            if (string.IsNullOrWhiteSpace(SearchText) || MatchesSearch(commit))
-            {
-                Commits.Add(commit);
-            }
         }
 
-        RefreshParentCommits();
-        OnPropertyChanged(nameof(CommitsTitle));
-        OnCommitFilterChanged();
+        ApplyFilters();
     }
 
     protected virtual void OnCommitFilterChanged()
@@ -178,12 +253,12 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
             || string.Equals(file.Path, _exactFilePathSearchText, StringComparison.Ordinal);
     }
 
-    private void ApplySearch()
+    private void ApplyFilters()
     {
         string? selectedHash = SelectedCommit?.Hash;
-        IEnumerable<GitCommit> filteredCommits = string.IsNullOrWhiteSpace(SearchText)
-            ? _allCommits
-            : _allCommits.Where(MatchesSearch);
+        IReadOnlyList<GitCommit> filteredCommits = CommitBrowserFilter.Apply(
+            _allCommits,
+            CreateFilterCriteria());
 
         Commits.Clear();
         foreach (GitCommit commit in filteredCommits)
@@ -198,25 +273,14 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         OnCommitFilterChanged();
     }
 
-    private bool MatchesSearch(GitCommit commit)
-    {
-        string query = SearchText.Trim();
-        if (IsExactFilePathSearch)
-        {
-            return commit.ChangedFilePaths.Any(path =>
-                string.Equals(path, query, StringComparison.Ordinal));
-        }
-
-        return commit.Message.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || commit.Hash.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || commit.ShortHash.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || commit.AuthorName.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || commit.AuthorEmail.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || commit.References.Any(reference =>
-                reference.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
-            || commit.ChangedFilePaths.Any(path =>
-                path.Contains(query, StringComparison.OrdinalIgnoreCase));
-    }
+    private CommitFilterCriteria CreateFilterCriteria() => new(
+        IsMainlineOnly,
+        FilterFromDate,
+        FilterFromTime,
+        FilterToDate,
+        FilterToTime,
+        SearchText,
+        _exactFilePathSearchText);
 
     [RelayCommand]
     private void OnFilterByChangedFile(GitChangedFile? changedFile)
@@ -230,7 +294,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         _exactFilePathSearchText = filePath;
         if (string.Equals(SearchText, filePath, StringComparison.Ordinal))
         {
-            ApplySearch();
+            ApplyFilters();
             RefreshChangedFilesFilter();
             return;
         }
@@ -259,13 +323,20 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(SearchText))
-        {
-            SearchText = "";
-        }
+        ClearCommitFilters();
 
         SelectedCommit = Commits.FirstOrDefault(commit =>
             string.Equals(commit.Hash, parent.Hash, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void ClearCommitFilters()
+    {
+        IsMainlineOnly = false;
+        FilterFromDate = null;
+        FilterFromTime = TimeSpan.Zero;
+        FilterToDate = null;
+        FilterToTime = new TimeSpan(23, 59, 0);
+        SearchText = "";
     }
 
     private void RefreshParentCommits()

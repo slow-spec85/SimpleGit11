@@ -6,16 +6,21 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SimpleGit11.Services.Execution;
 
 namespace SimpleGit11.Services;
 
 public sealed class GitArchiveService : IGitArchiveService
 {
     private readonly IGitCommandRunner _commandRunner;
+    private readonly IExecutionContextService? _executionContextService;
 
-    public GitArchiveService(IGitCommandRunner? commandRunner = null)
+    public GitArchiveService(
+        IGitCommandRunner? commandRunner = null,
+        IExecutionContextService? executionContextService = null)
     {
         _commandRunner = commandRunner ?? new GitCommandRunner();
+        _executionContextService = executionContextService;
     }
 
     public async Task CreateAsync(
@@ -34,12 +39,18 @@ public sealed class GitArchiveService : IGitArchiveService
         string temporaryPath = Path.Combine(
             outputDirectory,
             $".{Path.GetFileName(outputPath)}.{Guid.NewGuid():N}.tmp");
+        bool isRemote = _executionContextService?.Current.IsLocal == false;
+        string commandOutputPath = isRemote
+            ? _executionContextService!.Current.Runtime.Paths.Combine(
+                repository.CommonGitDirectory,
+                $"simplegit11-archive-{Guid.NewGuid():N}.tmp")
+            : temporaryPath;
 
         List<string> arguments =
         [
             "archive",
             $"--format={GetFormatArgument(request.Format)}",
-            $"--output={temporaryPath}"
+            $"--output={commandOutputPath}"
         ];
         if (!string.IsNullOrWhiteSpace(rootDirectoryName))
         {
@@ -54,11 +65,23 @@ public sealed class GitArchiveService : IGitArchiveService
                 repository.Path,
                 arguments,
                 cancellationToken: cancellationToken);
+            if (isRemote)
+            {
+                await _executionContextService!.Current.Runtime.FileTransfer.DownloadAsync(
+                    commandOutputPath,
+                    temporaryPath,
+                    cancellationToken);
+            }
+
             File.Move(temporaryPath, outputPath, overwrite: true);
         }
         finally
         {
             TryDeleteTemporaryFile(temporaryPath);
+            if (isRemote)
+            {
+                await TryDeleteRemoteTemporaryFileAsync(commandOutputPath);
+            }
         }
     }
 
@@ -106,6 +129,21 @@ public sealed class GitArchiveService : IGitArchiveService
         {
         }
         catch (UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private async Task TryDeleteRemoteTemporaryFileAsync(string path)
+    {
+        try
+        {
+            IRepositoryFileSystem files = _executionContextService!.Current.Runtime.Files;
+            if (await files.FileExistsAsync(path, CancellationToken.None))
+            {
+                await files.DeleteFileAsync(path, CancellationToken.None);
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
         }
     }
