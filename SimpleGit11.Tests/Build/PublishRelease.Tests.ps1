@@ -62,12 +62,10 @@ param($CoreDirectory, $ReleaseVersion, $InstallerVersion, [switch]$AcceptWixEula
 if (-not $AcceptWixEula) { throw 'Consent was not forwarded.' }
 if ($global:publicationTest.FailInstaller) { throw 'Fixture installer failure.' }
 if ((Split-Path -Leaf $CoreDirectory) -ne '.publish-staging-win-x64') { throw 'Payload must remain internal.' }
-foreach ($culture in @('en-US', 'ru-RU')) {
-    $path = Join-Path (Split-Path -Parent $CoreDirectory) "SimpleGit11-$ReleaseVersion-win-x64-$culture.msi"
-    Set-Content -LiteralPath $path -Value $InstallerVersion
-    Set-Content -LiteralPath "$path.sha256" -Value 'fixture checksum'
-    $path
-}
+$path = Join-Path (Split-Path -Parent $CoreDirectory) "SimpleGit11-$ReleaseVersion-win-x64.msi"
+Set-Content -LiteralPath $path -Value $InstallerVersion
+Set-Content -LiteralPath "$path.sha256" -Value 'fixture checksum'
+$path
 '@
     [string]$fixtureScript = Join-Path $buildDirectory 'Publish-Release.ps1'
     if ((Get-Command $fixtureScript).Parameters.ContainsKey('Installer')) { throw 'The optional installer mode must be removed.' }
@@ -82,7 +80,7 @@ foreach ($culture in @('en-US', 'ru-RU')) {
 
     $result = & $fixtureScript -AcceptWixEula
     if ($result.Version -ne '1.2.3' -or $result.InstallerVersion -ne '1.2.3' -or
-        $result.Installers.Count -ne 2 -or $result.ChecksumFiles.Count -ne 2) { throw 'Invalid stable MSI result.' }
+        $result.Installers.Count -ne 1 -or $result.ChecksumFiles.Count -ne 1) { throw 'Invalid stable MSI result.' }
     if ('Archive' -in $result.PSObject.Properties.Name -or 'Sha256' -in $result.PSObject.Properties.Name) { throw 'Obsolete archive output remains.' }
     foreach ($file in @($result.Installers) + @($result.ChecksumFiles)) {
         if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing output: $file" }

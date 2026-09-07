@@ -20,7 +20,7 @@ public sealed partial class SynchronizationPage : Page, IPageRefreshTarget, IRem
 
     public Task RefreshAsync()
     {
-        return ViewModel.RefreshSynchronizationLocalAsync();
+        return ViewModel.RefreshSynchronizationPageAsync();
     }
 
     public Task RefreshSelectedRemoteAsync()

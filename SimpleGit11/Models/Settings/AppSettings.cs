@@ -10,9 +10,11 @@ public sealed class AppSettings
 
     public AppLanguage Language { get; set; } = AppLanguage.System;
 
-    public bool IgnoreWhitespaceInDiff { get; set; }
+    public string DefaultRemoteName { get; set; } = "origin";
 
-    public bool IncludePrereleaseVersions { get; set; }
+    public bool FetchOnRepositoryOpen { get; set; }
+
+    public bool IgnoreWhitespaceInDiff { get; set; }
 
     public string EditorFontFamily { get; set; } = DefaultEditorFontFamily;
 

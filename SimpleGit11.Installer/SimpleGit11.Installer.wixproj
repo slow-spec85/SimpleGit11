@@ -3,8 +3,8 @@
     <OutputType>Package</OutputType>
     <InstallerPlatform>x64</InstallerPlatform>
     <Platforms>x64</Platforms>
-    <Cultures Condition="'$(Cultures)' == ''">en-US</Cultures>
-    <OutputName>SimpleGit11-$(ReleaseVersion)-win-x64-$(Cultures)</OutputName>
+    <Cultures>en-US</Cultures>
+    <OutputName>SimpleGit11-$(ReleaseVersion)-win-x64</OutputName>
     <DefineConstants>$(DefineConstants);MsiVersion=$(MsiVersion);CoreSource=$(CoreSource);PayloadFile=$(PayloadFile)</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AcceptEula Condition="'$(AcceptWixEula)' == 'true'">wix7</AcceptEula>

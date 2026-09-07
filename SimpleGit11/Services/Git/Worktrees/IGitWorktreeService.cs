@@ -12,6 +12,8 @@ public interface IGitWorktreeService
 
     Task MoveAsync(RepositoryInfo repository, GitWorktree worktree, string newPath);
 
+    Task<WorktreeRemovalState> GetRemovalStateAsync(RepositoryInfo repository, GitWorktree worktree);
+
     Task RemoveAsync(RepositoryInfo repository, GitWorktree worktree, bool force);
 
     Task LockAsync(RepositoryInfo repository, GitWorktree worktree, string reason);

@@ -91,10 +91,11 @@ public sealed class GitSubmoduleServiceTests
         temporaryDirectory.CreateFile("repository/External/TextControlBox-WinUI/.git");
         temporaryDirectory.CreateFile("repository/External/TextControlBox-WinUI/.gitmodules");
 
-        GitSubmoduleService service = new(new FakeGitCommandRunner(
+        FakeGitCommandRunner runner = new(
             repositoryPath,
             submodulePath,
-            nestedSubmodulePath));
+            nestedSubmodulePath);
+        GitSubmoduleService service = new(runner);
 
         IReadOnlyList<GitSubmoduleApplicationState> states = await service.GetApplicationStatesAsync(
             new RepositoryInfo(repositoryPath, "repository", "main"));
@@ -107,6 +108,64 @@ public sealed class GitSubmoduleServiceTests
             states[1].Path);
         Assert.AreEqual(submodulePath.Replace('/', '\\'), states[1].OwnerRepositoryPath);
         Assert.IsFalse(states[1].IsInitialized);
+        Assert.IsFalse(runner.Commands.Any(command => command.StartsWith("status ") || command.StartsWith("ls-tree ")));
+        Assert.AreEqual(IndexCommit, states[0].RequiredCommit);
+        Assert.AreEqual(CheckedOutCommit, states[0].LocalCommit);
+    }
+
+    [TestMethod]
+    [DataRow(true, false, true, 0)]
+    [DataRow(false, false, true, 1)]
+    [DataRow(true, true, true, 1)]
+    [DataRow(true, false, false, 0)]
+    public async Task GetApplicationStatesAsync_ReadsOnlyPinnedAndCurrentCommits(
+        bool initialized, bool headFails, bool hasIndexCommit, int expectedStates)
+    {
+        using TemporaryDirectory temporaryDirectory = new();
+        string repositoryPath = temporaryDirectory.CreateDirectory("repository");
+        string submodulePath = temporaryDirectory.CreateDirectory("repository/External/TextControlBox-WinUI");
+        temporaryDirectory.CreateFile("repository/.gitmodules");
+        if (initialized)
+        {
+            temporaryDirectory.CreateFile("repository/External/TextControlBox-WinUI/.git");
+        }
+
+        FakeGitCommandRunner runner = new(repositoryPath, submodulePath)
+        {
+            CurrentCommit = IndexCommit,
+            HeadFails = headFails,
+            HasIndexCommit = hasIndexCommit
+        };
+        GitSubmoduleService service = new(runner);
+        IReadOnlyList<GitSubmoduleApplicationState> states = await service.GetApplicationStatesAsync(
+            new RepositoryInfo(repositoryPath, "repository", "main"));
+
+        Assert.HasCount(expectedStates, states);
+        Assert.AreEqual(initialized ? 3 : 2, runner.Commands.Count);
+        Assert.IsFalse(runner.Commands.Any(command => command.StartsWith("status ") || command.StartsWith("ls-tree ")));
+        Assert.AreEqual(initialized, runner.Commands.Contains("rev-parse --verify HEAD"));
+        if (expectedStates > 0)
+        {
+            Assert.AreEqual(IndexCommit, states[0].RequiredCommit);
+            Assert.AreEqual("", states[0].LocalCommit);
+            Assert.AreEqual(initialized, states[0].IsInitialized);
+        }
+    }
+
+    [TestMethod]
+    public async Task GetApplicationStatesAsync_CanceledReadRunsNoGitCommands()
+    {
+        using TemporaryDirectory temporaryDirectory = new();
+        string repositoryPath = temporaryDirectory.CreateDirectory("repository");
+        temporaryDirectory.CreateFile("repository/.gitmodules");
+        FakeGitCommandRunner runner = new(repositoryPath, temporaryDirectory.GetPath("submodule"));
+        GitSubmoduleService service = new(runner);
+        using CancellationTokenSource cancellation = new();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => service.GetApplicationStatesAsync(
+            new RepositoryInfo(repositoryPath, "repository", "main"), cancellation.Token));
+        Assert.IsEmpty(runner.Commands);
     }
 
     [TestMethod]
@@ -200,6 +259,11 @@ public sealed class GitSubmoduleServiceTests
         string submodulePath,
         string? nestedSubmodulePath = null) : IGitCommandRunner
     {
+        public List<string> Commands { get; } = [];
+        public string CurrentCommit { get; init; } = CheckedOutCommit;
+        public bool HeadFails { get; init; }
+        public bool HasIndexCommit { get; init; } = true;
+
         public Task<GitCommandResult> RunAsync(
             string workingDirectory,
             IReadOnlyList<string> arguments,
@@ -208,6 +272,7 @@ public sealed class GitSubmoduleServiceTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             string command = string.Join(' ', arguments);
+            Commands.Add(command);
             string output = "";
 
             if (PathsEqual(workingDirectory, repositoryPath)
@@ -235,7 +300,7 @@ public sealed class GitSubmoduleServiceTests
             else if (PathsEqual(workingDirectory, repositoryPath)
                 && command.StartsWith("ls-files ", StringComparison.Ordinal))
             {
-                output = $"160000 {IndexCommit} 0\tExternal/TextControlBox-WinUI\0";
+                output = HasIndexCommit ? $"160000 {IndexCommit} 0\tExternal/TextControlBox-WinUI\0" : "";
             }
             else if (PathsEqual(workingDirectory, submodulePath)
                 && command.StartsWith("ls-tree ", StringComparison.Ordinal))
@@ -250,7 +315,11 @@ public sealed class GitSubmoduleServiceTests
             else if (PathsEqual(workingDirectory, submodulePath)
                 && command.StartsWith("rev-parse ", StringComparison.Ordinal))
             {
-                output = CheckedOutCommit;
+                if (HeadFails)
+                {
+                    return Task.FromResult(new GitCommandResult(128, "", "HEAD unavailable"));
+                }
+                output = CurrentCommit;
             }
             else if (PathsEqual(workingDirectory, submodulePath)
                 && command.StartsWith("status ", StringComparison.Ordinal))

@@ -9,6 +9,28 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class WorktreeViewItemTests
 {
     [TestMethod]
+    [DataRow(true, false, false, false)]
+    [DataRow(false, true, false, false)]
+    [DataRow(false, false, true, false)]
+    [DataRow(false, false, false, true)]
+    public void RemoveCommand_ProtectedWorktree_IsDisabled(bool main, bool bare, bool locked, bool prunable)
+    {
+        WorktreeViewItem item = new(
+            new GitWorktree("D:\\repo", "1234567890", "main", bare, false, locked, prunable, IsMain: main),
+            new TestLocalizationService(),
+            new AsyncCommandExecutor(new RecordingExceptionHandler()),
+            _ => { },
+            _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
+            _ => { });
+
+        Assert.IsFalse(item.CanRemove);
+        Assert.IsFalse(item.RemoveCommand.CanExecute(null));
+    }
+
+    [TestMethod]
     public void CopyTextCommand_CopiesProvidedValue()
     {
         string? copiedText = null;

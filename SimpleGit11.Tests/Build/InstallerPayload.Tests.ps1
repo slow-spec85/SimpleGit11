@@ -125,6 +125,9 @@ try {
         throw 'Cleanup must resolve only the fixed per-user data folder.'
     }
     if ($package.Wix.Package.Scope -ne 'perUserOrMachine') { throw 'Both install scopes must be supported, per-user by default.' }
+    if ($package.Wix.Package.MajorUpgrade.IgnoreLanguage -ne 'yes') {
+        throw 'The unified English MSI must upgrade legacy packages in either installer language.'
+    }
     if ($package.Wix.Package.StandardDirectory[0].Id -ne 'ProgramFiles64Folder') { throw 'Use the MSI-redirectable x64 program directory.' }
     $packageNs = New-Object Xml.XmlNamespaceManager($package.NameTable)
     $packageNs.AddNamespace('w', 'http://wixtoolset.org/schemas/v4/wxs')
@@ -145,10 +148,6 @@ try {
     $coreFeature = @($package.Wix.Package.Feature | Where-Object Id -eq 'Core')[0]
     if ($coreFeature.AllowAbsent -ne 'no') { throw 'Core must not be removable during feature maintenance.' }
     $english = [xml](Get-Content -LiteralPath (Join-Path $repositoryRoot 'SimpleGit11.Installer\Strings\en-US\Resources.wxl') -Raw)
-    $russian = [xml](Get-Content -LiteralPath (Join-Path $repositoryRoot 'SimpleGit11.Installer\Strings\ru-RU\Resources.wxl') -Raw)
-    if (Compare-Object @($english.WixLocalization.String.Id | Sort-Object) @($russian.WixLocalization.String.Id | Sort-Object)) {
-        throw 'Installer translations have different resource keys.'
-    }
     if (@($english.WixLocalization.String.Id | Where-Object { $_ -in @('WindowsRequired', 'PerUserRequired') }).Count -ne 0) {
         throw 'Removed restrictions must not remain in localization.'
     }
@@ -177,7 +176,7 @@ try {
     if ((Get-Content -LiteralPath (Join-Path $published 'Licenses\PACKAGES.txt') -Raw) -notmatch 'Package: Fixture') {
         throw 'Plugin dependency license was omitted.'
     }
-    Write-Host 'Installer payload, versions, localization and cleanup guards passed.'
+    Write-Host 'Installer payload, versions, English localization and cleanup guards passed.'
 }
 finally {
     if (Test-Path -LiteralPath $link) { [IO.Directory]::Delete($link) }

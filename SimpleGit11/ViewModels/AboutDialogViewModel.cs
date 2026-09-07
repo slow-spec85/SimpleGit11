@@ -14,21 +14,24 @@ namespace SimpleGit11.ViewModels;
 public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
 {
     private readonly IProductInfoService _productInfoService;
-    private readonly ISettingsService _settingsService;
+    private readonly IProductUpdateService _productUpdateService;
+    private readonly IInstallerLauncher _installerLauncher;
     private readonly ILocalizationService _localizationService;
     private CancellationTokenSource? _releaseRequestCancellation;
-    private bool _canPersistPrereleasePreference;
-    private bool _isDialogOpen;
+    private CancellationTokenSource? _updateCancellation;
+    private ProductReleaseInfo? _latestRelease;
     private long _releaseRequestSequence;
 
     public AboutDialogViewModel(
         IProductInfoService productInfoService,
-        ISettingsService settingsService,
+        IProductUpdateService productUpdateService,
+        IInstallerLauncher installerLauncher,
         ILocalizationService localizationService,
         IPluginCatalog pluginCatalog)
     {
         _productInfoService = productInfoService;
-        _settingsService = settingsService;
+        _productUpdateService = productUpdateService;
+        _installerLauncher = installerLauncher;
         _localizationService = localizationService;
         ProductName = productInfoService.ProductName;
         CurrentVersion = productInfoService.CurrentVersion;
@@ -40,9 +43,10 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
         SshPluginVersion = sshPlugin?.Version ?? "";
         LatestReleaseVersion = "";
         ReleaseStatusMessage = "";
-        IncludePrereleaseVersions = settingsService.Current.IncludePrereleaseVersions;
-        _canPersistPrereleasePreference = true;
+        UpdateStatusMessage = "";
     }
+
+    public event EventHandler? InstallerLaunched;
 
     public string ProductName { get; }
 
@@ -55,9 +59,6 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
     public bool HasSshPlugin { get; }
 
     public string SshPluginVersion { get; }
-
-    [ObservableProperty]
-    public partial bool IncludePrereleaseVersions { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RefreshLatestReleaseCommand))]
@@ -81,34 +82,30 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     public partial string ReleaseStatusMessage { get; private set; }
 
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
+    public partial bool CanInstallUpdate { get; private set; }
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RefreshLatestReleaseCommand))]
+    public partial bool IsDownloadingUpdate { get; private set; }
+
+    [ObservableProperty]
+    public partial bool HasUpdateStatus { get; private set; }
+
+    [ObservableProperty]
+    public partial string UpdateStatusMessage { get; private set; }
+
     public Task LoadAsync()
     {
-        _isDialogOpen = true;
         return LoadLatestReleaseAsync();
     }
 
     public void Dispose()
     {
-        _isDialogOpen = false;
-        CancellationTokenSource? cancellation = Interlocked.Exchange(
-            ref _releaseRequestCancellation,
-            null);
-        cancellation?.Cancel();
-        cancellation?.Dispose();
-    }
-
-    partial void OnIncludePrereleaseVersionsChanged(bool value)
-    {
-        if (!_canPersistPrereleasePreference)
-        {
-            return;
-        }
-
-        _settingsService.SetIncludePrereleaseVersions(value);
-        if (_isDialogOpen)
-        {
-            _ = LoadLatestReleaseAsync();
-        }
+        CancelAndDispose(ref _releaseRequestCancellation);
+        CancelAndDispose(ref _updateCancellation);
     }
 
     [RelayCommand(
@@ -121,7 +118,59 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
 
     private bool CanRefreshLatestRelease()
     {
-        return !IsLoadingLatestRelease;
+        return !IsLoadingLatestRelease && !IsDownloadingUpdate;
+    }
+
+    [RelayCommand(
+        CanExecute = nameof(CanStartUpdate),
+        FlowExceptionsToTaskScheduler = true)]
+    private async Task OnInstallUpdateAsync()
+    {
+        ProductReleaseInfo? release = _latestRelease;
+        if (release is null || !CanStartUpdate())
+        {
+            return;
+        }
+
+        CancellationTokenSource cancellation = new();
+        CancellationTokenSource? previousCancellation = Interlocked.Exchange(
+            ref _updateCancellation,
+            cancellation);
+        previousCancellation?.Cancel();
+        previousCancellation?.Dispose();
+        CancellationToken cancellationToken = cancellation.Token;
+        HasUpdateStatus = true;
+        UpdateStatusMessage = _localizationService.GetString("AboutDownloadingUpdate");
+        IsDownloadingUpdate = true;
+
+        try
+        {
+            string installerPath = await _productUpdateService.DownloadInstallerAsync(
+                release,
+                null,
+                cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            _installerLauncher.Launch(installerPath);
+            InstallerLaunched?.Invoke(this, EventArgs.Empty);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            UpdateStatusMessage = _localizationService.GetString("AboutUpdateFailed");
+            HasUpdateStatus = true;
+        }
+        finally
+        {
+            IsDownloadingUpdate = false;
+        }
+    }
+
+    private bool CanStartUpdate()
+    {
+        return CanInstallUpdate && !IsDownloadingUpdate;
     }
 
     private async Task LoadLatestReleaseAsync()
@@ -141,7 +190,6 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
         try
         {
             ProductReleaseInfo? release = await _productInfoService.GetLatestReleaseAsync(
-                IncludePrereleaseVersions,
                 cancellationToken);
             if (requestSequence != _releaseRequestSequence)
             {
@@ -150,17 +198,16 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
 
             if (release is null)
             {
-                ReleaseStatusMessage = _localizationService.GetString(
-                    IncludePrereleaseVersions
-                        ? "AboutNoPublishedRelease"
-                        : "AboutNoStableRelease");
+                ReleaseStatusMessage = _localizationService.GetString("AboutNoStableRelease");
                 HasReleaseStatus = true;
                 return;
             }
 
             LatestReleaseVersion = release.Version;
             LatestReleaseUri = release.Uri;
+            _latestRelease = release;
             HasLatestRelease = true;
+            CanInstallUpdate = _productUpdateService.IsUpdateAvailable(release, CurrentVersion);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -187,10 +234,21 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
     private void ClearReleaseState()
     {
         HasLatestRelease = false;
+        CanInstallUpdate = false;
+        _latestRelease = null;
         LatestReleaseVersion = "";
         LatestReleaseUri = null;
         HasReleaseStatus = false;
         HasReleaseError = false;
         ReleaseStatusMessage = "";
+        HasUpdateStatus = false;
+        UpdateStatusMessage = "";
+    }
+
+    private static void CancelAndDispose(ref CancellationTokenSource? source)
+    {
+        CancellationTokenSource? cancellation = Interlocked.Exchange(ref source, null);
+        cancellation?.Cancel();
+        cancellation?.Dispose();
     }
 }

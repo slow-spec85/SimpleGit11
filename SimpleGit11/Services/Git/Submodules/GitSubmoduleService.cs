@@ -105,10 +105,12 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(repository);
-        IReadOnlyList<GitSubmodule> submodules = await GetSubmodulesAsync(repository, cancellationToken);
+        StringComparer pathComparer = _executionContextService?.Current.Runtime.Paths.Style == RepositoryPathStyle.Posix
+            ? StringComparer.Ordinal
+            : StringComparer.OrdinalIgnoreCase;
         List<GitSubmoduleApplicationState> states = [];
-        AddApplicationStates(submodules, repository.Path, "", states);
-        return states.Where(state => state.RequiresApplication).ToList();
+        await LoadApplicationStatesAsync(repository.Path, "", new HashSet<string>(pathComparer), 0, states, cancellationToken);
+        return states;
     }
 
     public Task InitializeAsync(
@@ -233,23 +235,7 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
             return [];
         }
 
-        string configurationPath = Combine(repositoryPath, ".gitmodules");
-        if (!await FileExistsAsync(configurationPath, cancellationToken))
-        {
-            return [];
-        }
-
-        GitCommandResult configurationResult = await RunQueryAsync(
-            repositoryPath,
-            ["config", "--null", "--file", ".gitmodules", "--list"],
-            cancellationToken);
-        if (!configurationResult.IsSuccess)
-        {
-            throw new GitCommandException(configurationResult.CombinedOutput, configurationResult.ExitCode);
-        }
-
-        IReadOnlyList<GitSubmoduleConfiguration> configurations =
-            GitSubmoduleConfigurationParser.Parse(configurationResult.StandardOutput);
+        IReadOnlyList<GitSubmoduleConfiguration> configurations = await GetConfigurationsAsync(repositoryPath, cancellationToken);
         List<GitSubmodule> submodules = [];
         foreach (GitSubmoduleConfiguration configuration in configurations)
         {
@@ -265,6 +251,28 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
         return submodules;
     }
 
+    private async Task<IReadOnlyList<GitSubmoduleConfiguration>> GetConfigurationsAsync(
+        string repositoryPath,
+        CancellationToken cancellationToken)
+    {
+        string configurationPath = Combine(repositoryPath, ".gitmodules");
+        if (!await FileExistsAsync(configurationPath, cancellationToken))
+        {
+            return [];
+        }
+
+        GitCommandResult configurationResult = await RunQueryAsync(
+            repositoryPath,
+            ["config", "--null", "--file", ".gitmodules", "--list"],
+            cancellationToken);
+        if (!configurationResult.IsSuccess)
+        {
+            throw new GitCommandException(configurationResult.CombinedOutput, configurationResult.ExitCode);
+        }
+
+        return GitSubmoduleConfigurationParser.Parse(configurationResult.StandardOutput);
+    }
+
     private async Task<GitSubmodule> CreateSubmoduleAsync(
         string repositoryPath,
         GitSubmoduleConfiguration configuration,
@@ -272,13 +280,7 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
         int depth,
         CancellationToken cancellationToken)
     {
-        string fullPath = NormalizePath(Combine(repositoryPath, configuration.Path));
-        if (!IsPathInsideRepository(repositoryPath, fullPath))
-        {
-            throw new GitCommandException(
-                $"Submodule path is outside the repository: {configuration.Path}",
-                -1);
-        }
+        string fullPath = GetSubmoduleFullPath(repositoryPath, configuration.Path);
 
         Task<GitCommandResult> headCommitTask = RunQueryAsync(
             repositoryPath,
@@ -406,32 +408,72 @@ public sealed class GitSubmoduleService : IGitSubmoduleService
         return references;
     }
 
-    private static void AddApplicationStates(
-        IReadOnlyList<GitSubmodule> submodules,
-        string ownerRepositoryPath,
+    private async Task LoadApplicationStatesAsync(
+        string repositoryPath,
         string parentDisplayPath,
-        List<GitSubmoduleApplicationState> states)
+        HashSet<string> visitedPaths,
+        int depth,
+        List<GitSubmoduleApplicationState> states,
+        CancellationToken cancellationToken)
     {
-        foreach (GitSubmodule submodule in submodules)
+        cancellationToken.ThrowIfCancellationRequested();
+        if (depth >= MaximumRecursionDepth || !visitedPaths.Add(NormalizePath(repositoryPath)))
         {
-            string displayPath = CombineGitPath(parentDisplayPath, submodule.Path);
-            if (!string.IsNullOrWhiteSpace(submodule.IndexCommit))
+            return;
+        }
+
+        IReadOnlyList<GitSubmoduleConfiguration> configurations = await GetConfigurationsAsync(repositoryPath, cancellationToken);
+        foreach (GitSubmoduleConfiguration configuration in configurations)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            string fullPath = GetSubmoduleFullPath(repositoryPath, configuration.Path);
+            string displayPath = CombineGitPath(parentDisplayPath, configuration.Path);
+            GitCommandResult indexResult = await RunQueryAsync(
+                repositoryPath, ["ls-files", "--stage", "-z", "--", configuration.Path], cancellationToken);
+            GitSubmoduleIndexState indexState = ParseIndexState(indexResult.StandardOutput);
+            bool isInitialized = await IsGitWorkingTreeAsync(fullPath, cancellationToken);
+            string checkedOutCommit = "";
+            if (isInitialized)
             {
-                states.Add(new GitSubmoduleApplicationState(
-                    displayPath,
-                    ownerRepositoryPath,
-                    submodule.Path,
-                    submodule.IndexCommit,
-                    submodule.CheckedOutCommit,
-                    submodule.IsInitialized));
+                GitCommandResult headResult = await RunQueryAsync(
+                    fullPath, ["rev-parse", "--verify", "HEAD"], cancellationToken);
+                if (headResult.IsSuccess)
+                {
+                    checkedOutCommit = headResult.StandardOutput.Trim();
+                }
             }
 
-            AddApplicationStates(
-                submodule.Children,
-                submodule.FullPath,
-                displayPath,
-                states);
+            if (!string.IsNullOrWhiteSpace(indexState.Commit))
+            {
+                GitSubmoduleApplicationState state = new(
+                    displayPath,
+                    repositoryPath,
+                    configuration.Path,
+                    indexState.Commit,
+                    checkedOutCommit,
+                    isInitialized);
+                if (state.RequiresApplication)
+                {
+                    states.Add(state);
+                }
+            }
+
+            if (isInitialized)
+            {
+                await LoadApplicationStatesAsync(fullPath, displayPath, visitedPaths, depth + 1, states, cancellationToken);
+            }
         }
+    }
+
+    private string GetSubmoduleFullPath(string repositoryPath, string submodulePath)
+    {
+        string fullPath = NormalizePath(Combine(repositoryPath, submodulePath));
+        if (!IsPathInsideRepository(repositoryPath, fullPath))
+        {
+            throw new GitCommandException($"Submodule path is outside the repository: {submodulePath}", -1);
+        }
+
+        return fullPath;
     }
 
     private static string CombineGitPath(string parentPath, string childPath)

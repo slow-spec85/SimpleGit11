@@ -37,15 +37,27 @@ public sealed class ProductInfoServiceTests
               "draft": false,
               "prerelease": false,
               "created_at": "2026-08-01T10:00:00Z",
-              "published_at": "2026-08-01T11:00:00Z"
+              "published_at": "2026-08-01T11:00:00Z",
+              "assets": [
+                {
+                  "name": "SimpleGit11-1.2.3-win-x64.msi",
+                  "browser_download_url": "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.2.3/SimpleGit11-1.2.3-win-x64.msi",
+                  "size": 123456
+                },
+                {
+                  "name": "SimpleGit11-1.2.3-win-x64.msi.sha256",
+                  "browser_download_url": "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.2.3/SimpleGit11-1.2.3-win-x64.msi.sha256",
+                  "size": 96
+                }
+              ]
             }
             """;
         RecordingHttpMessageHandler handler = new(_ => CreateJsonResponse(responseJson));
         using HttpClient client = new(handler);
         using ProductInfoService service = new(client);
 
-        ProductReleaseInfo? firstRelease = await service.GetLatestReleaseAsync(false, CancellationToken.None);
-        ProductReleaseInfo? secondRelease = await service.GetLatestReleaseAsync(false, CancellationToken.None);
+        ProductReleaseInfo? firstRelease = await service.GetLatestReleaseAsync(CancellationToken.None);
+        ProductReleaseInfo? secondRelease = await service.GetLatestReleaseAsync(CancellationToken.None);
 
         Assert.IsNotNull(firstRelease);
         Assert.AreEqual("1.2.3", firstRelease.Version);
@@ -53,52 +65,12 @@ public sealed class ProductInfoServiceTests
             "https://github.com/slow-spec85/SimpleGit11/releases/tag/v1.2.3",
             firstRelease.Uri.AbsoluteUri);
         Assert.IsFalse(firstRelease.IsPrerelease);
+        Assert.IsNotNull(firstRelease.Installer);
+        Assert.AreEqual("SimpleGit11-1.2.3-win-x64.msi", firstRelease.Installer.FileName);
+        Assert.AreEqual(123456, firstRelease.Installer.Size);
         Assert.AreEqual(firstRelease, secondRelease);
         Assert.AreEqual(1, handler.Requests.Count);
         StringAssert.EndsWith(handler.Requests[0].AbsolutePath, "/releases/latest");
-    }
-
-    [TestMethod]
-    public async Task GetLatestReleaseAsync_WithPrereleases_SelectsNewestPublishedValidRelease()
-    {
-        const string responseJson = """
-            [
-              {
-                "tag_name": "v9.0.0-preview.1",
-                "html_url": "https://example.com/untrusted",
-                "draft": false,
-                "prerelease": true,
-                "created_at": "2026-08-21T10:00:00Z",
-                "published_at": "2026-08-21T11:00:00Z"
-              },
-              {
-                "tag_name": "v1.3.0-preview.2",
-                "html_url": "https://github.com/slow-spec85/SimpleGit11/releases/tag/v1.3.0-preview.2",
-                "draft": false,
-                "prerelease": true,
-                "created_at": "2026-08-20T10:00:00Z",
-                "published_at": "2026-08-20T11:00:00Z"
-              },
-              {
-                "tag_name": "v1.2.0",
-                "html_url": "https://github.com/slow-spec85/SimpleGit11/releases/tag/v1.2.0",
-                "draft": false,
-                "prerelease": false,
-                "created_at": "2026-08-10T10:00:00Z",
-                "published_at": "2026-08-10T11:00:00Z"
-              }
-            ]
-            """;
-        RecordingHttpMessageHandler handler = new(_ => CreateJsonResponse(responseJson));
-        using HttpClient client = new(handler);
-        using ProductInfoService service = new(client);
-
-        ProductReleaseInfo? release = await service.GetLatestReleaseAsync(true, CancellationToken.None);
-
-        Assert.IsNotNull(release);
-        Assert.AreEqual("1.3.0-preview.2", release.Version);
-        Assert.IsTrue(release.IsPrerelease);
-        StringAssert.Contains(handler.Requests[0].Query, "per_page=100");
     }
 
     [TestMethod]
@@ -108,7 +80,7 @@ public sealed class ProductInfoServiceTests
         using HttpClient client = new(handler);
         using ProductInfoService service = new(client);
 
-        ProductReleaseInfo? release = await service.GetLatestReleaseAsync(false, CancellationToken.None);
+        ProductReleaseInfo? release = await service.GetLatestReleaseAsync(CancellationToken.None);
 
         Assert.IsNull(release);
     }

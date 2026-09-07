@@ -68,7 +68,7 @@ are needed only when installing for all users or into a protected folder.
 
 ## Installation
 
-1. Download `SimpleGit11-<version>-win-x64-en-US.msi` (or `ru-RU`) and its
+1. Download `SimpleGit11-<version>-win-x64.msi` and its
    matching `.sha256` file from the repository's Releases page.
 2. Optionally verify the checksum, then run the MSI.
 3. Choose current-user or all-users installation and the installation folder.
@@ -76,7 +76,8 @@ are needed only when installing for all users or into a protected folder.
 5. Start SimpleGit11 from the Start menu.
 
 Current-user installation is the default. Re-run the original MSI to modify, repair or uninstall.
-Automatic updates are not implemented yet. See [PUBLISHING.md](PUBLISHING.md)
+Stable updates can be downloaded, verified, and started from the About dialog.
+See [PUBLISHING.md](PUBLISHING.md)
 for installation, updating and optional removal of application data.
 
 ## Building from source

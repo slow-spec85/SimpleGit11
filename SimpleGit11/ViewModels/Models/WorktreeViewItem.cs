@@ -87,7 +87,7 @@ public sealed partial class WorktreeViewItem
 
     public bool CanMove => !Worktree.IsMain && !Worktree.IsLocked && !Worktree.IsPrunable;
 
-    public bool CanRemove => !Worktree.IsMain && !Worktree.IsLocked && !Worktree.IsPrunable;
+    public bool CanRemove => !Worktree.IsMain && !Worktree.IsBare && !Worktree.IsLocked && !Worktree.IsPrunable;
 
     public bool CanToggleLock => !Worktree.IsMain && !Worktree.IsPrunable;
 

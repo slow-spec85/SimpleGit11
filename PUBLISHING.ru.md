@@ -16,10 +16,8 @@ SimpleGit11 распространяется как **unpackaged, self-contained
 Для каждой опубликованной версии в разделе Releases доступны:
 
 ```text
-SimpleGit11-<version>-win-x64-en-US.msi
-SimpleGit11-<version>-win-x64-en-US.msi.sha256
-SimpleGit11-<version>-win-x64-ru-RU.msi
-SimpleGit11-<version>-win-x64-ru-RU.msi.sha256
+SimpleGit11-<version>-win-x64.msi
+SimpleGit11-<version>-win-x64.msi.sha256
 ```
 
 Автоматически создаваемые GitHub архивы `Source code (zip)` и `Source code (tar.gz)` содержат исходный код, но не готовое приложение.
@@ -41,8 +39,10 @@ SimpleGit11-<version>-win-x64-ru-RU.msi.sha256
 
 ### MSI с выбором SSH
 
-Выберите `SimpleGit11-<version>-win-x64-ru-RU.msi`
-(или `en-US`). Выберите установку для текущего пользователя (по умолчанию,
+Выберите `SimpleGit11-<version>-win-x64.msi`. Мастер установки отображается
+на английском, а установленное приложение по-прежнему поддерживает русский и
+английский языки. Единый пакет обновляет установки, выполненные любым из прежних
+локализованных MSI. Выберите установку для текущего пользователя (по умолчанию,
 `%LOCALAPPDATA%\Programs\SimpleGit11`) или для всех пользователей
 (`%ProgramFiles%\SimpleGit11`, с подтверждением администратора).
 На следующем шаге можно изменить папку установки.
@@ -73,7 +73,7 @@ SSH-профили, историю, журналы и вложенные пап�
 Поместите MSI и соответствующий `.sha256` в один каталог, затем выполните в PowerShell:
 
 ```powershell
-$installerPath = ".\SimpleGit11-1.0.0-win-x64-ru-RU.msi"
+$installerPath = ".\SimpleGit11-1.0.0-win-x64.msi"
 $checksum = "$installerPath.sha256"
 
 $expected = (Get-Content $checksum).Split(
@@ -92,9 +92,13 @@ if ($actual -ne $expected) {
 
 ## Обновление
 
-Пока автоматическое обновление не реализовано.
+Окно «О программе» проверяет последний стабильный GitHub Release. Если его версия
+новее и release содержит `SimpleGit11-<version>-win-x64.msi` вместе с соответствующим
+asset `.sha256`, кнопка **Обновить** скачивает оба файла, проверяет размер и SHA-256
+установщика, запускает интерактивный мастер и закрывает SimpleGit11. Файлы сохраняются
+во временном каталоге пользователя. Предварительные версии приложением не предлагаются.
 
-Чтобы обновить приложение вручную:
+Чтобы вместо этого обновить приложение вручную:
 
 1. Закройте все экземпляры SimpleGit11.
 2. Скачайте MSI новой версии.
@@ -142,9 +146,9 @@ SimpleGit11\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\
 
 ## Подготовка MSI и SHA-256
 
-Скрипт публикации создаёт только установщики. Он выполняет self-contained
-публикацию, собирает лицензии, проверяет WinUI-файлы, затем собирает MSI на
-русском и английском. WiX SDK 7 и расширения UI/Util — зависимости сборки.
+Скрипт публикации создаёт только установщик. Он выполняет self-contained
+публикацию, собирает лицензии, проверяет WinUI-файлы, затем собирает MSI с
+англоязычным мастером. WiX SDK 7 и расширения UI/Util — зависимости сборки.
 Перед использованием `-AcceptWixEula` ознакомьтесь с
 [условиями WiX](https://docs.firegiant.com/wix/osmf/).
 
@@ -194,10 +198,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 В `artifacts` создаются только распространяемые файлы:
 
 ```text
-SimpleGit11-<version>-win-x64-en-US.msi
-SimpleGit11-<version>-win-x64-en-US.msi.sha256
-SimpleGit11-<version>-win-x64-ru-RU.msi
-SimpleGit11-<version>-win-x64-ru-RU.msi.sha256
+SimpleGit11-<version>-win-x64.msi
+SimpleGit11-<version>-win-x64.msi.sha256
 ```
 
 Каталоги `.publish-staging-win-x64` и `.installer-staging-win-x64` внутри

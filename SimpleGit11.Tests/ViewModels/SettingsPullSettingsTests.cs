@@ -14,6 +14,35 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class SettingsPullSettingsTests
 {
     [TestMethod]
+    public void RepositoryOpeningSettings_LoadAndSaveImmediately()
+    {
+        AppSettings settings = new() { DefaultRemoteName = "upstream", FetchOnRepositoryOpen = true };
+        int writes = 0;
+        ISettingsService service = ServiceStub.Create<ISettingsService>((method, args) =>
+        {
+            switch (method)
+            {
+                case "get_Current": return settings;
+                case "SetDefaultRemoteName": settings.DefaultRemoteName = (string)args![0]!; break;
+                case "SetFetchOnRepositoryOpen": settings.FetchOnRepositoryOpen = (bool)args![0]!; break;
+                default: throw new NotSupportedException(method);
+            }
+            writes++;
+            return null;
+        });
+        Fixture fixture = new(service);
+        Assert.AreEqual("upstream", fixture.ViewModel.DefaultRemoteName);
+        Assert.IsTrue(fixture.ViewModel.FetchOnRepositoryOpen);
+        Assert.AreEqual(0, writes);
+
+        fixture.ViewModel.DefaultRemoteName = "backup";
+        fixture.ViewModel.FetchOnRepositoryOpen = false;
+        Assert.AreEqual("backup", settings.DefaultRemoteName);
+        Assert.IsFalse(settings.FetchOnRepositoryOpen);
+        Assert.AreEqual(2, writes);
+    }
+
+    [TestMethod]
     [DataRow(null, null)]
     [DataRow("m", "yes")]
     [DataRow("", "unexpected")]
@@ -179,7 +208,7 @@ public sealed class SettingsPullSettingsTests
         public MainWindowViewModel MainWindow { get; }
         public SettingsViewModel ViewModel { get; }
 
-        public Fixture()
+        public Fixture(ISettingsService? settingsService = null)
         {
             ILocalizationService localization = new TestLocalization();
             GitConfigService configuration = new(Runner);
@@ -193,13 +222,14 @@ public sealed class SettingsPullSettingsTests
                 git,
                 ServiceStub.Create<IClipboardService>(),
                 new TestProductInfoService(),
-                messenger);
+                messenger,
+                ServiceStub.Create<ISettingsService>((_, _) => new AppSettings()));
             ViewModel = new SettingsViewModel(
                 MainWindow,
                 ServiceStub.Create<IThemeService>((method, _) => method == "get_CurrentTheme"
                     ? AppThemeMode.System : throw new NotSupportedException(method)),
                 localization,
-                ServiceStub.Create<ISettingsService>((method, _) => method == "get_Current"
+                settingsService ?? ServiceStub.Create<ISettingsService>((method, _) => method == "get_Current"
                     ? new AppSettings() : throw new NotSupportedException(method)),
                 git,
                 ServiceStub.Create<IDialogService>(),

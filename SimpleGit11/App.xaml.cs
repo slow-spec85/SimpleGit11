@@ -94,6 +94,9 @@ public partial class App : Application
             Timeout = TimeSpan.FromSeconds(10)
         });
         services.AddSingleton<IProductInfoService, ProductInfoService>();
+        services.AddSingleton<IProductUpdateService>(static _ => new ProductUpdateService(
+            new HttpClient { Timeout = TimeSpan.FromMinutes(15) }));
+        services.AddSingleton<IInstallerLauncher, InstallerLauncher>();
         services.AddSingleton<ILocalSettingsStore, JsonLocalSettingsStore>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();

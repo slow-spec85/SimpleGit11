@@ -162,26 +162,29 @@
   <data name="AboutCheckingReleaseTextBlock.Text" xml:space="preserve">
     <value>Checking…</value>
   </data>
-  <data name="IncludePrereleaseVersionsToggleSwitch.Header" xml:space="preserve">
-    <value>Include prerelease versions</value>
+  <data name="InstallUpdateButton.Content" xml:space="preserve">
+    <value>Update</value>
   </data>
-  <data name="IncludePrereleaseVersionsToggleSwitch.OnContent" xml:space="preserve">
-    <value>On</value>
+  <data name="InstallUpdateButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Download and install update</value>
   </data>
-  <data name="IncludePrereleaseVersionsToggleSwitch.OffContent" xml:space="preserve">
-    <value>Off</value>
+  <data name="UpdateProgressRing.AutomationProperties.Name" xml:space="preserve">
+    <value>Downloading and verifying update</value>
   </data>
   <data name="RetryReleaseCheckButton.Content" xml:space="preserve">
     <value>Retry</value>
-  </data>
-  <data name="AboutNoPublishedRelease" xml:space="preserve">
-    <value>No published releases found.</value>
   </data>
   <data name="AboutNoStableRelease" xml:space="preserve">
     <value>No stable releases have been published yet.</value>
   </data>
   <data name="AboutReleaseCheckFailed" xml:space="preserve">
     <value>Couldn't check the latest version.</value>
+  </data>
+  <data name="AboutDownloadingUpdate" xml:space="preserve">
+    <value>Downloading and verifying the update…</value>
+  </data>
+  <data name="AboutUpdateFailed" xml:space="preserve">
+    <value>Couldn't download or verify the update.</value>
   </data>
   <data name="RecentRepositoriesTextBlock.Text" xml:space="preserve">
     <value>Recent repositories</value>
@@ -3238,6 +3241,34 @@ Push will use the configured destinations, not the selected remote.</value>
   <data name="RemoveWorktreeButton" xml:space="preserve">
     <value>Remove</value>
   </data>
+  <data name="ForceRemoveWorktreeDialogTitle" xml:space="preserve">
+    <value>Force remove worktree?</value>
+  </data>
+  <data name="ForceRemoveWorktreeDialogMessage" xml:space="preserve">
+    <value>Worktree: {0}
+
+{1}
+
+Forced removal will delete the worktree folder, including uncommitted changes and files in submodules. Back up any files and submodule commits you need before continuing. The worktree branch will remain.</value>
+  </data>
+  <data name="ForceRemoveWorktreeButton" xml:space="preserve">
+    <value>Remove forcibly</value>
+  </data>
+  <data name="WorktreeRemovalSubmodulesReason" xml:space="preserve">
+    <value>The worktree contains initialized submodules or their local Git data.</value>
+  </data>
+  <data name="WorktreeRemovalChangesReason" xml:space="preserve">
+    <value>The worktree contains uncommitted changes, conflicts, or untracked files.</value>
+  </data>
+  <data name="WorktreeRemovalMainBlocked" xml:space="preserve">
+    <value>The main worktree or a bare repository cannot be removed as a linked worktree.</value>
+  </data>
+  <data name="WorktreeRemovalLockedBlocked" xml:space="preserve">
+    <value>The worktree is locked. Unlock it before removing it.</value>
+  </data>
+  <data name="WorktreeRemovalUnavailable" xml:space="preserve">
+    <value>The worktree is missing or its registration is invalid. Refresh the list and use repair or prune.</value>
+  </data>
   <data name="RemovingWorktreeProgress" xml:space="preserve">
     <value>Removing worktree…</value>
   </data>
@@ -4165,5 +4196,35 @@ only — fast-forward only; Not set — inherit.</value>
   </data>
   <data name="PullEmptyValue" xml:space="preserve">
     <value>(empty value)</value>
+  </data>
+  <data name="DefaultRemoteNameDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Remote name to select when opening a repository. Falls back to origin or the first available remote.</value>
+  </data>
+  <data name="DefaultRemoteNameHeaderTextBlock.Text" xml:space="preserve">
+    <value>Default active remote</value>
+  </data>
+  <data name="DefaultRemoteNameTextBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Default active remote</value>
+  </data>
+  <data name="DefaultRemoteNameTextBox.PlaceholderText" xml:space="preserve">
+    <value>origin</value>
+  </data>
+  <data name="FetchOnRepositoryOpenDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Open the synchronization page and perform a full refresh, just like the Refresh button.</value>
+  </data>
+  <data name="FetchOnRepositoryOpenHeaderTextBlock.Text" xml:space="preserve">
+    <value>Fetch changes from the server when opening a repository</value>
+  </data>
+  <data name="FetchOnRepositoryOpenToggleSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Fetch changes from the server when opening a repository</value>
+  </data>
+  <data name="FetchOnRepositoryOpenToggleSwitch.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="FetchOnRepositoryOpenToggleSwitch.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="RepositoryOpeningTitleTextBlock.Text" xml:space="preserve">
+    <value>Opening repositories</value>
   </data>
 </root>

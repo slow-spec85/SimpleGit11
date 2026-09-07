@@ -51,25 +51,21 @@ foreach ($file in @('plugin.json', 'SimpleGit11.Plugin.Ssh.dll', 'SimpleGit11.Pl
 Write-InstallerPayload -CoreDirectory $CoreDirectory -SshDirectory $sshDirectory -OutputPath $payload -RepositoryRoot $repositoryRoot
 
 [string]$installerProject = Join-Path $repositoryRoot 'SimpleGit11.Installer\SimpleGit11.Installer.wixproj'
-$installers = @()
-foreach ($culture in @('en-US', 'ru-RU')) {
-    Write-Host "Building $culture MSI $version..."
-    & dotnet build $installerProject -c Release -p:Platform=x64 `
-        "-p:CoreSource=$CoreDirectory" "-p:PayloadFile=$payload" `
-        "-p:MsiVersion=$version" "-p:ReleaseVersion=$ReleaseVersion" `
-        "-p:Cultures=$culture" '-p:AcceptWixEula=true' "-p:OutputPath=$staging\msi\" | Out-Host
-    if ($LASTEXITCODE -ne 0) { throw "MSI build failed: $LASTEXITCODE" }
-    [string]$name = "SimpleGit11-$ReleaseVersion-win-x64-$culture.msi"
-    [string]$builtMsi = Join-Path $staging "msi\$culture\$name"
-    & (Join-Path $PSScriptRoot 'Test-InstallerPackage.ps1') -Path $builtMsi
-    [string]$destination = Join-Path $artifactDirectory $name
-    Remove-FileUnderRoot -Path $destination -Root $repositoryRoot
-    Copy-Item -LiteralPath $builtMsi -Destination $destination
-    [string]$checksumPath = "$destination.sha256"
-    Assert-NoReparsePointUnderRoot -Path $checksumPath -Root $repositoryRoot | Out-Null
-    [string]$hash = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash
-    Set-Content -LiteralPath $checksumPath -Value "$hash  $name" -Encoding Ascii
-    $installers += $destination
-}
-Write-Warning 'MSI files are unsigned. Sign release artifacts with your production certificate and a timestamp, then regenerate their SHA-256 files.'
-return $installers
+Write-Host "Building MSI $version..."
+& dotnet build $installerProject -c Release -p:Platform=x64 `
+    "-p:CoreSource=$CoreDirectory" "-p:PayloadFile=$payload" `
+    "-p:MsiVersion=$version" "-p:ReleaseVersion=$ReleaseVersion" `
+    '-p:AcceptWixEula=true' "-p:OutputPath=$staging\msi\" | Out-Host
+if ($LASTEXITCODE -ne 0) { throw "MSI build failed: $LASTEXITCODE" }
+[string]$name = "SimpleGit11-$ReleaseVersion-win-x64.msi"
+[string]$builtMsi = Join-Path $staging "msi\en-US\$name"
+& (Join-Path $PSScriptRoot 'Test-InstallerPackage.ps1') -Path $builtMsi
+[string]$destination = Join-Path $artifactDirectory $name
+Remove-FileUnderRoot -Path $destination -Root $repositoryRoot
+Copy-Item -LiteralPath $builtMsi -Destination $destination
+[string]$checksumPath = "$destination.sha256"
+Assert-NoReparsePointUnderRoot -Path $checksumPath -Root $repositoryRoot | Out-Null
+[string]$hash = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash
+Set-Content -LiteralPath $checksumPath -Value "$hash  $name" -Encoding Ascii
+Write-Warning 'The MSI file is unsigned. Sign the release artifact with your production certificate and a timestamp, then regenerate its SHA-256 file.'
+return $destination

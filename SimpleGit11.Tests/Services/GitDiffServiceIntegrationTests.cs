@@ -23,9 +23,7 @@ public sealed class GitDiffServiceIntegrationTests
         await repository.CommitAllAsync();
         repository.WriteFile("file.txt", "before\r\nnew value\r\nafter\r\n");
 
-        SettingsService settingsService = new(
-            new InMemoryLocalSettingsStore(),
-            new TestProductInfoService());
+        SettingsService settingsService = new(new InMemoryLocalSettingsStore());
         GitDiffService service = new(settingsService);
         GitChangedFile changedFile = new(
             "file.txt",
@@ -47,9 +45,7 @@ public sealed class GitDiffServiceIntegrationTests
     {
         await using TemporaryGitRepository repository =
             await TemporaryGitRepository.CreateAsync();
-        SettingsService settingsService = new(
-            new InMemoryLocalSettingsStore(),
-            new TestProductInfoService());
+        SettingsService settingsService = new(new InMemoryLocalSettingsStore());
         GitDiffService service = new(settingsService);
         GitCommit missingCommit = new(
             "0000000000000000000000000000000000000000",

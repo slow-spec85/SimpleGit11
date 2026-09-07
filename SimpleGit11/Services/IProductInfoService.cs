@@ -13,7 +13,5 @@ public interface IProductInfoService
 
     Uri RepositoryUri { get; }
 
-    Task<ProductReleaseInfo?> GetLatestReleaseAsync(
-        bool includePrereleases,
-        CancellationToken cancellationToken);
+    Task<ProductReleaseInfo?> GetLatestReleaseAsync(CancellationToken cancellationToken);
 }

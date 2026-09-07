@@ -12,28 +12,21 @@ public sealed class SettingsService : ISettingsService
     private const string ThemeModeKey = "ThemeMode";
     private const string LanguageKey = "Language";
     private const string IgnoreWhitespaceInDiffKey = "IgnoreWhitespaceInDiff";
-    private const string IncludePrereleaseVersionsKey = "IncludePrereleaseVersions";
     private const string EditorFontFamilyKey = "EditorFontFamily";
     private const string EditorFontSizeKey = "EditorFontSize";
     private const string EditorLineSpacingKey = "EditorLineSpacing";
     private readonly ILocalSettingsStore _localSettingsStore;
 
-    public SettingsService(
-        ILocalSettingsStore localSettingsStore,
-        IProductInfoService productInfoService)
+    public SettingsService(ILocalSettingsStore localSettingsStore)
     {
         _localSettingsStore = localSettingsStore;
-        bool currentVersionIsPrerelease = productInfoService.CurrentVersion.Contains(
-            '-',
-            StringComparison.Ordinal);
         Current = new AppSettings
         {
             ThemeMode = LoadEnum(ThemeModeKey, AppThemeMode.System),
             Language = LoadEnum(LanguageKey, AppLanguage.System),
+            DefaultRemoteName = LoadString(nameof(AppSettings.DefaultRemoteName), "origin"),
+            FetchOnRepositoryOpen = LoadBool(nameof(AppSettings.FetchOnRepositoryOpen), false),
             IgnoreWhitespaceInDiff = LoadBool(IgnoreWhitespaceInDiffKey, false),
-            IncludePrereleaseVersions = LoadBool(
-                IncludePrereleaseVersionsKey,
-                currentVersionIsPrerelease),
             EditorFontFamily = LoadString(
                 EditorFontFamilyKey,
                 AppSettings.DefaultEditorFontFamily),
@@ -72,12 +65,16 @@ public sealed class SettingsService : ISettingsService
         _localSettingsStore.SetString(IgnoreWhitespaceInDiffKey, ignoreWhitespace.ToString());
     }
 
-    public void SetIncludePrereleaseVersions(bool includePrereleaseVersions)
+    public void SetDefaultRemoteName(string remoteName)
     {
-        Current.IncludePrereleaseVersions = includePrereleaseVersions;
-        _localSettingsStore.SetString(
-            IncludePrereleaseVersionsKey,
-            includePrereleaseVersions.ToString());
+        Current.DefaultRemoteName = string.IsNullOrWhiteSpace(remoteName) ? "origin" : remoteName.Trim();
+        _localSettingsStore.SetString(nameof(AppSettings.DefaultRemoteName), Current.DefaultRemoteName);
+    }
+
+    public void SetFetchOnRepositoryOpen(bool fetch)
+    {
+        Current.FetchOnRepositoryOpen = fetch;
+        _localSettingsStore.SetString(nameof(AppSettings.FetchOnRepositoryOpen), fetch.ToString());
     }
 
     public void SetEditorFont(string fontFamily, int fontSize)

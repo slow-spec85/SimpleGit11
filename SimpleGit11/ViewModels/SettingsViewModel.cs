@@ -76,6 +76,8 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
                 : AppSettings.DefaultEditorFontFamily;
         EditorFontSize = _settingsService.Current.EditorFontSize;
         EditorLineSpacing = _settingsService.Current.EditorLineSpacing;
+        DefaultRemoteName = _settingsService.Current.DefaultRemoteName;
+        FetchOnRepositoryOpen = _settingsService.Current.FetchOnRepositoryOpen;
         RepositoryUserName = "";
         GlobalRepositoryUserName = "";
         RepositoryEmail = "";
@@ -100,6 +102,28 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     }
 
     public ObservableCollection<DisplayOption<AppThemeMode>> ThemeOptions { get; }
+
+    [ObservableProperty]
+    public partial string DefaultRemoteName { get; set; }
+
+    [ObservableProperty]
+    public partial bool FetchOnRepositoryOpen { get; set; }
+
+    partial void OnDefaultRemoteNameChanged(string value)
+    {
+        if (!_isInitializing)
+        {
+            _settingsService.SetDefaultRemoteName(value);
+        }
+    }
+
+    partial void OnFetchOnRepositoryOpenChanged(bool value)
+    {
+        if (!_isInitializing)
+        {
+            _settingsService.SetFetchOnRepositoryOpen(value);
+        }
+    }
     public ObservableCollection<DisplayOption<AppLanguage>> LanguageOptions { get; }
     public ObservableCollection<string> EditorFontFamilyOptions { get; }
     public sealed record ConfigOption(string? Value, string DisplayName);

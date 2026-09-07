@@ -310,6 +310,13 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         _dispatcherQueue = dispatcherQueue;
     }
 
+    public Task RefreshSynchronizationPageAsync()
+    {
+        return _mainWindowViewModel.TryConsumeOpeningFetch()
+            ? RefreshSynchronizationAsync()
+            : RefreshSynchronizationLocalAsync();
+    }
+
     public Task RefreshSynchronizationLocalAsync()
     {
         string? currentRepositoryPath = _mainWindowViewModel.CurrentRepository?.Path;
@@ -330,12 +337,15 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
 
     private async Task RefreshSynchronizationAsync()
     {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
         await RunGitOperationAsync(
             _localizationService.GetString("RefreshingSynchronizationProgress"),
-            cancellationToken => RefreshCoreAsync(
-                fetch: true,
-                useKnownRemoteTagState: false,
-                cancellationToken),
+            cancellationToken => _mainWindowViewModel.CurrentRepository != repository
+                ? Task.CompletedTask
+                : RefreshCoreAsync(
+                    fetch: true,
+                    useKnownRemoteTagState: false,
+                    cancellationToken),
             canCancel: true);
     }
 
@@ -373,9 +383,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
             _isUpdatingRemoteSelection = true;
             Remotes = remotes.ToList();
 
-            SelectedRemote = Remotes.FirstOrDefault(remote => remote.Name == selectedRemoteName)
-                ?? Remotes.FirstOrDefault(remote => remote.Name == "origin")
-                ?? Remotes.FirstOrDefault();
+            SelectedRemote = _mainWindowViewModel.ResolveSelectedRemote(Remotes, selectedRemoteName);
             _isUpdatingRemoteSelection = false;
             HasNoRemotes = SelectedRemote is null;
 

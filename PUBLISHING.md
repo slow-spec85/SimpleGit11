@@ -18,10 +18,8 @@ application:
 Each published version provides the following files on its Releases page:
 
 ```text
-SimpleGit11-<version>-win-x64-en-US.msi
-SimpleGit11-<version>-win-x64-en-US.msi.sha256
-SimpleGit11-<version>-win-x64-ru-RU.msi
-SimpleGit11-<version>-win-x64-ru-RU.msi.sha256
+SimpleGit11-<version>-win-x64.msi
+SimpleGit11-<version>-win-x64.msi.sha256
 ```
 
 The automatically generated GitHub `Source code (zip)` and
@@ -46,7 +44,9 @@ Building from source additionally requires:
 
 ### MSI with optional SSH
 
-Choose `SimpleGit11-<version>-win-x64-en-US.msi` (or `ru-RU`).
+Choose `SimpleGit11-<version>-win-x64.msi`. The installer wizard is in English;
+the installed application still includes both English and Russian localization.
+The unified package upgrades installations made by either legacy localized MSI.
 Choose current-user installation (default: `%LOCALAPPDATA%\Programs\SimpleGit11`)
 or all-users installation (default: `%ProgramFiles%\SimpleGit11`, administrator
 approval required). The next page allows changing the folder. Core is
@@ -69,7 +69,7 @@ Place the MSI and its matching `.sha256` file in the same directory,
 then run the following in PowerShell:
 
 ```powershell
-$installerPath = ".\SimpleGit11-1.0.0-win-x64-en-US.msi"
+$installerPath = ".\SimpleGit11-1.0.0-win-x64.msi"
 $checksum = "$installerPath.sha256"
 
 $expected = (Get-Content $checksum).Split(
@@ -88,9 +88,14 @@ Replace `1.0.0` with the downloaded version number.
 
 ## Updating
 
-Automatic updates are not implemented yet.
+The About dialog checks the latest stable GitHub Release. When its version is
+newer and the release contains `SimpleGit11-<version>-win-x64.msi` together with
+the matching `.sha256` asset, the **Update** button downloads both files, verifies
+the MSI size and SHA-256 checksum, starts the interactive installer, and closes
+SimpleGit11. The files are kept under the user's temporary directory. Prerelease
+updates are not offered by the application.
 
-To update the application manually:
+To update the application manually instead:
 
 1. Close every running SimpleGit11 instance.
 2. Download the MSI for the new version.
@@ -139,9 +144,9 @@ Run the built application:
 
 ## Preparing MSI packages and SHA-256 checksums
 
-Publishing produces installers only. The script performs a self-contained
-publish, collects licenses, checks required WinUI files, and builds English and
-Russian MSI packages. WiX SDK 7 and its UI/Util extensions are build dependencies.
+Publishing produces the installer only. The script performs a self-contained
+publish, collects licenses, checks required WinUI files, and builds the
+English-language MSI package. WiX SDK 7 and its UI/Util extensions are build dependencies.
 Read the [WiX terms](https://docs.firegiant.com/wix/osmf/) before passing
 `-AcceptWixEula`.
 
@@ -191,10 +196,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 The distributable artifacts under `artifacts` are:
 
 ```text
-SimpleGit11-<version>-win-x64-en-US.msi
-SimpleGit11-<version>-win-x64-en-US.msi.sha256
-SimpleGit11-<version>-win-x64-ru-RU.msi
-SimpleGit11-<version>-win-x64-ru-RU.msi.sha256
+SimpleGit11-<version>-win-x64.msi
+SimpleGit11-<version>-win-x64.msi.sha256
 ```
 
 The `.publish-staging-win-x64` and `.installer-staging-win-x64` directories

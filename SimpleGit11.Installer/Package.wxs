@@ -3,7 +3,7 @@
   <Package Name="SimpleGit11" Manufacturer="SimpleGit11 contributors"
            UpgradeCode="2DBB44F0-1B39-4A09-9D63-52DFDDC73441"
            Version="$(var.MsiVersion)" Language="!(loc.Language)" Scope="perUserOrMachine">
-    <MajorUpgrade DowngradeErrorMessage="!(loc.NewerVersionInstalled)" Schedule="afterInstallInitialize" />
+    <MajorUpgrade DowngradeErrorMessage="!(loc.NewerVersionInstalled)" IgnoreLanguage="yes" Schedule="afterInstallInitialize" />
     <MediaTemplate EmbedCab="yes" />
     <!-- Do not gate on WindowsBuild/VersionNT: MSI can expose compatibility versions.
          The x64 package template supplies the native architecture check. -->

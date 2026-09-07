@@ -8,6 +8,44 @@ namespace SimpleGit11.Tests.Services;
 public sealed class SettingsServiceTests
 {
     [TestMethod]
+    public void RepositoryOpening_DefaultsPreserveManualFetchAndOrigin()
+    {
+        SettingsService service = CreateService(new MemoryLocalSettingsStore());
+        Assert.AreEqual("origin", service.Current.DefaultRemoteName);
+        Assert.IsFalse(service.Current.FetchOnRepositoryOpen);
+    }
+
+    [TestMethod]
+    public void RepositoryOpening_PreferencesSurviveReload()
+    {
+        MemoryLocalSettingsStore store = new();
+        SettingsService service = CreateService(store);
+        service.SetDefaultRemoteName(" upstream ");
+        service.SetFetchOnRepositoryOpen(true);
+
+        SettingsService reloaded = CreateService(store);
+        Assert.AreEqual("upstream", reloaded.Current.DefaultRemoteName);
+        Assert.IsTrue(reloaded.Current.FetchOnRepositoryOpen);
+
+        reloaded.SetDefaultRemoteName("  ");
+        reloaded.SetFetchOnRepositoryOpen(false);
+        SettingsService reset = CreateService(store);
+        Assert.AreEqual("origin", reset.Current.DefaultRemoteName);
+        Assert.IsFalse(reset.Current.FetchOnRepositoryOpen);
+    }
+
+    [TestMethod]
+    public void RepositoryOpening_InvalidStoredValuesUseDefaults()
+    {
+        MemoryLocalSettingsStore store = new();
+        store.SetString("DefaultRemoteName", " ");
+        store.SetString("FetchOnRepositoryOpen", "invalid");
+        SettingsService service = CreateService(store);
+        Assert.AreEqual("origin", service.Current.DefaultRemoteName);
+        Assert.IsFalse(service.Current.FetchOnRepositoryOpen);
+    }
+
+    [TestMethod]
     public void Constructor_LoadsAndClampsEditorLineSpacing()
     {
         MemoryLocalSettingsStore store = new();
@@ -45,45 +83,9 @@ public sealed class SettingsServiceTests
         Assert.AreEqual(1, appearanceChangedCount);
     }
 
-    [TestMethod]
-    public void Constructor_EnablesPrereleasesForPrereleaseBuildByDefault()
+    private static SettingsService CreateService(ILocalSettingsStore store)
     {
-        MemoryLocalSettingsStore store = new();
-
-        SettingsService service = CreateService(store, "1.2.0-preview.1");
-
-        Assert.IsTrue(service.Current.IncludePrereleaseVersions);
-        Assert.IsNull(store.GetString("IncludePrereleaseVersions"));
-    }
-
-    [TestMethod]
-    public void Constructor_UsesPersistedPrereleasePreference()
-    {
-        MemoryLocalSettingsStore store = new();
-        store.SetString("IncludePrereleaseVersions", "False");
-
-        SettingsService service = CreateService(store, "1.2.0-preview.1");
-
-        Assert.IsFalse(service.Current.IncludePrereleaseVersions);
-    }
-
-    [TestMethod]
-    public void SetIncludePrereleaseVersions_PersistsValue()
-    {
-        MemoryLocalSettingsStore store = new();
-        SettingsService service = CreateService(store);
-
-        service.SetIncludePrereleaseVersions(true);
-
-        Assert.IsTrue(service.Current.IncludePrereleaseVersions);
-        Assert.AreEqual("True", store.GetString("IncludePrereleaseVersions"));
-    }
-
-    private static SettingsService CreateService(
-        ILocalSettingsStore store,
-        string currentVersion = "1.0.0")
-    {
-        return new SettingsService(store, new TestProductInfoService(currentVersion));
+        return new SettingsService(store);
     }
 
     private sealed class MemoryLocalSettingsStore : ILocalSettingsStore

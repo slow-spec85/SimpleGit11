@@ -921,6 +921,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         UpdateCommandStates();
 
         await LoadRepositoryDetailsAsync(repository);
+        _mainWindowViewModel.CompleteRepositoryOpen(repository);
     }
 
     public async Task<bool> OpenRepositoryPathAsync(string path)
@@ -1447,7 +1448,44 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             async () =>
             {
                 bool wasCurrent = item.Worktree.IsCurrent;
-                await _gitService.Worktrees.RemoveAsync(repository, item.Worktree, false);
+                WorktreeRemovalState state = await _gitService.Worktrees.GetRemovalStateAsync(repository, item.Worktree);
+                if (!state.CanRemove)
+                {
+                    string reasonKey = state.Blocker switch
+                    {
+                        WorktreeRemovalBlocker.MainOrBare => "WorktreeRemovalMainBlocked",
+                        WorktreeRemovalBlocker.Locked => "WorktreeRemovalLockedBlocked",
+                        _ => "WorktreeRemovalUnavailable"
+                    };
+                    ShowError(_localizationService.GetString(reasonKey));
+                    await LoadWorktreesAsync(repository);
+                    return;
+                }
+
+                if (state.RequiresForce)
+                {
+                    List<string> reasons = [];
+                    if (state.HasSubmodules)
+                    {
+                        reasons.Add(_localizationService.GetString("WorktreeRemovalSubmodulesReason"));
+                    }
+                    if (state.HasChanges)
+                    {
+                        reasons.Add(_localizationService.GetString("WorktreeRemovalChangesReason"));
+                    }
+
+                    bool forceConfirmed = await _dialogService.ConfirmAsync(
+                        _localizationService.GetString("ForceRemoveWorktreeDialogTitle"),
+                        string.Format(_localizationService.GetString("ForceRemoveWorktreeDialogMessage"),
+                            item.Path, string.Join(Environment.NewLine, reasons)),
+                        _localizationService.GetString("ForceRemoveWorktreeButton"));
+                    if (!forceConfirmed)
+                    {
+                        return;
+                    }
+                }
+
+                await _gitService.Worktrees.RemoveAsync(repository, item.Worktree, state.RequiresForce);
                 if (wasCurrent)
                 {
                     await OpenRepositoryPathAsync(repository.MainWorktreePath);

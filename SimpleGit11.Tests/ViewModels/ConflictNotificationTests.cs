@@ -225,7 +225,8 @@ public sealed class ConflictNotificationTests
             Window = new MainWindowViewModel(
                 Stub.Create<IRecentRepositoriesService>((_, _) => Array.Empty<RepositoryInfo>()),
                 new Localization(), git, Stub.Create<IClipboardService>(),
-                new TestProductInfoService(), new StrongReferenceMessenger());
+                new TestProductInfoService(), new StrongReferenceMessenger(),
+                Stub.Create<ISettingsService>((_, _) => new AppSettings()));
             Window.SetCurrentRepository(_repository, []);
         }
 

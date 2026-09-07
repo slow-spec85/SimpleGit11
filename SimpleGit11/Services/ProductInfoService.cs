@@ -18,12 +18,12 @@ public sealed class ProductInfoService : IProductInfoService, IDisposable
     private const string ProductNameValue = "SimpleGit11";
     private const string RepositoryUrl = "https://github.com/slow-spec85/SimpleGit11";
     private const string LatestStableReleasePath = "repos/slow-spec85/SimpleGit11/releases/latest";
-    private const string ReleaseListPath = "repos/slow-spec85/SimpleGit11/releases?per_page=100";
     private const string GitHubApiVersion = "2022-11-28";
     private static readonly Uri GitHubApiBaseUri = new("https://api.github.com/");
     private readonly HttpClient _httpClient;
-    private readonly Dictionary<bool, ProductReleaseInfo?> _releaseCache = [];
     private readonly SemaphoreSlim _releaseSemaphore = new(1, 1);
+    private ProductReleaseInfo? _cachedRelease;
+    private bool _releaseLoaded;
 
     public ProductInfoService(HttpClient httpClient)
     {
@@ -37,23 +37,19 @@ public sealed class ProductInfoService : IProductInfoService, IDisposable
 
     public Uri RepositoryUri { get; } = new(RepositoryUrl);
 
-    public async Task<ProductReleaseInfo?> GetLatestReleaseAsync(
-        bool includePrereleases,
-        CancellationToken cancellationToken)
+    public async Task<ProductReleaseInfo?> GetLatestReleaseAsync(CancellationToken cancellationToken)
     {
         await _releaseSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_releaseCache.TryGetValue(includePrereleases, out ProductReleaseInfo? cachedRelease))
+            if (_releaseLoaded)
             {
-                return cachedRelease;
+                return _cachedRelease;
             }
 
-            ProductReleaseInfo? release = includePrereleases
-                ? await GetLatestPublishedReleaseAsync(cancellationToken).ConfigureAwait(false)
-                : await GetLatestStableReleaseAsync(cancellationToken).ConfigureAwait(false);
-            _releaseCache[includePrereleases] = release;
-            return release;
+            _cachedRelease = await GetLatestStableReleaseAsync(cancellationToken).ConfigureAwait(false);
+            _releaseLoaded = true;
+            return _cachedRelease;
         }
         finally
         {
@@ -99,19 +95,6 @@ public sealed class ProductInfoService : IProductInfoService, IDisposable
             : CreateReleaseInfo(release);
     }
 
-    private async Task<ProductReleaseInfo?> GetLatestPublishedReleaseAsync(
-        CancellationToken cancellationToken)
-    {
-        GitHubRelease[]? releases = await GetFromGitHubAsync<GitHubRelease[]>(
-            ReleaseListPath,
-            cancellationToken).ConfigureAwait(false);
-        return releases?
-            .Where(static release => !release.Draft)
-            .OrderByDescending(static release => release.PublishedAt ?? release.CreatedAt)
-            .Select(CreateReleaseInfo)
-            .FirstOrDefault(static release => release is not null);
-    }
-
     private async Task<T?> GetFromGitHubAsync<T>(
         string relativePath,
         CancellationToken cancellationToken)
@@ -155,7 +138,49 @@ public sealed class ProductInfoService : IProductInfoService, IDisposable
             return null;
         }
 
-        return new ProductReleaseInfo(version, releaseUri, release.Prerelease);
+        return new ProductReleaseInfo(
+            version,
+            releaseUri,
+            release.Prerelease,
+            release.Prerelease ? null : CreateInstallerAsset(release, version));
+    }
+
+    private static ProductReleaseAsset? CreateInstallerAsset(
+        GitHubRelease release,
+        string version)
+    {
+        string installerName = $"SimpleGit11-{version}-win-x64.msi";
+        GitHubReleaseAsset? installer = release.Assets.FirstOrDefault(asset =>
+            string.Equals(asset.Name, installerName, StringComparison.Ordinal));
+        GitHubReleaseAsset? checksum = release.Assets.FirstOrDefault(asset =>
+            string.Equals(asset.Name, installerName + ".sha256", StringComparison.Ordinal));
+        if (installer is null
+            || checksum is null
+            || installer.Size <= 0
+            || !TryCreateDownloadUri(installer.DownloadUrl, out Uri installerUri)
+            || !TryCreateDownloadUri(checksum.DownloadUrl, out Uri checksumUri))
+        {
+            return null;
+        }
+
+        return new ProductReleaseAsset(installerName, installerUri, checksumUri, installer.Size);
+    }
+
+    private static bool TryCreateDownloadUri(string value, out Uri uri)
+    {
+        if (Uri.TryCreate(value, UriKind.Absolute, out Uri? candidate)
+            && string.Equals(candidate.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(candidate.Host, "github.com", StringComparison.OrdinalIgnoreCase)
+            && candidate.AbsolutePath.StartsWith(
+                "/slow-spec85/SimpleGit11/releases/download/",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            uri = candidate;
+            return true;
+        }
+
+        uri = null!;
+        return false;
     }
 
     private sealed class GitHubRelease
@@ -177,5 +202,20 @@ public sealed class ProductInfoService : IProductInfoService, IDisposable
 
         [JsonPropertyName("published_at")]
         public DateTimeOffset? PublishedAt { get; init; }
+
+        [JsonPropertyName("assets")]
+        public GitHubReleaseAsset[] Assets { get; init; } = [];
+    }
+
+    private sealed class GitHubReleaseAsset
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; init; } = "";
+
+        [JsonPropertyName("browser_download_url")]
+        public string DownloadUrl { get; init; } = "";
+
+        [JsonPropertyName("size")]
+        public long Size { get; init; }
     }
 }

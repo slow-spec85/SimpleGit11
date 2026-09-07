@@ -34,6 +34,15 @@ namespace SimpleGit11;
 /// </summary>
 public sealed partial class MainWindow : Window
 {
+    private static readonly HashSet<Type> TopLevelPageTypes =
+    [
+        typeof(RepositoryPage),
+        typeof(ChangesPage),
+        typeof(HistoryPage),
+        typeof(BranchesPage),
+        typeof(SynchronizationPage),
+        typeof(SettingsPage)
+    ];
     private const double ShortWindowHeight = 760;
     private const double TallWindowHeight = 820;
     private const double OneRecentRepositoryHeight = 56;
@@ -248,8 +257,8 @@ public sealed partial class MainWindow : Window
         }
 
         Type pageType = GetPageType(e.Target);
-        bool refreshChangesPage = e.Target == AppNavigationTarget.Changes
-            && ContentFrame.Content is ChangesPage;
+        bool refreshCurrentPage = (e.Target == AppNavigationTarget.Changes && ContentFrame.Content is ChangesPage)
+            || (e.Target == AppNavigationTarget.Synchronization && ContentFrame.Content is SynchronizationPage);
         NavigationViewItem? navigationItem = ShellNavigation.MenuItems
             .OfType<NavigationViewItem>()
             .Where(item => item.Tag is not PluginMenuItem)
@@ -260,7 +269,7 @@ public sealed partial class MainWindow : Window
         }
 
         NavigateToTopLevelPage(pageType);
-        if (refreshChangesPage)
+        if (refreshCurrentPage)
         {
             _ = _asyncCommandExecutor.ExecuteAsync(
                 () => RefreshCurrentPageAsync());
@@ -631,7 +640,6 @@ public sealed partial class MainWindow : Window
             ContentFrame.Navigate(pageType);
         }
 
-        ContentFrame.BackStack.Clear();
         UpdateBackNavigationState();
     }
 
@@ -657,10 +665,16 @@ public sealed partial class MainWindow : Window
 
     private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
     {
-        NavigationViewItem? navigationItem = ShellNavigation.MenuItems
-            .OfType<NavigationViewItem>()
-            .Where(item => item.Tag is not PluginMenuItem)
-            .FirstOrDefault(item => GetPageType(item.Tag) == e.SourcePageType);
+        Type? selectedTopLevelPageType = NavigationSelectionResolver.ResolveTopLevelPage(
+            e.SourcePageType,
+            ContentFrame.BackStack.Select(entry => entry.SourcePageType),
+            TopLevelPageTypes);
+        NavigationViewItem? navigationItem = selectedTopLevelPageType == typeof(SettingsPage)
+            ? ShellNavigation.SettingsItem as NavigationViewItem
+            : ShellNavigation.MenuItems
+                .OfType<NavigationViewItem>()
+                .Where(item => item.Tag is not PluginMenuItem)
+                .FirstOrDefault(item => GetPageType(item.Tag) == selectedTopLevelPageType);
         if (navigationItem is not null
             && !ReferenceEquals(ShellNavigation.SelectedItem, navigationItem))
         {

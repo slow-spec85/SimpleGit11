@@ -162,26 +162,29 @@
   <data name="AboutCheckingReleaseTextBlock.Text" xml:space="preserve">
     <value>Проверка…</value>
   </data>
-  <data name="IncludePrereleaseVersionsToggleSwitch.Header" xml:space="preserve">
-    <value>Включить предварительные версии</value>
+  <data name="InstallUpdateButton.Content" xml:space="preserve">
+    <value>Обновить</value>
   </data>
-  <data name="IncludePrereleaseVersionsToggleSwitch.OnContent" xml:space="preserve">
-    <value>Включено</value>
+  <data name="InstallUpdateButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Скачать и установить обновление</value>
   </data>
-  <data name="IncludePrereleaseVersionsToggleSwitch.OffContent" xml:space="preserve">
-    <value>Выключено</value>
+  <data name="UpdateProgressRing.AutomationProperties.Name" xml:space="preserve">
+    <value>Скачивание и проверка обновления</value>
   </data>
   <data name="RetryReleaseCheckButton.Content" xml:space="preserve">
     <value>Повторить</value>
-  </data>
-  <data name="AboutNoPublishedRelease" xml:space="preserve">
-    <value>Опубликованные версии не найдены.</value>
   </data>
   <data name="AboutNoStableRelease" xml:space="preserve">
     <value>Стабильные версии пока не опубликованы.</value>
   </data>
   <data name="AboutReleaseCheckFailed" xml:space="preserve">
     <value>Не удалось проверить новейшую версию.</value>
+  </data>
+  <data name="AboutDownloadingUpdate" xml:space="preserve">
+    <value>Скачивание и проверка обновления…</value>
+  </data>
+  <data name="AboutUpdateFailed" xml:space="preserve">
+    <value>Не удалось скачать или проверить обновление.</value>
   </data>
   <data name="RecentRepositoriesTextBlock.Text" xml:space="preserve">
     <value>Последние репозитории</value>
@@ -3238,6 +3241,34 @@ Push будет выполнен в настроенные направлени�
   <data name="RemoveWorktreeButton" xml:space="preserve">
     <value>Удалить</value>
   </data>
+  <data name="ForceRemoveWorktreeDialogTitle" xml:space="preserve">
+    <value>Удалить рабочее дерево принудительно?</value>
+  </data>
+  <data name="ForceRemoveWorktreeDialogMessage" xml:space="preserve">
+    <value>Рабочее дерево: {0}
+
+{1}
+
+Принудительное удаление удалит папку рабочего дерева, включая несохранённые изменения и файлы в подмодулях. Перед продолжением сохраните нужные файлы и коммиты подмодулей в другом месте. Ветка рабочего дерева останется.</value>
+  </data>
+  <data name="ForceRemoveWorktreeButton" xml:space="preserve">
+    <value>Удалить принудительно</value>
+  </data>
+  <data name="WorktreeRemovalSubmodulesReason" xml:space="preserve">
+    <value>Рабочее дерево содержит инициализированные подмодули или их локальные данные Git.</value>
+  </data>
+  <data name="WorktreeRemovalChangesReason" xml:space="preserve">
+    <value>Рабочее дерево содержит несохранённые изменения, конфликты или неотслеживаемые файлы.</value>
+  </data>
+  <data name="WorktreeRemovalMainBlocked" xml:space="preserve">
+    <value>Основное рабочее дерево или bare-репозиторий нельзя удалить как связанное рабочее дерево.</value>
+  </data>
+  <data name="WorktreeRemovalLockedBlocked" xml:space="preserve">
+    <value>Рабочее дерево заблокировано. Перед удалением снимите блокировку.</value>
+  </data>
+  <data name="WorktreeRemovalUnavailable" xml:space="preserve">
+    <value>Рабочее дерево отсутствует или его регистрация повреждена. Обновите список и используйте восстановление или очистку записей.</value>
+  </data>
   <data name="RemovingWorktreeProgress" xml:space="preserve">
     <value>Удаление рабочего дерева…</value>
   </data>
@@ -4165,5 +4196,35 @@ only — только fast-forward; «Не задано» — наследова
   </data>
   <data name="PullEmptyValue" xml:space="preserve">
     <value>(пустое значение)</value>
+  </data>
+  <data name="DefaultRemoteNameDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Имя remote, выбираемого при открытии. Если он отсутствует, используется origin или первый доступный.</value>
+  </data>
+  <data name="DefaultRemoteNameHeaderTextBlock.Text" xml:space="preserve">
+    <value>Активный удалённый репозиторий по умолчанию</value>
+  </data>
+  <data name="DefaultRemoteNameTextBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Активный удалённый репозиторий по умолчанию</value>
+  </data>
+  <data name="DefaultRemoteNameTextBox.PlaceholderText" xml:space="preserve">
+    <value>origin</value>
+  </data>
+  <data name="FetchOnRepositoryOpenDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Открывать страницу синхронизации и выполнять полное обновление, как по кнопке «Обновить».</value>
+  </data>
+  <data name="FetchOnRepositoryOpenHeaderTextBlock.Text" xml:space="preserve">
+    <value>Получать изменения с сервера при открытии репозитория</value>
+  </data>
+  <data name="FetchOnRepositoryOpenToggleSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Получать изменения с сервера при открытии репозитория</value>
+  </data>
+  <data name="FetchOnRepositoryOpenToggleSwitch.OffContent" xml:space="preserve">
+    <value>Выключено</value>
+  </data>
+  <data name="FetchOnRepositoryOpenToggleSwitch.OnContent" xml:space="preserve">
+    <value>Включено</value>
+  </data>
+  <data name="RepositoryOpeningTitleTextBlock.Text" xml:space="preserve">
+    <value>Открытие репозитория</value>
   </data>
 </root>

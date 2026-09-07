@@ -16,13 +16,11 @@ internal sealed class TestProductInfoService(string currentVersion = "1.0.0")
 
     public Exception? ReleaseException { get; set; }
 
-    public List<bool> IncludePrereleaseRequests { get; } = [];
+    public int ReleaseRequests { get; private set; }
 
-    public Task<ProductReleaseInfo?> GetLatestReleaseAsync(
-        bool includePrereleases,
-        CancellationToken cancellationToken)
+    public Task<ProductReleaseInfo?> GetLatestReleaseAsync(CancellationToken cancellationToken)
     {
-        IncludePrereleaseRequests.Add(includePrereleases);
+        ReleaseRequests++;
         return ReleaseException is null
             ? Task.FromResult(LatestRelease)
             : Task.FromException<ProductReleaseInfo?>(ReleaseException);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -18,6 +19,7 @@ public sealed class GitRemoteService : IGitRemoteService
 {
     private const char RecordSeparator = '\x1e';
     private const char UnitSeparator = '\x1f';
+    private const int MaximumConcurrentRevisionComparisons = 4;
     private readonly IGitTagService _tagService;
     private readonly IGitConfigService _gitConfigService;
     private readonly IGitCommandRunner _commandRunner;
@@ -278,18 +280,22 @@ public sealed class GitRemoteService : IGitRemoteService
         GitRemote defaultRemote,
         CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<BranchSynchronizationItem> branches =
-            await GetConfiguredBranchSynchronizationItemsAsync(
+        cancellationToken.ThrowIfCancellationRequested();
+        Task<IReadOnlyList<BranchSynchronizationItem>> branchesTask =
+            GetConfiguredBranchSynchronizationItemsAsync(
                 repository,
                 defaultRemote,
                 cancellationToken);
-
-        cancellationToken.ThrowIfCancellationRequested();
-        IReadOnlyList<GitTag> localTags = await _tagService.GetLocalTagsAsync(repository);
-        IReadOnlyList<GitTag> remoteTags = await GetRemoteTagsAsync(
+        Task<IReadOnlyList<GitTag>> localTagsTask = _tagService.GetLocalTagsAsync(repository);
+        Task<IReadOnlyList<GitTag>> remoteTagsTask = GetRemoteTagsAsync(
             repository,
             defaultRemote,
             cancellationToken);
+        await Task.WhenAll(branchesTask, localTagsTask, remoteTagsTask);
+
+        IReadOnlyList<BranchSynchronizationItem> branches = await branchesTask;
+        IReadOnlyList<GitTag> localTags = await localTagsTask;
+        IReadOnlyList<GitTag> remoteTags = await remoteTagsTask;
         IReadOnlyDictionary<string, GitTag> remoteTagsByName = remoteTags
             .ToDictionary(tag => tag.RemoteTagName, StringComparer.Ordinal);
         IReadOnlyList<TagSynchronizationItem> tags = CreateTagSynchronizationItems(
@@ -719,48 +725,36 @@ public sealed class GitRemoteService : IGitRemoteService
     {
         IReadOnlyList<BranchRemoteSelection> remoteSelections =
             await GetBranchRemoteSelectionsAsync(repository, defaultRemote, cancellationToken);
-        IReadOnlySet<string> remoteTrackingBranches = await GetAllRemoteTrackingBranchesAsync(
+        IReadOnlyDictionary<string, string> revisionHashes = await GetSynchronizationRevisionHashesAsync(
             repository,
             cancellationToken);
+        IReadOnlyDictionary<RevisionComparison, (int AheadCount, int BehindCount)> revisionCounts =
+            await GetSynchronizationRevisionCountsAsync(repository, remoteSelections, revisionHashes, cancellationToken);
 
         List<BranchSynchronizationItem> branches = [];
         foreach (BranchRemoteSelection selection in remoteSelections)
         {
             cancellationToken.ThrowIfCancellationRequested();
             LocalBranchReference localBranch = selection.Branch;
+            if (!revisionHashes.TryGetValue($"refs/heads/{localBranch.Name}", out string? localHash))
+            {
+                // The branch may have been deleted since its configuration was read.
+                continue;
+            }
+
             string pullTrackingBranch = selection.PullTrackingBranch;
-            bool isPublishedToPullRemote = remoteTrackingBranches.Contains(pullTrackingBranch);
-            (int AheadCount, int BehindCount) pullCounts = isPublishedToPullRemote
-                ? await GetRevisionCountsAsync(
-                    repository,
-                    localBranch.Name,
-                    pullTrackingBranch,
-                    cancellationToken)
-                : (0, 0);
+            bool isPublishedToPullRemote = revisionHashes.TryGetValue(
+                $"refs/remotes/{pullTrackingBranch}", out string? pullHash);
+            (int AheadCount, int BehindCount) pullCounts = GetKnownRevisionCounts(localHash, pullHash, revisionCounts);
             string pullTrackingState = CreateTrackingState(
                 isPublishedToPullRemote,
                 pullCounts.AheadCount,
                 pullCounts.BehindCount);
 
             string pushTrackingBranch = selection.PushTrackingBranch;
-            bool isPublishedToPushRemote = remoteTrackingBranches.Contains(pushTrackingBranch);
-            (int AheadCount, int BehindCount) pushCounts;
-            if (!isPublishedToPushRemote)
-            {
-                pushCounts = (0, 0);
-            }
-            else if (string.Equals(pushTrackingBranch, pullTrackingBranch, StringComparison.Ordinal))
-            {
-                pushCounts = pullCounts;
-            }
-            else
-            {
-                pushCounts = await GetRevisionCountsAsync(
-                    repository,
-                    localBranch.Name,
-                    pushTrackingBranch,
-                    cancellationToken);
-            }
+            bool isPublishedToPushRemote = revisionHashes.TryGetValue(
+                $"refs/remotes/{pushTrackingBranch}", out string? pushHash);
+            (int AheadCount, int BehindCount) pushCounts = GetKnownRevisionCounts(localHash, pushHash, revisionCounts);
 
             string pushTrackingState = CreateTrackingState(
                 isPublishedToPushRemote,
@@ -795,6 +789,80 @@ public sealed class GitRemoteService : IGitRemoteService
             .OrderByDescending(branch => branch.IsCurrent)
             .ThenBy(branch => branch.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> GetSynchronizationRevisionHashesAsync(
+        RepositoryInfo repository,
+        CancellationToken cancellationToken)
+    {
+        GitRemoteOperationResult result = await RunGitAsync(
+            repository, false, cancellationToken,
+            "for-each-ref", "refs/heads", "refs/remotes",
+            $"--format=%(refname){UnitSeparator}%(objectname)");
+        Dictionary<string, string> hashes = new(StringComparer.Ordinal);
+        foreach (string line in result.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
+        {
+            string[] fields = line.Split(UnitSeparator);
+            if (fields.Length == 2 && !fields[0].EndsWith("/HEAD", StringComparison.Ordinal))
+            {
+                hashes.Add(fields[0], fields[1]);
+            }
+        }
+
+        return hashes;
+    }
+
+    private async Task<IReadOnlyDictionary<RevisionComparison, (int AheadCount, int BehindCount)>>
+        GetSynchronizationRevisionCountsAsync(
+            RepositoryInfo repository,
+            IReadOnlyList<BranchRemoteSelection> selections,
+            IReadOnlyDictionary<string, string> hashes,
+            CancellationToken cancellationToken)
+    {
+        HashSet<RevisionComparison> comparisons = [];
+        foreach (BranchRemoteSelection selection in selections)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!hashes.TryGetValue($"refs/heads/{selection.Branch.Name}", out string? localHash))
+            {
+                continue;
+            }
+
+            foreach (string remoteBranch in new[] { selection.PullTrackingBranch, selection.PushTrackingBranch })
+            {
+                if (hashes.TryGetValue($"refs/remotes/{remoteBranch}", out string? remoteHash)
+                    && localHash != remoteHash)
+                {
+                    comparisons.Add(new RevisionComparison(localHash, remoteHash));
+                }
+            }
+        }
+
+        ConcurrentDictionary<RevisionComparison, (int AheadCount, int BehindCount)> counts = new();
+        await Parallel.ForEachAsync(
+            comparisons,
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = MaximumConcurrentRevisionComparisons,
+                CancellationToken = cancellationToken
+            },
+            async (comparison, token) =>
+            {
+                // Compare immutable commits so a concurrent ref update cannot change the captured snapshot.
+                counts[comparison] = await GetRevisionRangeCountsAsync(
+                    repository, $"{comparison.LocalHash}...{comparison.RemoteHash}", token);
+            });
+        return counts;
+    }
+
+    private static (int AheadCount, int BehindCount) GetKnownRevisionCounts(
+        string localHash,
+        string? remoteHash,
+        IReadOnlyDictionary<RevisionComparison, (int AheadCount, int BehindCount)> counts)
+    {
+        return remoteHash is null || localHash == remoteHash
+            ? (0, 0)
+            : counts[new RevisionComparison(localHash, remoteHash)];
     }
 
     private async Task<IReadOnlySet<string>> GetSynchronizationRemoteNamesAsync(
@@ -997,10 +1065,19 @@ public sealed class GitRemoteService : IGitRemoteService
         };
     }
 
-    private async Task<(int AheadCount, int BehindCount)> GetRevisionCountsAsync(
+    private Task<(int AheadCount, int BehindCount)> GetRevisionCountsAsync(
         RepositoryInfo repository,
         string localBranch,
         string remoteTrackingBranch,
+        CancellationToken cancellationToken)
+    {
+        return GetRevisionRangeCountsAsync(
+            repository, $"refs/heads/{localBranch}...refs/remotes/{remoteTrackingBranch}", cancellationToken);
+    }
+
+    private async Task<(int AheadCount, int BehindCount)> GetRevisionRangeCountsAsync(
+        RepositoryInfo repository,
+        string revisionRange,
         CancellationToken cancellationToken)
     {
         GitRemoteOperationResult output = await RunGitAsync(
@@ -1010,7 +1087,7 @@ public sealed class GitRemoteService : IGitRemoteService
             "rev-list",
             "--left-right",
             "--count",
-            $"refs/heads/{localBranch}...refs/remotes/{remoteTrackingBranch}");
+            revisionRange);
         string[] parts = output.Output.Split(
             [' ', '\t', '\r', '\n'],
             StringSplitOptions.RemoveEmptyEntries);
@@ -1414,6 +1491,8 @@ public sealed class GitRemoteService : IGitRemoteService
         public bool HasUpstream => !string.IsNullOrWhiteSpace(UpstreamBranch)
             && !string.IsNullOrWhiteSpace(UpstreamRemoteName);
     }
+
+    private readonly record struct RevisionComparison(string LocalHash, string RemoteHash);
 
     private sealed record BranchRemoteSelection(
         LocalBranchReference Branch,

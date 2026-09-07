@@ -21,6 +21,7 @@
                         <Setter Target="PageContentGrid.Padding" Value="24,20" />
                         <Setter Target="ThemeComboBox.MinWidth" Value="0" />
                         <Setter Target="LanguageComboBox.MinWidth" Value="0" />
+                        <Setter Target="DefaultRemoteNameTextBox.MinWidth" Value="0" />
                         <Setter Target="EditorFontFamilyComboBox.MinWidth" Value="0" />
                         <Setter Target="InitialBranchNameTextBox.MinWidth" Value="0" />
                         <Setter Target="GlobalPushDefaultRemoteTextBox.MinWidth" Value="0" />
@@ -165,6 +166,47 @@
                             SmallChange="1"
                             SpinButtonPlacementMode="Compact"
                             Value="{x:Bind ViewModel.EditorLineSpacing, Mode=TwoWay}" />
+                    </controls:SettingsCard>
+                </StackPanel>
+
+                <StackPanel Spacing="12">
+                    <TextBlock
+                        Margin="2,0,0,0"
+                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                        x:Uid="RepositoryOpeningTitleTextBlock" />
+
+                    <controls:SettingsCard>
+                        <controls:SettingsCard.HeaderIcon>
+                            <FontIcon Glyph="&#xE8B7;" />
+                        </controls:SettingsCard.HeaderIcon>
+                        <controls:SettingsCard.Header>
+                            <TextBlock x:Uid="DefaultRemoteNameHeaderTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Header>
+                        <controls:SettingsCard.Description>
+                            <TextBlock x:Uid="DefaultRemoteNameDescriptionTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Description>
+                        <TextBox
+                            x:Name="DefaultRemoteNameTextBox"
+                            x:Uid="DefaultRemoteNameTextBox"
+                            MinWidth="220"
+                            AutomationProperties.AutomationId="DefaultRemoteNameInput"
+                            Text="{x:Bind ViewModel.DefaultRemoteName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </controls:SettingsCard>
+
+                    <controls:SettingsCard>
+                        <controls:SettingsCard.HeaderIcon>
+                            <FontIcon Glyph="&#xE72C;" />
+                        </controls:SettingsCard.HeaderIcon>
+                        <controls:SettingsCard.Header>
+                            <TextBlock x:Uid="FetchOnRepositoryOpenHeaderTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Header>
+                        <controls:SettingsCard.Description>
+                            <TextBlock x:Uid="FetchOnRepositoryOpenDescriptionTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Description>
+                        <ToggleSwitch
+                            x:Uid="FetchOnRepositoryOpenToggleSwitch"
+                            AutomationProperties.AutomationId="FetchOnRepositoryOpenToggle"
+                            IsOn="{x:Bind ViewModel.FetchOnRepositoryOpen, Mode=TwoWay}" />
                     </controls:SettingsCard>
                 </StackPanel>
 

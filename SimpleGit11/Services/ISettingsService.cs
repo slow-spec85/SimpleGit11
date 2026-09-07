@@ -13,9 +13,11 @@ public interface ISettingsService
 
     void SetLanguage(AppLanguage language);
 
-    void SetIgnoreWhitespaceInDiff(bool ignoreWhitespace);
+    void SetDefaultRemoteName(string remoteName);
 
-    void SetIncludePrereleaseVersions(bool includePrereleaseVersions);
+    void SetFetchOnRepositoryOpen(bool fetch);
+
+    void SetIgnoreWhitespaceInDiff(bool ignoreWhitespace);
 
     void SetEditorFont(string fontFamily, int fontSize);
 

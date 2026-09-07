@@ -25,11 +25,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 PowerShell refuses to proceed while SimpleGit11 is running. The existing BAT
 wrappers retain their explicit `-StopRunningApp` behavior and forward arguments.
 Neither entry point installs or launches the generated package/application.
+The installed application's About dialog can download this MSI and its checksum,
+verify them, start the interactive package, and then close the running application.
 
-Only two MSI files and their SHA-256 sidecars are distributed under
-`artifacts`: `SimpleGit11-<version>-win-x64-en-US.msi` and
-`SimpleGit11-<version>-win-x64-ru-RU.msi`. Pick one language; do not install both.
-Both contain the same core and optional SSH payloads, with their license notices.
+One MSI file and its SHA-256 sidecar are distributed under `artifacts`:
+`SimpleGit11-<version>-win-x64.msi`. The installer wizard is in English; the
+installed application contains both English and Russian localization. The package
+contains the core and optional SSH payloads, with their license notices.
+It also upgrades legacy English and Russian MSI installations with the same
+upgrade code; the previous installer's UI language is deliberately ignored.
 The `.publish-staging-win-x64` and `.installer-staging-win-x64` directories are
 internal build inputs, not separate distributions. Existing older artifacts are
 not deleted automatically. The obsolete `-Installer` switch has been removed.
@@ -101,20 +105,20 @@ may differ from the person initiating uninstall, so no profile cleanup is offere
 
 ```powershell
 # Core only
-msiexec.exe /i "SimpleGit11-<version>-win-x64-en-US.msi" /qn ADDLOCAL=Core
+msiexec.exe /i "SimpleGit11-<version>-win-x64.msi" /qn ADDLOCAL=Core
 # Core and SSH
-msiexec.exe /i "SimpleGit11-<version>-win-x64-en-US.msi" /qn ADDLOCAL=Core,Ssh
+msiexec.exe /i "SimpleGit11-<version>-win-x64.msi" /qn ADDLOCAL=Core,Ssh
 # All users, optional custom folder (run an elevated console for unattended install)
-msiexec.exe /i "SimpleGit11-<version>-win-x64-en-US.msi" /qn ALLUSERS=1 ADDLOCAL=Core,Ssh INSTALLFOLDER="D:\Applications\SimpleGit11"
+msiexec.exe /i "SimpleGit11-<version>-win-x64.msi" /qn ALLUSERS=1 ADDLOCAL=Core,Ssh INSTALLFOLDER="D:\Applications\SimpleGit11"
 # Destructive opt-in: application and this user's application data
-msiexec.exe /x "SimpleGit11-<version>-win-x64-en-US.msi" /qn PURGEUSERDATA=1
+msiexec.exe /x "SimpleGit11-<version>-win-x64.msi" /qn PURGEUSERDATA=1
 ```
 
 ## Validation
 
 `InstallerPayload.Tests.ps1`, also run by MSTest, checks versions, stable IDs,
 feature isolation, XML escaping, missing dependencies, junction rejection,
-localization parity, license-free wizard navigation and cleanup guards.
+English localization, license-free wizard navigation and cleanup guards.
 
 Every MSI build runs ICE validation and reads its database to verify defaults,
 SSH file ownership, scope-aware registry keys, removal conditions and dialog

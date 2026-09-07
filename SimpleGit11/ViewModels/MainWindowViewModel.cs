@@ -27,6 +27,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
     private readonly IGitService _gitService;
     private readonly IClipboardService _clipboardService;
     private readonly IProductInfoService _productInfoService;
+    private readonly ISettingsService _settingsService;
+    private RepositoryInfo? _pendingOpeningFetch;
     private readonly Dictionary<object, ActiveOperation> _activeOperations = new(ReferenceEqualityComparer.Instance);
     private object? _notificationSource;
     private string? _pendingChangesNotice;
@@ -39,13 +41,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         IGitService gitService,
         IClipboardService clipboardService,
         IProductInfoService productInfoService,
-        IMessenger messenger)
+        IMessenger messenger,
+        ISettingsService settingsService)
     {
         _recentRepositoriesService = recentRepositoriesService;
         _localizationService = localizationService;
         _gitService = gitService;
         _clipboardService = clipboardService;
         _productInfoService = productInfoService;
+        _settingsService = settingsService;
         messenger.RegisterAll(this);
         CurrentRepositoryDisplayName = _localizationService.GetString("NoRepositoryOpen");
         SelectedRemoteName = _localizationService.GetString("NoRemote");
@@ -159,11 +163,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
 
     public void SetCurrentRepository(RepositoryInfo repository, IReadOnlyList<RepositoryInfo> recentRepositories)
     {
-        if (!string.Equals(CurrentRepository?.Path, repository.Path, StringComparison.OrdinalIgnoreCase))
-        {
-            SelectedRemoteName = _localizationService.GetString("NoRemote");
-            Remotes = [];
-        }
+        _pendingOpeningFetch = null;
+        SelectedRemoteName = _localizationService.GetString("NoRemote");
+        Remotes = [];
 
         CurrentRepository = repository;
         RecentRepositories.Clear();
@@ -177,6 +179,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
 
     public void CloseCurrentRepository()
     {
+        _pendingOpeningFetch = null;
         CurrentRepository = null;
         SelectedRemoteName = _localizationService.GetString("NoRemote");
         Remotes = [];
@@ -221,10 +224,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
             }
 
             Remotes = remotes;
-            GitRemote? selectedRemote = remotes.FirstOrDefault(remote =>
-                    string.Equals(remote.Name, SelectedRemoteName, StringComparison.Ordinal))
-                ?? remotes.FirstOrDefault(remote => string.Equals(remote.Name, "origin", StringComparison.Ordinal))
-                ?? remotes.FirstOrDefault();
+            GitRemote? selectedRemote = ResolveSelectedRemote(remotes, SelectedRemoteName);
             SelectRemote(selectedRemote?.Name);
         }
         catch
@@ -242,6 +242,33 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         _pendingChangesNotice = message;
         _pendingChangesNoticeDetails = details;
         RequestNavigation(AppNavigationTarget.Changes);
+    }
+
+    public GitRemote? ResolveSelectedRemote(IReadOnlyList<GitRemote> remotes, string? selectedName)
+    {
+        return remotes.FirstOrDefault(remote => remote.Name == selectedName)
+            ?? remotes.FirstOrDefault(remote => remote.Name == _settingsService.Current.DefaultRemoteName)
+            ?? remotes.FirstOrDefault(remote => remote.Name == "origin")
+            ?? remotes.FirstOrDefault();
+    }
+
+    public void CompleteRepositoryOpen(RepositoryInfo repository)
+    {
+        if (CurrentRepository != repository || !_settingsService.Current.FetchOnRepositoryOpen)
+        {
+            return;
+        }
+
+        _pendingOpeningFetch = repository;
+        RequestNavigation(AppNavigationTarget.Synchronization);
+    }
+
+    public bool TryConsumeOpeningFetch()
+    {
+        bool shouldFetch = _pendingOpeningFetch is not null
+            && _pendingOpeningFetch.Path == CurrentRepository?.Path;
+        _pendingOpeningFetch = null;
+        return shouldFetch;
     }
 
     public async Task<bool> TryShowConflictWarningAsync(
