@@ -102,30 +102,43 @@
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </StackPanel>
 
-                <StackPanel
-                    Orientation="Horizontal"
-                    Spacing="8"
-                    Visibility="{x:Bind ViewModel.HasLatestRelease, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                    <HyperlinkButton
-                        x:Name="LatestReleaseHyperlinkButton"
-                        AutomationProperties.AutomationId="AboutLatestReleaseLink"
-                        NavigateUri="{x:Bind ViewModel.LatestReleaseUri, Mode=OneWay}"
-                        Padding="0"
-                        Content="{x:Bind ViewModel.LatestReleaseVersion, Mode=OneWay}" />
+                <HyperlinkButton
+                    x:Name="LatestReleaseHyperlinkButton"
+                    AutomationProperties.AutomationId="AboutLatestReleaseLink"
+                    HorizontalAlignment="Left"
+                    NavigateUri="{x:Bind ViewModel.LatestReleaseUri, Mode=OneWay}"
+                    Padding="0"
+                    Content="{x:Bind ViewModel.LatestReleaseVersion, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.HasLatestRelease, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                <Grid
+                    x:Name="UpdateActionPanel"
+                    ColumnDefinitions="Auto,Auto,*"
+                    ColumnSpacing="8"
+                    Visibility="{x:Bind ViewModel.CanInstallUpdate, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                     <Button
                         x:Name="InstallUpdateButton"
                         x:Uid="InstallUpdateButton"
                         AutomationProperties.AutomationId="AboutInstallUpdate"
-                        Command="{x:Bind ViewModel.InstallUpdateCommand, Mode=OneWay}"
-                        Visibility="{x:Bind ViewModel.CanInstallUpdate, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                        Command="{x:Bind ViewModel.InstallUpdateCommand, Mode=OneWay}" />
                     <ProgressRing
                         x:Name="UpdateProgressRing"
                         x:Uid="UpdateProgressRing"
+                        Grid.Column="1"
                         Width="16"
                         Height="16"
+                        VerticalAlignment="Center"
                         IsActive="{x:Bind ViewModel.IsDownloadingUpdate, Mode=OneWay}"
                         Visibility="{x:Bind ViewModel.IsDownloadingUpdate, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
-                </StackPanel>
+                    <TextBlock
+                        x:Name="UpdateStatusTextBlock"
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind ViewModel.UpdateStatusMessage, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords"
+                        Visibility="{x:Bind ViewModel.HasUpdateStatus, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                </Grid>
 
                 <StackPanel
                     Spacing="8"
@@ -142,11 +155,6 @@
                         HorizontalAlignment="Left"
                         Visibility="{x:Bind ViewModel.HasReleaseError, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                 </StackPanel>
-                <TextBlock
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="{x:Bind ViewModel.UpdateStatusMessage, Mode=OneWay}"
-                    TextWrapping="WrapWholeWords"
-                    Visibility="{x:Bind ViewModel.HasUpdateStatus, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
             </StackPanel>
         </Grid>
     </StackPanel>

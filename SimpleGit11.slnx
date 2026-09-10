@@ -2,6 +2,10 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
+  <Project Path="External/TextControlBox-WinUI/TextControlBox.Tests/TextControlBox.Tests.csproj">
+    <Platform Project="x64" />
+    <Deploy />
+  </Project>
   <Project Path="External/TextControlBox-WinUI/TextControlBox/TextControlBox.csproj">
     <Platform Project="x64" />
   </Project>

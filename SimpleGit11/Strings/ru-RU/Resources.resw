@@ -1513,6 +1513,9 @@
   <data name="OpenRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Открыть</value>
   </data>
+  <data name="OpenRepositoryInNewWindowAppBarButton.Label" xml:space="preserve">
+    <value>Открыть в новом окне</value>
+  </data>
   <data name="CreateRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Создать</value>
   </data>
@@ -1764,6 +1767,9 @@
   </data>
   <data name="RemoveRecentRepositoryMenuFlyoutItem.Text" xml:space="preserve">
     <value>Убрать</value>
+  </data>
+  <data name="OpenRecentRepositoryInNewWindowMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Открыть в новом окне</value>
   </data>
   <data name="CredentialHelperSettingsCardHeaderTextBlock.Text" xml:space="preserve">
     <value>Учетные данные удаленных операций</value>
@@ -3539,6 +3545,9 @@ Push будет выполнен в настроенные направлени�
   <data name="OpenFoundRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Открыть</value>
   </data>
+  <data name="OpenFoundRepositoryInNewWindowAppBarButton.Label" xml:space="preserve">
+    <value>Открыть в новом окне</value>
+  </data>
   <data name="OpenFoundRepositoryFolderAppBarButton.Label" xml:space="preserve">
     <value>Расположение</value>
   </data>
@@ -3783,6 +3792,9 @@ Push будет выполнен в настроенные направлени�
   </data>
   <data name="OpenSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Открыть подмодуль как текущий репозиторий</value>
+  </data>
+  <data name="OpenSubmoduleInNewWindowAppBarButton.Label" xml:space="preserve">
+    <value>Открыть в новом окне</value>
   </data>
   <data name="OpenSubmoduleFolderAppBarButton.Label" xml:space="preserve">
     <value>Расположение</value>
@@ -4226,5 +4238,14 @@ only — только fast-forward; «Не задано» — наследова
   </data>
   <data name="RepositoryOpeningTitleTextBlock.Text" xml:space="preserve">
     <value>Открытие репозитория</value>
+  </data>
+  <data name="CommitGraphMergeDescription" xml:space="preserve">
+    <value>Коммит слияния, родителей: {0}.</value>
+  </data>
+  <data name="CommitGraphFilteredDescription" xml:space="preserve">
+    <value>Связь проходит через коммиты, скрытые фильтрами.</value>
+  </data>
+  <data name="CommitGraphMergeFilteredDescription" xml:space="preserve">
+    <value>Коммит слияния, родителей: {0}. Связь проходит через коммиты, скрытые фильтрами.</value>
   </data>
 </root>

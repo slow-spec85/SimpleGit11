@@ -123,7 +123,9 @@ public sealed partial class CommitBrowserView : UserControl
     private void HistoryCommitsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         ViewModel?.SetSelectedCommits(
-            HistoryCommitsListView.SelectedItems.OfType<GitCommit>());
+            HistoryCommitsListView.SelectedItems
+                .OfType<CommitBrowserRowViewItem>()
+                .Select(item => item.Commit));
         if (e.AddedItems.Count > 0)
         {
             HistoryCommitsListView.ScrollIntoView(e.AddedItems[0]);
@@ -140,26 +142,26 @@ public sealed partial class CommitBrowserView : UserControl
         }
 
         bool isPointerRequest = args.TryGetPosition(HistoryCommitsListView, out _);
-        GitCommit? commit = FindCommitDataContext(args.OriginalSource as DependencyObject);
-        if (commit is null && !isPointerRequest)
+        CommitBrowserRowViewItem? row = FindCommitRowDataContext(args.OriginalSource as DependencyObject);
+        if (row is null && !isPointerRequest)
         {
-            commit = HistoryCommitsListView.SelectedItem as GitCommit;
+            row = HistoryCommitsListView.SelectedItem as CommitBrowserRowViewItem;
         }
 
-        if (commit is null
-            || HistoryCommitsListView.ContainerFromItem(commit) is not FrameworkElement container)
+        if (row is null
+            || HistoryCommitsListView.ContainerFromItem(row) is not FrameworkElement container)
         {
             return;
         }
 
         if (HistoryCommitsListView.SelectionMode == ListViewSelectionMode.Single)
         {
-            HistoryCommitsListView.SelectedItem = commit;
+            HistoryCommitsListView.SelectedItem = row;
         }
-        else if (!HistoryCommitsListView.SelectedItems.Contains(commit))
+        else if (!HistoryCommitsListView.SelectedItems.Contains(row))
         {
             HistoryCommitsListView.SelectedItems.Clear();
-            HistoryCommitsListView.SelectedItem = commit;
+            HistoryCommitsListView.SelectedItem = row;
         }
 
         args.Handled = true;
@@ -172,13 +174,13 @@ public sealed partial class CommitBrowserView : UserControl
         CommitContextFlyout.ShowAt(container);
     }
 
-    private static GitCommit? FindCommitDataContext(DependencyObject? source)
+    private static CommitBrowserRowViewItem? FindCommitRowDataContext(DependencyObject? source)
     {
         while (source is not null)
         {
-            if (source is FrameworkElement { DataContext: GitCommit commit })
+            if (source is FrameworkElement { DataContext: CommitBrowserRowViewItem row })
             {
-                return commit;
+                return row;
             }
 
             source = VisualTreeHelper.GetParent(source);

@@ -369,6 +369,12 @@
                                     <StackPanel.ContextFlyout>
                                         <MenuFlyout>
                                             <MenuFlyoutItem
+                                                x:Uid="OpenRecentRepositoryInNewWindowMenuFlyoutItem"
+                                                Command="{Binding DataContext.OpenRecentRepositoryInNewWindowCommand, ElementName=RecentRepositoriesList}"
+                                                CommandParameter="{x:Bind}"
+                                                Icon="OpenFile" />
+                                            <MenuFlyoutSeparator />
+                                            <MenuFlyoutItem
                                                 x:Uid="RemoveRecentRepositoryMenuFlyoutItem"
                                                 Command="{Binding DataContext.RemoveRecentRepositoryCommand, ElementName=RecentRepositoriesList}"
                                                 CommandParameter="{x:Bind}"

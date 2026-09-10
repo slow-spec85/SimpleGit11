@@ -27,6 +27,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     private readonly ILocalizationService _localizationService;
     private readonly IClipboardService _clipboardService;
     private readonly IFileExplorerService _fileExplorerService;
+    private readonly IApplicationInstanceLauncher _applicationInstanceLauncher;
     private readonly IDialogService _dialogService;
     private readonly MainWindowViewModel _mainWindowViewModel;
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
@@ -47,7 +48,8 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         IMessenger messenger,
         IAsyncCommandExecutor asyncCommandExecutor,
         IExecutionContextService executionContextService,
-        IExecutionRepositoryDiscoveryService executionRepositoryDiscoveryService)
+        IExecutionRepositoryDiscoveryService executionRepositoryDiscoveryService,
+        IApplicationInstanceLauncher applicationInstanceLauncher)
         : base(messenger)
     {
         _storagePickerService = storagePickerService;
@@ -62,6 +64,8 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
         _executionContextService = executionContextService;
         _executionRepositoryDiscoveryService = executionRepositoryDiscoveryService;
+        _applicationInstanceLauncher = applicationInstanceLauncher
+            ?? throw new ArgumentNullException(nameof(applicationInstanceLauncher));
         _executionContextService.CurrentChanged += OnExecutionContextChanged;
         RepositoryName = _localizationService.GetString("NoRepositoryOpen");
         RepositoryPath = "";
@@ -98,6 +102,10 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
 
     [RelayCommand(CanExecute = nameof(CanRunWhenIdle), FlowExceptionsToTaskScheduler = true)]
     private Task OnOpenRepositoryAsync() => _asyncCommandExecutor.ExecuteAsync(OpenRepositoryAsync);
+
+    [RelayCommand(CanExecute = nameof(CanOpenRepositoryInNewWindow), FlowExceptionsToTaskScheduler = true)]
+    private Task OnOpenRepositoryInNewWindowAsync() =>
+        _asyncCommandExecutor.ExecuteAsync(OpenRepositoryInNewWindowAsync);
 
     [RelayCommand(CanExecute = nameof(CanRunWhenIdle), FlowExceptionsToTaskScheduler = true)]
     private Task OnCreateRepositoryAsync() => _asyncCommandExecutor.ExecuteAsync(CreateRepositoryAsync);
@@ -138,6 +146,10 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     [RelayCommand(CanExecute = nameof(CanRunWhenIdle), FlowExceptionsToTaskScheduler = true)]
     private Task OnOpenRecentRepositoryAsync(RepositoryInfo? repository) =>
         _asyncCommandExecutor.ExecuteAsync(() => OpenRecentRepositoryAsync(repository));
+
+    [RelayCommand(CanExecute = nameof(CanOpenRepositoryInNewWindow), FlowExceptionsToTaskScheduler = true)]
+    private Task OnOpenRecentRepositoryInNewWindowAsync(RepositoryInfo? repository) =>
+        _asyncCommandExecutor.ExecuteAsync(() => OpenRecentRepositoryInNewWindowAsync(repository));
 
     [RelayCommand(CanExecute = nameof(CanRunWithOpenRepository), FlowExceptionsToTaskScheduler = true)]
     private Task OnCreateWorktreeAsync() => _asyncCommandExecutor.ExecuteAsync(CreateWorktreeAsync);
@@ -402,6 +414,26 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         }
 
         await OpenRepositoryAsync(repository);
+    }
+
+    private async Task OpenRepositoryInNewWindowAsync()
+    {
+        ClearResultMessages();
+
+        string? selectedPath = await _storagePickerService.PickFolderAsync();
+        if (string.IsNullOrWhiteSpace(selectedPath))
+        {
+            return;
+        }
+
+        RepositoryInfo? repository = await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(selectedPath);
+        if (repository is null)
+        {
+            ShowError(_localizationService.GetString("SelectedFolderNotGitRepository"));
+            return;
+        }
+
+        _applicationInstanceLauncher.OpenRepository(repository.Path);
     }
 
     private async Task CreateRepositoryAsync()
@@ -858,6 +890,31 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         await OpenRepositoryAsync(refreshedRepository);
     }
 
+    private async Task OpenRecentRepositoryInNewWindowAsync(RepositoryInfo? repository)
+    {
+        if (repository is null)
+        {
+            return;
+        }
+
+        ClearResultMessages();
+
+        RepositoryInfo? refreshedRepository =
+            await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(repository.Path);
+        if (refreshedRepository is null && !string.IsNullOrWhiteSpace(repository.MainWorktreePath))
+        {
+            refreshedRepository = await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(
+                repository.MainWorktreePath);
+        }
+        if (refreshedRepository is null)
+        {
+            ShowError(_localizationService.GetString("RecentRepositoryCannotBeOpened"));
+            return;
+        }
+
+        _applicationInstanceLauncher.OpenRepository(refreshedRepository.Path);
+    }
+
     public async Task RefreshCurrentRepositoryAsync()
     {
         ClearResultMessages();
@@ -1019,6 +1076,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
                 _localizationService,
                 _asyncCommandExecutor,
                 OpenRepositoryPathAsync,
+                OpenRepositoryInNewWindowPathAsync,
                 OpenSubmoduleFolder,
                 ExecuteSubmoduleActionAsync,
                 _clipboardService.SetText,
@@ -1045,6 +1103,12 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         {
             ShowError(_localizationService.GetString("SubmoduleFolderOpenFailed"), exception.Message);
         }
+    }
+
+    private Task OpenRepositoryInNewWindowPathAsync(string path)
+    {
+        _applicationInstanceLauncher.OpenRepository(path);
+        return Task.CompletedTask;
     }
 
     private async Task AddSubmoduleAsync()
@@ -1859,6 +1923,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     private void UpdateCommandStates()
     {
         OpenRepositoryCommand.NotifyCanExecuteChanged();
+        OpenRepositoryInNewWindowCommand.NotifyCanExecuteChanged();
         CreateRepositoryCommand.NotifyCanExecuteChanged();
         CloneRepositoryCommand.NotifyCanExecuteChanged();
         AddRemoteCommand.NotifyCanExecuteChanged();
@@ -1867,6 +1932,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         RefreshRepositoryCommand.NotifyCanExecuteChanged();
         OpenFoundRepositoryCommand.NotifyCanExecuteChanged();
         OpenRecentRepositoryCommand.NotifyCanExecuteChanged();
+        OpenRecentRepositoryInNewWindowCommand.NotifyCanExecuteChanged();
         BrowseRepositorySearchStartPathCommand.NotifyCanExecuteChanged();
         SearchRepositoriesCommand.NotifyCanExecuteChanged();
         CreateWorktreeCommand.NotifyCanExecuteChanged();
@@ -1899,6 +1965,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
                 repository,
                 _asyncCommandExecutor,
                 async path => await OpenRepositoryPathAsync(path),
+                OpenRepositoryInNewWindowPathAsync,
                 OpenFoundRepositoryFolder,
                 _clipboardService.SetText,
                 CanOpenLocalFolders));
@@ -1933,6 +2000,9 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
 
     private bool CanOpenLocalFolders => _executionContextService.Current.Runtime.Capabilities.HasFlag(
         ExecutionCapabilities.OpenInLocalFileExplorer);
+
+    private bool CanOpenRepositoryInNewWindow =>
+        _executionContextService.Current.IsLocal && !IsGitOperationRunning;
 
     private void ApplyFoundRepositoryFilter()
     {

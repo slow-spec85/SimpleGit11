@@ -55,6 +55,12 @@
                     <SolidColorBrush x:Key="BranchesPageHeaderActiveBrush" Color="#1A1A1A" />
                     <SolidColorBrush x:Key="BranchesPageHeaderInactiveBrush" Color="#7A7A7A" />
                     <SolidColorBrush x:Key="CardBorderColorDefaultBrush" Color="#EAEAEA" />
+                    <SolidColorBrush x:Key="CommitGraphLane1Brush" Color="#0067C0" />
+                    <SolidColorBrush x:Key="CommitGraphLane2Brush" Color="#0F7B0F" />
+                    <SolidColorBrush x:Key="CommitGraphLane3Brush" Color="#744DA9" />
+                    <SolidColorBrush x:Key="CommitGraphLane4Brush" Color="#CA5010" />
+                    <SolidColorBrush x:Key="CommitGraphLane5Brush" Color="#038387" />
+                    <SolidColorBrush x:Key="CommitGraphLane6Brush" Color="#C239B3" />
                     
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
@@ -99,6 +105,12 @@
                     <SolidColorBrush x:Key="BranchesPageHeaderActiveBrush" Color="#F5F5F5" />
                     <SolidColorBrush x:Key="BranchesPageHeaderInactiveBrush" Color="#A0A0A0" />
                     <SolidColorBrush x:Key="CardBorderColorDefaultBrush" Color="#232323" />
+                    <SolidColorBrush x:Key="CommitGraphLane1Brush" Color="#60CDFF" />
+                    <SolidColorBrush x:Key="CommitGraphLane2Brush" Color="#6CCB5F" />
+                    <SolidColorBrush x:Key="CommitGraphLane3Brush" Color="#B4A0FF" />
+                    <SolidColorBrush x:Key="CommitGraphLane4Brush" Color="#FF9349" />
+                    <SolidColorBrush x:Key="CommitGraphLane5Brush" Color="#4EC9B0" />
+                    <SolidColorBrush x:Key="CommitGraphLane6Brush" Color="#F17CB0" />
 
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
@@ -140,6 +152,12 @@
                     <SolidColorBrush x:Key="TitleBarButtonPressedBackgroundBrush" Color="{ThemeResource SystemColorHighlightColor}" />
                     <SolidColorBrush x:Key="BranchesPageHeaderActiveBrush" Color="{ThemeResource SystemColorButtonTextColor}" />
                     <SolidColorBrush x:Key="BranchesPageHeaderInactiveBrush" Color="{ThemeResource SystemColorGrayTextColor}" />
+                    <SolidColorBrush x:Key="CommitGraphLane1Brush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="CommitGraphLane2Brush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="CommitGraphLane3Brush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="CommitGraphLane4Brush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="CommitGraphLane5Brush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="CommitGraphLane6Brush" Color="{ThemeResource SystemColorWindowTextColor}" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 

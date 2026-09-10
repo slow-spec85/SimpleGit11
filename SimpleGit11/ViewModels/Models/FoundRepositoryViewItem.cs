@@ -10,6 +10,7 @@ public sealed partial class FoundRepositoryViewItem
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly Func<string, Task> _open;
+    private readonly Func<string, Task> _openInNewWindow;
     private readonly Action<string> _openFolder;
     private readonly Action<string> _copy;
     private readonly bool _canOpenLocalFolder;
@@ -18,6 +19,7 @@ public sealed partial class FoundRepositoryViewItem
         RepositoryInfo repository,
         IAsyncCommandExecutor asyncCommandExecutor,
         Func<string, Task> open,
+        Func<string, Task> openInNewWindow,
         Action<string> openFolder,
         Action<string> copy,
         bool canOpenLocalFolder = true)
@@ -26,6 +28,7 @@ public sealed partial class FoundRepositoryViewItem
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
         _open = open ?? throw new ArgumentNullException(nameof(open));
+        _openInNewWindow = openInNewWindow ?? throw new ArgumentNullException(nameof(openInNewWindow));
         _openFolder = openFolder ?? throw new ArgumentNullException(nameof(openFolder));
         _copy = copy ?? throw new ArgumentNullException(nameof(copy));
         _canOpenLocalFolder = canOpenLocalFolder;
@@ -41,6 +44,12 @@ public sealed partial class FoundRepositoryViewItem
     private Task OnOpenAsync()
     {
         return _asyncCommandExecutor.ExecuteAsync(() => _open(Path));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOpenFolder), FlowExceptionsToTaskScheduler = true)]
+    private Task OnOpenInNewWindowAsync()
+    {
+        return _asyncCommandExecutor.ExecuteAsync(() => _openInNewWindow(Path));
     }
 
     public bool CanOpenFolder => _canOpenLocalFolder;

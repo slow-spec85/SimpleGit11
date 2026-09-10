@@ -49,17 +49,46 @@ public sealed class SubmoduleViewItemTests
         Assert.AreEqual(item.Url, copiedText);
     }
 
+    [TestMethod]
+    public async Task OpenInNewWindowCommand_OpensSubmodulePath()
+    {
+        string? openedPath = null;
+        SubmoduleViewItem item = CreateItem(
+            CreateSubmodule(),
+            openInNewWindow: path =>
+            {
+                openedPath = path;
+                return Task.CompletedTask;
+            });
+
+        await item.OpenInNewWindowCommand.ExecuteAsync(null);
+
+        Assert.AreEqual(item.FullPath, openedPath);
+    }
+
+    [TestMethod]
+    public void OpenInNewWindowCommand_RemoteContext_IsDisabled()
+    {
+        SubmoduleViewItem item = CreateItem(CreateSubmodule(), canOpenLocalFolder: false);
+
+        Assert.IsFalse(item.OpenInNewWindowCommand.CanExecute(null));
+    }
+
     private static SubmoduleViewItem CreateItem(
         GitSubmodule submodule,
-        Action<string>? copy = null) => new(
+        Action<string>? copy = null,
+        Func<string, Task>? openInNewWindow = null,
+        bool canOpenLocalFolder = true) => new(
         submodule,
         new TestLocalizationService(),
         new ImmediateAsyncCommandExecutor(),
         _ => Task.CompletedTask,
+        openInNewWindow ?? (_ => Task.CompletedTask),
         _ => { },
         (_, _) => Task.CompletedTask,
         copy ?? (_ => { }),
-        "D:\\Repository");
+        "D:\\Repository",
+        canOpenLocalFolder);
 
     private static GitSubmodule CreateSubmodule() => new(
         Name: "External/TextControlBox-WinUI",

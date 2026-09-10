@@ -38,6 +38,8 @@ public partial class App : Application
     {
         try
         {
+            string? startupRepositoryPath = ApplicationLaunchArguments.GetRepositoryPath(
+                Environment.GetCommandLineArgs());
             _window = new MainWindow(
                 GetService<MainWindowViewModel>(),
                 GetService<ILocalizationService>(),
@@ -53,6 +55,11 @@ public partial class App : Application
             GetService<StoragePickerService>().RegisterWindow(_window);
             GetService<DialogService>().RegisterWindow(_window);
             _window.Activate();
+            if (startupRepositoryPath is not null)
+            {
+                _ = GetService<IAsyncCommandExecutor>().ExecuteAsync(
+                    () => GetService<RepositoryViewModel>().OpenRepositoryPathAsync(startupRepositoryPath));
+            }
             _ = EnsureCredentialHelperConfiguredAsync();
         }
         catch (Exception exception)
@@ -97,6 +104,7 @@ public partial class App : Application
         services.AddSingleton<IProductUpdateService>(static _ => new ProductUpdateService(
             new HttpClient { Timeout = TimeSpan.FromMinutes(15) }));
         services.AddSingleton<IInstallerLauncher, InstallerLauncher>();
+        services.AddSingleton<IApplicationInstanceLauncher, ApplicationInstanceLauncher>();
         services.AddSingleton<ILocalSettingsStore, JsonLocalSettingsStore>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();

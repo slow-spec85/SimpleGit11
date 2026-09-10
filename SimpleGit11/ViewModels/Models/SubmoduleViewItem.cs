@@ -13,6 +13,7 @@ public sealed partial class SubmoduleViewItem
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly Func<string, Task> _open;
+    private readonly Func<string, Task> _openInNewWindow;
     private readonly Action<string> _openFolder;
     private readonly Func<SubmoduleViewItem, SubmoduleAction, Task> _executeAction;
     private readonly Action<string> _copy;
@@ -23,6 +24,7 @@ public sealed partial class SubmoduleViewItem
         ILocalizationService localizationService,
         IAsyncCommandExecutor asyncCommandExecutor,
         Func<string, Task> open,
+        Func<string, Task> openInNewWindow,
         Action<string> openFolder,
         Func<SubmoduleViewItem, SubmoduleAction, Task> executeAction,
         Action<string> copy,
@@ -34,6 +36,7 @@ public sealed partial class SubmoduleViewItem
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
         _open = open ?? throw new ArgumentNullException(nameof(open));
+        _openInNewWindow = openInNewWindow ?? throw new ArgumentNullException(nameof(openInNewWindow));
         _openFolder = openFolder ?? throw new ArgumentNullException(nameof(openFolder));
         _executeAction = executeAction ?? throw new ArgumentNullException(nameof(executeAction));
         _copy = copy ?? throw new ArgumentNullException(nameof(copy));
@@ -59,6 +62,7 @@ public sealed partial class SubmoduleViewItem
                 localizationService,
                 asyncCommandExecutor,
                 open,
+                openInNewWindow,
                 openFolder,
                 executeAction,
                 copy,
@@ -105,6 +109,12 @@ public sealed partial class SubmoduleViewItem
         return _asyncCommandExecutor.ExecuteAsync(() => _open(Submodule.FullPath));
     }
 
+    [RelayCommand(CanExecute = nameof(CanOpenInNewWindow), FlowExceptionsToTaskScheduler = true)]
+    private Task OnOpenInNewWindowAsync()
+    {
+        return _asyncCommandExecutor.ExecuteAsync(() => _openInNewWindow(Submodule.FullPath));
+    }
+
     [RelayCommand(CanExecute = nameof(CanOpenFolder))]
     private void OnOpenFolder()
     {
@@ -145,6 +155,8 @@ public sealed partial class SubmoduleViewItem
     }
 
     private bool CanInitialize() => !Submodule.IsInitialized;
+
+    private bool CanOpenInNewWindow() => CanOpen && _canOpenLocalFolder;
 
     private bool CanUseInitializedModule() => Submodule.IsInitialized;
 

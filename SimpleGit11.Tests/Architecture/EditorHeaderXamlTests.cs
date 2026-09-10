@@ -37,6 +37,38 @@ public sealed class EditorHeaderXamlTests
     }
 
     [TestMethod]
+    public void CommitBrowserCommitList_UsesTypedGraphRowsWithoutReplacingListVirtualization()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
+        XElement list = FindByXName(document, "HistoryCommitsListView");
+        XElement template = list.Descendants().Single(element => element.Name.LocalName == "DataTemplate"
+            && RequiredXamlAttribute(element, "DataType").Contains("CommitBrowserRowViewItem", StringComparison.Ordinal));
+        XElement graph = template.Descendants().Single(element => element.Name.LocalName == "CommitGraphCell");
+
+        StringAssert.Contains(RequiredAttribute(list, "ItemsSource"), "ViewModel.CommitRows");
+        StringAssert.Contains(RequiredAttribute(list, "SelectedItem"), "ViewModel.SelectedCommitRow");
+        StringAssert.Contains(RequiredAttribute(graph, "Graph"), "Graph");
+        StringAssert.Contains(RequiredAttribute(graph, "Visibility"), "ShowGraph");
+    }
+
+    [TestMethod]
+    public void CommitBrowserCommitList_UsesMinimalHorizontalInsets()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
+        XElement list = FindByXName(document, "HistoryCommitsListView");
+        XElement itemStyle = list.Elements().Single(element => element.Name.LocalName == "ListView.ItemContainerStyle")
+            .Elements().Single(element => element.Name.LocalName == "Style");
+
+        StringAssert.Contains(RequiredAttribute(itemStyle, "BasedOn"), "DefaultListViewItemStyle");
+        Assert.IsTrue(itemStyle.Elements().Any(element =>
+            element.Name.LocalName == "Setter"
+            && (string?)element.Attribute("Property") == "Padding"
+            && (string?)element.Attribute("Value") == "8,0,0,0"));
+        AssertVisualStateSetter(document, "CommitListHeader.Padding", "0,0,4,0");
+        AssertVisualStateSetter(document, "HistoryCommitsListView.Padding", "0,0,4,0");
+    }
+
+    [TestMethod]
     public void DiffViewerHeader_SearchAndAdaptiveControlsRemainAvailable()
     {
         XDocument document = LoadApplicationXaml("Controls", "DiffViewer.xaml");

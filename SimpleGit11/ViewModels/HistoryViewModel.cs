@@ -49,6 +49,8 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
 
     public override Visibility EditCommitMessageActionVisibility => Visibility.Visible;
 
+    protected override bool ShowsCommitGraph => true;
+
     public bool CanEditSelectedCommitMessage =>
         SelectedCommit is not null
         && SelectedCommit.IsSynchronized == false

@@ -24,6 +24,7 @@ public sealed class FoundRepositoryViewItemTests
                 openedPath = path;
                 return Task.CompletedTask;
             },
+            _ => Task.CompletedTask,
             _ => { },
             _ => { });
 
@@ -40,6 +41,7 @@ public sealed class FoundRepositoryViewItemTests
             new RepositoryInfo(RepositoryPath, RepositoryName, "main"),
             new AsyncCommandExecutor(new RecordingExceptionHandler()),
             _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
             path => openedPath = path,
             _ => { });
 
@@ -54,6 +56,7 @@ public sealed class FoundRepositoryViewItemTests
         FoundRepositoryViewItem item = new(
             new RepositoryInfo(RepositoryPath, RepositoryName, "main"),
             new AsyncCommandExecutor(new RecordingExceptionHandler()),
+            _ => Task.CompletedTask,
             _ => Task.CompletedTask,
             _ => Assert.Fail("The local folder callback must not run in an SSH context."),
             _ => { },
@@ -70,6 +73,7 @@ public sealed class FoundRepositoryViewItemTests
             new RepositoryInfo(RepositoryPath, RepositoryName, "main"),
             new AsyncCommandExecutor(new RecordingExceptionHandler()),
             _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
             _ => { },
             text => copiedText = text);
 
@@ -78,6 +82,42 @@ public sealed class FoundRepositoryViewItemTests
 
         item.CopyNameCommand.Execute(null);
         Assert.AreEqual(RepositoryName, copiedText);
+    }
+
+    [TestMethod]
+    public async Task OpenInNewWindowCommand_OpensRepositoryPath()
+    {
+        string? openedPath = null;
+        FoundRepositoryViewItem item = new(
+            new RepositoryInfo(RepositoryPath, RepositoryName, "main"),
+            new AsyncCommandExecutor(new RecordingExceptionHandler()),
+            _ => Task.CompletedTask,
+            path =>
+            {
+                openedPath = path;
+                return Task.CompletedTask;
+            },
+            _ => { },
+            _ => { });
+
+        await item.OpenInNewWindowCommand.ExecuteAsync(null);
+
+        Assert.AreEqual(RepositoryPath, openedPath);
+    }
+
+    [TestMethod]
+    public void OpenInNewWindowCommand_RemoteContext_IsDisabled()
+    {
+        FoundRepositoryViewItem item = new(
+            new RepositoryInfo(RepositoryPath, RepositoryName, "main"),
+            new AsyncCommandExecutor(new RecordingExceptionHandler()),
+            _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
+            _ => { },
+            _ => { },
+            canOpenLocalFolder: false);
+
+        Assert.IsFalse(item.OpenInNewWindowCommand.CanExecute(null));
     }
 
     private sealed class RecordingExceptionHandler : IAsyncCommandExceptionHandler

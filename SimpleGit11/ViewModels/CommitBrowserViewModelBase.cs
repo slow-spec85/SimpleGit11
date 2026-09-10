@@ -21,6 +21,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     protected const int CommitPageSize = 300;
     private readonly List<GitCommit> _allCommits = [];
     private string _exactFilePathSearchText = "";
+    private CommitBrowserRowViewItem? _selectedCommitRow;
 
     protected CommitBrowserViewModelBase(
         MainWindowViewModel mainWindowViewModel,
@@ -52,9 +53,23 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
     public ObservableCollection<GitCommit> Commits { get; } = [];
 
+    public ObservableCollection<CommitBrowserRowViewItem> CommitRows { get; } = [];
+
     public ObservableCollection<GitCommit> SelectedCommits { get; } = [];
 
     public ObservableCollection<CommitParentViewItem> ParentCommits { get; } = [];
+
+    public CommitBrowserRowViewItem? SelectedCommitRow
+    {
+        get => _selectedCommitRow;
+        set
+        {
+            if (SetProperty(ref _selectedCommitRow, value))
+            {
+                SelectedCommit = value?.Commit;
+            }
+        }
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsCommitFilterApplied))]
@@ -163,6 +178,8 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
     protected IReadOnlyList<GitCommit> AllCommits => _allCommits;
 
+    protected virtual bool ShowsCommitGraph => false;
+
     protected bool HasUnfilteredCommits => _allCommits.Count > 0;
 
     protected virtual bool CanEditCommitMessage()
@@ -192,8 +209,10 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     {
         _allCommits.Clear();
         Commits.Clear();
+        CommitRows.Clear();
         SetSelectedCommits([]);
         SelectedCommit = null;
+        SelectedCommitRow = null;
         RefreshParentCommits();
         OnPropertyChanged(nameof(CommitsTitle));
         OnCommitFilterChanged();
@@ -243,6 +262,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
     protected sealed override void OnSelectedCommitChanged()
     {
+        SynchronizeSelectedCommitRow();
         RefreshParentCommits();
         OnBrowserSelectedCommitChanged();
     }
@@ -266,11 +286,81 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
             Commits.Add(commit);
         }
 
+        RebuildCommitRows(filteredCommits);
+
         SelectedCommit = Commits.FirstOrDefault(commit =>
             string.Equals(commit.Hash, selectedHash, StringComparison.OrdinalIgnoreCase))
             ?? Commits.FirstOrDefault();
+        SynchronizeSelectedCommitRow();
         OnPropertyChanged(nameof(CommitsTitle));
         OnCommitFilterChanged();
+    }
+
+    private void RebuildCommitRows(IReadOnlyList<GitCommit> filteredCommits)
+    {
+        CommitRows.Clear();
+        if (!ShowsCommitGraph)
+        {
+            foreach (GitCommit commit in filteredCommits)
+            {
+                CommitRows.Add(new CommitBrowserRowViewItem(commit, CommitGraphRow.Empty, false, ""));
+            }
+
+            return;
+        }
+
+        HashSet<string> visibleHashes = filteredCommits
+            .Select(commit => commit.Hash)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        CommitGraphLayout layout = CommitGraphLayoutBuilder.Build(
+            _allCommits,
+            visibleHashes,
+            IsMainlineOnly);
+
+        foreach (GitCommit commit in filteredCommits)
+        {
+            CommitGraphRow graph = layout.Rows.TryGetValue(commit.Hash, out CommitGraphRow? row)
+                ? row
+                : CommitGraphRow.Empty;
+            CommitRows.Add(new CommitBrowserRowViewItem(
+                commit,
+                graph,
+                true,
+                GetAccessibleGraphDescription(commit, graph)));
+        }
+    }
+
+    private string GetAccessibleGraphDescription(GitCommit commit, CommitGraphRow graph)
+    {
+        bool hasCollapsedConnection = graph.Segments.Any(segment => segment.IsCollapsed);
+        if (commit.IsMerge && hasCollapsedConnection)
+        {
+            return string.Format(
+                _localizationService.GetString("CommitGraphMergeFilteredDescription"),
+                commit.ParentCount);
+        }
+
+        if (commit.IsMerge)
+        {
+            return string.Format(
+                _localizationService.GetString("CommitGraphMergeDescription"),
+                commit.ParentCount);
+        }
+
+        return hasCollapsedConnection
+            ? _localizationService.GetString("CommitGraphFilteredDescription")
+            : "";
+    }
+
+    private void SynchronizeSelectedCommitRow()
+    {
+        CommitBrowserRowViewItem? row = SelectedCommit is null
+            ? null
+            : CommitRows.FirstOrDefault(item => string.Equals(
+                item.Commit.Hash,
+                SelectedCommit.Hash,
+                StringComparison.OrdinalIgnoreCase));
+        SetProperty(ref _selectedCommitRow, row, nameof(SelectedCommitRow));
     }
 
     private CommitFilterCriteria CreateFilterCriteria() => new(

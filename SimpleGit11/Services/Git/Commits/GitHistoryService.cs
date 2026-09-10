@@ -50,6 +50,7 @@ public sealed class GitHistoryService : IGitHistoryService
             "log",
             $"--skip={skip}",
             $"--max-count={requestedCount}",
+            "--topo-order",
             "--date=iso-strict",
             $"--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%ad%x1f%s%x1f%B%x1f%P%x1e");
 
@@ -188,6 +189,7 @@ public sealed class GitHistoryService : IGitHistoryService
             "log",
             $"--skip={skip}",
             $"--max-count={count}",
+            "--topo-order",
             "--name-only",
             $"--pretty=format:%x1e%H");
 

@@ -68,6 +68,37 @@ public sealed class GitHistoryServiceTests
     }
 
     [TestMethod]
+    public async Task GetCommitsPageAsync_MergedDeletedBranch_PreservesTopologyAcrossPages()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile("root.txt", "root");
+        await repository.CommitAllAsync("root");
+        await repository.RunGitAsync("checkout", "-b", "feature");
+        repository.WriteFile("feature.txt", "feature");
+        await repository.CommitAllAsync("feature");
+        await repository.RunGitAsync("checkout", "main");
+        repository.WriteFile("main.txt", "main");
+        await repository.CommitAllAsync("main");
+        await repository.RunGitAsync("merge", "--no-ff", "feature", "-m", "merge feature");
+        await repository.RunGitAsync("branch", "-d", "feature");
+        GitHistoryService service = new();
+
+        GitCommitPage firstPage = await service.GetCommitsPageAsync(repository.Repository, 0, 2);
+        GitCommitPage secondPage = await service.GetCommitsPageAsync(repository.Repository, 2, 2);
+        IReadOnlyList<GitCommit> commits = [.. firstPage.Commits, .. secondPage.Commits];
+
+        Assert.HasCount(4, commits);
+        Assert.HasCount(4, commits.Select(commit => commit.Hash).Distinct().ToArray());
+        GitCommit merge = commits[0];
+        Assert.AreEqual("merge feature", merge.Title);
+        Assert.AreEqual(2, merge.ParentCount);
+        Assert.IsTrue(merge.References.Any(reference => reference.Name == "main"));
+        Assert.IsFalse(commits.SelectMany(commit => commit.References).Any(reference => reference.Name == "feature"));
+        Assert.IsTrue(firstPage.HasMore);
+        Assert.IsFalse(secondPage.HasMore);
+    }
+
+    [TestMethod]
     public async Task GetChangedFilesAsync_SubmoduleChange_IsMarkedAsSubmodule()
     {
         await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();

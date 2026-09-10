@@ -1513,6 +1513,9 @@
   <data name="OpenRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Open</value>
   </data>
+  <data name="OpenRepositoryInNewWindowAppBarButton.Label" xml:space="preserve">
+    <value>Open in new window</value>
+  </data>
   <data name="CreateRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Create</value>
   </data>
@@ -1764,6 +1767,9 @@
   </data>
   <data name="RemoveRecentRepositoryMenuFlyoutItem.Text" xml:space="preserve">
     <value>Remove</value>
+  </data>
+  <data name="OpenRecentRepositoryInNewWindowMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Open in new window</value>
   </data>
   <data name="CredentialHelperSettingsCardHeaderTextBlock.Text" xml:space="preserve">
     <value>Remote operation credentials</value>
@@ -3539,6 +3545,9 @@ Forced removal will delete the worktree folder, including uncommitted changes an
   <data name="OpenFoundRepositoryAppBarButton.Label" xml:space="preserve">
     <value>Open</value>
   </data>
+  <data name="OpenFoundRepositoryInNewWindowAppBarButton.Label" xml:space="preserve">
+    <value>Open in new window</value>
+  </data>
   <data name="OpenFoundRepositoryFolderAppBarButton.Label" xml:space="preserve">
     <value>Location</value>
   </data>
@@ -3783,6 +3792,9 @@ The rule has been quarantined for this editor session and will be skipped until 
   </data>
   <data name="OpenSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Open the submodule as the current repository</value>
+  </data>
+  <data name="OpenSubmoduleInNewWindowAppBarButton.Label" xml:space="preserve">
+    <value>Open in new window</value>
   </data>
   <data name="OpenSubmoduleFolderAppBarButton.Label" xml:space="preserve">
     <value>Location</value>
@@ -4226,5 +4238,14 @@ only — fast-forward only; Not set — inherit.</value>
   </data>
   <data name="RepositoryOpeningTitleTextBlock.Text" xml:space="preserve">
     <value>Opening repositories</value>
+  </data>
+  <data name="CommitGraphMergeDescription" xml:space="preserve">
+    <value>Merge commit, {0} parents.</value>
+  </data>
+  <data name="CommitGraphFilteredDescription" xml:space="preserve">
+    <value>A connection passes through commits hidden by filters.</value>
+  </data>
+  <data name="CommitGraphMergeFilteredDescription" xml:space="preserve">
+    <value>Merge commit, {0} parents. A connection passes through commits hidden by filters.</value>
   </data>
 </root>

@@ -47,8 +47,8 @@
                         <Setter Target="HistoryDiffPane.(Grid.Row)" Value="2" />
                         <Setter Target="HistoryDiffPane.(Grid.Column)" Value="0" />
                         <Setter Target="HistoryDiffPane.Padding" Value="0" />
-                        <Setter Target="CommitListHeader.Padding" Value="0,0,32,0" />
-                        <Setter Target="HistoryCommitsListView.Padding" Value="0,0,28,0" />
+                        <Setter Target="CommitListHeader.Padding" Value="0,0,4,0" />
+                        <Setter Target="HistoryCommitsListView.Padding" Value="0,0,4,0" />
                         <Setter Target="ChangedFilesHeader.Padding" Value="0,0,32,0" />
                         <Setter Target="HistoryChangedFilesListView.Padding" Value="0,0,28,0" />
                         <Setter Target="CommitDetailsHeader.Padding" Value="0,0,32,0" />
@@ -254,48 +254,66 @@
                         x:Name="HistoryCommitsListView"
                         Grid.Row="1"
                         ContextRequested="HistoryCommitsListView_ContextRequested"
-                        ItemsSource="{x:Bind ViewModel.Commits, Mode=OneWay}"
-                        SelectedItem="{x:Bind ViewModel.SelectedCommit, Mode=TwoWay}"
+                        ItemsSource="{x:Bind ViewModel.CommitRows, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedCommitRow, Mode=TwoWay}"
                         SelectionChanged="HistoryCommitsListView_SelectionChanged"
                         SelectionMode="Single">
+                        <ListView.ItemContainerStyle>
+                            <Style
+                                BasedOn="{StaticResource DefaultListViewItemStyle}"
+                                TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Margin" Value="0" />
+                                <Setter Property="Padding" Value="8,0,0,0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.Footer>
                             <ContentPresenter
                                 HorizontalAlignment="Stretch"
                                 Content="{Binding CommitListFooter, ElementName=PageRoot}" />
                         </ListView.Footer>
                         <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="models:GitCommit">
-                                <Grid Padding="4">
-                                    <StackPanel Spacing="2">
-                                        <StackPanel Orientation="Horizontal"
-                                                    Spacing="4">
+                            <DataTemplate x:DataType="viewmodels:CommitBrowserRowViewItem">
+                                <Grid
+                                    AutomationProperties.HelpText="{x:Bind AccessibleGraphDescription, Mode=OneTime}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <controls:CommitGraphCell
+                                        Graph="{x:Bind Graph, Mode=OneTime}"
+                                        Visibility="{x:Bind ShowGraph, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                    <StackPanel Grid.Column="1" Margin="4" Spacing="2">
+                                        <StackPanel Orientation="Horizontal">
                                             <FontIcon
                                                 x:Uid="CommitRequiresSynchronizationIcon"
+                                                Margin="0,0,4,0"
                                                 FontSize="12"
                                                 Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
                                                 Glyph="&#xE74A;"
-                                                Visibility="{x:Bind NeedsSynchronization, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                            <StackPanel Orientation="Horizontal"
-                                                        Spacing="2">
+                                                Visibility="{x:Bind Commit.NeedsSynchronization, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                            <StackPanel 
+                                                Orientation="Horizontal"
+                                                Spacing="2"
+                                                Margin="0,0,4,0"
+                                                Visibility="{x:Bind Commit.IsMerge, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
                                                 <Path
                                                     Width="12"
                                                     Height="14"
                                                     VerticalAlignment="Center"
                                                     Data="{StaticResource MergeCommitIconData}"
                                                     Fill="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                                    Stretch="Uniform"
-                                                    Visibility="{x:Bind IsMerge, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                    Stretch="Uniform" />
                                                 <TextBlock
                                                     x:Uid="MergeCommitParentCountTextBlock"
                                                     VerticalAlignment="Center"
                                                     Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
                                                     Style="{ThemeResource CaptionTextBlockStyle}"
-                                                    Text="{x:Bind ParentCount, Mode=OneTime}"
-                                                    Visibility="{x:Bind IsMerge, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                    Text="{x:Bind Commit.ParentCount, Mode=OneTime}" />
                                             </StackPanel>
                                             <ItemsControl
-                                                ItemsSource="{x:Bind References, Mode=OneTime}"
-                                                Visibility="{x:Bind HasReferences, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
+                                                ItemsSource="{x:Bind Commit.References, Mode=OneTime}"
+                                                Visibility="{x:Bind Commit.HasReferences, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
                                                         <StackPanel Orientation="Horizontal" />
@@ -349,47 +367,38 @@
                                             <TextBlock
                                                 FontWeight="SemiBold"
                                                 MaxLines="1"
-                                                Text="{x:Bind Message, Mode=OneTime}"
-                                                ToolTipService.ToolTip="{x:Bind Title, Mode=OneTime}"
+                                                Text="{x:Bind Commit.Message, Mode=OneTime}"
+                                                ToolTipService.ToolTip="{x:Bind Commit.Title, Mode=OneTime}"
                                                 TextTrimming="CharacterEllipsis" />
-                                            
                                         </StackPanel>
-                                        <Grid ColumnSpacing="8">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-
+                                        <StackPanel Orientation="Horizontal">
                                             <Border
                                                 Padding="6,1"
+                                                Margin="0,0,4,0"
                                                 Background="{ThemeResource AccentFillColorSecondaryBrush}"
                                                 CornerRadius="4"
-                                                Visibility="{x:Bind HasRangeSideLabel, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
+                                                Visibility="{x:Bind Commit.HasRangeSideLabel, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
                                                 <TextBlock
                                                     Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
                                                     Style="{ThemeResource CaptionTextBlockStyle}"
-                                                    Text="{x:Bind RangeSideLabel, Mode=OneTime}" />
+                                                    Text="{x:Bind Commit.RangeSideLabel, Mode=OneTime}" />
                                             </Border>
                                             <TextBlock
-                                                Grid.Column="1"
+                                                Margin="0,0,4,0"
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Style="{ThemeResource CaptionTextBlockStyle}"
-                                                Text="{x:Bind DisplayDate, Mode=OneTime}" />
+                                                Text="{x:Bind Commit.DisplayDate, Mode=OneTime}" />
                                             <TextBlock
-                                                Grid.Column="2"
+                                                Margin="0,0,4,0"
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Style="{ThemeResource CaptionTextBlockStyle}"
-                                                Text="{x:Bind ShortHash, Mode=OneTime}" />
+                                                Text="{x:Bind Commit.ShortHash, Mode=OneTime}" />
                                             <TextBlock
-                                                Grid.Column="3"
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 MaxLines="1"
                                                 Style="{ThemeResource CaptionTextBlockStyle}"
-                                                Text="{x:Bind AuthorName, Mode=OneTime}"
-                                                TextTrimming="CharacterEllipsis" />
-                                        </Grid>
+                                                Text="{x:Bind Commit.AuthorName, Mode=OneTime}" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </DataTemplate>

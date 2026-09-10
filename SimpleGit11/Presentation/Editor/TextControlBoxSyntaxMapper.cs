@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using SimpleGit11.Models;
 using TextControlBoxNS;
@@ -49,6 +50,16 @@ internal static class TextControlBoxSyntaxMapper
             return SyntaxHighlightID.Inifile;
         }
 
+        if (IsDockerfile(fileName))
+        {
+            return SyntaxHighlightID.Dockerfile;
+        }
+
+        if (IsShellProfile(fileName))
+        {
+            return SyntaxHighlightID.Bash;
+        }
+
         return Path.GetExtension(path).ToLowerInvariant() switch
         {
             ".asm" or ".s" => SyntaxHighlightID.x86Assembly,
@@ -62,6 +73,15 @@ internal static class TextControlBoxSyntaxMapper
             ".ini" => SyntaxHighlightID.Inifile,
             ".java" => SyntaxHighlightID.Java,
             ".js" or ".jsx" or ".ts" or ".tsx" => SyntaxHighlightID.Javascript,
+            ".go" => SyntaxHighlightID.Go,
+            ".vb" => SyntaxHighlightID.VisualBasic,
+            ".bas" or ".cls" or ".frm" or ".vba" => SyntaxHighlightID.VBA,
+            ".bash" or ".sh" or ".zsh" => SyntaxHighlightID.Bash,
+            ".ps1" or ".psd1" or ".psm1" => SyntaxHighlightID.PowerShell,
+            ".rs" => SyntaxHighlightID.Rust,
+            ".yaml" or ".yml" => SyntaxHighlightID.YAML,
+            ".dockerfile" => SyntaxHighlightID.Dockerfile,
+            ".hcl" or ".tf" or ".tfvars" => SyntaxHighlightID.HCL,
             ".json" => SyntaxHighlightID.Json,
             ".lua" => SyntaxHighlightID.Lua,
             ".md" or ".markdown" => SyntaxHighlightID.Markdown,
@@ -85,7 +105,9 @@ internal static class TextControlBoxSyntaxMapper
             or SyntaxHighlightID.Java
             or SyntaxHighlightID.Javascript
             or SyntaxHighlightID.Json
-            or SyntaxHighlightID.PHP;
+            or SyntaxHighlightID.PHP
+            or SyntaxHighlightID.Go
+            or SyntaxHighlightID.Rust;
     }
 
     private static bool IsHashStyle(SyntaxHighlightID language)
@@ -94,7 +116,12 @@ internal static class TextControlBoxSyntaxMapper
             or SyntaxHighlightID.Inifile
             or SyntaxHighlightID.Python
             or SyntaxHighlightID.TOML
-            or SyntaxHighlightID.Gitignore;
+            or SyntaxHighlightID.Gitignore
+            or SyntaxHighlightID.Bash
+            or SyntaxHighlightID.PowerShell
+            or SyntaxHighlightID.YAML
+            or SyntaxHighlightID.Dockerfile
+            or SyntaxHighlightID.HCL;
     }
 
     private static bool IsDashStyle(SyntaxHighlightID language)
@@ -107,5 +134,23 @@ internal static class TextControlBoxSyntaxMapper
         return language is SyntaxHighlightID.Html
             or SyntaxHighlightID.Markdown
             or SyntaxHighlightID.XML;
+    }
+
+    private static bool IsDockerfile(string fileName)
+    {
+        return fileName == "dockerfile"
+            || fileName.StartsWith("dockerfile.", StringComparison.Ordinal)
+            || fileName == "containerfile"
+            || fileName.StartsWith("containerfile.", StringComparison.Ordinal);
+    }
+
+    private static bool IsShellProfile(string fileName)
+    {
+        return fileName is ".bash_profile"
+            or ".bash_logout"
+            or ".bashrc"
+            or ".profile"
+            or ".zprofile"
+            or ".zshrc";
     }
 }
