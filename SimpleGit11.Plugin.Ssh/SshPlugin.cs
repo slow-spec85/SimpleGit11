@@ -20,8 +20,10 @@ public sealed class SshPlugin : ISimpleGitPlugin
 
     public void ConfigureServices(IServiceCollection services)
     {
+        services.AddSingleton<SshPublicKeyInstaller>();
         services.AddSingleton<IExecutionProvider, SshExecutionProvider>();
         services.AddSingleton<ISshConnectionProfileStore, SshConnectionProfileStore>();
+        services.AddSingleton<ISshPrivateKeyService, SshPrivateKeyService>();
         services.AddSingleton<ISshLocalizationService, SshLocalizationService>();
         services.AddSingleton<ISshConnectionDialogService, SshConnectionDialogService>();
         services.AddSingleton<SshConnectionController>();

@@ -31,10 +31,18 @@ public sealed class SshGitCommandRunner : IGitCommandRunner
             workingDirectory,
             arguments,
             options.EnvironmentVariables,
-            options.UseDefaultWorkingDirectory);
+            options.UseDefaultWorkingDirectory,
+            options.HttpAuthentication);
+        string? standardInput = options.HttpAuthentication is
+        {
+            Username: not null,
+            Password: not null
+        } credential
+            ? CreateCredentialInput(credential)
+            : options.StandardInput;
         SshCommandResult commandResult = await _session.ExecuteAsync(
             commandText,
-            options.StandardInput,
+            standardInput,
             cancellationToken);
         GitCommandResult result = new(
             commandResult.ExitCode,
@@ -49,5 +57,20 @@ public sealed class SshGitCommandRunner : IGitCommandRunner
         }
 
         return result;
+    }
+
+    private static string CreateCredentialInput(GitHttpAuthentication credential)
+    {
+        ValidateCredentialValue(credential.Username!);
+        ValidateCredentialValue(credential.Password!);
+        return $"username={credential.Username}\npassword={credential.Password}\n\n";
+    }
+
+    private static void ValidateCredentialValue(string value)
+    {
+        if (value.IndexOfAny(['\r', '\n']) >= 0)
+        {
+            throw new ArgumentException("Git credential values cannot contain line breaks.");
+        }
     }
 }

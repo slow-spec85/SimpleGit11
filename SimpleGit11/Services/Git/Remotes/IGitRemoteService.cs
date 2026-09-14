@@ -120,7 +120,16 @@ public interface IGitRemoteService
         string url,
         CancellationToken cancellationToken = default);
 
-    Task<GitRemoteOperationResult> SetRemoteUrlAsync(RepositoryInfo repository, GitRemote remote, string url);
+    Task<GitRemoteOperationResult> CheckAccessAsync(
+        RepositoryInfo repository,
+        string url,
+        CancellationToken cancellationToken = default);
+
+    Task<GitRemoteOperationResult> SetRemoteUrlAsync(
+        RepositoryInfo repository,
+        GitRemote remote,
+        string url,
+        CancellationToken cancellationToken = default);
 
     Task<GitRemoteOperationResult> RenameRemoteAsync(
         RepositoryInfo repository,

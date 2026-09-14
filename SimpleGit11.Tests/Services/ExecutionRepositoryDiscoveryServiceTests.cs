@@ -74,6 +74,26 @@ public sealed class ExecutionRepositoryDiscoveryServiceTests
         Assert.IsNull(repository);
     }
 
+    [TestMethod]
+    [DataRow(127, "bash: git: command not found")]
+    [DataRow(1, "CommandNotFoundException: The term 'git' is not recognized")]
+    public async Task TryOpenRepositoryAsync_GitIsUnavailable_ThrowsFileNotFoundException(
+        int exitCode,
+        string standardError)
+    {
+        ScriptedGitCommandRunner runner = new(new Dictionary<string, GitCommandResult>
+        {
+            ["rev-parse --show-toplevel"] = new GitCommandResult(exitCode, "", standardError)
+        });
+        TestExecutionContextService context = new(new TestRepositoryPathService(RepositoryPathStyle.Posix));
+        ExecutionRepositoryDiscoveryService service = new(runner, context);
+
+        FileNotFoundException exception = await Assert.ThrowsExactlyAsync<FileNotFoundException>(
+            () => service.TryOpenRepositoryAsync("/srv/repo"));
+
+        Assert.AreEqual("git", exception.FileName);
+    }
+
     private static GitCommandResult Success(string output) => new(0, output, "");
 
     private sealed class ScriptedGitCommandRunner : IGitCommandRunner

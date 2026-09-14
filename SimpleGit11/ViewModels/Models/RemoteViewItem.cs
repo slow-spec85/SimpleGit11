@@ -14,6 +14,7 @@ public sealed partial class RemoteViewItem
     private readonly Action<RemoteViewItem> _select;
     private readonly Func<RemoteViewItem, Task> _rename;
     private readonly Func<RemoteViewItem, Task> _edit;
+    private readonly Func<RemoteViewItem, Task> _checkAccess;
     private readonly Func<RemoteViewItem, Task> _remove;
     private readonly Action<string> _copy;
     private bool _isCurrent;
@@ -24,6 +25,7 @@ public sealed partial class RemoteViewItem
                             Action<RemoteViewItem> select,
                             Func<RemoteViewItem, Task> rename,
                             Func<RemoteViewItem, Task> edit,
+                            Func<RemoteViewItem, Task> checkAccess,
                             Func<RemoteViewItem, Task> remove,
                             Action<string> copy,
                             bool isCurrent)
@@ -33,6 +35,7 @@ public sealed partial class RemoteViewItem
         _select = select ?? throw new ArgumentNullException(nameof(select));
         _rename = rename ?? throw new ArgumentNullException(nameof(edit));
         _edit = edit ?? throw new ArgumentNullException(nameof(edit));
+        _checkAccess = checkAccess ?? throw new ArgumentNullException(nameof(checkAccess));
         _remove = remove ?? throw new ArgumentNullException(nameof(remove));
         _copy = copy ?? throw new ArgumentNullException(nameof(copy));
         _isCurrent = isCurrent;
@@ -82,6 +85,12 @@ public sealed partial class RemoteViewItem
     private Task OnRemoveAsync()
     {
         return _asyncCommandExecutor.ExecuteAsync(() => _remove(this));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanEdit), FlowExceptionsToTaskScheduler = true)]
+    private Task OnCheckAccessAsync()
+    {
+        return _asyncCommandExecutor.ExecuteAsync(() => _checkAccess(this));
     }
 
     [RelayCommand]

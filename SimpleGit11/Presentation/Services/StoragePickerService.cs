@@ -4,13 +4,14 @@ using System.Threading.Tasks;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.Storage.Pickers;
+using SimpleGit11.Extensibility.Presentation;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
 using WinRT.Interop;
 
 namespace SimpleGit11.Presentation.Services;
 
-public sealed class StoragePickerService : IStoragePickerService
+public sealed class StoragePickerService : IStoragePickerService, IPluginStoragePicker
 {
     private WindowId _windowId;
     private bool _isWindowRegistered;
@@ -32,6 +33,36 @@ public sealed class StoragePickerService : IStoragePickerService
         };
 
         PickFolderResult? result = await picker.PickSingleFolderAsync();
+        return result?.Path;
+    }
+
+    public async Task<string?> PickFileAsync()
+    {
+        EnsureWindowRegistered();
+
+        FileOpenPicker picker = new(_windowId)
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+        };
+        picker.FileTypeFilter.Add("*");
+
+        PickFileResult? result = await picker.PickSingleFileAsync();
+        return result?.Path;
+    }
+
+    public async Task<string?> PickSaveFileAsync(string suggestedFileName)
+    {
+        EnsureWindowRegistered();
+        ArgumentException.ThrowIfNullOrWhiteSpace(suggestedFileName);
+
+        FileSavePicker picker = new(_windowId)
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+            SuggestedFileName = suggestedFileName,
+            ShowOverwritePrompt = true
+        };
+
+        PickFileResult? result = await picker.PickSaveFileAsync();
         return result?.Path;
     }
 

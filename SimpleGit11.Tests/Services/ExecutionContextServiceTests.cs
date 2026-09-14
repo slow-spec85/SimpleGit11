@@ -1,3 +1,4 @@
+using SimpleGit11.Services;
 using SimpleGit11.Services.Execution;
 using SimpleGit11.Services.Execution.Local;
 using SimpleGit11.Services.Git.Execution;
@@ -84,6 +85,114 @@ public sealed class ExecutionContextServiceTests
         Assert.AreSame(failure, events[0].Exception);
     }
 
+    [TestMethod]
+    public async Task RunAsync_RemoteHttpsAuthenticationFailure_UsesLocalCredentialAndApprovesIt()
+    {
+        LocalExecutionRuntime localRuntime = CreateLocalRuntime();
+        SequenceGitCommandRunner remoteGit = new(
+            new GitCommandResult(128, "", "fatal: could not read Username"),
+            new GitCommandResult(0, "success", ""));
+        FakeExecutionRuntime remoteRuntime = new("server.example", remoteGit);
+        ExecutionProviderRegistry registry = new([
+            new LocalExecutionProvider(localRuntime),
+            new FakeExecutionProvider("test-remote", remoteRuntime)
+        ]);
+        await using ExecutionContextService service = new(registry, localRuntime);
+        RecordingCredentialService credentialService = new(
+            new GitHttpAuthentication(
+                "https://example.test/team/project.git",
+                "user",
+                "secret"));
+        ContextualGitCommandRunner contextualRunner = new(service, credentialService);
+        await service.ActivateAsync(
+            "test-remote",
+            new ExecutionConnectionRequest(null, new Dictionary<string, string>()));
+
+        GitCommandResult result = await contextualRunner.RunAsync(
+            "/repo",
+            ["fetch", "origin"],
+            new GitCommandOptions(
+                HttpAuthentication: new GitHttpAuthentication(
+                    "https://example.test/team/project.git")));
+
+        Assert.IsTrue(result.IsSuccess);
+        Assert.HasCount(2, remoteGit.Options);
+        Assert.IsNull(remoteGit.Options[0].HttpAuthentication?.Username);
+        Assert.AreEqual("user", remoteGit.Options[1].HttpAuthentication?.Username);
+        Assert.AreEqual(1, credentialService.GetCount);
+        Assert.AreEqual(1, credentialService.ApproveCount);
+        Assert.AreEqual(0, credentialService.RejectCount);
+    }
+
+    [TestMethod]
+    public async Task RunAsync_RejectedHttpsCredential_ClearsItAndRetriesAuthenticationOnce()
+    {
+        LocalExecutionRuntime localRuntime = CreateLocalRuntime();
+        SequenceGitCommandRunner remoteGit = new(
+            new GitCommandResult(128, "", "fatal: Authentication failed"),
+            new GitCommandResult(128, "", "fatal: Authentication failed"),
+            new GitCommandResult(0, "success", ""));
+        FakeExecutionRuntime remoteRuntime = new("server.example", remoteGit);
+        ExecutionProviderRegistry registry = new([
+            new LocalExecutionProvider(localRuntime),
+            new FakeExecutionProvider("test-remote", remoteRuntime)
+        ]);
+        await using ExecutionContextService service = new(registry, localRuntime);
+        RecordingCredentialService credentialService = new(
+            new GitHttpAuthentication(
+                "https://example.test/team/project.git",
+                "user",
+                "secret"));
+        ContextualGitCommandRunner contextualRunner = new(service, credentialService);
+        await service.ActivateAsync(
+            "test-remote",
+            new ExecutionConnectionRequest(null, new Dictionary<string, string>()));
+
+        GitCommandResult result = await contextualRunner.RunAsync(
+            "/repo",
+            ["push", "origin"],
+            new GitCommandOptions(
+                HttpAuthentication: new GitHttpAuthentication(
+                    "https://example.test/team/project.git")));
+
+        Assert.IsTrue(result.IsSuccess);
+        Assert.AreEqual(2, credentialService.GetCount);
+        Assert.AreEqual(1, credentialService.RejectCount);
+        Assert.AreEqual(1, credentialService.ApproveCount);
+    }
+
+    [TestMethod]
+    public async Task RunAsync_CredentialManagerFailure_PreservesLocalAndRemoteErrors()
+    {
+        LocalExecutionRuntime localRuntime = CreateLocalRuntime();
+        SequenceGitCommandRunner remoteGit = new(
+            new GitCommandResult(128, "", "fatal: could not read Username"));
+        FakeExecutionRuntime remoteRuntime = new("server.example", remoteGit);
+        ExecutionProviderRegistry registry = new([
+            new LocalExecutionProvider(localRuntime),
+            new FakeExecutionProvider("test-remote", remoteRuntime)
+        ]);
+        await using ExecutionContextService service = new(registry, localRuntime);
+        ContextualGitCommandRunner contextualRunner = new(
+            service,
+            new FailingCredentialService("Git Credential Manager failed. TLS certificate failure"));
+        await service.ActivateAsync(
+            "test-remote",
+            new ExecutionConnectionRequest(null, new Dictionary<string, string>()));
+
+        GitCommandResult result = await contextualRunner.RunAsync(
+            "/repo",
+            ["fetch", "origin"],
+            new GitCommandOptions(
+                ThrowOnError: false,
+                HttpAuthentication: new GitHttpAuthentication(
+                    "https://example.test/team/project.git")));
+
+        Assert.IsFalse(result.IsSuccess);
+        StringAssert.Contains(result.StandardError, "Git Credential Manager failed. TLS certificate failure");
+        StringAssert.Contains(result.StandardError, "fatal: could not read Username");
+    }
+
     private static LocalExecutionRuntime CreateLocalRuntime()
     {
         return new LocalExecutionRuntime(
@@ -163,6 +272,80 @@ public sealed class ExecutionContextServiceTests
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(new GitCommandResult(0, _output, string.Empty));
+        }
+    }
+
+    private sealed class SequenceGitCommandRunner(params GitCommandResult[] results)
+        : IGitCommandRunner
+    {
+        private int _index;
+
+        public List<GitCommandOptions> Options { get; } = [];
+
+        public Task<GitCommandResult> RunAsync(
+            string workingDirectory,
+            IReadOnlyList<string> arguments,
+            GitCommandOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
+            Options.Add(options ?? new GitCommandOptions());
+            return Task.FromResult(results[_index++]);
+        }
+    }
+
+    private sealed class RecordingCredentialService(GitHttpAuthentication credential)
+        : ILocalGitCredentialService
+    {
+        public int GetCount { get; private set; }
+        public int ApproveCount { get; private set; }
+        public int RejectCount { get; private set; }
+
+        public Task<GitHttpAuthentication?> GetAsync(
+            string remoteUrl,
+            CancellationToken cancellationToken = default)
+        {
+            GetCount++;
+            return Task.FromResult<GitHttpAuthentication?>(credential);
+        }
+
+        public Task ApproveAsync(
+            GitHttpAuthentication approvedCredential,
+            CancellationToken cancellationToken = default)
+        {
+            ApproveCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task RejectAsync(
+            GitHttpAuthentication rejectedCredential,
+            CancellationToken cancellationToken = default)
+        {
+            RejectCount++;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FailingCredentialService(string message) : ILocalGitCredentialService
+    {
+        public Task<GitHttpAuthentication?> GetAsync(
+            string remoteUrl,
+            CancellationToken cancellationToken = default)
+        {
+            throw new GitCommandException(message, 1);
+        }
+
+        public Task ApproveAsync(
+            GitHttpAuthentication credential,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task RejectAsync(
+            GitHttpAuthentication credential,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
         }
     }
 }

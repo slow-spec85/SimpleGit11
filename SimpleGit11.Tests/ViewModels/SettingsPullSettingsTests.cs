@@ -5,6 +5,7 @@ using SimpleGit11.Models;
 using SimpleGit11.Services;
 using SimpleGit11.Services.Git;
 using SimpleGit11.Services.Git.Execution;
+using SimpleGit11.Services.Execution;
 using SimpleGit11.Tests.TestInfrastructure;
 using SimpleGit11.ViewModels;
 
@@ -236,7 +237,11 @@ public sealed class SettingsPullSettingsTests
                 new TestExecutionContextService(new InMemoryRepositoryFileSystem()),
                 messenger,
                 ServiceStub.Create<IAsyncCommandExecutor>((method, arguments) => method == "ExecuteAsync"
-                    ? ((Func<Task>)arguments![0]!)() : throw new NotSupportedException(method)));
+                    ? ((Func<Task>)arguments![0]!)() : throw new NotSupportedException(method)),
+                ServiceStub.Create<IOpenSshService>((method, _) => method == "GetIdentitiesAsync"
+                    ? Task.FromResult<IReadOnlyList<SshIdentity>>([])
+                    : throw new NotSupportedException(method)),
+                ServiceStub.Create<IClipboardService>());
         }
 
         public void OpenRepository() => MainWindow.SetCurrentRepository(

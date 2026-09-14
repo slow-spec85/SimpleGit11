@@ -5,8 +5,16 @@ using SimpleGit11.Services.Execution;
 
 namespace SimpleGit11.Plugin.Ssh.Services;
 
-public sealed class SshExecutionProvider : IExecutionProvider
+internal sealed class SshExecutionProvider : IExecutionProvider
 {
+    private readonly SshPublicKeyInstaller _publicKeyInstaller;
+
+    public SshExecutionProvider(SshPublicKeyInstaller publicKeyInstaller)
+    {
+        _publicKeyInstaller = publicKeyInstaller
+            ?? throw new ArgumentNullException(nameof(publicKeyInstaller));
+    }
+
     public string Id => SshPlugin.ProviderId;
 
     public async Task<IExecutionRuntime> ConnectAsync(
@@ -15,6 +23,10 @@ public sealed class SshExecutionProvider : IExecutionProvider
     {
         SshConnectionSettings settings = SshConnectionSettings.FromRequest(request);
         SshConnectionMonitor connectionMonitor = new();
+        await _publicKeyInstaller.InstallAsync(
+            settings,
+            connectionMonitor,
+            cancellationToken);
         SshCommandSession commandSession = await SshCommandSession.ConnectAsync(
             settings,
             connectionMonitor,

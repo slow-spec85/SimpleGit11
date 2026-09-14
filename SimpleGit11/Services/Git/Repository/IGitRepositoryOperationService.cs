@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
 
@@ -10,5 +11,6 @@ public interface IGitRepositoryOperationService
     Task<RepositoryInfo> CloneAsync(
         string parentPath,
         string remoteUrl,
-        bool initializeSubmodulesRecursively = false);
+        bool initializeSubmodulesRecursively = false,
+        CancellationToken cancellationToken = default);
 }

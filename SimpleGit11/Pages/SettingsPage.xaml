@@ -6,6 +6,7 @@
     xmlns:appControls="using:SimpleGit11.Controls"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:models="using:SimpleGit11.Models"
+    xmlns:viewmodels="using:SimpleGit11.ViewModels"
     NavigationCacheMode="Required">
 
     <Grid
@@ -26,6 +27,7 @@
                         <Setter Target="InitialBranchNameTextBox.MinWidth" Value="0" />
                         <Setter Target="GlobalPushDefaultRemoteTextBox.MinWidth" Value="0" />
                         <Setter Target="RepositoryPushDefaultRemoteTextBox.MinWidth" Value="0" />
+                        <Setter Target="RepositorySshKeyPathTextBox.MinWidth" Value="0" />
                         <Setter Target="GlobalUserNameTextBox.MinWidth" Value="0" />
                         <Setter Target="GlobalEmailTextBox.MinWidth" Value="0" />
                         <Setter Target="RepositoryUserNameTextBox.MinWidth" Value="0" />
@@ -173,7 +175,7 @@
                     <TextBlock
                         Margin="2,0,0,0"
                         Style="{ThemeResource SubtitleTextBlockStyle}"
-                        x:Uid="RepositoryOpeningTitleTextBlock" />
+                        x:Uid="ApplicationSettingsTitleTextBlock" />
 
                     <controls:SettingsCard>
                         <controls:SettingsCard.HeaderIcon>
@@ -208,6 +210,79 @@
                             AutomationProperties.AutomationId="FetchOnRepositoryOpenToggle"
                             IsOn="{x:Bind ViewModel.FetchOnRepositoryOpen, Mode=TwoWay}" />
                     </controls:SettingsCard>
+                </StackPanel>
+
+                <StackPanel Spacing="12">
+                    <TextBlock
+                        Margin="2,0,0,0"
+                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                        Text="{x:Bind ViewModel.SshSettingsTitle, Mode=OneWay}" />
+
+                    <controls:SettingsExpander
+                        IsExpanded="False"
+                        ItemsSource="{x:Bind ViewModel.SshIdentities, Mode=OneWay}">
+                        <controls:SettingsExpander.HeaderIcon>
+                            <FontIcon Glyph="&#xE72E;" />
+                        </controls:SettingsExpander.HeaderIcon>
+                        <controls:SettingsExpander.Header>
+                            <StackPanel Spacing="4">
+                                <TextBlock x:Uid="SshIdentitiesSettingsTitleTextBlock" />
+                                <TextBlock
+                                    x:Uid="SshIdentitiesSettingsDescriptionTextBlock"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                    TextWrapping="WrapWholeWords" />
+                            </StackPanel>
+                        </controls:SettingsExpander.Header>
+                        <Button
+                            x:Uid="AddSshIdentityButton"
+                            AutomationProperties.AutomationId="AddSshIdentityButton"
+                            Command="{x:Bind ViewModel.AddSshIdentityCommand, Mode=OneWay}" />
+                        <controls:SettingsExpander.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:SshIdentityViewItem">
+                                <controls:SettingsCard>
+                                    <controls:SettingsCard.Header>
+                                        <StackPanel Spacing="3">
+                                            <TextBlock
+                                                FontWeight="SemiBold"
+                                                Text="{x:Bind PrivateKeyPath, Mode=OneTime}"
+                                                TextTrimming="CharacterEllipsis"
+                                                ToolTipService.ToolTip="{x:Bind PrivateKeyPath, Mode=OneTime}" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Text="{x:Bind Fingerprint, Mode=OneTime}"
+                                                TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </controls:SettingsCard.Header>
+                                    <Button
+                                        x:Uid="SshIdentityActionsButton"
+                                        AutomationProperties.AutomationId="SshIdentityActionsButton"
+                                        Background="Transparent"
+                                        BorderThickness="0">
+                                        <FontIcon Glyph="&#xE712;" />
+                                        <Button.Flyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem
+                                                x:Uid="CopySshPublicKeyMenuFlyoutItem"
+                                                Command="{x:Bind CopyPublicKeyCommand, Mode=OneTime}"
+                                                Icon="Copy" />
+                                                <MenuFlyoutItem
+                                                x:Uid="CopySshPrivateKeyPathMenuFlyoutItem"
+                                                Command="{x:Bind CopyPathCommand, Mode=OneTime}"
+                                                Icon="Copy" />
+                                                <MenuFlyoutSeparator />
+                                                <MenuFlyoutItem
+                                                x:Uid="DeleteSshIdentityMenuFlyoutItem"
+                                                Command="{x:Bind RemoveCommand, Mode=OneTime}"
+                                                Icon="Delete" />
+                                            </MenuFlyout>
+                                        </Button.Flyout>
+                                    </Button>
+                                </controls:SettingsCard>
+                            </DataTemplate>
+                        </controls:SettingsExpander.ItemTemplate>
+                    </controls:SettingsExpander>
                 </StackPanel>
 
                 <StackPanel Spacing="12">
@@ -363,15 +438,15 @@
                                     <StackPanel Spacing="4">
                                         <TextBlock x:Uid="CredentialHelperSettingsCardHeaderTextBlock" />
                                         <TextBlock
+                                            x:Uid="CredentialHelperSettingsCardDescriptionTextBlock"
                                             FontSize="12"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                            Text="{x:Bind ViewModel.CredentialHelperStatus, Mode=OneWay}"
-                                            TextWrapping="WrapWholeWords" />
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                     </StackPanel>
                                 </controls:SettingsCard.Header>
                                 <ToggleSwitch
                                     x:Uid="CredentialHelperToggleSwitch"
-                                    IsOn="{x:Bind ViewModel.UseCredentialHelperManager, Mode=TwoWay}" />
+                                    IsOn="{x:Bind ViewModel.UseCredentialHelperManager, Mode=TwoWay}" 
+                                    IsEnabled="{x:Bind ViewModel.IsLocalContext, Mode=OneWay}"/>
                             </controls:SettingsCard>
 
                             <controls:SettingsCard>
@@ -485,6 +560,25 @@
                                     MinWidth="260"
                                     AutomationProperties.AutomationId="RepositoryPushDefaultRemote"
                                     Text="{x:Bind ViewModel.RepositoryPushDefaultRemote, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </controls:SettingsCard>
+
+                            <controls:SettingsCard>
+                                <controls:SettingsCard.Header>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Uid="RepositorySshKeySettingsCardHeaderTextBlock" />
+                                        <TextBlock
+                                            x:Uid="RepositorySshKeySettingsCardHeaderDescriptionTextBlock"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+                                </controls:SettingsCard.Header>
+                                <TextBox
+                                    x:Name="RepositorySshKeyPathTextBox"
+                                    x:Uid="RepositorySshKeyPathTextBox"
+                                    MinWidth="260"
+                                    AutomationProperties.AutomationId="RepositorySshKeyPath"
+                                    Text="{x:Bind ViewModel.RepositorySshKeyPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             </controls:SettingsCard>
 
                             <controls:SettingsCard IsEnabled="{x:Bind ViewModel.IsRepositoryPullSettingsLoaded, Mode=OneWay}">

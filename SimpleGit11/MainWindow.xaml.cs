@@ -629,6 +629,7 @@ public sealed partial class MainWindow : Window
             AppNavigationTarget.History => typeof(HistoryPage),
             AppNavigationTarget.Branches => typeof(BranchesPage),
             AppNavigationTarget.Synchronization => typeof(SynchronizationPage),
+            AppNavigationTarget.Settings => typeof(SettingsPage),
             _ => typeof(RepositoryPage)
         };
     }

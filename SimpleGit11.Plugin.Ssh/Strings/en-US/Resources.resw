@@ -1,31 +1,267 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <data name="SshConnectionDialogTitle" xml:space="preserve"><value>Connect to a machine over SSH</value></data>
-  <data name="SshHostHeader" xml:space="preserve"><value>Host</value></data>
-  <data name="SshPortHeader" xml:space="preserve"><value>Port</value></data>
-  <data name="SshUsernameHeader" xml:space="preserve"><value>User name</value></data>
-  <data name="SshPasswordHeader" xml:space="preserve"><value>Password (when not using a key)</value></data>
-  <data name="SshPrivateKeyPathHeader" xml:space="preserve"><value>Private key path (optional)</value></data>
-  <data name="SshPrivateKeyPassphraseHeader" xml:space="preserve"><value>Private key passphrase (optional)</value></data>
-  <data name="SshConnectButton" xml:space="preserve"><value>Connect</value></data>
-  <data name="SshHostKeyDialogTitle" xml:space="preserve"><value>Verify SSH host</value></data>
-  <data name="SshHostKeyDialogMessage" xml:space="preserve"><value>The identity of {0} is not trusted yet. Verify this SHA-256 fingerprint before connecting:\n\n{1}</value></data>
-  <data name="SshTrustHostKeyButton" xml:space="preserve"><value>Trust and connect</value></data>
-  <data name="SshRememberProfileCheckBox" xml:space="preserve"><value>Remember connection settings (passwords are never saved)</value></data>
-  <data name="SshConnectionNavigationItem" xml:space="preserve"><value>SSH connection</value></data>
-  <data name="SshConnectionBusyStatus" xml:space="preserve"><value>Connection settings are being processed</value></data>
-  <data name="SshConnectionActiveStatusFormat" xml:space="preserve"><value>Connected to {0}. Select to disconnect.</value></data>
-  <data name="SshConnectionInactiveStatus" xml:space="preserve"><value>Not connected. Select to configure a connection.</value></data>
-  <data name="SshDisconnectDialogTitle" xml:space="preserve"><value>Disconnect SSH?</value></data>
-  <data name="SshDisconnectDialogMessage" xml:space="preserve"><value>Disconnect from {0} and return to working on the local machine?</value></data>
-  <data name="SshDisconnectConfirmButton" xml:space="preserve"><value>Disconnect</value></data>
-  <data name="SshSavedProfileHeader" xml:space="preserve"><value>Saved connection</value></data>
-  <data name="SshNewConnectionOption" xml:space="preserve"><value>New connection</value></data>
-  <data name="SshDeleteProfileButton" xml:space="preserve"><value>Delete profile</value></data>
-  <data name="SshDeleteProfileDialogTitle" xml:space="preserve"><value>Delete SSH profile?</value></data>
-  <data name="SshDeleteProfileDialogMessage" xml:space="preserve"><value>The saved profile {0}@{1}:{2} will be deleted. Passwords and passphrases were not stored.</value></data>
-  <data name="SshDeleteProfileConfirmButton" xml:space="preserve"><value>Delete</value></data>
-  <data name="SshCancelButton" xml:space="preserve"><value>Cancel</value></data>
-  <data name="SshHostPlaceholder" xml:space="preserve"><value>server.example.com</value></data>
-  <data name="SshPrivateKeyPathPlaceholder" xml:space="preserve"><value>C:\Users\user\.ssh\id_ed25519</value></data>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SshConnectionDialogTitle" xml:space="preserve">
+    <value>Connect to a machine over SSH</value>
+  </data>
+  <data name="SshHostHeader" xml:space="preserve">
+    <value>Host</value>
+  </data>
+  <data name="SshPortHeader" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="SshUsernameHeader" xml:space="preserve">
+    <value>User name</value>
+  </data>
+  <data name="SshPasswordHeader" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="SshPrivateKeyModeHeader" xml:space="preserve">
+    <value>Connect using a private key</value>
+  </data>
+  <data name="SshPrivateKeyPathHeader" xml:space="preserve">
+    <value>Private key path</value>
+  </data>
+  <data name="SshGeneratePrivateKeyButton" xml:space="preserve">
+    <value>Generate a new private key</value>
+  </data>
+  <data name="SshBrowsePrivateKeyButton" xml:space="preserve">
+    <value>Browse for a private key</value>
+  </data>
+  <data name="SshGeneratedKeyPassphrasePromptTitle" xml:space="preserve">
+    <value>Protect the new private key</value>
+  </data>
+  <data name="SshGeneratedKeyPassphrasePromptMessage" xml:space="preserve">
+    <value>Enter a passphrase to encrypt the key, or leave both fields empty.</value>
+  </data>
+  <data name="SshGeneratedKeyPassphraseHeader" xml:space="preserve">
+    <value>Passphrase</value>
+  </data>
+  <data name="SshGeneratedKeyPassphraseConfirmationHeader" xml:space="preserve">
+    <value>Confirm passphrase</value>
+  </data>
+  <data name="SshGeneratedKeyPassphraseMismatchMessage" xml:space="preserve">
+    <value>The passphrases do not match.</value>
+  </data>
+  <data name="SshGeneratedKeyPassphraseContinueButton" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="SshPrivateKeyGenerationFailedMessage" xml:space="preserve">
+    <value>The private key could not be generated: {0}</value>
+  </data>
+  <data name="SshPrivateKeyPassphrasePromptTitle" xml:space="preserve">
+    <value>Private key passphrase</value>
+  </data>
+  <data name="SshPrivateKeyPassphrasePromptMessage" xml:space="preserve">
+    <value>The selected key is encrypted. Enter its passphrase to connect.</value>
+  </data>
+  <data name="SshPrivateKeyPassphraseInvalidMessage" xml:space="preserve">
+    <value>The key could not be opened. Check the passphrase.</value>
+  </data>
+  <data name="SshPrivateKeyReadFailedMessage" xml:space="preserve">
+    <value>The private key could not be read: {0}</value>
+  </data>
+  <data name="SshPrivateKeyPasswordNotice" xml:space="preserve">
+    <value>On first setup, the app connects with the password, adds the public key to ~/.ssh/authorized_keys, and reconnects with the key. Passwords are not saved.</value>
+  </data>
+  <data name="SshConnectionFieldsRequiredMessage" xml:space="preserve">
+    <value>Enter a host, a user name, and a valid port.</value>
+  </data>
+  <data name="SshPasswordRequiredMessage" xml:space="preserve">
+    <value>Enter the server password.</value>
+  </data>
+  <data name="SshPrivateKeyRequiredMessage" xml:space="preserve">
+    <value>Select a private key file.</value>
+  </data>
+  <data name="SshInitialPasswordRequiredMessage" xml:space="preserve">
+    <value>Enter the server password for the initial public-key installation.</value>
+  </data>
+  <data name="SshConnectButton" xml:space="preserve">
+    <value>Connect</value>
+  </data>
+  <data name="SshHostKeyDialogTitle" xml:space="preserve">
+    <value>Verify SSH host</value>
+  </data>
+  <data name="SshHostKeyDialogMessage" xml:space="preserve">
+    <value>The identity of {0} is not trusted yet. Verify this SHA-256 fingerprint before connecting:\n\n{1}</value>
+  </data>
+  <data name="SshTrustHostKeyButton" xml:space="preserve">
+    <value>Trust and connect</value>
+  </data>
+  <data name="SshHostKeyChangedDialogTitle" xml:space="preserve">
+    <value>SSH server key changed</value>
+  </data>
+  <data name="SshHostKeyChangedDialogMessage" xml:space="preserve">
+    <value>The SSH key presented by {0} differs from the key saved in this connection profile. This may indicate a server reconfiguration or an attempted interception. Verify both SHA-256 fingerprints before continuing:\n\nSaved: {1}\nReceived: {2}</value>
+  </data>
+  <data name="SshReplaceHostKeyButton" xml:space="preserve">
+    <value>Replace key and connect</value>
+  </data>
+  <data name="SshRememberProfileToggleSwitch" xml:space="preserve">
+    <value>Remember settings (passwords are not saved)</value>
+  </data>
+  <data name="SshConnectionNavigationItem" xml:space="preserve">
+    <value>SSH connection</value>
+  </data>
+  <data name="SshConnectionBusyStatus" xml:space="preserve">
+    <value>Connection settings are being processed</value>
+  </data>
+  <data name="SshConnectionActiveStatusFormat" xml:space="preserve">
+    <value>Connected to {0}. Select to disconnect.</value>
+  </data>
+  <data name="SshConnectionInactiveStatus" xml:space="preserve">
+    <value>Not connected. Select to configure a connection.</value>
+  </data>
+  <data name="SshDisconnectDialogTitle" xml:space="preserve">
+    <value>Disconnect SSH?</value>
+  </data>
+  <data name="SshDisconnectDialogMessage" xml:space="preserve">
+    <value>Disconnect from {0} and return to working on the local machine?</value>
+  </data>
+  <data name="SshDisconnectConfirmButton" xml:space="preserve">
+    <value>Disconnect</value>
+  </data>
+  <data name="SshSavedProfileHeader" xml:space="preserve">
+    <value>Saved connection</value>
+  </data>
+  <data name="SshNewConnectionOption" xml:space="preserve">
+    <value>New connection</value>
+  </data>
+  <data name="SshDeleteProfileButton" xml:space="preserve">
+    <value>Delete profile</value>
+  </data>
+  <data name="SshDeleteProfileDialogTitle" xml:space="preserve">
+    <value>Delete SSH profile?</value>
+  </data>
+  <data name="SshDeleteProfileDialogMessage" xml:space="preserve">
+    <value>The saved profile {0}@{1}:{2} will be deleted. Passwords and passphrases were not stored.</value>
+  </data>
+  <data name="SshDeleteProfileConfirmButton" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="SshCancelButton" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SshHostPlaceholder" xml:space="preserve">
+    <value>server.example.com</value>
+  </data>
+  <data name="SshPrivateKeyPathPlaceholder" xml:space="preserve">
+    <value>C:\Users\user\.ssh\id_ed25519</value>
+  </data>
 </root>

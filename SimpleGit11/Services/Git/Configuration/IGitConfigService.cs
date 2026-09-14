@@ -23,6 +23,7 @@ public interface IGitConfigService
     Task SetPullRebaseAsync(ConfigScope level, RepositoryInfo? repository, string? value);
     Task SetPullFastForwardAsync(ConfigScope level, RepositoryInfo? repository, string? value);
     Task<string> GetGlobalSshCommandAsync();
+    Task<string> GetRepositorySshCommandAsync(RepositoryInfo repository);
     Task<IReadOnlyList<GitUrlRewrite>> GetGlobalUrlRewritesAsync();
     Task<bool> IsGlobalCredentialHelperManagerConfiguredAsync();
     Task<IReadOnlyDictionary<string, string>> GetBranchDescriptionsAsync(RepositoryInfo repository);
@@ -34,6 +35,7 @@ public interface IGitConfigService
     Task SetInitialBranchNameAsync(ConfigScope level, RepositoryInfo? repository, string branchName);
     Task SetPushDefaultRemoteAsync(ConfigScope level, RepositoryInfo? repository, string remoteName);
     Task SetGlobalSshCommandAsync(string sshCommand);
+    Task SetRepositorySshCommandAsync(RepositoryInfo repository, string sshCommand);
     Task SetBranchUpstreamAsync(RepositoryInfo repository, string branchName, string remoteName);
     Task UnsetBranchUpstreamAsync(RepositoryInfo repository, string branchName);
     Task SetBranchPushRemoteAsync(RepositoryInfo repository, string branchName, string? remoteName);
@@ -50,4 +52,5 @@ public interface IGitConfigService
     Task UnsetInitialBranchNameAsync(ConfigScope level, RepositoryInfo? repository);
     Task UnsetPushDefaultRemoteAsync(ConfigScope level, RepositoryInfo? repository);
     Task UnsetGlobalSshCommandAsync();
+    Task UnsetRepositorySshCommandAsync(RepositoryInfo repository);
 }

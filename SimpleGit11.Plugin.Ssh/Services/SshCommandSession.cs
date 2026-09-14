@@ -52,10 +52,12 @@ public sealed class SshCommandSession : IAsyncDisposable
             Task execution = command.ExecuteAsync(cancellationToken);
             if (standardInput is not null)
             {
-                using Stream input = command.CreateInputStream();
-                byte[] bytes = Encoding.UTF8.GetBytes(standardInput);
-                await input.WriteAsync(bytes, cancellationToken);
-                await input.FlushAsync(cancellationToken);
+                using (Stream input = command.CreateInputStream())
+                {
+                    byte[] bytes = Encoding.UTF8.GetBytes(standardInput);
+                    await input.WriteAsync(bytes, cancellationToken);
+                    await input.FlushAsync(cancellationToken);
+                }
             }
 
             await execution;

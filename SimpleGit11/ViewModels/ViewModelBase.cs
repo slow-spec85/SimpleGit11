@@ -1,7 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml.Controls;
 using SimpleGit11.Messages;
+using SimpleGit11.Services;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
 
@@ -50,6 +54,29 @@ public abstract class AppNotificationViewModelBase : ViewModelBase
             details?.Trim() ?? "",
             actionCommand,
             actionText));
+    }
+
+    protected void ShowRemoteOperationError(
+        IEnumerable<string> remoteUrls,
+        GitRemoteOperationErrorKind errorKind,
+        string message,
+        string rawOutput,
+        string credentialManagerMessage,
+        string sshAuthenticationMessage,
+        string openSshSettingsText,
+        Action openSshSettings)
+    {
+        bool isSshAuthenticationFailure = errorKind == GitRemoteOperationErrorKind.Authentication
+            && remoteUrls.Any(url => OpenSshService.TryParseEndpoint(url, out _));
+        string displayMessage = errorKind == GitRemoteOperationErrorKind.CredentialManager
+            ? credentialManagerMessage
+            : isSshAuthenticationFailure ? sshAuthenticationMessage : message;
+        ShowNotification(
+            AppNotificationSeverity.Error,
+            displayMessage,
+            rawOutput,
+            isSshAuthenticationFailure ? new RelayCommand(openSshSettings) : null,
+            isSshAuthenticationFailure ? openSshSettingsText : null);
     }
 
     protected void PublishOperationState(

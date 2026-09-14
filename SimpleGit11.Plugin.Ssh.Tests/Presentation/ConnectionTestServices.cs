@@ -17,7 +17,15 @@ internal sealed class ConnectionTestProfiles : ISshConnectionProfileStore
 
 internal sealed class ConnectionTestLocalization : ISshLocalizationService
 {
-    public string GetString(string key) => key + " {0}";
+    public string GetString(string key)
+    {
+        return key switch
+        {
+            "SshHostKeyChangedDialogMessage" => key + " {0} {1} {2}",
+            "SshHostKeyDialogMessage" => key + " {0} {1}",
+            _ => key + " {0}"
+        };
+    }
 }
 
 internal sealed class ConnectionTestDialogs : ISshConnectionDialogService

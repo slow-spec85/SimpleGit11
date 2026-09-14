@@ -1,5 +1,6 @@
 using System.Reflection;
 using SimpleGit11.Plugin.Ssh.Services;
+using SimpleGit11.Services.Execution;
 
 namespace SimpleGit11.Plugin.Ssh.Tests.Services;
 
@@ -22,6 +23,12 @@ public sealed class SshPluginArchitectureTests
             .InformationalVersion;
 
         Assert.AreEqual(informationalVersion.Split('+', 2)[0], new SshPlugin().Metadata.Version);
+    }
+
+    [TestMethod]
+    public void ExecutionRuntime_ExposesGitServerIdentityStore()
+    {
+        Assert.IsTrue(typeof(IRemoteSshIdentityStore).IsAssignableFrom(typeof(SshExecutionRuntime)));
     }
 
     [TestMethod]

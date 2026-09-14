@@ -28,7 +28,16 @@ public sealed class GitWorktreeService : IGitWorktreeService
 
     public async Task<IReadOnlyList<GitWorktree>> GetWorktreesAsync(RepositoryInfo repository)
     {
-        string output = await RunGitAsync(repository, "worktree", "list", "--porcelain", "-z");
+        string output;
+        try
+        {
+            output = await RunGitAsync(repository, "worktree", "list", "--porcelain", "-z");
+        }
+        catch (GitCommandException exception) when (exception.ExitCode == 129)
+        {
+            output = await RunGitAsync(repository, "worktree", "list", "--porcelain");
+        }
+
         return GitWorktreeParser.Parse(
             output,
             repository,

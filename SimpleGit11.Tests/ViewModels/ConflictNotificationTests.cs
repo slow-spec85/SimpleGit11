@@ -53,6 +53,8 @@ public sealed class ConflictNotificationTests
 
     [TestMethod]
     [DataRow(GitRemoteOperationErrorKind.Authentication)]
+    [DataRow(GitRemoteOperationErrorKind.CredentialManager)]
+    [DataRow(GitRemoteOperationErrorKind.HostKeyVerification)]
     [DataRow(GitRemoteOperationErrorKind.NonFastForward)]
     [DataRow(GitRemoteOperationErrorKind.AtomicNotSupported)]
     public async Task KnownRemoteFailure_IsNotHiddenByExistingLocalConflicts(GitRemoteOperationErrorKind kind)

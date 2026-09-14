@@ -42,25 +42,29 @@
                             TextWrapping="WrapWholeWords" />
                     </Expander.Header>
                     <ScrollViewer
+                        Padding="0,10"
                         MaxHeight="240"
                         HorizontalScrollBarVisibility="Disabled"
                         HorizontalScrollMode="Disabled"
                         IsTabStop="True"
                         VerticalScrollBarVisibility="Auto"
                         VerticalScrollMode="Enabled">
-                        <TextBlock
-                            FontFamily="Consolas"
-                            Text="{x:Bind Details, Mode=OneWay}"
-                            TextWrapping="WrapWholeWords" />
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                FontFamily="Consolas"
+                                Text="{x:Bind Details, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                            <Button
+                                Margin="0,0,0,4"
+                                MinWidth="120"
+                                MinHeight="32"
+                                HorizontalAlignment="Left"
+                                Command="{x:Bind ActionCommand, Mode=OneWay}"
+                                Content="{x:Bind ActionContent, Mode=OneWay}"
+                                Visibility="{x:Bind ActionVisibility, Mode=OneWay}" />
+                        </StackPanel>
                     </ScrollViewer>
                 </Expander>
-                <Button
-                    MinWidth="120"
-                    MinHeight="32"
-                    HorizontalAlignment="Left"
-                    Command="{x:Bind ActionCommand, Mode=OneWay}"
-                    Content="{x:Bind ActionContent, Mode=OneWay}"
-                    Visibility="{x:Bind ActionVisibility, Mode=OneWay}" />
             </StackPanel>
         </InfoBar.Content>
     </InfoBar>

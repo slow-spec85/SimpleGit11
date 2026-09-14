@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.Messaging;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
+using SimpleGit11.Services.Execution;
 using SimpleGit11.Services.Git;
 using SimpleGit11.Tests.TestInfrastructure;
 using SimpleGit11.ViewModels;
@@ -78,8 +79,81 @@ public sealed class RepositoryOpeningTests
         Assert.IsFalse(window.TryConsumeOpeningFetch());
     }
 
-    private static MainWindowViewModel CreateWindow(AppSettings settings)
+    [TestMethod]
+    public void OpeningAnotherRepository_ClearsCachedBranchViewModelState()
     {
+        StrongReferenceMessenger messenger = new();
+        MainWindowViewModel window = CreateWindow(new AppSettings(), messenger);
+        BranchesViewModel branches = new(
+            window,
+            null!,
+            Stub.Create<IGitService>(),
+            Stub.Create<ILocalizationService>((_, args) => args![0]),
+            Stub.Create<IClipboardService>(),
+            Stub.Create<IDialogService>(),
+            messenger,
+            Stub.Create<IAsyncCommandExecutor>(),
+            Stub.Create<IExecutionContextService>());
+        window.SetCurrentRepository(new RepositoryInfo("C:/first", "first", "main"), []);
+        branches.Branches.Add(new GitBranch("first-branch", true, false, "", "", null));
+        branches.RemoteBranches.Add(new GitBranch("origin/first-branch", false, true, "", "", null));
+
+        window.SetCurrentRepository(new RepositoryInfo("C:/second", "second", "main"), []);
+
+        Assert.IsEmpty(branches.Branches);
+        Assert.IsEmpty(branches.RemoteBranches);
+        Assert.IsEmpty(branches.FilteredBranches);
+        Assert.IsNull(branches.SelectedBranch);
+    }
+
+    [TestMethod]
+    public async Task OpeningAnotherRepository_IgnoresLateBranchRefreshFromPreviousRepository()
+    {
+        TaskCompletionSource<IReadOnlyList<GitBranch>> previousRepositoryBranches = new();
+        StrongReferenceMessenger messenger = new();
+        MainWindowViewModel window = CreateWindow(new AppSettings(), messenger);
+        IGitConfigService configuration = Stub.Create<IGitConfigService>((method, _) =>
+            method == "GetBranchDescriptionsAsync"
+                ? Task.FromResult<IReadOnlyDictionary<string, string>>(
+                    new Dictionary<string, string>())
+                : throw new NotSupportedException(method));
+        IGitService gitService = Stub.Create<IGitService>((method, args) => method switch
+        {
+            "ExecuteAsync" => ((Func<Task>)args![0]!)(),
+            "GetRemotesAsync" => Task.FromResult<IReadOnlyList<GitRemote>>([]),
+            "GetOperationStateAsync" => Task.FromResult(GitOperationState.None),
+            "GetLocalBranchesAsync" => previousRepositoryBranches.Task,
+            "GetRemoteBranchesAsync" => Task.FromResult<IReadOnlyList<GitBranch>>([]),
+            "get_Configuration" => configuration,
+            _ => throw new NotSupportedException(method)
+        });
+        BranchesViewModel branches = new(
+            window,
+            null!,
+            gitService,
+            Stub.Create<ILocalizationService>((_, args) => args![0]),
+            Stub.Create<IClipboardService>(),
+            Stub.Create<IDialogService>(),
+            messenger,
+            Stub.Create<IAsyncCommandExecutor>(),
+            Stub.Create<IExecutionContextService>());
+        window.SetCurrentRepository(new RepositoryInfo("C:/first", "first", "main"), []);
+
+        Task staleRefresh = branches.RefreshBranchesLocalAsync();
+        window.SetCurrentRepository(new RepositoryInfo("C:/second", "second", "main"), []);
+        previousRepositoryBranches.SetResult(
+            [new GitBranch("first-branch", true, false, "", "", null)]);
+        await staleRefresh;
+
+        Assert.IsEmpty(branches.Branches);
+        Assert.IsEmpty(branches.FilteredBranches);
+    }
+
+    private static MainWindowViewModel CreateWindow(
+        AppSettings settings,
+        IMessenger? messenger = null)
+    {
+        messenger ??= new StrongReferenceMessenger();
         return new MainWindowViewModel(
             Stub.Create<IRecentRepositoriesService>((_, _) => Array.Empty<RepositoryInfo>()),
             Stub.Create<ILocalizationService>((_, args) => args![0]),
@@ -88,7 +162,7 @@ public sealed class RepositoryOpeningTests
                 : throw new NotSupportedException(method)),
             Stub.Create<IClipboardService>(),
             new TestProductInfoService(),
-            new StrongReferenceMessenger(),
+            messenger,
             Stub.Create<ISettingsService>((_, _) => settings));
     }
 }

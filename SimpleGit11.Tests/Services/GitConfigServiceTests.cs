@@ -183,6 +183,35 @@ public sealed class GitConfigServiceTests
             runner.Commands);
     }
 
+    [TestMethod]
+    public async Task RepositorySshCommandOperations_UseLocalCoreSshCommandSetting()
+    {
+        RecordingGitCommandRunner runner = new()
+        {
+            QueryOutput = "ssh -i /home/user/.ssh/id_ed25519_gitlab_com -o IdentitiesOnly=yes\n"
+        };
+        GitConfigService service = new(runner);
+        RepositoryInfo repository = new("/home/user/repository", "repository", "main");
+
+        string configuredCommand = await service.GetRepositorySshCommandAsync(repository);
+        await service.SetRepositorySshCommandAsync(
+            repository,
+            " ssh -i /home/user/.ssh/id_ed25519_gitlab_com -o IdentitiesOnly=yes ");
+        await service.UnsetRepositorySshCommandAsync(repository);
+
+        Assert.AreEqual(
+            "ssh -i /home/user/.ssh/id_ed25519_gitlab_com -o IdentitiesOnly=yes",
+            configuredCommand);
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "config --local --get core.sshCommand",
+                "config --local --replace-all core.sshCommand ssh -i /home/user/.ssh/id_ed25519_gitlab_com -o IdentitiesOnly=yes",
+                "config --local --unset-all core.sshCommand"
+            },
+            runner.Commands);
+    }
+
     private sealed class RecordingGitCommandRunner : IGitCommandRunner
     {
         public List<string> Commands { get; } = [];

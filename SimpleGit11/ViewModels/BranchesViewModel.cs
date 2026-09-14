@@ -33,7 +33,8 @@ public enum BranchListScope
     All
 }
 
-public sealed partial class BranchesViewModel : AppNotificationViewModelBase
+public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
+    IRecipient<RepositoryChangedMessage>
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private const int BranchHistoryPreviewCount = 5;
@@ -101,6 +102,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         _executionContextService = executionContextService;
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
+        messenger.RegisterAll(this);
         Remotes = [];
         BranchUpstreamRemoteOptions = [];
         BranchPushRemoteOptions = [];
@@ -109,6 +111,23 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         ProgressMessage = "";
         ReferenceKind = ReferenceListKind.Branches;
         BranchScope = BranchListScope.Local;
+    }
+
+    public void Receive(RepositoryChangedMessage message)
+    {
+        _lastRepositoryPath = null;
+        _hasRefreshed = false;
+        ResetLazyDataState();
+        Remotes = [];
+        SelectedRemote = null;
+        Branches.Clear();
+        RemoteBranches.Clear();
+        FilteredBranches.Clear();
+        SelectedBranch = null;
+        HasNoBranches = false;
+        SetBranchOperationState(GitOperationState.None);
+        ClearNotification();
+        NotifyReferenceListChanged();
     }
 
     private bool CanRunWhenIdle() => !IsGitOperationRunning;
@@ -1816,7 +1835,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
     {
         ClearResultMessages();
 
-        if (_mainWindowViewModel.CurrentRepository is null)
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        if (repository is null)
         {
             await RefreshBranchesCoreAsync();
             return;
@@ -1824,7 +1844,6 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
 
         try
         {
-            RepositoryInfo repository = _mainWindowViewModel.CurrentRepository;
             IReadOnlyList<GitRemote> remotes = await _gitService.GetRemotesAsync(
                 repository,
                 cancellationToken);
@@ -1903,7 +1922,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
         }
         _hasRefreshed = true;
 
-        if (_mainWindowViewModel.CurrentRepository is null)
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        if (repository is null)
         {
             SetBranchOperationState(GitOperationState.None);
             Branches.Clear();
@@ -1926,13 +1946,17 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
             string? selectedRemoteName = string.IsNullOrWhiteSpace(_mainWindowViewModel.SelectedRemoteName)
                 ? SelectedRemote?.Name
                 : _mainWindowViewModel.SelectedRemoteName;
-            Task<IReadOnlyList<GitRemote>> remotesTask = _gitService.GetRemotesAsync(_mainWindowViewModel.CurrentRepository);
-            Task<GitOperationState> operationStateTask = _gitService.GetOperationStateAsync(_mainWindowViewModel.CurrentRepository);
-            Task<IReadOnlyList<GitBranch>> branchesTask = _gitService.GetLocalBranchesAsync(_mainWindowViewModel.CurrentRepository);
-            Task<IReadOnlyList<GitBranch>> remoteBranchesTask = _gitService.GetRemoteBranchesAsync(_mainWindowViewModel.CurrentRepository);
+            Task<IReadOnlyList<GitRemote>> remotesTask = _gitService.GetRemotesAsync(repository);
+            Task<GitOperationState> operationStateTask = _gitService.GetOperationStateAsync(repository);
+            Task<IReadOnlyList<GitBranch>> branchesTask = _gitService.GetLocalBranchesAsync(repository);
+            Task<IReadOnlyList<GitBranch>> remoteBranchesTask = _gitService.GetRemoteBranchesAsync(repository);
             Task<IReadOnlyDictionary<string, string>> branchDescriptionsTask =
-                _gitService.Configuration.GetBranchDescriptionsAsync(_mainWindowViewModel.CurrentRepository);
+                _gitService.Configuration.GetBranchDescriptionsAsync(repository);
             await Task.WhenAll(remotesTask, operationStateTask, branchesTask, remoteBranchesTask, branchDescriptionsTask);
+            if (!ReferenceEquals(_mainWindowViewModel.CurrentRepository, repository))
+            {
+                return;
+            }
 
             IReadOnlyList<GitRemote> remotes = await remotesTask;
             Remotes = remotes.ToList();
@@ -1957,7 +1981,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
             _lastRepositoryFetch = null;
             _isLastRepositoryFetchLoaded = false;
             OnPropertyChanged(nameof(LastRepositoryFetchText));
-            _lastRepositoryPath = _mainWindowViewModel.CurrentRepository.Path;
+            _lastRepositoryPath = repository.Path;
             SetBranchOperationState(operationState);
 
             Branches.Clear();
@@ -1978,9 +2002,13 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase
             ApplyBranchFilter(selectedBranchName);
             if (_areLocalTagsLoaded && refreshLoadedTags)
             {
-                Task<IReadOnlyList<GitTag>> tagsTask = _gitService.GetLocalTagsAsync(_mainWindowViewModel.CurrentRepository);
-                Task<string?> headTask = _gitService.Tags.GetHeadCommitHashAsync(_mainWindowViewModel.CurrentRepository);
+                Task<IReadOnlyList<GitTag>> tagsTask = _gitService.GetLocalTagsAsync(repository);
+                Task<string?> headTask = _gitService.Tags.GetHeadCommitHashAsync(repository);
                 await Task.WhenAll(tagsTask, headTask);
+                if (!ReferenceEquals(_mainWindowViewModel.CurrentRepository, repository))
+                {
+                    return;
+                }
                 _tagHeadCommitHash = await headTask;
                 ReplaceLocalTags(await tagsTask, _tagHeadCommitHash, selectedTagName);
                 ReplaceRemoteTags(GetCachedRemoteTags(), _tagHeadCommitHash, selectedTagName);

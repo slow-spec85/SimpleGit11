@@ -94,6 +94,7 @@ public partial class App : Application
         services.AddSingleton<ExecutionContextService>();
         services.AddSingleton<IExecutionContextService>(provider =>
             provider.GetRequiredService<ExecutionContextService>());
+        services.AddSingleton<ILocalGitCredentialService, LocalGitCredentialService>();
         services.AddSingleton<IGitCommandRunner, ContextualGitCommandRunner>();
         services.AddSingleton<IGitRepositoryChangeDetector, GitRepositoryChangeDetector>();
         services.AddSingleton(static _ => new HttpClient
@@ -115,6 +116,8 @@ public partial class App : Application
         services.AddSingleton<IMessenger, WeakReferenceMessenger>();
         services.AddSingleton<StoragePickerService>();
         services.AddSingleton<IStoragePickerService>(provider => provider.GetRequiredService<StoragePickerService>());
+        services.AddSingleton<IPluginStoragePicker>(provider =>
+            provider.GetRequiredService<StoragePickerService>());
         services.AddSingleton<IGitRepositoryDiscoveryService, RepositoryDiscoveryService>();
         services.AddSingleton<IExecutionRepositoryDiscoveryService, ExecutionRepositoryDiscoveryService>();
         services.AddSingleton<IGitRepositoryOperationService, GitRepositoryOperationService>();
@@ -134,6 +137,8 @@ public partial class App : Application
         services.AddSingleton<DialogService>();
         services.AddSingleton<IDialogService>(provider => provider.GetRequiredService<DialogService>());
         services.AddSingleton<IPluginDialogHost>(provider => provider.GetRequiredService<DialogService>());
+        services.AddSingleton<IHostKeyConfirmationService, HostKeyConfirmationService>();
+        services.AddSingleton<IOpenSshService, OpenSshService>();
         services.AddSingleton<IGitRemoteService, GitRemoteService>();
         services.AddSingleton<IGitWorktreeService, GitWorktreeService>();
         services.AddSingleton<IGitRevisionService, GitRevisionService>();

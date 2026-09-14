@@ -19,7 +19,8 @@ using SimpleGit11.Services.Git;
 
 namespace SimpleGit11.ViewModels;
 
-public sealed partial class SynchronizationViewModel : AppNotificationViewModelBase
+public sealed partial class SynchronizationViewModel : AppNotificationViewModelBase,
+    IRecipient<RepositoryChangedMessage>
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly MainWindowViewModel _mainWindowViewModel;
@@ -52,6 +53,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         _clipboardService = clipboardService;
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
+        messenger.RegisterAll(this);
         Remotes = [];
         RemoteOptions = [];
         LocalBranches = [];
@@ -61,6 +63,16 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         IncomingSubmoduleChanges = [];
         SubmodulesRequiringApplication = [];
         ProgressMessage = "";
+    }
+
+    public void Receive(RepositoryChangedMessage message)
+    {
+        _lastRepositoryPath = null;
+        _lastSuccessfulFetch = null;
+        _hasRefreshed = false;
+        ClearNotification();
+        ClearSynchronizationState();
+        RemoteOptions = [];
     }
 
     [ObservableProperty]
@@ -410,7 +422,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         }
         catch (Exception exception) when (IsExpectedGitException(exception))
         {
-            ShowGitError(exception);
+            ShowGitError(exception, Remotes.Select(remote => remote.DisplayUrl));
         }
         finally
         {
@@ -461,7 +473,9 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         }
         catch (Exception exception) when (IsExpectedGitException(exception))
         {
-            ShowGitError(exception);
+            ShowGitError(
+                exception,
+                SelectedRemote is null ? [] : [SelectedRemote.FetchUrl]);
         }
     }
 
@@ -661,7 +675,10 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
                 return result;
             },
             _localizationService.GetString("PullSucceeded"),
-            mayCreateConflicts: true);
+            mayCreateConflicts: true,
+            remoteUrls: GetRemoteUrls(
+                [currentBranch.HasUpstream ? currentBranch.UpstreamRemoteName : defaultRemote.Name],
+                usePushUrl: false));
     }
 
     private async Task SwitchAndPullAsync(BranchSynchronizationViewItem? item)
@@ -709,7 +726,10 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
                     return result;
                 },
                 string.Format(_localizationService.GetString("SwitchAndPullSucceeded"), branch.Name),
-                mayCreateConflicts: true));
+                mayCreateConflicts: true,
+                remoteUrls: GetRemoteUrls(
+                    [branch.HasUpstream ? branch.UpstreamRemoteName : defaultRemote.Name],
+                    usePushUrl: false)));
     }
 
     private Task PushAllChangesAsync(GitPushMode mode)
@@ -916,7 +936,9 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
 
             return new GitRemoteOperationResult(
                 string.Join(Environment.NewLine + Environment.NewLine, outputs));
-        }, success);
+        },
+            success,
+            remoteUrls: GetRemoteUrls(destinationsUsed, usePushUrl: true));
     }
 
     private sealed record BranchPushOperation(
@@ -963,6 +985,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         if (addedRemote is not null)
         {
             SelectedRemote = addedRemote;
+            await CheckRemoteAccessAsync(repository, addedRemote.DisplayUrl);
         }
     }
 
@@ -1039,10 +1062,51 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
 
         await RunRemoteOperationAsync(
             string.Format(_localizationService.GetString("EditRemoteUrlProgress"), remote.Name),
-            _ => _gitService.Remotes.SetRemoteUrlAsync(repository, remote, newUrl),
+            cancellationToken => _gitService.Remotes.SetRemoteUrlAsync(
+                repository,
+                remote,
+                newUrl,
+                cancellationToken),
             string.Format(_localizationService.GetString("RemoteUrlUpdated"), remote.Name));
 
         await RefreshSynchronizationLocalAsync();
+        GitRemote? updatedRemote = Remotes.FirstOrDefault(item => item.Name == remote.Name);
+        if (updatedRemote is not null)
+        {
+            await CheckRemoteAccessAsync(repository, updatedRemote.DisplayUrl);
+        }
+    }
+
+    private Task CheckRemoteAccessAsync(RepositoryInfo repository, string url)
+    {
+        return RunGitOperationAsync(
+            _localizationService.GetString("RemoteAccessCheckProgress"),
+            cancellationToken => CheckRemoteAccessCoreAsync(repository, url, cancellationToken),
+            canCancel: true);
+    }
+
+    private async Task CheckRemoteAccessCoreAsync(
+        RepositoryInfo repository,
+        string url,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _gitService.Remotes.CheckAccessAsync(repository, url, cancellationToken);
+            ShowNotification(AppNotificationSeverity.Success, _localizationService.GetString("RemoteAccessCheckSucceeded"));
+        }
+        catch (GitRemoteOperationException exception)
+        {
+            ShowRemoteOperationError(
+                [url],
+                exception.Kind,
+                _localizationService.GetString("RemoteAccessCheckFailed"),
+                exception.Message,
+                _localizationService.GetString("CredentialManagerFailed"),
+                _localizationService.GetString("RemoteSshAccessAuthenticationFailed"),
+                _localizationService.GetString("OpenSshSettingsButton"),
+                () => _mainWindowViewModel.RequestNavigation(AppNavigationTarget.Settings));
+        }
     }
 
     private async Task RemoveRemoteAsync()
@@ -1088,7 +1152,8 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         string progressMessage,
         Func<CancellationToken, Task<GitRemoteOperationResult>> operation,
         string successMessage,
-        bool mayCreateConflicts = false)
+        bool mayCreateConflicts = false,
+        IReadOnlyList<string>? remoteUrls = null)
     {
         RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
         return RunGitOperationAsync(progressMessage, async cancellationToken =>
@@ -1109,7 +1174,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
                     return;
                 }
 
-                ShowGitError(exception);
+                ShowGitError(exception, remoteUrls ?? []);
             }
         }, canCancel: true);
     }
@@ -1281,7 +1346,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
             or GitCommandException;
     }
 
-    private void ShowGitError(Exception exception)
+    private void ShowGitError(Exception exception, IEnumerable<string>? remoteUrls = null)
     {
         string message = exception switch
         {
@@ -1291,14 +1356,52 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
             _ => _localizationService.GetString("GitRemoteCommandFailed")
         };
         string? details = exception is GitCommandException ? exception.Message : null;
+        if (exception is GitRemoteOperationException operationException && details is not null)
+        {
+            ShowRemoteOperationError(
+                remoteUrls ?? [],
+                operationException.Kind,
+                message,
+                details,
+                _localizationService.GetString("CredentialManagerFailed"),
+                _localizationService.GetString("RemoteSshAccessAuthenticationFailed"),
+                _localizationService.GetString("OpenSshSettingsButton"),
+                () => _mainWindowViewModel.RequestNavigation(AppNavigationTarget.Settings));
+            return;
+        }
+
         ShowError(message, details);
+    }
+
+    private IReadOnlyList<string> GetRemoteUrls(
+        IEnumerable<string> remoteNames,
+        bool usePushUrl)
+    {
+        HashSet<string> names = remoteNames
+            .Where(static name => !string.IsNullOrWhiteSpace(name))
+            .ToHashSet(StringComparer.Ordinal);
+        return Remotes
+            .Where(remote => names.Contains(remote.Name))
+            .Select(remote => usePushUrl && !string.IsNullOrWhiteSpace(remote.PushUrl)
+                ? remote.PushUrl
+                : remote.DisplayUrl)
+            .Where(static url => !string.IsNullOrWhiteSpace(url))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private string GetRemoteOperationErrorMessage(GitRemoteOperationException exception)
     {
         return exception.Kind switch
         {
+            GitRemoteOperationErrorKind.HostKeyVerification =>
+                exception.ExecutionMachineName is null
+                    ? _localizationService.GetString("RemoteHostKeyVerificationFailed")
+                    : string.Format(
+                        _localizationService.GetString("RemoteExecutionHostKeyVerificationFailed"),
+                        exception.ExecutionMachineName),
             GitRemoteOperationErrorKind.Authentication => _localizationService.GetString("RemoteAuthenticationFailed"),
+            GitRemoteOperationErrorKind.CredentialManager => _localizationService.GetString("CredentialManagerFailed"),
             GitRemoteOperationErrorKind.Conflict => _localizationService.GetString("RemoteOperationConflicts"),
             GitRemoteOperationErrorKind.NonFastForward => _localizationService.GetString("RemoteOperationNonFastForward"),
             GitRemoteOperationErrorKind.AtomicNotSupported =>

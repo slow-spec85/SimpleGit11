@@ -25,8 +25,11 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     private readonly ISettingsService _settingsService;
     private readonly IDialogService _dialogService;
     private readonly IExecutionContextService _executionContextService;
+    private readonly IOpenSshService _openSshService;
+    private readonly IClipboardService _clipboardService;
     private GitPullSettings? _savedGlobalPullSettings;
     private GitPullSettings? _savedRepositoryPullSettings;
+    private string? _unmanagedRepositorySshCommand;
     private bool _isInitializing = true;
     public SettingsViewModel(
         MainWindowViewModel mainWindowViewModel,
@@ -37,7 +40,9 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         IDialogService dialogService,
         IExecutionContextService executionContextService,
         IMessenger messenger,
-        IAsyncCommandExecutor asyncCommandExecutor)
+        IAsyncCommandExecutor asyncCommandExecutor,
+        IOpenSshService openSshService,
+        IClipboardService clipboardService)
         : base(messenger)
     {
         _mainWindowViewModel = mainWindowViewModel;
@@ -47,6 +52,8 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         _gitService = gitService;
         _dialogService = dialogService;
         _executionContextService = executionContextService;
+        _openSshService = openSshService;
+        _clipboardService = clipboardService;
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
         ThemeOptions =
@@ -85,10 +92,11 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         InitialBranchName = "";
         GlobalPushDefaultRemote = "";
         SshCommand = "";
+        RepositorySshKeyPath = "";
         RepositoryPushDefaultRemote = "";
-        CredentialHelperStatus = "";
         RepositorySettingsStatus = "";
         GlobalUrlRewrites = [];
+        SshIdentities = [];
         GlobalPullRebaseOptions = CreatePullRebaseOptions();
         GlobalPullFastForwardOptions = CreatePullFastForwardOptions();
         RepositoryPullRebaseOptions = CreatePullRebaseOptions();
@@ -155,6 +163,10 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         _localizationService.GetString("GlobalGitSettingsTitleFormat"),
         _executionContextService.Current.DisplayMachineName);
 
+    public string SshSettingsTitle => string.Format(
+        _localizationService.GetString("SshSettingsTitleFormat"),
+        _executionContextService.Current.DisplayMachineName);
+
     [ObservableProperty]
     public partial DisplayOption<AppThemeMode> SelectedTheme { get; set; }
 
@@ -198,13 +210,13 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     public partial bool UseSshCommandOverride { get; set; }
 
     [ObservableProperty]
+    public partial string RepositorySshKeyPath { get; set; }
+
+    [ObservableProperty]
     public partial string RepositoryPushDefaultRemote { get; set; }
 
     [ObservableProperty]
     public partial bool UseCredentialHelperManager { get; set; }
-
-    [ObservableProperty]
-    public partial string CredentialHelperStatus { get; private set; }
 
     [ObservableProperty]
     public partial string RepositorySettingsStatus { get; private set; }
@@ -214,6 +226,15 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     [ObservableProperty]
     public partial bool IsUrlRewriteOperationRunning { get; private set; }
+
+    [ObservableProperty]
+    public partial IReadOnlyList<SshIdentityViewItem> SshIdentities { get; private set; }
+
+    [ObservableProperty]
+    public partial bool IsSshIdentityOperationRunning { get; private set; }
+
+    [ObservableProperty]
+    public partial bool IsLocalContext { get; private set; }
 
     partial void OnSelectedThemeChanged(DisplayOption<AppThemeMode> value)
     {
@@ -258,16 +279,21 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         }
     }
 
-    partial void OnUseCredentialHelperManagerChanged(bool value)
-    {
-        UpdateCredentialHelperStatus();
-    }
-
     partial void OnIsUrlRewriteOperationRunningChanged(bool value)
     {
         AddGlobalUrlRewriteCommand.NotifyCanExecuteChanged();
         EditGlobalUrlRewriteCommand.NotifyCanExecuteChanged();
         RemoveGlobalUrlRewriteCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsSshIdentityOperationRunningChanged(bool value)
+    {
+        AddSshIdentityCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnUseCredentialHelperManagerChanged(bool value)
+    {
+
     }
 
     private async Task ReadGitConfig()
@@ -299,12 +325,22 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
                 RepositoryPushDefaultRemote = await _gitService.Configuration.GetPushDefaultRemoteAsync(
                     ConfigScope.Local,
                     currentRepository) ?? "";
+                string repositorySshCommand = await _gitService.Configuration.GetRepositorySshCommandAsync(
+                    currentRepository);
+                string? repositorySshKeyPath = GetRepositorySshIdentityPath(repositorySshCommand);
+                _unmanagedRepositorySshCommand = !string.IsNullOrWhiteSpace(repositorySshCommand)
+                    && repositorySshKeyPath is null
+                        ? repositorySshCommand
+                        : null;
+                RepositorySshKeyPath = repositorySshKeyPath ?? "";
             }
             else
             {
                 RepositoryUserName = "";
                 RepositoryEmail = "";
                 RepositoryPushDefaultRemote = "";
+                RepositorySshKeyPath = "";
+                _unmanagedRepositorySshCommand = null;
             }
         }
         catch (Exception exception)
@@ -316,7 +352,15 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     public Task RefreshSettingsAsync()
     {
         OnPropertyChanged(nameof(GlobalGitSettingsTitle));
-        return ReadGitConfig();
+        OnPropertyChanged(nameof(SshSettingsTitle));
+        IsLocalContext = _executionContextService.Current.IsLocal;
+        return RefreshSettingsCoreAsync();
+    }
+
+    private async Task RefreshSettingsCoreAsync()
+    {
+        await ReadGitConfig();
+        await LoadSshIdentitiesAsync();
     }
 
     private ObservableCollection<ConfigOption> CreatePullRebaseOptions() =>
@@ -552,6 +596,135 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         return _asyncCommandExecutor.ExecuteAsync(SaveRepositorySettingsCoreAsync);
     }
 
+    [RelayCommand(CanExecute = nameof(CanManageSshIdentities), FlowExceptionsToTaskScheduler = true)]
+    private Task OnAddSshIdentityAsync() =>
+        _asyncCommandExecutor.ExecuteAsync(AddSshIdentityAsync);
+
+    private bool CanManageSshIdentities() => !IsSshIdentityOperationRunning;
+
+    private async Task AddSshIdentityAsync()
+    {
+        SshIdentityCreationRequest? request = await _dialogService.ShowCreateSshIdentityAsync(
+            _executionContextService.Current.DisplayMachineName);
+        if (request is null)
+        {
+            return;
+        }
+
+        IsSshIdentityOperationRunning = true;
+        try
+        {
+            SshIdentity identity = await _openSshService.CreateIdentityAsync(
+                $"ssh://git@{request.Host}/",
+                request.Passphrase);
+            _clipboardService.SetText(identity.PublicKey);
+            await LoadSshIdentitiesAsync();
+            ShowNotification(
+                AppNotificationSeverity.Success,
+                _localizationService.GetString(string.IsNullOrEmpty(request.Passphrase)
+                    ? "SshIdentityCreatedAndCopiedWithoutAgent"
+                    : "SshIdentityCreatedAndCopied"));
+        }
+        catch (Exception exception)
+        {
+            await LoadSshIdentitiesAsync();
+            ShowNotification(
+                AppNotificationSeverity.Error,
+                _localizationService.GetString("SshIdentityCreateFailed"),
+                exception.Message);
+        }
+        finally
+        {
+            IsSshIdentityOperationRunning = false;
+        }
+    }
+
+    private async Task RemoveSshIdentityAsync(SshIdentityViewItem item)
+    {
+        bool confirmed = await _dialogService.ConfirmAsync(
+            _localizationService.GetString("SshIdentityDeleteDialogTitle"),
+            string.Format(
+                _localizationService.GetString("SshIdentityDeleteDialogMessage"),
+                item.PrivateKeyPath,
+                item.Fingerprint),
+            _localizationService.GetString("SshIdentityDeleteButton"));
+        if (!confirmed)
+        {
+            return;
+        }
+
+        IsSshIdentityOperationRunning = true;
+        try
+        {
+            IReadOnlyList<string> references = await _openSshService.GetIdentityConfigurationReferencesAsync(
+                item.PrivateKeyPath);
+            IReadOnlyList<string> externalReferences = references
+                .Where(path => !path.EndsWith("simplegit11.conf", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            bool removeExternalReferences = false;
+            if (externalReferences.Count > 0)
+            {
+                removeExternalReferences = await _dialogService.ConfirmAsync(
+                    _localizationService.GetString("SshIdentityExternalReferencesTitle"),
+                    string.Format(
+                        _localizationService.GetString("SshIdentityExternalReferencesMessage"),
+                        string.Join(Environment.NewLine, externalReferences)),
+                    _localizationService.GetString("SshIdentityRemoveReferencesButton"));
+                if (!removeExternalReferences)
+                {
+                    return;
+                }
+            }
+
+            await _openSshService.DeleteIdentityAsync(item.PrivateKeyPath, removeExternalReferences);
+            await LoadSshIdentitiesAsync();
+            ShowNotification(AppNotificationSeverity.Success, _localizationService.GetString("SshIdentityDeleted"));
+        }
+        catch (Exception exception)
+        {
+            ShowNotification(
+                AppNotificationSeverity.Error,
+                _localizationService.GetString("SshIdentityDeleteFailed"),
+                exception.Message);
+        }
+        finally
+        {
+            IsSshIdentityOperationRunning = false;
+        }
+    }
+
+    private async Task LoadSshIdentitiesAsync()
+    {
+        IReadOnlyList<SshIdentity> identities = await _openSshService.GetIdentitiesAsync();
+        SshIdentities = identities
+            .Select(identity => new SshIdentityViewItem(
+                identity,
+                RemoveSshIdentityAsync,
+                _clipboardService.SetText))
+            .ToList();
+    }
+
+    internal static string CreateRepositorySshCommand(string privateKeyPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(privateKeyPath);
+        string normalizedPath = privateKeyPath.Replace('\\', '/').Replace("\"", "\\\"", StringComparison.Ordinal);
+        return $"ssh -i \"{normalizedPath}\" -o IdentitiesOnly=yes";
+    }
+
+    internal static string? GetRepositorySshIdentityPath(string sshCommand)
+    {
+        const string quotedIdentityPrefix = "ssh -i \"";
+        if (!sshCommand.StartsWith(quotedIdentityPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        int closingQuoteIndex = sshCommand.IndexOf('"', quotedIdentityPrefix.Length);
+        return closingQuoteIndex > quotedIdentityPrefix.Length
+            ? sshCommand[quotedIdentityPrefix.Length..closingQuoteIndex]
+            : null;
+    }
+
     private async Task SaveRepositorySettingsCoreAsync()
     {
         ClearNotification();
@@ -580,7 +753,9 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
             DirectoryNotFoundException => _localizationService.GetString("RepositoryFolderNotFound"),
             _ => _localizationService.GetString(fallbackResourceKey)
         };
-        string? details = exception is GitCommandException ? exception.Message : null;
+        string? details = exception is GitCommandException or InvalidOperationException
+            ? exception.Message
+            : null;
 
         ShowNotification(AppNotificationSeverity.Error, message, details);
     }
@@ -594,13 +769,6 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         }
 
         await _gitService.Configuration.UnsetGlobalCredentialHelperAsync();
-    }
-
-    private void UpdateCredentialHelperStatus()
-    {
-        CredentialHelperStatus = UseCredentialHelperManager
-            ? _localizationService.GetString("CredentialHelperStatusEnabled")
-            : _localizationService.GetString("CredentialHelperStatusDisabled");
     }
 
     private async Task SaveGlobalGitSettingsAsync()
@@ -686,6 +854,37 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
             RepositoryPushDefaultRemote = await _gitService.Configuration.GetPushDefaultRemoteAsync(
                 ConfigScope.Local,
                 currentRepository) ?? "";
+
+            if (!string.IsNullOrWhiteSpace(RepositorySshKeyPath))
+            {
+                string privateKeyPath = RepositorySshKeyPath.Trim();
+                RepositoryPathStyle pathStyle = _executionContextService.Current.Runtime.Paths.Style;
+                bool isAbsolutePath = pathStyle == RepositoryPathStyle.Windows
+                    ? Path.IsPathFullyQualified(privateKeyPath)
+                    : privateKeyPath.StartsWith("/", StringComparison.Ordinal);
+                if (!isAbsolutePath)
+                {
+                    throw new InvalidOperationException(
+                        _localizationService.GetString("RepositorySshKeyPathMustBeAbsolute"));
+                }
+
+                if (!await _executionContextService.Current.Runtime.Files.FileExistsAsync(privateKeyPath))
+                {
+                    throw new InvalidOperationException(string.Format(
+                        _localizationService.GetString("RepositorySshKeyFileNotFound"),
+                        privateKeyPath));
+                }
+
+                await _gitService.Configuration.SetRepositorySshCommandAsync(
+                    currentRepository,
+                    CreateRepositorySshCommand(privateKeyPath));
+                RepositorySshKeyPath = privateKeyPath;
+                _unmanagedRepositorySshCommand = null;
+            }
+            else if (_unmanagedRepositorySshCommand is null)
+            {
+                await _gitService.Configuration.UnsetRepositorySshCommandAsync(currentRepository);
+            }
 
             if (string.IsNullOrWhiteSpace(RepositoryUserName))
             {

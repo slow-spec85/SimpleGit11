@@ -24,17 +24,20 @@ public sealed class GitRemoteService : IGitRemoteService
     private readonly IGitConfigService _gitConfigService;
     private readonly IGitCommandRunner _commandRunner;
     private readonly IExecutionContextService? _executionContextService;
+    private readonly IOpenSshService? _openSshService;
 
     public GitRemoteService(
         IGitTagService tagService,
         IGitConfigService gitConfigService,
         IGitCommandRunner? commandRunner = null,
-        IExecutionContextService? executionContextService = null)
+        IExecutionContextService? executionContextService = null,
+        IOpenSshService? openSshService = null)
     {
         _tagService = tagService;
         _gitConfigService = gitConfigService;
         _commandRunner = commandRunner ?? new GitCommandRunner();
         _executionContextService = executionContextService;
+        _openSshService = openSshService;
     }
 
     public async Task<IReadOnlyList<GitRemote>> GetRemotesAsync(
@@ -422,15 +425,20 @@ public sealed class GitRemoteService : IGitRemoteService
             string.Join(Environment.NewLine + Environment.NewLine, outputs));
     }
 
-    private Task<GitRemoteOperationResult> FetchRemoteAsync(
+    private async Task<GitRemoteOperationResult> FetchRemoteAsync(
         RepositoryInfo repository,
         string remoteName,
         bool fetchTags,
         CancellationToken cancellationToken)
     {
         ValidateReferenceName(remoteName, nameof(remoteName));
-        return RunGitAsync(
+        string? remoteUrl = await EnsureRemoteHostTrustedAsync(
             repository,
+            remoteName,
+            cancellationToken);
+        return await RunRemoteGitAsync(
+            repository,
+            remoteUrl,
             false,
             cancellationToken,
             "fetch",
@@ -444,7 +452,23 @@ public sealed class GitRemoteService : IGitRemoteService
         RepositoryInfo repository,
         CancellationToken cancellationToken = default)
     {
-        return await RunGitAsync(repository, false, cancellationToken, "pull", "--progress");
+        string? remoteUrl = null;
+        if (CanManageKnownHosts)
+        {
+            string remoteName = await GetCurrentBranchRemoteNameAsync(repository, cancellationToken);
+            remoteUrl = await EnsureRemoteHostTrustedAsync(
+                repository,
+                remoteName,
+                cancellationToken);
+        }
+
+        return await RunRemoteGitAsync(
+            repository,
+            remoteUrl,
+            false,
+            cancellationToken,
+            "pull",
+            "--progress");
     }
 
     public async Task<GitRemoteOperationResult> PullAsync(
@@ -455,8 +479,13 @@ public sealed class GitRemoteService : IGitRemoteService
     {
         ValidateReferenceName(remoteName, nameof(remoteName));
         ValidateReferenceName(branchName, nameof(branchName));
-        return await RunGitAsync(
+        string? remoteUrl = await EnsureRemoteHostTrustedAsync(
             repository,
+            remoteName,
+            cancellationToken);
+        return await RunRemoteGitAsync(
+            repository,
+            remoteUrl,
             false,
             cancellationToken,
             "pull",
@@ -502,9 +531,15 @@ public sealed class GitRemoteService : IGitRemoteService
         GitPushRequest request,
         CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<string> arguments = GitPushArguments.Create(request);
-        return await RunGitAsync(
+        string? remoteUrl = await EnsureRemoteHostTrustedAsync(
             repository,
+            request.RemoteName,
+            cancellationToken,
+            usePushUrl: true);
+        IReadOnlyList<string> arguments = GitPushArguments.Create(request);
+        return await RunRemoteGitAsync(
+            repository,
+            remoteUrl,
             false,
             cancellationToken,
             arguments.ToArray());
@@ -517,12 +552,50 @@ public sealed class GitRemoteService : IGitRemoteService
         CancellationToken cancellationToken = default)
     {
         ValidateReferenceName(name, nameof(name));
-        return await RunGitAsync(repository, false, cancellationToken, "remote", "add", name, url);
+        await EnsureHostTrustedAsync(url, cancellationToken);
+        GitRemoteOperationResult result = await RunGitAsync(
+            repository,
+            false,
+            cancellationToken,
+            "remote",
+            "add",
+            name,
+            url);
+        return result;
     }
 
-    public async Task<GitRemoteOperationResult> SetRemoteUrlAsync(RepositoryInfo repository, GitRemote remote, string url)
+    public async Task<GitRemoteOperationResult> CheckAccessAsync(
+        RepositoryInfo repository,
+        string url,
+        CancellationToken cancellationToken = default)
     {
-        return await RunGitAsync(repository, false, "remote", "set-url", remote.Name, url);
+        ArgumentException.ThrowIfNullOrWhiteSpace(url);
+        await EnsureHostTrustedAsync(url, cancellationToken);
+        return await RunRemoteGitAsync(
+            repository,
+            url,
+            false,
+            cancellationToken,
+            "ls-remote",
+            url);
+    }
+
+    public async Task<GitRemoteOperationResult> SetRemoteUrlAsync(
+        RepositoryInfo repository,
+        GitRemote remote,
+        string url,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureHostTrustedAsync(url, cancellationToken);
+        GitRemoteOperationResult result = await RunGitAsync(
+            repository,
+            false,
+            cancellationToken,
+            "remote",
+            "set-url",
+            remote.Name,
+            url);
+        return result;
     }
 
     public async Task<GitRemoteOperationResult> RenameRemoteAsync(
@@ -548,22 +621,61 @@ public sealed class GitRemoteService : IGitRemoteService
         string branchName,
         CancellationToken cancellationToken = default)
     {
-        var deleteResult = await RunGitAsync(repository, false, cancellationToken, "push", "--progress", remote.Name, "--delete", branchName);
-        var pruneResult = await RunGitAsync(repository, false, cancellationToken, "fetch", "--prune", "--progress", remote.Name);
+        string? pushUrl = await EnsureRemoteHostTrustedAsync(
+            repository,
+            remote.Name,
+            cancellationToken,
+            usePushUrl: true);
+        GitRemoteOperationResult deleteResult = await RunRemoteGitAsync(
+            repository,
+            pushUrl,
+            false,
+            cancellationToken,
+            "push",
+            "--progress",
+            remote.Name,
+            "--delete",
+            branchName);
+        string? fetchUrl = await EnsureRemoteHostTrustedAsync(
+            repository,
+            remote.Name,
+            cancellationToken);
+        GitRemoteOperationResult pruneResult = await RunRemoteGitAsync(
+            repository,
+            fetchUrl,
+            false,
+            cancellationToken,
+            "fetch",
+            "--prune",
+            "--progress",
+            remote.Name);
         var output = CombineOutput(deleteResult.Output, pruneResult.Output);
         return new GitRemoteOperationResult(output);
     }
 
-    public Task<GitRemoteOperationResult> FetchTagAsync(
+    public async Task<GitRemoteOperationResult> FetchTagAsync(
         RepositoryInfo repository,
         GitRemote remote,
         string tagName,
         bool force,
         CancellationToken cancellationToken = default)
     {
+        string? remoteUrl = await EnsureRemoteHostTrustedAsync(
+            repository,
+            remote.Name,
+            cancellationToken);
         string prefix = force ? "+" : "";
         string refspec = $"{prefix}refs/tags/{tagName}:refs/tags/{tagName}";
-        return RunGitAsync(repository, false, cancellationToken, "fetch", "--no-tags", "--progress", remote.Name, refspec);
+        return await RunRemoteGitAsync(
+            repository,
+            remoteUrl,
+            false,
+            cancellationToken,
+            "fetch",
+            "--no-tags",
+            "--progress",
+            remote.Name,
+            refspec);
     }
 
     public async Task<IReadOnlyList<GitTag>> GetRemoteTagsAsync(
@@ -571,8 +683,13 @@ public sealed class GitRemoteService : IGitRemoteService
         GitRemote remote,
         CancellationToken cancellationToken = default)
     {
-        GitRemoteOperationResult output = await RunGitAsync(
+        string? remoteUrl = await EnsureRemoteHostTrustedAsync(
             repository,
+            remote.Name,
+            cancellationToken);
+        GitRemoteOperationResult output = await RunRemoteGitAsync(
+            repository,
+            remoteUrl,
             false,
             cancellationToken,
             "ls-remote",
@@ -587,8 +704,34 @@ public sealed class GitRemoteService : IGitRemoteService
         string tagName,
         CancellationToken cancellationToken = default)
     {
-        var deleteResult = await RunGitAsync(repository, false, cancellationToken, "push", "--progress", remote.Name, $":refs/tags/{tagName}");
-        var fetchResult = await RunGitAsync(repository, false, cancellationToken, "fetch", "--prune", "--tags", "--progress", remote.Name);
+        string? pushUrl = await EnsureRemoteHostTrustedAsync(
+            repository,
+            remote.Name,
+            cancellationToken,
+            usePushUrl: true);
+        GitRemoteOperationResult deleteResult = await RunRemoteGitAsync(
+            repository,
+            pushUrl,
+            false,
+            cancellationToken,
+            "push",
+            "--progress",
+            remote.Name,
+            $":refs/tags/{tagName}");
+        string? fetchUrl = await EnsureRemoteHostTrustedAsync(
+            repository,
+            remote.Name,
+            cancellationToken);
+        GitRemoteOperationResult fetchResult = await RunRemoteGitAsync(
+            repository,
+            fetchUrl,
+            false,
+            cancellationToken,
+            "fetch",
+            "--prune",
+            "--tags",
+            "--progress",
+            remote.Name);
         var output = CombineOutput(deleteResult.Output, fetchResult.Output);
         return new GitRemoteOperationResult(output);
     }
@@ -1179,6 +1322,76 @@ public sealed class GitRemoteService : IGitRemoteService
         return new GitCommitPage(commits.Take(count).ToList(), hasMore);
     }
 
+    private async Task<string?> EnsureRemoteHostTrustedAsync(
+        RepositoryInfo repository,
+        string remoteName,
+        CancellationToken cancellationToken,
+        bool usePushUrl = false)
+    {
+        if (!CanManageKnownHosts
+            || string.IsNullOrWhiteSpace(remoteName)
+            || remoteName == ".")
+        {
+            return null;
+        }
+
+        List<string> arguments = ["remote", "get-url"];
+        if (usePushUrl)
+        {
+            arguments.Add("--push");
+        }
+
+        arguments.Add(remoteName);
+        GitCommandResult result = await _commandRunner.RunAsync(
+            repository.Path,
+            arguments,
+            new GitCommandOptions(ThrowOnError: false),
+            cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return null;
+        }
+
+        string remoteUrl = result.StandardOutput.Trim();
+        await EnsureHostTrustedAsync(remoteUrl, cancellationToken);
+        return remoteUrl;
+    }
+
+    private async Task EnsureHostTrustedAsync(string remoteUrl, CancellationToken cancellationToken)
+    {
+        if (!CanManageKnownHosts)
+        {
+            return;
+        }
+
+        await _openSshService!.EnsureTrustedAsync(remoteUrl, cancellationToken);
+    }
+
+    private bool CanManageKnownHosts => _openSshService is not null;
+
+    private async Task<string> GetCurrentBranchRemoteNameAsync(
+        RepositoryInfo repository,
+        CancellationToken cancellationToken)
+    {
+        GitCommandResult branchResult = await _commandRunner.RunAsync(
+            repository.Path,
+            ["symbolic-ref", "--quiet", "--short", "HEAD"],
+            new GitCommandOptions(ThrowOnError: false),
+            cancellationToken);
+        string branchName = branchResult.StandardOutput.Trim();
+        if (!branchResult.IsSuccess || string.IsNullOrWhiteSpace(branchName))
+        {
+            return "";
+        }
+
+        GitCommandResult remoteResult = await _commandRunner.RunAsync(
+            repository.Path,
+            ["config", "--get", $"branch.{branchName}.remote"],
+            new GitCommandOptions(ThrowOnError: false),
+            cancellationToken);
+        return remoteResult.IsSuccess ? remoteResult.StandardOutput.Trim() : "";
+    }
+
     private async Task<GitRemoteOperationResult> RunGitAsync(
         RepositoryInfo repository,
         bool allowFailure,
@@ -1193,10 +1406,44 @@ public sealed class GitRemoteService : IGitRemoteService
         CancellationToken cancellationToken,
         params string[] arguments)
     {
+        return await RunGitCoreAsync(
+            repository,
+            allowFailure,
+            null,
+            cancellationToken,
+            arguments);
+    }
+
+    private async Task<GitRemoteOperationResult> RunRemoteGitAsync(
+        RepositoryInfo repository,
+        string? remoteUrl,
+        bool allowFailure,
+        CancellationToken cancellationToken,
+        params string[] arguments)
+    {
+        return await RunGitCoreAsync(
+            repository,
+            allowFailure,
+            remoteUrl,
+            cancellationToken,
+            arguments);
+    }
+
+    private async Task<GitRemoteOperationResult> RunGitCoreAsync(
+        RepositoryInfo repository,
+        bool allowFailure,
+        string? remoteUrl,
+        CancellationToken cancellationToken,
+        IReadOnlyList<string> arguments)
+    {
         GitCommandResult result = await _commandRunner.RunAsync(
             repository.Path,
             arguments,
-            new GitCommandOptions(ThrowOnError: false),
+            new GitCommandOptions(
+                ThrowOnError: false,
+                HttpAuthentication: string.IsNullOrWhiteSpace(remoteUrl)
+                    ? null
+                    : new GitHttpAuthentication(remoteUrl)),
             cancellationToken);
         if (!result.IsSuccess)
         {
@@ -1209,7 +1456,10 @@ public sealed class GitRemoteService : IGitRemoteService
             throw new GitRemoteOperationException(
                 string.IsNullOrWhiteSpace(output) ? "Git remote command failed." : output,
                 result.ExitCode,
-                ClassifyError(output));
+                GitRemoteOperationErrorClassifier.Classify(output),
+                _executionContextService is { Current.IsLocal: false }
+                    ? _executionContextService.Current.DisplayMachineName
+                    : null);
         }
 
         return new GitRemoteOperationResult(result.CombinedOutput);
@@ -1409,40 +1659,6 @@ public sealed class GitRemoteService : IGitRemoteService
         return DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
             ? date
             : null;
-    }
-
-    private static GitRemoteOperationErrorKind ClassifyError(string output)
-    {
-        if (output.Contains("does not support --atomic push", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("does not support atomic push", StringComparison.OrdinalIgnoreCase))
-        {
-            return GitRemoteOperationErrorKind.AtomicNotSupported;
-        }
-
-        if (output.Contains("Authentication failed", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("could not read Username", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("Permission denied", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("403", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("401", StringComparison.OrdinalIgnoreCase))
-        {
-            return GitRemoteOperationErrorKind.Authentication;
-        }
-
-        if (output.Contains("CONFLICT", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("Automatic merge failed", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("fix conflicts", StringComparison.OrdinalIgnoreCase))
-        {
-            return GitRemoteOperationErrorKind.Conflict;
-        }
-
-        if (output.Contains("non-fast-forward", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("fetch first", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("rejected", StringComparison.OrdinalIgnoreCase))
-        {
-            return GitRemoteOperationErrorKind.NonFastForward;
-        }
-
-        return GitRemoteOperationErrorKind.General;
     }
 
     private static void ValidateReferenceName(string referenceName, string parameterName)

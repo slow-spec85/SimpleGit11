@@ -15,7 +15,8 @@ using System.Threading.Tasks;
 
 namespace SimpleGit11.ViewModels;
 
-public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
+public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
+    IRecipient<RepositoryChangedMessage>
 {
     private readonly IDialogService _dialogService;
     private readonly RepositoryViewModel _repositoryViewModel;
@@ -44,7 +45,19 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase
     {
         _dialogService = dialogService;
         _repositoryViewModel = repositoryViewModel;
+        messenger.RegisterAll(this);
         ProgressMessage = "";
+    }
+
+    public void Receive(RepositoryChangedMessage message)
+    {
+        ClearError();
+        ClearCommits();
+        ClearCommitDetails();
+        _nextHistoryOffset = 0;
+        HasNoCommits = false;
+        HasMoreCommits = false;
+        OnPropertyChanged(nameof(HistoryVisible));
     }
 
     public override Visibility EditCommitMessageActionVisibility => Visibility.Visible;

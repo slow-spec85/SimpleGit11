@@ -151,6 +151,12 @@ public sealed class GitCommitWorkflowServiceTests
             return Task.FromResult(ConfirmationResult);
         }
 
+        public Task ShowMessageAsync(string title, string message, string closeButtonText) =>
+            throw new NotSupportedException();
+
+        public Task<SshIdentityCreationRequest?> ShowCreateSshIdentityAsync(string machineName) =>
+            throw new NotSupportedException();
+
         public Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit) =>
             throw new NotSupportedException();
 

@@ -10,6 +10,10 @@ public interface IDialogService
 
     Task<bool> ConfirmAsync(string title, string message, string primaryButtonText);
 
+    Task ShowMessageAsync(string title, string message, string closeButtonText);
+
+    Task<SshIdentityCreationRequest?> ShowCreateSshIdentityAsync(string machineName);
+
     Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit);
 
     Task<bool> ConfirmCherryPickAsync(

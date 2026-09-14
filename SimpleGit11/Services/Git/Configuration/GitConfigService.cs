@@ -95,6 +95,15 @@ public sealed class GitConfigService : IGitConfigService
             throwOnError: false);
     }
 
+    public Task<string> GetRepositorySshCommandAsync(RepositoryInfo repository)
+    {
+        ArgumentNullException.ThrowIfNull(repository);
+        return RunGitAsync(
+            repository,
+            ["config", "--local", "--get", SshCommandKey],
+            throwOnError: false);
+    }
+
     public async Task<GitPullSettings> GetPullSettingsAsync(ConfigScope level, RepositoryInfo? repository)
     {
         string? rebase = await ReadPullValueAsync(level, repository, PullRebaseKey);
@@ -382,6 +391,15 @@ public sealed class GitConfigService : IGitConfigService
             repoNeeded: false);
     }
 
+    public Task SetRepositorySshCommandAsync(RepositoryInfo repository, string sshCommand)
+    {
+        ArgumentNullException.ThrowIfNull(repository);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sshCommand);
+        return RunGitAsync(
+            repository,
+            ["config", "--local", "--replace-all", SshCommandKey, sshCommand.Trim()]);
+    }
+
     public async Task SetBranchUpstreamAsync(
         RepositoryInfo repository,
         string branchName,
@@ -498,6 +516,15 @@ public sealed class GitConfigService : IGitConfigService
             null,
             ["config", "--global", "--unset-all", SshCommandKey],
             repoNeeded: false,
+            throwOnError: false);
+    }
+
+    public Task UnsetRepositorySshCommandAsync(RepositoryInfo repository)
+    {
+        ArgumentNullException.ThrowIfNull(repository);
+        return RunGitAsync(
+            repository,
+            ["config", "--local", "--unset-all", SshCommandKey],
             throwOnError: false);
     }
 

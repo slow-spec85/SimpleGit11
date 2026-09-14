@@ -28,6 +28,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
     private readonly IClipboardService _clipboardService;
     private readonly IProductInfoService _productInfoService;
     private readonly ISettingsService _settingsService;
+    private readonly IMessenger _messenger;
     private RepositoryInfo? _pendingOpeningFetch;
     private readonly Dictionary<object, ActiveOperation> _activeOperations = new(ReferenceEqualityComparer.Instance);
     private object? _notificationSource;
@@ -50,6 +51,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         _clipboardService = clipboardService;
         _productInfoService = productInfoService;
         _settingsService = settingsService;
+        _messenger = messenger;
         messenger.RegisterAll(this);
         CurrentRepositoryDisplayName = _localizationService.GetString("NoRepositoryOpen");
         SelectedRemoteName = _localizationService.GetString("NoRemote");
@@ -146,6 +148,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
 
     partial void OnCurrentRepositoryChanged(RepositoryInfo? value)
     {
+        _messenger.Send(new RepositoryChangedMessage(value));
         CurrentRepositoryDisplayName = value is null
             ? _localizationService.GetString("NoRepositoryOpen")
             : value.Name;
@@ -282,7 +285,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         }
 
         if (exception is GitRemoteOperationException
-            { Kind: GitRemoteOperationErrorKind.Authentication
+            { Kind: GitRemoteOperationErrorKind.HostKeyVerification
+                or GitRemoteOperationErrorKind.Authentication
+                or GitRemoteOperationErrorKind.CredentialManager
                 or GitRemoteOperationErrorKind.NonFastForward
                 or GitRemoteOperationErrorKind.AtomicNotSupported })
         {

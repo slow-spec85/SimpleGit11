@@ -469,6 +469,9 @@
                                                             x:Uid="EditRemoteUrlAppBarButton"
                                                             Command="{x:Bind EditCommand, Mode=OneWay}" />
                                                         <AppBarButton
+                                                            x:Uid="CheckRemoteAccessAppBarButton"
+                                                            Command="{x:Bind CheckAccessCommand, Mode=OneWay}" />
+                                                        <AppBarButton
                                                             x:Uid="RemoveRemoteAppBarButton"
                                                             Command="{x:Bind RemoveCommand, Mode=OneWay}" />
                                                     </CommandBar.SecondaryCommands>

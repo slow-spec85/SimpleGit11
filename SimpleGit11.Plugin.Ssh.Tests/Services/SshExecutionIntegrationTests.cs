@@ -57,7 +57,8 @@ public sealed class SshExecutionIntegrationTests
             SshConnectionRequestKeys.PrivateKeyPassphrase,
             "SIMPLEGIT11_SSH_TEST_PRIVATE_KEY_PASSPHRASE");
 
-        SshExecutionProvider provider = new();
+        SshPrivateKeyService privateKeyService = new();
+        SshExecutionProvider provider = new(new SshPublicKeyInstaller(privateKeyService));
         await using IExecutionRuntime runtime = await provider.ConnectAsync(
             new ExecutionConnectionRequest("integration-test", settings, secrets));
         GitCommandResult gitVersion = await runtime.Git.RunAsync(

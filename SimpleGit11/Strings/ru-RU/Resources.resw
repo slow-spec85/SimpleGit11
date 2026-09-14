@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1150,6 +1150,9 @@
   <data name="RemoteAuthenticationFailed" xml:space="preserve">
     <value>Ошибка авторизации. Проверьте учетные данные или Git Credential Manager.</value>
   </data>
+  <data name="CredentialManagerFailed" xml:space="preserve">
+    <value>Git Credential Manager не предоставил учётные данные. Проверьте подробности ошибки и его настройки.</value>
+  </data>
   <data name="RemoteOperationConflicts" xml:space="preserve">
     <value>Git сообщил о конфликтах. Разрешите конфликты перед продолжением.</value>
   </data>
@@ -1199,7 +1202,7 @@
     <value>Требуется Git Credential Manager</value>
   </data>
   <data name="CredentialHelperSetupDialogMessage" xml:space="preserve">
-    <value>Удаленные функции SimpleGit11 работают только когда Git credential.helper настроен как manager. Применить эту глобальную настройку Git для clone, fetch, pull и push?</value>
+    <value>Для работы с приватными удаленными репозиториями по HTTPS требуется Git Credential Manager. Применить глобальную настройку Git credential.helper=manager для клонирования, получения и отправки изменений?</value>
   </data>
   <data name="CredentialHelperSetupDialogPrimaryButton" xml:space="preserve">
     <value>Применить</value>
@@ -1772,13 +1775,10 @@
     <value>Открыть в новом окне</value>
   </data>
   <data name="CredentialHelperSettingsCardHeaderTextBlock.Text" xml:space="preserve">
-    <value>Учетные данные удаленных операций</value>
+    <value>Git Credential Manager</value>
   </data>
-  <data name="CredentialHelperStatusEnabled" xml:space="preserve">
-    <value>Удаленные операции будут использовать Git Credential Manager</value>
-  </data>
-  <data name="CredentialHelperStatusDisabled" xml:space="preserve">
-    <value>Удаленные операции могут перестать работать, потому что credential.helper не будет manager</value>
+  <data name="CredentialHelperSettingsCardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Требуется для авторизации на удаленных приватных репозиториях по протоколу HTTPS</value>
   </data>
   <data name="CredentialHelperToggleSwitch.OnContent" xml:space="preserve">
     <value>Вкл.</value>
@@ -4236,8 +4236,8 @@ only — только fast-forward; «Не задано» — наследова
   <data name="FetchOnRepositoryOpenToggleSwitch.OnContent" xml:space="preserve">
     <value>Включено</value>
   </data>
-  <data name="RepositoryOpeningTitleTextBlock.Text" xml:space="preserve">
-    <value>Открытие репозитория</value>
+  <data name="ApplicationSettingsTitleTextBlock.Text" xml:space="preserve">
+    <value>Параметры приложения</value>
   </data>
   <data name="CommitGraphMergeDescription" xml:space="preserve">
     <value>Коммит слияния, родителей: {0}.</value>
@@ -4247,5 +4247,164 @@ only — только fast-forward; «Не задано» — наследова
   </data>
   <data name="CommitGraphMergeFilteredDescription" xml:space="preserve">
     <value>Коммит слияния, родителей: {0}. Связь проходит через коммиты, скрытые фильтрами.</value>
+  </data>
+  <data name="SshHostKeyDialogTitle" xml:space="preserve">
+    <value>Доверять SSH-серверу?</value>
+  </data>
+  <data name="SshHostKeyDialogMessage" xml:space="preserve">
+    <value>SSH-сервер {0} отсутствует в known_hosts. Перед продолжением сверьте отпечатки с администратором сервера:
+
+{1}
+
+Если вы доверяете серверу, его открытые ключи будут добавлены в known_hosts. Существующие ключи никогда не заменяются автоматически.</value>
+  </data>
+  <data name="SshHostKeyDialogPrimaryButton" xml:space="preserve">
+    <value>Доверять и добавить</value>
+  </data>
+  <data name="RemoteHostKeyVerificationFailed" xml:space="preserve">
+    <value>Не удалось проверить ключ SSH-сервера. Если сохранённый ключ изменился, проверьте подлинность сервера и обновите known_hosts вручную.</value>
+  </data>
+  <data name="RemoteExecutionSshHostKeyDialogMessage" xml:space="preserve">
+    <value>Git-сервер {0} не является доверенным на удалённом компьютере {1}. Перед продолжением сверьте отпечатки с администратором Git-сервера:
+
+{2}
+
+Если вы доверяете серверу, его открытые ключи будут добавлены в known_hosts на компьютере {1}. Существующие ключи никогда не заменяются автоматически.</value>
+  </data>
+  <data name="RemoteExecutionHostKeyVerificationFailed" xml:space="preserve">
+    <value>Не удалось проверить ключ Git-сервера на удалённом компьютере {0}. Проверьте подлинность Git-сервера и обновите known_hosts на этом компьютере.</value>
+  </data>
+  <data name="SshIdentityCreateButton" xml:space="preserve">
+    <value>Создать ключ</value>
+  </data>
+  <data name="RepositorySshKeySettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>SSH-ключ для этого репозитория</value>
+  </data>
+  <data name="RepositorySshKeySettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>При необходимости выберите приватный ключ, который будет использоваться только для этого репозитория.</value>
+  </data>
+  <data name="SshSettingsTitleFormat" xml:space="preserve">
+    <value>Параметры SSH на {0}</value>
+  </data>
+  <data name="SshIdentitiesSettingsTitleTextBlock.Text" xml:space="preserve">
+    <value>Ключи для Git-серверов</value>
+  </data>
+  <data name="SshIdentitiesSettingsDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Ключи, которыми этот компьютер подтверждает доступ к Git-серверам.</value>
+  </data>
+  <data name="AddSshIdentityButton.Content" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="SshIdentityActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Действия с SSH-ключом</value>
+  </data>
+  <data name="CopySshPublicKeyMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать публичный ключ</value>
+  </data>
+  <data name="CopySshPublicKeyMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Копируется только публичный ключ</value>
+  </data>
+  <data name="CopySshPrivateKeyPathMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать путь к ключу</value>
+  </data>
+  <data name="DeleteSshIdentityMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="SshIdentityCreateDialogTitle" xml:space="preserve">
+    <value>Добавление SSH-ключа</value>
+  </data>
+  <data name="SshIdentityCreateDialogDescription" xml:space="preserve">
+    <value>На компьютере {0} будет создан и настроен ED25519-ключ. Если указать парольную фразу, ключ будет зашифрован и загружен в ssh-agent.</value>
+  </data>
+  <data name="SshIdentityHostLabel" xml:space="preserve">
+    <value>Git-сервер</value>
+  </data>
+  <data name="SshIdentityHostPlaceholder" xml:space="preserve">
+    <value>gitlab.com</value>
+  </data>
+  <data name="SshIdentityPassphraseLabel" xml:space="preserve">
+    <value>Парольная фраза ключа (необязательно)</value>
+  </data>
+  <data name="SshIdentityPassphraseConfirmationLabel" xml:space="preserve">
+    <value>Подтверждение парольной фразы (необязательно)</value>
+  </data>
+  <data name="SshIdentityHostRequired" xml:space="preserve">
+    <value>Введите имя Git-сервера.</value>
+  </data>
+  <data name="SshIdentityHostInvalid" xml:space="preserve">
+    <value>Укажите только корректное имя сервера или IP-адрес, без URL и пути к репозиторию.</value>
+  </data>
+  <data name="SshIdentityPassphraseMismatch" xml:space="preserve">
+    <value>Парольные фразы не совпадают.</value>
+  </data>
+  <data name="SshIdentityCreatedAndCopied" xml:space="preserve">
+    <value>SSH-ключ создан, настроен, загружен в ssh-agent, а его публичная часть скопирована.</value>
+  </data>
+  <data name="SshIdentityCreatedAndCopiedWithoutAgent" xml:space="preserve">
+    <value>Незашифрованный SSH-ключ создан и настроен, а его публичная часть скопирована. Ключ не загружался в ssh-agent.</value>
+  </data>
+  <data name="SshIdentityCreateFailed" xml:space="preserve">
+    <value>Не удалось полностью настроить SSH-ключ.</value>
+  </data>
+  <data name="SshIdentityDeleteDialogTitle" xml:space="preserve">
+    <value>Удалить SSH-ключ?</value>
+  </data>
+  <data name="SshIdentityDeleteDialogMessage" xml:space="preserve">
+    <value>Файлы приватного и публичного ключей будут удалены без возможности восстановления.
+
+Путь: {0}
+Отпечаток: {1}</value>
+  </data>
+  <data name="SshIdentityDeleteButton" xml:space="preserve">
+    <value>Удалить ключ</value>
+  </data>
+  <data name="SshIdentityExternalReferencesTitle" xml:space="preserve">
+    <value>Удалить внешние ссылки из конфигурации?</value>
+  </data>
+  <data name="SshIdentityExternalReferencesMessage" xml:space="preserve">
+    <value>Ключ также указан в конфигурационных файлах, которыми SimpleGit11 не управляет:
+
+{0}
+
+Продолжайте, только если из них можно удалить соответствующие строки IdentityFile.</value>
+  </data>
+  <data name="SshIdentityRemoveReferencesButton" xml:space="preserve">
+    <value>Удалить ссылки</value>
+  </data>
+  <data name="SshIdentityDeleted" xml:space="preserve">
+    <value>SSH-ключ удалён.</value>
+  </data>
+  <data name="SshIdentityDeleteFailed" xml:space="preserve">
+    <value>Не удалось удалить SSH-ключ.</value>
+  </data>
+  <data name="RepositorySshKeyPathTextBox.PlaceholderText" xml:space="preserve">
+    <value>Путь к приватному ключу</value>
+  </data>
+  <data name="RepositorySshKeyPathTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Путь к SSH-ключу для этого репозитория</value>
+  </data>
+  <data name="RepositorySshKeyPathMustBeAbsolute" xml:space="preserve">
+    <value>Укажите полный путь к приватному SSH-ключу.</value>
+  </data>
+  <data name="RepositorySshKeyFileNotFound" xml:space="preserve">
+    <value>Файл приватного SSH-ключа не найден: {0}</value>
+  </data>
+  <data name="RemoteAccessCheckProgress" xml:space="preserve">
+    <value>Проверяется доступ к удалённому репозиторию...</value>
+  </data>
+  <data name="RemoteAccessCheckSucceeded" xml:space="preserve">
+    <value>Доступ к удалённому репозиторию подтверждён.</value>
+  </data>
+  <data name="RemoteAccessCheckFailed" xml:space="preserve">
+    <value>Не удалось получить доступ к удалённому репозиторию.</value>
+  </data>
+  <data name="RemoteSshAccessAuthenticationFailed" xml:space="preserve">
+    <value>Не найден SSH-ключ, принятый Git-сервером. Настройте ключ в параметрах SSH и добавьте его публичную часть в свою учётную запись на Git-сервере.</value>
+  </data>
+  <data name="OpenSshSettingsButton" xml:space="preserve">
+    <value>Открыть параметры SSH</value>
+  </data>
+  <data name="CheckRemoteAccessAppBarButton.Label" xml:space="preserve">
+    <value>Проверить доступ</value>
   </data>
 </root>

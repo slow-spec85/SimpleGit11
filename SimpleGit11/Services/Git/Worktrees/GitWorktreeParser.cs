@@ -21,8 +21,10 @@ internal static class GitWorktreeParser
         List<GitWorktree> worktrees = [];
         WorktreeBuilder? current = null;
 
-        foreach (string field in output.Split('\0', StringSplitOptions.RemoveEmptyEntries))
+        char fieldSeparator = output.Contains('\0', StringComparison.Ordinal) ? '\0' : '\n';
+        foreach (string rawField in output.Split(fieldSeparator, StringSplitOptions.RemoveEmptyEntries))
         {
+            string field = fieldSeparator == '\0' ? rawField : rawField.TrimEnd('\r');
             if (field.StartsWith("worktree ", StringComparison.Ordinal))
             {
                 if (current is not null)

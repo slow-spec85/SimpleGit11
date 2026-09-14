@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SimpleGit11.Services.Execution;
+using SimpleGit11.Services.Git.Execution;
 
 namespace SimpleGit11.Plugin.Ssh.Services;
 
@@ -13,20 +14,27 @@ public static class RemoteCommandComposer
         string workingDirectory,
         IReadOnlyList<string> arguments,
         IReadOnlyDictionary<string, string>? environmentVariables,
-        bool useDefaultWorkingDirectory = false)
+        bool useDefaultWorkingDirectory = false,
+        GitHttpAuthentication? httpAuthentication = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
         ArgumentNullException.ThrowIfNull(arguments);
         return style == RepositoryPathStyle.Windows
             ? ComposeWindowsGit(workingDirectory, arguments, environmentVariables, useDefaultWorkingDirectory)
-            : ComposePosixGit(workingDirectory, arguments, environmentVariables, useDefaultWorkingDirectory);
+            : ComposePosixGit(
+                workingDirectory,
+                arguments,
+                environmentVariables,
+                useDefaultWorkingDirectory,
+                httpAuthentication);
     }
 
     private static string ComposePosixGit(
         string workingDirectory,
         IReadOnlyList<string> arguments,
         IReadOnlyDictionary<string, string>? environmentVariables,
-        bool useDefaultWorkingDirectory)
+        bool useDefaultWorkingDirectory,
+        GitHttpAuthentication? httpAuthentication)
     {
         StringBuilder command = new();
         if (!useDefaultWorkingDirectory)
@@ -42,13 +50,59 @@ public static class RemoteCommandComposer
             }
         }
 
+        bool hasCredential = httpAuthentication is
+        {
+            Username: not null,
+            Password: not null
+        };
+        if (httpAuthentication is not null)
+        {
+            command.Append("GIT_TERMINAL_PROMPT='0' ");
+        }
+
+        if (hasCredential)
+        {
+            command.Append("sh -c ")
+                .Append(QuotePosix("exec 3<&0; exec \"$@\""))
+                .Append(" sh ");
+        }
+
         command.Append("git");
+        if (httpAuthentication is not null)
+        {
+            command.Append(" -c ").Append(QuotePosix("credential.helper="));
+            if (hasCredential)
+            {
+                command.Append(" -c ")
+                    .Append(QuotePosix($"credential.helper={CreateCredentialHelper(httpAuthentication.Url)}"));
+            }
+        }
+
         foreach (string argument in arguments)
         {
             command.Append(' ').Append(QuotePosix(argument));
         }
 
         return command.ToString();
+    }
+
+    private static string CreateCredentialHelper(string remoteUrl)
+    {
+        Uri uri = new(remoteUrl, UriKind.Absolute);
+        string host = uri.IsDefaultPort ? uri.IdnHost : uri.Authority;
+        string helper = "!f() { "
+            + "[ \"$1\" = get ] || exit 0; "
+            + "protocol=; host=; "
+            + "while IFS= read -r line; do "
+            + "[ -z \"$line\" ] && break; "
+            + "case \"$line\" in "
+            + "protocol=*) protocol=${line#protocol=} ;; "
+            + "host=*) host=${line#host=} ;; "
+            + "esac; done; "
+            + $"[ \"$protocol\" = {QuotePosix(uri.Scheme)} ] "
+            + $"&& [ \"$host\" = {QuotePosix(host)} ] "
+            + "&& cat <&3; }; f";
+        return helper;
     }
 
     private static string ComposeWindowsGit(

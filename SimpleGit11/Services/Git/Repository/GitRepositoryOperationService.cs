@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
 using SimpleGit11.Services.Git.Execution;
@@ -44,9 +45,10 @@ public sealed class GitRepositoryOperationService : IGitRepositoryOperationServi
     public async Task<RepositoryInfo> CloneAsync(
         string parentPath,
         string remoteUrl,
-        bool initializeSubmodulesRecursively = false)
+        bool initializeSubmodulesRecursively = false,
+        CancellationToken cancellationToken = default)
     {
-        if (!await DirectoryExistsAsync(parentPath))
+        if (!await DirectoryExistsAsync(parentPath, cancellationToken))
         {
             throw new DirectoryNotFoundException(parentPath);
         }
@@ -57,34 +59,63 @@ public sealed class GitRepositoryOperationService : IGitRepositoryOperationServi
             repositoryName) ?? Path.Combine(parentPath, repositoryName);
         if (initializeSubmodulesRecursively)
         {
-            await RunGitAsync(parentPath, "clone", "--progress", "--recurse-submodules", remoteUrl);
+            await RunGitAsync(
+                parentPath,
+                cancellationToken,
+                "clone",
+                "--progress",
+                "--recurse-submodules",
+                remoteUrl);
         }
         else
         {
-            await RunGitAsync(parentPath, "clone", "--progress", remoteUrl);
+            await RunGitAsync(parentPath, cancellationToken, "clone", "--progress", remoteUrl);
         }
 
-        return await TryOpenRepositoryAsync(repositoryPath)
+        return await TryOpenRepositoryAsync(repositoryPath, cancellationToken)
             ?? throw new GitCommandException("Git repository was cloned, but could not be opened.", -1);
     }
 
-    private async Task RunGitAsync(string workingDirectory, params string[] arguments)
+    private Task RunGitAsync(string workingDirectory, params string[] arguments)
     {
-        _ = await _commandRunner.RunAsync(workingDirectory, arguments);
+        return RunGitAsync(workingDirectory, CancellationToken.None, arguments);
     }
 
-    private Task<bool> DirectoryExistsAsync(string path)
+    private async Task RunGitAsync(
+        string workingDirectory,
+        CancellationToken cancellationToken,
+        params string[] arguments)
+    {
+        string? remoteUrl = arguments.Length > 1
+            && string.Equals(arguments[0], "clone", StringComparison.Ordinal)
+            ? arguments[^1]
+            : null;
+        _ = await _commandRunner.RunAsync(
+            workingDirectory,
+            arguments,
+            remoteUrl is null
+                ? null
+                : new GitCommandOptions(
+                    HttpAuthentication: new GitHttpAuthentication(remoteUrl)),
+            cancellationToken: cancellationToken);
+    }
+
+    private Task<bool> DirectoryExistsAsync(
+        string path,
+        CancellationToken cancellationToken = default)
     {
         return _executionContextService is null
             ? Task.FromResult(Directory.Exists(path))
-            : _executionContextService.Current.Runtime.Files.DirectoryExistsAsync(path);
+            : _executionContextService.Current.Runtime.Files.DirectoryExistsAsync(path, cancellationToken);
     }
 
-    private Task<RepositoryInfo?> TryOpenRepositoryAsync(string path)
+    private Task<RepositoryInfo?> TryOpenRepositoryAsync(
+        string path,
+        CancellationToken cancellationToken = default)
     {
         return _executionRepositoryDiscoveryService is null
             ? Task.FromResult(_repositoryDiscoveryService.TryOpenRepository(path))
-            : _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(path);
+            : _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(path, cancellationToken);
     }
 
     private static string GetRepositoryName(string remoteUrl)

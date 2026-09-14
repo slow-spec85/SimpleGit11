@@ -25,16 +25,22 @@ public sealed class GitRepositoryOperationServiceTests
         GitRepositoryOperationService service = new(
             new StubRepositoryDiscoveryService(clonedRepository),
             runner);
+        using CancellationTokenSource cancellationTokenSource = new();
 
         RepositoryInfo result = await service.CloneAsync(
             temporaryDirectory.Path,
             "https://example.test/project.git",
-            initializeSubmodulesRecursively: true);
+            initializeSubmodulesRecursively: true,
+            cancellationToken: cancellationTokenSource.Token);
 
         Assert.AreSame(clonedRepository, result);
         CollectionAssert.AreEqual(
             new[] { "clone", "--progress", "--recurse-submodules", "https://example.test/project.git" },
             new List<string>(runner.Arguments));
+        Assert.AreEqual(cancellationTokenSource.Token, runner.CancellationToken);
+        Assert.AreEqual(
+            "https://example.test/project.git",
+            runner.Options?.HttpAuthentication?.Url);
     }
 
     [TestMethod]
@@ -70,6 +76,8 @@ public sealed class GitRepositoryOperationServiceTests
     {
         public string WorkingDirectory { get; private set; } = "";
         public IReadOnlyList<string> Arguments { get; private set; } = [];
+        public CancellationToken CancellationToken { get; private set; }
+        public GitCommandOptions? Options { get; private set; }
 
         public Task<GitCommandResult> RunAsync(
             string workingDirectory,
@@ -79,6 +87,8 @@ public sealed class GitRepositoryOperationServiceTests
         {
             WorkingDirectory = workingDirectory;
             Arguments = arguments;
+            CancellationToken = cancellationToken;
+            Options = options;
             return Task.FromResult(new GitCommandResult(0, "", ""));
         }
     }

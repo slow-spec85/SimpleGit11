@@ -7,5 +7,6 @@ public enum AppNavigationTarget
     History,
     Branches,
     Synchronization,
-    CommitRange
+    CommitRange,
+    Settings
 }

@@ -10,6 +10,29 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitWorktreeServiceTests
 {
     [TestMethod]
+    public async Task GetWorktreesAsync_OldGitWithoutNullFormat_FallsBackToLineFormat()
+    {
+        OldGitCommandRunner runner = new();
+        GitWorktreeService service = new(runner);
+        RepositoryInfo repository = new(
+            Environment.CurrentDirectory,
+            "repository",
+            "main",
+            mainWorktreePath: Environment.CurrentDirectory);
+
+        GitWorktree worktree = (await service.GetWorktreesAsync(repository)).Single();
+
+        Assert.AreEqual("main", worktree.BranchName);
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "worktree list --porcelain -z",
+                "worktree list --porcelain"
+            },
+            runner.Commands);
+    }
+
+    [TestMethod]
     public async Task CleanWorktree_RemovesNormallyAndKeepsBranch()
     {
         await using TemporaryGitRepository repository = await CreateRepositoryAsync();
@@ -190,5 +213,29 @@ public sealed class GitWorktreeServiceTests
         string path = directory.GetPath("linked worktree");
         await repository.RunGitAsync("worktree", "add", "-b", "topic", path);
         return (await service.GetWorktreesAsync(repository.Repository)).Single(worktree => !worktree.IsMain);
+    }
+
+    private sealed class OldGitCommandRunner : IGitCommandRunner
+    {
+        public List<string> Commands { get; } = [];
+
+        public Task<GitCommandResult> RunAsync(
+            string workingDirectory,
+            IReadOnlyList<string> arguments,
+            GitCommandOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
+            string command = string.Join(' ', arguments);
+            Commands.Add(command);
+            if (arguments.Contains("-z"))
+            {
+                throw new GitCommandException("error: unknown switch `z'", 129);
+            }
+
+            string output = $"worktree {workingDirectory}\n"
+                + "HEAD 1111111111111111111111111111111111111111\n"
+                + "branch refs/heads/main\n\n";
+            return Task.FromResult(new GitCommandResult(0, output, ""));
+        }
     }
 }

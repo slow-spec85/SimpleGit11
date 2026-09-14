@@ -50,6 +50,44 @@ public sealed class SshLocalizationServiceTests
     }
 
     [TestMethod]
+    [DataRow(AppLanguage.English, "SSH server key changed", "Replace key and connect")]
+    [DataRow(AppLanguage.Russian, "Ключ SSH-сервера изменился", "Заменить ключ и подключиться")]
+    public void GetString_ChangedHostKeyConfirmation_IsLocalized(
+        AppLanguage language,
+        string title,
+        string button)
+    {
+        SshLocalizationService localization = new(new HostLocalization(language));
+        string message = string.Format(
+            localization.GetString("SshHostKeyChangedDialogMessage"),
+            "server",
+            "SHA256:old",
+            "SHA256:new");
+
+        Assert.AreEqual(title, localization.GetString("SshHostKeyChangedDialogTitle"));
+        Assert.AreEqual(button, localization.GetString("SshReplaceHostKeyButton"));
+        StringAssert.Contains(message, "SHA256:old");
+        StringAssert.Contains(message, "SHA256:new");
+        Assert.IsFalse(message.Contains("\\n", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    [DataRow(AppLanguage.English, "Connect using a private key", "~/.ssh/authorized_keys")]
+    [DataRow(AppLanguage.Russian, "Подключение по приватному ключу", "~/.ssh/authorized_keys")]
+    public void GetString_PrivateKeySetup_IsLocalized(
+        AppLanguage language,
+        string toggleHeader,
+        string expectedNoticePart)
+    {
+        SshLocalizationService localization = new(new HostLocalization(language));
+
+        Assert.AreEqual(toggleHeader, localization.GetString("SshPrivateKeyModeHeader"));
+        StringAssert.Contains(
+            localization.GetString("SshPrivateKeyPasswordNotice"),
+            expectedNoticePart);
+    }
+
+    [TestMethod]
     public void Resources_BothLanguagesHaveTheSameNonEmptyKeys()
     {
         string[]? englishKeys = null;

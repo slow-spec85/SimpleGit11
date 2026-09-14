@@ -75,9 +75,54 @@ public sealed class SshConnectionControllerTests
     }
 
     [TestMethod]
+    public async Task ToggleAsync_ExistingProfileChanges_AreSavedAfterSuccessfulConnection()
+    {
+        _profiles.Profiles.Add(new(
+            "profile",
+            "server",
+            2222,
+            "user",
+            null,
+            "trusted-key",
+            DateTimeOffset.UtcNow));
+        _dialogs.Results.Enqueue(Connection(false) with
+        {
+            PrivateKeyPath = "replacement-key"
+        });
+
+        await CreateController().ToggleAsync();
+
+        ExecutionConnectionRequest request = _contexts.Requests.Single();
+        Assert.AreEqual("profile", request.ProfileId);
+        Assert.AreEqual("replacement-key", _profiles.Profiles.Single().PrivateKeyPath);
+    }
+
+    [TestMethod]
+    public async Task ToggleAsync_ExistingProfileConnectionFails_DoesNotSaveChanges()
+    {
+        _profiles.Profiles.Add(new(
+            "profile",
+            "server",
+            2222,
+            "user",
+            "original-key",
+            "trusted-key",
+            DateTimeOffset.UtcNow));
+        _dialogs.Results.Enqueue(Connection(false) with
+        {
+            PrivateKeyPath = "replacement-key"
+        });
+        _contexts.Connect = _ => Task.FromException(new IOException("Connection failed"));
+
+        await Assert.ThrowsExactlyAsync<IOException>(CreateController().ToggleAsync);
+
+        Assert.AreEqual("original-key", _profiles.Profiles.Single().PrivateKeyPath);
+    }
+
+    [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public async Task ToggleAsync_HostKeyChallenge_RetriesOnlyAfterConfirmation(bool trust)
+    public async Task ToggleAsync_ChangedHostKey_RetriesOnlyAfterExplicitReplacement(bool trust)
     {
         _dialogs.Results.Enqueue(Connection());
         _dialogs.Confirmations.Enqueue(trust);
@@ -90,6 +135,50 @@ public sealed class SshConnectionControllerTests
         Assert.AreEqual(trust ? 2 : 1, _contexts.Requests.Count);
         Assert.AreEqual(!trust, _contexts.Current.IsLocal);
         Assert.HasCount(1, _dialogs.Prompts);
+        Assert.AreEqual(
+            _localization.GetString("SshHostKeyChangedDialogTitle"),
+            _dialogs.Prompts[0].Title);
+        StringAssert.Contains(_dialogs.Prompts[0].Message, "trusted-key");
+        StringAssert.Contains(_dialogs.Prompts[0].Message, "new-key");
+        Assert.AreEqual(
+            _localization.GetString("SshReplaceHostKeyButton"),
+            _dialogs.Prompts[0].PrimaryButtonText);
+        if (trust)
+        {
+            Assert.AreEqual("new-key", _profiles.Profiles.Single().ExpectedHostKey);
+        }
+        else
+        {
+            Assert.IsEmpty(_profiles.Profiles);
+        }
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task ToggleAsync_UnknownHostKey_UsesInitialTrustConfirmation(bool trust)
+    {
+        _dialogs.Results.Enqueue(Connection() with { ExpectedHostKey = null });
+        _dialogs.Confirmations.Enqueue(trust);
+        _contexts.Connect = request => request.Settings.TryGetValue(
+                SshConnectionRequestKeys.ExpectedHostKey,
+                out string? expectedHostKey)
+                && expectedHostKey == "new-key"
+            ? Task.CompletedTask
+            : Task.FromException(new SshHostKeyVerificationException("server", "new-key", null));
+
+        await CreateController().ToggleAsync();
+
+        Assert.AreEqual(trust ? 2 : 1, _contexts.Requests.Count);
+        Assert.AreEqual(!trust, _contexts.Current.IsLocal);
+        Assert.HasCount(1, _dialogs.Prompts);
+        Assert.AreEqual(
+            _localization.GetString("SshHostKeyDialogTitle"),
+            _dialogs.Prompts[0].Title);
+        StringAssert.Contains(_dialogs.Prompts[0].Message, "new-key");
+        Assert.AreEqual(
+            _localization.GetString("SshTrustHostKeyButton"),
+            _dialogs.Prompts[0].PrimaryButtonText);
         if (trust)
         {
             Assert.AreEqual("new-key", _profiles.Profiles.Single().ExpectedHostKey);

@@ -15,6 +15,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleGit11.ViewModels;
@@ -35,6 +36,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     private readonly IExecutionRepositoryDiscoveryService _executionRepositoryDiscoveryService;
     private readonly List<FoundRepositoryViewItem> _foundRepositoryItems = [];
     private IReadOnlyList<GitRemote> _remotes = [];
+    private CancellationTokenSource? _remoteOperationCancellationTokenSource;
 
     public RepositoryViewModel(
         IStoragePickerService storagePickerService,
@@ -113,6 +115,9 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     [RelayCommand(CanExecute = nameof(CanCloneRepository), FlowExceptionsToTaskScheduler = true)]
     private Task OnCloneRepositoryAsync() => _asyncCommandExecutor.ExecuteAsync(CloneRepositoryAsync);
 
+    [RelayCommand(CanExecute = nameof(CanCancelRemoteOperation))]
+    private void OnCancelRemoteOperation() => CancelRemoteOperation();
+
     [RelayCommand(CanExecute = nameof(CanRunGitOperation), FlowExceptionsToTaskScheduler = true)]
     private Task OnAddRemoteAsync() => _asyncCommandExecutor.ExecuteAsync(AddRemoteAsync);
 
@@ -123,6 +128,10 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     [RelayCommand(CanExecute = nameof(CanRunGitOperation), FlowExceptionsToTaskScheduler = true)]
     private Task OnEditRemoteUrlAsync(RemoteViewItem? item) => 
         _asyncCommandExecutor.ExecuteAsync(() => EditRemoteUrlAsync(item));
+
+    [RelayCommand(CanExecute = nameof(CanRunGitOperation), FlowExceptionsToTaskScheduler = true)]
+    private Task OnCheckRemoteAccessAsync(RemoteViewItem? item) =>
+        _asyncCommandExecutor.ExecuteAsync(() => CheckRemoteAccessAsync(item));
 
     [RelayCommand(CanExecute = nameof(CanRemoveTrackingRemote), FlowExceptionsToTaskScheduler = true)]
     private Task OnRemoveRemoteAsync(RemoteViewItem? item) => 
@@ -367,6 +376,11 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
 
     public bool CanCloneRepository => !IsGitOperationRunning && !string.IsNullOrWhiteSpace(CloneRepositoryUrl);
 
+    public bool CanCancelRemoteOperation => _remoteOperationCancellationTokenSource is
+    {
+        IsCancellationRequested: false
+    };
+
     public bool CanSearchRepositories => !IsGitOperationRunning && !string.IsNullOrWhiteSpace(RepositorySearchStartPath);
 
     public bool HasNoFoundRepositories => !IsGitOperationRunning && FoundRepositories.Count == 0;
@@ -383,7 +397,10 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
 
     private void PublishRepositoryOperationState()
     {
-        PublishOperationState(IsGitOperationRunning, ProgressMessage);
+        PublishOperationState(
+            IsGitOperationRunning,
+            ProgressMessage,
+            CanCancelRemoteOperation ? CancelRemoteOperationCommand : null);
     }
 
     private async Task OpenRepositoryAsync()
@@ -406,10 +423,9 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             return;
         }
 
-        RepositoryInfo? repository = await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(selectedPath);
+        RepositoryInfo? repository = await DiscoverSelectedRepositoryAsync(selectedPath);
         if (repository is null)
         {
-            ShowError(_localizationService.GetString("SelectedFolderNotGitRepository"));
             return;
         }
 
@@ -426,14 +442,33 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             return;
         }
 
-        RepositoryInfo? repository = await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(selectedPath);
+        RepositoryInfo? repository = await DiscoverSelectedRepositoryAsync(selectedPath);
         if (repository is null)
         {
-            ShowError(_localizationService.GetString("SelectedFolderNotGitRepository"));
             return;
         }
 
         _applicationInstanceLauncher.OpenRepository(repository.Path);
+    }
+
+    private async Task<RepositoryInfo?> DiscoverSelectedRepositoryAsync(string selectedPath)
+    {
+        try
+        {
+            RepositoryInfo? repository =
+                await _executionRepositoryDiscoveryService.TryOpenRepositoryAsync(selectedPath);
+            if (repository is null)
+            {
+                ShowError(_localizationService.GetString("SelectedFolderNotGitRepository"));
+            }
+
+            return repository;
+        }
+        catch (FileNotFoundException)
+        {
+            ShowError(_localizationService.GetString("GitExecutableNotFound"));
+            return null;
+        }
     }
 
     private async Task CreateRepositoryAsync()
@@ -569,31 +604,43 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             return;
         }
 
-        await RunGitOperationAsync(_localizationService.GetString("CloningRepositoryProgress"), async () =>
-        {
-            try
+        await RunGitOperationAsync(
+            _localizationService.GetString("CloningRepositoryProgress"),
+            async cancellationToken =>
             {
-                RepositoryInfo repository = await _gitService.RepositoryOperations.CloneAsync(
-                    selectedPath,
-                    remoteUrl,
-                    CloneSubmodulesRecursively);
-                await OpenRepositoryAsync(repository);
-                CloneRepositoryUrl = "";
-                ShowSuccess(string.Format(_localizationService.GetString("RepositoryCloned"), repository.Name));
-            }
-            catch (FileNotFoundException)
-            {
-                ShowError(_localizationService.GetString("GitExecutableNotFound"));
-            }
-            catch (DirectoryNotFoundException)
-            {
-                ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
-            }
-            catch (GitCommandException exception)
-            {
-                ShowError(_localizationService.GetString("GitCloneCommandFailed"), exception.Message);
-            }
-        });
+                try
+                {
+                    RepositoryInfo repository = await _gitService.RepositoryOperations.CloneAsync(
+                        selectedPath,
+                        remoteUrl,
+                        CloneSubmodulesRecursively,
+                        cancellationToken);
+                    await OpenRepositoryAsync(repository);
+                    CloneRepositoryUrl = "";
+                    ShowSuccess(string.Format(_localizationService.GetString("RepositoryCloned"), repository.Name));
+                }
+                catch (FileNotFoundException)
+                {
+                    ShowError(_localizationService.GetString("GitExecutableNotFound"));
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
+                }
+                catch (GitCommandException exception)
+                {
+                    ShowRemoteOperationError(
+                        [remoteUrl],
+                        GitRemoteOperationErrorClassifier.Classify(exception.Message),
+                        _localizationService.GetString("GitCloneCommandFailed"),
+                        exception.Message,
+                        _localizationService.GetString("CredentialManagerFailed"),
+                        _localizationService.GetString("RemoteSshAccessAuthenticationFailed"),
+                        _localizationService.GetString("OpenSshSettingsButton"),
+                        () => _mainWindowViewModel.RequestNavigation(AppNavigationTarget.Settings));
+                }
+            },
+            canCancel: true);
     }
 
     private async Task AddRemoteAsync()
@@ -625,28 +672,34 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             return;
         }
 
-        await RunGitOperationAsync(string.Format(_localizationService.GetString("AddRemoteProgress"), remoteName), async () =>
-        {
-            try
+        await RunGitOperationAsync(
+            string.Format(_localizationService.GetString("AddRemoteProgress"), remoteName),
+            async cancellationToken =>
             {
-                GitRemoteOperationResult result = await _gitService.Remotes.AddRemoteAsync(repository, remoteName, remoteUrl);
-                await LoadRemoteDetailsAsync(repository);
-                string successMessage = string.Format(_localizationService.GetString("RemoteAdded"), remoteName);
-                ShowSuccess(successMessage, result.Output);
-            }
-            catch (FileNotFoundException)
-            {
-                ShowError(_localizationService.GetString("GitExecutableNotFound"));
-            }
-            catch (DirectoryNotFoundException)
-            {
-                ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
-            }
-            catch (GitCommandException exception)
-            {
-                ShowError(_localizationService.GetString("GitRemoteCommandFailed"), exception.Message);
-            }
-        });
+                try
+                {
+                    await _gitService.Remotes.AddRemoteAsync(
+                        repository,
+                        remoteName,
+                        remoteUrl,
+                        cancellationToken);
+                    await LoadRemoteDetailsAsync(repository);
+                    await CheckRemoteAccessCoreAsync(repository, remoteUrl, cancellationToken);
+                }
+                catch (FileNotFoundException)
+                {
+                    ShowError(_localizationService.GetString("GitExecutableNotFound"));
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
+                }
+                catch (GitCommandException exception)
+                {
+                    ShowError(_localizationService.GetString("GitRemoteCommandFailed"), exception.Message);
+                }
+            },
+            canCancel: true);
     }
 
     private void SelectRemote(object? parameter)
@@ -744,28 +797,34 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             return;
         }
 
-        await RunGitOperationAsync(string.Format(_localizationService.GetString("EditRemoteUrlProgress"), remote.Name), async () =>
-        {
-            try
+        await RunGitOperationAsync(
+            string.Format(_localizationService.GetString("EditRemoteUrlProgress"), remote.Name),
+            async cancellationToken =>
             {
-                GitRemoteOperationResult result = await _gitService.Remotes.SetRemoteUrlAsync(repository, remote, newUrl);
-                await LoadRemoteDetailsAsync(repository);
-                string successMessage = string.Format(_localizationService.GetString("RemoteUrlUpdated"), remote.Name);
-                ShowSuccess(successMessage, result.Output);
-            }
-            catch (FileNotFoundException)
-            {
-                ShowError(_localizationService.GetString("GitExecutableNotFound"));
-            }
-            catch (DirectoryNotFoundException)
-            {
-                ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
-            }
-            catch (GitCommandException exception)
-            {
-                ShowError(_localizationService.GetString("GitRemoteCommandFailed"), exception.Message);
-            }
-        });
+                try
+                {
+                    await _gitService.Remotes.SetRemoteUrlAsync(
+                        repository,
+                        remote,
+                        newUrl,
+                        cancellationToken);
+                    await LoadRemoteDetailsAsync(repository);
+                    await CheckRemoteAccessCoreAsync(repository, newUrl, cancellationToken);
+                }
+                catch (FileNotFoundException)
+                {
+                    ShowError(_localizationService.GetString("GitExecutableNotFound"));
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
+                }
+                catch (GitCommandException exception)
+                {
+                    ShowError(_localizationService.GetString("GitRemoteCommandFailed"), exception.Message);
+                }
+            },
+            canCancel: true);
     }
 
     private async Task RemoveRemoteAsync(object? parameter)
@@ -888,6 +947,48 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         }
 
         await OpenRepositoryAsync(refreshedRepository);
+    }
+
+    private async Task CheckRemoteAccessAsync(object? parameter)
+    {
+        if (parameter is not RemoteViewItem remoteItem
+            || _mainWindowViewModel.CurrentRepository is not RepositoryInfo repository)
+        {
+            return;
+        }
+
+        ClearResultMessages();
+        await RunGitOperationAsync(
+            _localizationService.GetString("RemoteAccessCheckProgress"),
+            cancellationToken => CheckRemoteAccessCoreAsync(
+                repository,
+                remoteItem.ReferenceText,
+                cancellationToken),
+            canCancel: true);
+    }
+
+    private async Task CheckRemoteAccessCoreAsync(
+        RepositoryInfo repository,
+        string url,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _gitService.Remotes.CheckAccessAsync(repository, url, cancellationToken);
+            ShowSuccess(_localizationService.GetString("RemoteAccessCheckSucceeded"));
+        }
+        catch (GitRemoteOperationException exception)
+        {
+            ShowRemoteOperationError(
+                [url],
+                exception.Kind,
+                _localizationService.GetString("RemoteAccessCheckFailed"),
+                exception.Message,
+                _localizationService.GetString("CredentialManagerFailed"),
+                _localizationService.GetString("RemoteSshAccessAuthenticationFailed"),
+                _localizationService.GetString("OpenSshSettingsButton"),
+                () => _mainWindowViewModel.RequestNavigation(AppNavigationTarget.Settings));
+        }
     }
 
     private async Task OpenRecentRepositoryInNewWindowAsync(RepositoryInfo? repository)
@@ -1808,6 +1909,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
                                                 item => SelectRemote(item),
                                                 item => RenameRemoteAsync(item),
                                                 item => EditRemoteUrlAsync(item),
+                                                item => CheckRemoteAccessAsync(item),
                                                 item => RemoveRemoteAsync(item),
                                                 _clipboardService.SetText,
                                                 selectedRemoteName?.Equals(remote.Name) ?? false);
@@ -1819,22 +1921,56 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         OnPropertyChanged(nameof(HasNoRemotes));
     }
 
-    private async Task RunGitOperationAsync(string progressMessage, Func<Task> operation)
+    private Task RunGitOperationAsync(string progressMessage, Func<Task> operation)
+    {
+        return RunGitOperationAsync(progressMessage, _ => operation(), canCancel: false);
+    }
+
+    private async Task RunGitOperationAsync(
+        string progressMessage,
+        Func<CancellationToken, Task> operation,
+        bool canCancel)
     {
         await _gitService.ExecuteAsync(async () =>
         {
+            using CancellationTokenSource? cancellationTokenSource = canCancel
+                ? new CancellationTokenSource()
+                : null;
+            _remoteOperationCancellationTokenSource = cancellationTokenSource;
             IsGitOperationRunning = true;
             ProgressMessage = progressMessage;
+            NotifyRemoteCancellationStateChanged();
             try
             {
-                await operation();
+                await operation(cancellationTokenSource?.Token ?? CancellationToken.None);
+            }
+            catch (OperationCanceledException) when (cancellationTokenSource?.IsCancellationRequested == true)
+            {
+                ShowNotification(
+                    AppNotificationSeverity.Informational,
+                    _localizationService.GetString("RemoteOperationCanceled"));
             }
             finally
             {
+                _remoteOperationCancellationTokenSource = null;
                 ProgressMessage = "";
                 IsGitOperationRunning = false;
+                NotifyRemoteCancellationStateChanged();
             }
         });
+    }
+
+    private void CancelRemoteOperation()
+    {
+        _remoteOperationCancellationTokenSource?.Cancel();
+        NotifyRemoteCancellationStateChanged();
+    }
+
+    private void NotifyRemoteCancellationStateChanged()
+    {
+        OnPropertyChanged(nameof(CanCancelRemoteOperation));
+        CancelRemoteOperationCommand.NotifyCanExecuteChanged();
+        PublishRepositoryOperationState();
     }
 
     private void ClearRepository()

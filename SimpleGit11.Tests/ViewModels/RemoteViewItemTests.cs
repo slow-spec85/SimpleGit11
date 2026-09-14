@@ -20,12 +20,38 @@ public sealed class RemoteViewItemTests
             _ => Task.CompletedTask,
             _ => Task.CompletedTask,
             _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
             text => copiedText = text,
             false);
 
         item.CopyTextCommand.Execute(item.ReferenceText);
 
         Assert.AreEqual(item.ReferenceText, copiedText);
+    }
+
+    [TestMethod]
+    public async Task CheckAccessCommand_InvokesRemoteAccessCheck()
+    {
+        RemoteViewItem? checkedItem = null;
+        RemoteViewItem item = new(
+            new GitRemote("origin", "git@example.test:team/repository.git", ""),
+            new TestLocalizationService(),
+            new AsyncCommandExecutor(new RecordingExceptionHandler()),
+            _ => { },
+            _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
+            candidate =>
+            {
+                checkedItem = candidate;
+                return Task.CompletedTask;
+            },
+            _ => Task.CompletedTask,
+            _ => { },
+            false);
+
+        await item.CheckAccessCommand.ExecuteAsync(null);
+
+        Assert.AreSame(item, checkedItem);
     }
 
     private sealed class RecordingExceptionHandler : IAsyncCommandExceptionHandler

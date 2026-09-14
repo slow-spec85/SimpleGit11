@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1150,6 +1150,9 @@
   <data name="RemoteAuthenticationFailed" xml:space="preserve">
     <value>Authentication failed. Check your credentials or Git credential manager.</value>
   </data>
+  <data name="CredentialManagerFailed" xml:space="preserve">
+    <value>Git Credential Manager could not provide credentials. Check the error details and its configuration.</value>
+  </data>
   <data name="RemoteOperationConflicts" xml:space="preserve">
     <value>Git reported conflicts. Resolve conflicts before continuing.</value>
   </data>
@@ -1199,7 +1202,7 @@
     <value>Git Credential Manager required</value>
   </data>
   <data name="CredentialHelperSetupDialogMessage" xml:space="preserve">
-    <value>SimpleGit11 remote features work only when Git credential.helper is configured as manager. Apply this global Git setting to use clone, fetch, pull, and push?</value>
+    <value>Git Credential Manager is required to work with private HTTPS remotes. Apply the global Git credential.helper=manager setting for cloning, fetching, pulling, and pushing?</value>
   </data>
   <data name="CredentialHelperSetupDialogPrimaryButton" xml:space="preserve">
     <value>Apply</value>
@@ -1772,13 +1775,10 @@
     <value>Open in new window</value>
   </data>
   <data name="CredentialHelperSettingsCardHeaderTextBlock.Text" xml:space="preserve">
-    <value>Remote operation credentials</value>
+    <value>Git Credential Manager</value>
   </data>
-  <data name="CredentialHelperStatusEnabled" xml:space="preserve">
-    <value>Remote operations will use Git Credential Manager after saving</value>
-  </data>
-  <data name="CredentialHelperStatusDisabled" xml:space="preserve">
-    <value>Remote operations may stop working after saving because credential.helper will not be manager</value>
+  <data name="CredentialHelperSettingsCardDescriptionTextBlock.Text" xml:space="preserve">
+    <value>It is required for authorization on private remote repositories over HTTPS protocol.</value>
   </data>
   <data name="CredentialHelperToggleSwitch.OnContent" xml:space="preserve">
     <value>On</value>
@@ -4236,8 +4236,8 @@ only — fast-forward only; Not set — inherit.</value>
   <data name="FetchOnRepositoryOpenToggleSwitch.OnContent" xml:space="preserve">
     <value>On</value>
   </data>
-  <data name="RepositoryOpeningTitleTextBlock.Text" xml:space="preserve">
-    <value>Opening repositories</value>
+  <data name="ApplicationSettingsTitleTextBlock.Text" xml:space="preserve">
+    <value>Application settings</value>
   </data>
   <data name="CommitGraphMergeDescription" xml:space="preserve">
     <value>Merge commit, {0} parents.</value>
@@ -4247,5 +4247,164 @@ only — fast-forward only; Not set — inherit.</value>
   </data>
   <data name="CommitGraphMergeFilteredDescription" xml:space="preserve">
     <value>Merge commit, {0} parents. A connection passes through commits hidden by filters.</value>
+  </data>
+  <data name="SshHostKeyDialogTitle" xml:space="preserve">
+    <value>Trust SSH server?</value>
+  </data>
+  <data name="SshHostKeyDialogMessage" xml:space="preserve">
+    <value>The SSH server {0} is not in known_hosts. Verify these fingerprints with the server administrator before continuing:
+
+{1}
+
+If you trust this server, its public keys will be added to known_hosts. Existing keys are never replaced automatically.</value>
+  </data>
+  <data name="SshHostKeyDialogPrimaryButton" xml:space="preserve">
+    <value>Trust and add</value>
+  </data>
+  <data name="RemoteHostKeyVerificationFailed" xml:space="preserve">
+    <value>SSH server key verification failed. If the saved key has changed, verify the server identity and update known_hosts manually.</value>
+  </data>
+  <data name="RemoteExecutionSshHostKeyDialogMessage" xml:space="preserve">
+    <value>The Git SSH server {0} is not trusted on the remote computer {1}. Verify these fingerprints with the Git server administrator before continuing:
+
+{2}
+
+If you trust this server, its public keys will be added to known_hosts on {1}. Existing keys are never replaced automatically.</value>
+  </data>
+  <data name="RemoteExecutionHostKeyVerificationFailed" xml:space="preserve">
+    <value>Git SSH server key verification failed on the remote computer {0}. Verify the Git server identity and update known_hosts on that computer.</value>
+  </data>
+  <data name="SshIdentityCreateButton" xml:space="preserve">
+    <value>Create key</value>
+  </data>
+  <data name="RepositorySshKeySettingsCardHeaderTextBlock.Text" xml:space="preserve">
+    <value>SSH key for this repository</value>
+  </data>
+  <data name="RepositorySshKeySettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Optionally select a private key that should be used only for this repository.</value>
+  </data>
+  <data name="SshSettingsTitleFormat" xml:space="preserve">
+    <value>SSH settings on {0}</value>
+  </data>
+  <data name="SshIdentitiesSettingsTitleTextBlock.Text" xml:space="preserve">
+    <value>Keys for Git servers</value>
+  </data>
+  <data name="SshIdentitiesSettingsDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Keys used by this computer to confirm access to Git servers.</value>
+  </data>
+  <data name="AddSshIdentityButton.Content" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="SshIdentityActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>SSH key actions</value>
+  </data>
+  <data name="CopySshPublicKeyMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Copy public key</value>
+  </data>
+  <data name="CopySshPublicKeyMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Only the public key is copied</value>
+  </data>
+  <data name="CopySshPrivateKeyPathMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Copy key path</value>
+  </data>
+  <data name="DeleteSshIdentityMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="SshIdentityCreateDialogTitle" xml:space="preserve">
+    <value>Add SSH key</value>
+  </data>
+  <data name="SshIdentityCreateDialogDescription" xml:space="preserve">
+    <value>An ED25519 key will be created and configured on {0}. If you specify a passphrase, the key will be encrypted and loaded into ssh-agent.</value>
+  </data>
+  <data name="SshIdentityHostLabel" xml:space="preserve">
+    <value>Git server</value>
+  </data>
+  <data name="SshIdentityHostPlaceholder" xml:space="preserve">
+    <value>gitlab.com</value>
+  </data>
+  <data name="SshIdentityPassphraseLabel" xml:space="preserve">
+    <value>Key passphrase (optional)</value>
+  </data>
+  <data name="SshIdentityPassphraseConfirmationLabel" xml:space="preserve">
+    <value>Confirm passphrase (optional)</value>
+  </data>
+  <data name="SshIdentityHostRequired" xml:space="preserve">
+    <value>Enter the Git server name.</value>
+  </data>
+  <data name="SshIdentityHostInvalid" xml:space="preserve">
+    <value>Enter only a valid server name or IP address, without a URL or repository path.</value>
+  </data>
+  <data name="SshIdentityPassphraseMismatch" xml:space="preserve">
+    <value>The passphrases do not match.</value>
+  </data>
+  <data name="SshIdentityCreatedAndCopied" xml:space="preserve">
+    <value>The SSH key was created, configured, loaded into ssh-agent, and its public part was copied.</value>
+  </data>
+  <data name="SshIdentityCreatedAndCopiedWithoutAgent" xml:space="preserve">
+    <value>The unencrypted SSH key was created and configured, and its public part was copied. It was not loaded into ssh-agent.</value>
+  </data>
+  <data name="SshIdentityCreateFailed" xml:space="preserve">
+    <value>The SSH key could not be fully configured.</value>
+  </data>
+  <data name="SshIdentityDeleteDialogTitle" xml:space="preserve">
+    <value>Delete SSH key?</value>
+  </data>
+  <data name="SshIdentityDeleteDialogMessage" xml:space="preserve">
+    <value>The private and public key files will be permanently deleted.
+
+Path: {0}
+Fingerprint: {1}</value>
+  </data>
+  <data name="SshIdentityDeleteButton" xml:space="preserve">
+    <value>Delete key</value>
+  </data>
+  <data name="SshIdentityExternalReferencesTitle" xml:space="preserve">
+    <value>Remove external configuration references?</value>
+  </data>
+  <data name="SshIdentityExternalReferencesMessage" xml:space="preserve">
+    <value>This key is also referenced by configuration files not managed by SimpleGit11:
+
+{0}
+
+Continue only if these IdentityFile entries may be removed.</value>
+  </data>
+  <data name="SshIdentityRemoveReferencesButton" xml:space="preserve">
+    <value>Remove references</value>
+  </data>
+  <data name="SshIdentityDeleted" xml:space="preserve">
+    <value>The SSH key was deleted.</value>
+  </data>
+  <data name="SshIdentityDeleteFailed" xml:space="preserve">
+    <value>The SSH key could not be deleted.</value>
+  </data>
+  <data name="RepositorySshKeyPathTextBox.PlaceholderText" xml:space="preserve">
+    <value>Private key path</value>
+  </data>
+  <data name="RepositorySshKeyPathTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>SSH key path for this repository</value>
+  </data>
+  <data name="RepositorySshKeyPathMustBeAbsolute" xml:space="preserve">
+    <value>Specify the full path to the SSH private key.</value>
+  </data>
+  <data name="RepositorySshKeyFileNotFound" xml:space="preserve">
+    <value>The SSH private key file was not found: {0}</value>
+  </data>
+  <data name="RemoteAccessCheckProgress" xml:space="preserve">
+    <value>Checking remote repository access...</value>
+  </data>
+  <data name="RemoteAccessCheckSucceeded" xml:space="preserve">
+    <value>Access to the remote repository was verified.</value>
+  </data>
+  <data name="RemoteAccessCheckFailed" xml:space="preserve">
+    <value>Could not access the remote repository.</value>
+  </data>
+  <data name="RemoteSshAccessAuthenticationFailed" xml:space="preserve">
+    <value>No SSH key accepted by the Git server was found. Configure a key in SSH settings and add its public part to your account on the Git server.</value>
+  </data>
+  <data name="OpenSshSettingsButton" xml:space="preserve">
+    <value>Open SSH settings</value>
+  </data>
+  <data name="CheckRemoteAccessAppBarButton.Label" xml:space="preserve">
+    <value>Check access</value>
   </data>
 </root>

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Automation;
 using SimpleGit11.Dialogs;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
@@ -90,6 +91,104 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
         ApplyTheme(dialog);
 
         return await dialog.ShowAsync() == ContentDialogResult.Primary;
+    }
+
+    public async Task ShowMessageAsync(string title, string message, string closeButtonText)
+    {
+        EnsureWindowRegistered();
+        ContentDialog dialog = new()
+        {
+            Title = title,
+            Content = new TextBlock
+            {
+                Text = message,
+                TextWrapping = TextWrapping.WrapWholeWords
+            },
+            CloseButtonText = closeButtonText,
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = _window!.Content.XamlRoot
+        };
+        ApplyTheme(dialog);
+        await dialog.ShowAsync();
+    }
+
+    public async Task<SshIdentityCreationRequest?> ShowCreateSshIdentityAsync(string machineName)
+    {
+        EnsureWindowRegistered();
+        TextBox hostTextBox = new()
+        {
+            Header = _localizationService.GetString("SshIdentityHostLabel"),
+            PlaceholderText = _localizationService.GetString("SshIdentityHostPlaceholder")
+        };
+        AutomationProperties.SetAutomationId(hostTextBox, "SshIdentityHost");
+        PasswordBox passphraseBox = new()
+        {
+            Header = _localizationService.GetString("SshIdentityPassphraseLabel")
+        };
+        AutomationProperties.SetAutomationId(passphraseBox, "SshIdentityPassphrase");
+        PasswordBox confirmationBox = new()
+        {
+            Header = _localizationService.GetString("SshIdentityPassphraseConfirmationLabel")
+        };
+        AutomationProperties.SetAutomationId(confirmationBox, "SshIdentityPassphraseConfirmation");
+        TextBlock validationText = new()
+        {
+            Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemFillColorCriticalBrush"],
+            TextWrapping = TextWrapping.WrapWholeWords,
+            Visibility = Visibility.Collapsed
+        };
+        StackPanel content = new()
+        {
+            MaxWidth = 480,
+            Spacing = 12,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = string.Format(
+                        _localizationService.GetString("SshIdentityCreateDialogDescription"),
+                        machineName),
+                    TextWrapping = TextWrapping.WrapWholeWords
+                },
+                hostTextBox,
+                passphraseBox,
+                confirmationBox,
+                validationText
+            }
+        };
+        ContentDialog dialog = new()
+        {
+            Title = _localizationService.GetString("SshIdentityCreateDialogTitle"),
+            Content = content,
+            PrimaryButtonText = _localizationService.GetString("SshIdentityCreateButton"),
+            CloseButtonText = _localizationService.GetString("ConfirmationDialogCancelButton"),
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = _window!.Content.XamlRoot
+        };
+        dialog.PrimaryButtonClick += (_, args) =>
+        {
+            string host = hostTextBox.Text.Trim();
+            string hostForValidation = host.Length >= 2 && host[0] == '[' && host[^1] == ']'
+                ? host[1..^1]
+                : host;
+            string message = string.IsNullOrWhiteSpace(host)
+                ? _localizationService.GetString("SshIdentityHostRequired")
+                : Uri.CheckHostName(hostForValidation) == UriHostNameType.Unknown
+                    ? _localizationService.GetString("SshIdentityHostInvalid")
+                : !string.Equals(passphraseBox.Password, confirmationBox.Password, StringComparison.Ordinal)
+                        ? _localizationService.GetString("SshIdentityPassphraseMismatch")
+                        : "";
+            validationText.Text = message;
+            validationText.Visibility = string.IsNullOrEmpty(message) ? Visibility.Collapsed : Visibility.Visible;
+            args.Cancel = !string.IsNullOrEmpty(message);
+        };
+        ApplyTheme(dialog);
+        return await dialog.ShowAsync() == ContentDialogResult.Primary
+            ? new SshIdentityCreationRequest(
+                hostTextBox.Text.Trim(),
+                passphraseBox.Password,
+                confirmationBox.Password)
+            : null;
     }
 
     public async Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit)
@@ -518,6 +617,21 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
         return new DialogValidationMessages(
             _localizationService.GetString("ValidationRequiredField"),
             _localizationService.GetString("ValidationSelectionRequired"));
+    }
+
+    private static void AddSshIdentityDetail(StackPanel content, string label, string value)
+    {
+        content.Children.Add(new TextBlock
+        {
+            Text = label,
+            Style = (Style)Application.Current.Resources["BodyStrongTextBlockStyle"]
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = value,
+            IsTextSelectionEnabled = true,
+            TextWrapping = TextWrapping.WrapWholeWords
+        });
     }
 
     private void EnsureWindowRegistered()

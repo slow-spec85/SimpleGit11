@@ -1,31 +1,267 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <data name="SshConnectionDialogTitle" xml:space="preserve"><value>Подключение к машине по SSH</value></data>
-  <data name="SshHostHeader" xml:space="preserve"><value>Узел</value></data>
-  <data name="SshPortHeader" xml:space="preserve"><value>Порт</value></data>
-  <data name="SshUsernameHeader" xml:space="preserve"><value>Имя пользователя</value></data>
-  <data name="SshPasswordHeader" xml:space="preserve"><value>Пароль (если не используется ключ)</value></data>
-  <data name="SshPrivateKeyPathHeader" xml:space="preserve"><value>Путь к закрытому ключу (необязательно)</value></data>
-  <data name="SshPrivateKeyPassphraseHeader" xml:space="preserve"><value>Пароль закрытого ключа (необязательно)</value></data>
-  <data name="SshConnectButton" xml:space="preserve"><value>Подключиться</value></data>
-  <data name="SshHostKeyDialogTitle" xml:space="preserve"><value>Проверка SSH-узла</value></data>
-  <data name="SshHostKeyDialogMessage" xml:space="preserve"><value>Подлинность узла {0} ещё не подтверждена. Перед подключением проверьте отпечаток SHA-256:\n\n{1}</value></data>
-  <data name="SshTrustHostKeyButton" xml:space="preserve"><value>Доверять и подключиться</value></data>
-  <data name="SshRememberProfileCheckBox" xml:space="preserve"><value>Запомнить параметры подключения (пароли не сохраняются)</value></data>
-  <data name="SshConnectionNavigationItem" xml:space="preserve"><value>Подключение по SSH</value></data>
-  <data name="SshConnectionBusyStatus" xml:space="preserve"><value>Выполняется настройка подключения</value></data>
-  <data name="SshConnectionActiveStatusFormat" xml:space="preserve"><value>Подключено к {0}. Нажмите для отключения.</value></data>
-  <data name="SshConnectionInactiveStatus" xml:space="preserve"><value>Нет подключения. Нажмите для настройки подключения.</value></data>
-  <data name="SshDisconnectDialogTitle" xml:space="preserve"><value>Отключиться от SSH?</value></data>
-  <data name="SshDisconnectDialogMessage" xml:space="preserve"><value>Отключиться от {0} и вернуться к работе на локальной машине?</value></data>
-  <data name="SshDisconnectConfirmButton" xml:space="preserve"><value>Отключиться</value></data>
-  <data name="SshSavedProfileHeader" xml:space="preserve"><value>Сохранённое подключение</value></data>
-  <data name="SshNewConnectionOption" xml:space="preserve"><value>Новое подключение</value></data>
-  <data name="SshDeleteProfileButton" xml:space="preserve"><value>Удалить профиль</value></data>
-  <data name="SshDeleteProfileDialogTitle" xml:space="preserve"><value>Удалить профиль SSH?</value></data>
-  <data name="SshDeleteProfileDialogMessage" xml:space="preserve"><value>Сохранённый профиль {0}@{1}:{2} будет удалён. Пароли и парольные фразы не сохранялись.</value></data>
-  <data name="SshDeleteProfileConfirmButton" xml:space="preserve"><value>Удалить</value></data>
-  <data name="SshCancelButton" xml:space="preserve"><value>Отмена</value></data>
-  <data name="SshHostPlaceholder" xml:space="preserve"><value>server.example.com</value></data>
-  <data name="SshPrivateKeyPathPlaceholder" xml:space="preserve"><value>C:\Users\user\.ssh\id_ed25519</value></data>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SshConnectionDialogTitle" xml:space="preserve">
+    <value>Подключение к машине по SSH</value>
+  </data>
+  <data name="SshHostHeader" xml:space="preserve">
+    <value>Узел</value>
+  </data>
+  <data name="SshPortHeader" xml:space="preserve">
+    <value>Порт</value>
+  </data>
+  <data name="SshUsernameHeader" xml:space="preserve">
+    <value>Имя пользователя</value>
+  </data>
+  <data name="SshPasswordHeader" xml:space="preserve">
+    <value>Пароль</value>
+  </data>
+  <data name="SshPrivateKeyModeHeader" xml:space="preserve">
+    <value>Подключение по приватному ключу</value>
+  </data>
+  <data name="SshPrivateKeyPathHeader" xml:space="preserve">
+    <value>Путь к закрытому ключу</value>
+  </data>
+  <data name="SshGeneratePrivateKeyButton" xml:space="preserve">
+    <value>Сгенерировать новый ключ</value>
+  </data>
+  <data name="SshBrowsePrivateKeyButton" xml:space="preserve">
+    <value>Выбрать файл приватного ключа</value>
+  </data>
+  <data name="SshGeneratedKeyPassphrasePromptTitle" xml:space="preserve">
+    <value>Защита нового приватного ключа</value>
+  </data>
+  <data name="SshGeneratedKeyPassphrasePromptMessage" xml:space="preserve">
+    <value>Задайте пароль для шифрования ключа или оставьте оба поля пустыми.</value>
+  </data>
+  <data name="SshGeneratedKeyPassphraseHeader" xml:space="preserve">
+    <value>Пароль</value>
+  </data>
+  <data name="SshGeneratedKeyPassphraseConfirmationHeader" xml:space="preserve">
+    <value>Подтверждение пароля</value>
+  </data>
+  <data name="SshGeneratedKeyPassphraseMismatchMessage" xml:space="preserve">
+    <value>Пароли не совпадают.</value>
+  </data>
+  <data name="SshGeneratedKeyPassphraseContinueButton" xml:space="preserve">
+    <value>Продолжить</value>
+  </data>
+  <data name="SshPrivateKeyGenerationFailedMessage" xml:space="preserve">
+    <value>Не удалось сгенерировать приватный ключ: {0}</value>
+  </data>
+  <data name="SshPrivateKeyPassphrasePromptTitle" xml:space="preserve">
+    <value>Пароль приватного ключа</value>
+  </data>
+  <data name="SshPrivateKeyPassphrasePromptMessage" xml:space="preserve">
+    <value>Выбранный ключ зашифрован. Введите пароль для подключения.</value>
+  </data>
+  <data name="SshPrivateKeyPassphraseInvalidMessage" xml:space="preserve">
+    <value>Не удалось открыть ключ. Проверьте пароль.</value>
+  </data>
+  <data name="SshPrivateKeyReadFailedMessage" xml:space="preserve">
+    <value>Не удалось прочитать приватный ключ: {0}</value>
+  </data>
+  <data name="SshPrivateKeyPasswordNotice" xml:space="preserve">
+    <value>При первой настройке программа подключится по паролю, добавит публичный ключ в ~/.ssh/authorized_keys и повторно подключится по ключу. Пароли не сохраняются.</value>
+  </data>
+  <data name="SshConnectionFieldsRequiredMessage" xml:space="preserve">
+    <value>Укажите узел, имя пользователя и допустимый порт.</value>
+  </data>
+  <data name="SshPasswordRequiredMessage" xml:space="preserve">
+    <value>Введите пароль пользователя на сервере.</value>
+  </data>
+  <data name="SshPrivateKeyRequiredMessage" xml:space="preserve">
+    <value>Выберите файл приватного ключа.</value>
+  </data>
+  <data name="SshInitialPasswordRequiredMessage" xml:space="preserve">
+    <value>Для первоначальной установки публичного ключа введите пароль пользователя на сервере.</value>
+  </data>
+  <data name="SshConnectButton" xml:space="preserve">
+    <value>Подключиться</value>
+  </data>
+  <data name="SshHostKeyDialogTitle" xml:space="preserve">
+    <value>Проверка SSH-узла</value>
+  </data>
+  <data name="SshHostKeyDialogMessage" xml:space="preserve">
+    <value>Подлинность узла {0} ещё не подтверждена. Перед подключением проверьте отпечаток SHA-256:\n\n{1}</value>
+  </data>
+  <data name="SshTrustHostKeyButton" xml:space="preserve">
+    <value>Доверять и подключиться</value>
+  </data>
+  <data name="SshHostKeyChangedDialogTitle" xml:space="preserve">
+    <value>Ключ SSH-сервера изменился</value>
+  </data>
+  <data name="SshHostKeyChangedDialogMessage" xml:space="preserve">
+    <value>Ключ, представленный SSH-сервером {0}, отличается от ключа, сохранённого в профиле подключения. Это может быть следствием перенастройки сервера или попытки перехвата соединения. Перед продолжением сверьте оба отпечатка SHA-256:\n\nСохранённый: {1}\nПолученный: {2}</value>
+  </data>
+  <data name="SshReplaceHostKeyButton" xml:space="preserve">
+    <value>Заменить ключ и подключиться</value>
+  </data>
+  <data name="SshRememberProfileToggleSwitch" xml:space="preserve">
+    <value>Запомнить параметры (пароли не сохраняются)</value>
+  </data>
+  <data name="SshConnectionNavigationItem" xml:space="preserve">
+    <value>Подключение по SSH</value>
+  </data>
+  <data name="SshConnectionBusyStatus" xml:space="preserve">
+    <value>Выполняется настройка подключения</value>
+  </data>
+  <data name="SshConnectionActiveStatusFormat" xml:space="preserve">
+    <value>Подключено к {0}. Нажмите для отключения.</value>
+  </data>
+  <data name="SshConnectionInactiveStatus" xml:space="preserve">
+    <value>Нет подключения. Нажмите для настройки подключения.</value>
+  </data>
+  <data name="SshDisconnectDialogTitle" xml:space="preserve">
+    <value>Отключиться от SSH?</value>
+  </data>
+  <data name="SshDisconnectDialogMessage" xml:space="preserve">
+    <value>Отключиться от {0} и вернуться к работе на локальной машине?</value>
+  </data>
+  <data name="SshDisconnectConfirmButton" xml:space="preserve">
+    <value>Отключиться</value>
+  </data>
+  <data name="SshSavedProfileHeader" xml:space="preserve">
+    <value>Сохранённое подключение</value>
+  </data>
+  <data name="SshNewConnectionOption" xml:space="preserve">
+    <value>Новое подключение</value>
+  </data>
+  <data name="SshDeleteProfileButton" xml:space="preserve">
+    <value>Удалить профиль</value>
+  </data>
+  <data name="SshDeleteProfileDialogTitle" xml:space="preserve">
+    <value>Удалить профиль SSH?</value>
+  </data>
+  <data name="SshDeleteProfileDialogMessage" xml:space="preserve">
+    <value>Сохранённый профиль {0}@{1}:{2} будет удалён. Пароли и парольные фразы не сохранялись.</value>
+  </data>
+  <data name="SshDeleteProfileConfirmButton" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="SshCancelButton" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="SshHostPlaceholder" xml:space="preserve">
+    <value>server.example.com</value>
+  </data>
+  <data name="SshPrivateKeyPathPlaceholder" xml:space="preserve">
+    <value>C:\Users\user\.ssh\id_ed25519</value>
+  </data>
 </root>

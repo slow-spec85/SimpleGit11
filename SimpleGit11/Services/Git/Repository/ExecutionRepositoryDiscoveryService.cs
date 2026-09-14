@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
@@ -30,6 +31,11 @@ public sealed class ExecutionRepositoryDiscoveryService : IExecutionRepositoryDi
             path,
             ["rev-parse", "--show-toplevel"],
             cancellationToken);
+        if (IsGitUnavailable(rootResult))
+        {
+            throw new FileNotFoundException("Git executable was not found.", "git");
+        }
+
         if (!rootResult.IsSuccess || string.IsNullOrWhiteSpace(rootResult.StandardOutput))
         {
             return null;
@@ -107,5 +113,13 @@ public sealed class ExecutionRepositoryDiscoveryService : IExecutionRepositoryDi
         return style == RepositoryPathStyle.Windows
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
+    }
+
+    private static bool IsGitUnavailable(GitCommandResult result)
+    {
+        return result.ExitCode == 127
+            || result.StandardError.Contains(
+                "CommandNotFoundException",
+                StringComparison.OrdinalIgnoreCase);
     }
 }

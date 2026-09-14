@@ -1,5 +1,6 @@
 using System.Text;
 using SimpleGit11.Services.Execution;
+using SimpleGit11.Services.Git.Execution;
 using SimpleGit11.Plugin.Ssh.Services;
 
 namespace SimpleGit11.Plugin.Ssh.Tests.Services;
@@ -59,5 +60,26 @@ public sealed class RemoteCommandComposerTests
             useDefaultWorkingDirectory: true);
 
         Assert.AreEqual("git 'config' '--global' 'user.name'", command);
+    }
+
+    [TestMethod]
+    public void ComposeGit_PosixHttpsCredential_UsesStandardInputCredentialHelper()
+    {
+        string command = RemoteCommandComposer.ComposeGit(
+            RepositoryPathStyle.Posix,
+            "/repo",
+            ["fetch", "origin"],
+            null,
+            httpAuthentication: new GitHttpAuthentication(
+                "https://git.example.test/team/project.git",
+                "user",
+                "secret-token"));
+
+        StringAssert.Contains(command, "GIT_TERMINAL_PROMPT='0'");
+        StringAssert.Contains(command, "exec 3<&0");
+        StringAssert.Contains(command, "credential.helper=");
+        StringAssert.Contains(command, "git.example.test");
+        Assert.IsFalse(command.Contains("user", StringComparison.Ordinal));
+        Assert.IsFalse(command.Contains("secret-token", StringComparison.Ordinal));
     }
 }

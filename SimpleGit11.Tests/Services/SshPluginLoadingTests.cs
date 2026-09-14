@@ -92,7 +92,6 @@ public sealed class SshPluginLoadingTests
                 .Where(name => name.Name is "SimpleGit11.Plugin.Ssh" or "Renci.SshNet" or "BouncyCastle.Cryptography")
                 .Select(name => name.Name!).ToArray();
             Assert.IsEmpty(forbiddenReferences);
-            Assert.IsFalse(assembly.GetTypes().Any(type => type.Name.StartsWith("Ssh", StringComparison.Ordinal)));
         }
     }
 
@@ -129,6 +128,7 @@ public sealed class SshPluginLoadingTests
         services.AddSingleton<ILocalSettingsStore>(new Settings());
         services.AddSingleton<ILocalizationService>(new Localization());
         services.AddSingleton<IPluginDialogHost>(dialogHost);
+        services.AddSingleton<IPluginStoragePicker>(dialogHost);
         return services;
     }
 
@@ -146,11 +146,16 @@ public sealed class SshPluginLoadingTests
         public void SetLanguage(AppLanguage language) { }
     }
 
-    private sealed class DialogHost : IPluginDialogHost
+    private sealed class DialogHost : IPluginDialogHost, IPluginStoragePicker
     {
         public int ConfirmationCount { get; private set; }
 
         public Task<ContentDialogResult> ShowAsync(ContentDialog dialog) => throw new NotSupportedException();
+
+        public Task<string?> PickFileAsync() => throw new NotSupportedException();
+
+        public Task<string?> PickSaveFileAsync(string suggestedFileName) =>
+            throw new NotSupportedException();
 
         public Task<bool> ConfirmAsync(string title, string message, string primaryButtonText)
         {

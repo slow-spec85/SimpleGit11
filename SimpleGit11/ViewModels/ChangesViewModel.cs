@@ -17,7 +17,8 @@ using SimpleGit11.Services.Git;
 
 namespace SimpleGit11.ViewModels;
 
-public sealed partial class ChangesViewModel : AppNotificationViewModelBase
+public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
+    IRecipient<RepositoryChangedMessage>
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly MainWindowViewModel _mainWindowViewModel;
@@ -56,6 +57,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
         _textFileService = textFileService;
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new System.ArgumentNullException(nameof(asyncCommandExecutor));
+        messenger.RegisterAll(this);
         ConflictEditor = conflictEditor;
         ConflictEditor.ConflictResolvedAsync = OnConflictResolvedAsync;
         DiffEmptyMessage = _localizationService.GetString("SelectFileToViewDiff");
@@ -65,6 +67,14 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase
         SelectedDiffStat = DiffStat.Empty;
         SelectedChanges = [];
         InitializeSyntaxHighlightingOptions();
+    }
+
+    public void Receive(RepositoryChangedMessage message)
+    {
+        ClearNotification();
+        ClearChanges();
+        ClearDiff(_localizationService.GetString("SelectFileToViewDiff"));
+        ConflictEditor.Clear();
     }
 
     private bool CanRunWhenIdle() => !IsGitOperationRunning && !IsEditingFile;

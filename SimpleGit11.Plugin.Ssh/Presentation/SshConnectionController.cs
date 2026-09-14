@@ -97,6 +97,11 @@ internal sealed class SshConnectionController(
                 continue;
             }
 
+            bool persistProfile = result.RememberProfile
+                || profiles.Any(profile => string.Equals(
+                    profile.Id,
+                    result.ProfileId,
+                    StringComparison.Ordinal));
             string? expectedHostKey = result.ExpectedHostKey;
             while (_executionContextService.Current.Id == initialContextId)
             {
@@ -104,8 +109,8 @@ internal sealed class SshConnectionController(
                 {
                     await _executionContextService.ActivateAsync(
                         SshPlugin.ProviderId,
-                        CreateSshConnectionRequest(result, expectedHostKey));
-                    if (result.RememberProfile)
+                        CreateSshConnectionRequest(result, expectedHostKey, persistProfile));
+                    if (persistProfile)
                     {
                         _sshConnectionProfileStore.Upsert(new SshConnectionProfile(
                             result.ProfileId,
@@ -120,14 +125,7 @@ internal sealed class SshConnectionController(
                 }
                 catch (SshHostKeyVerificationException exception)
                 {
-                    bool trust = await _dialogService.ConfirmAsync(
-                        _localizationService.GetString("SshHostKeyDialogTitle"),
-                        string.Format(
-                            _localizationService.GetString("SshHostKeyDialogMessage"),
-                            exception.Host,
-                            exception.Fingerprint),
-                        _localizationService.GetString("SshTrustHostKeyButton"));
-                    if (!trust)
+                    if (!await ConfirmHostKeyAsync(exception))
                     {
                         return;
                     }
@@ -138,9 +136,33 @@ internal sealed class SshConnectionController(
         }
     }
 
+    private async Task<bool> ConfirmHostKeyAsync(SshHostKeyVerificationException exception)
+    {
+        bool hostKeyChanged = exception.ExpectedFingerprint is not null;
+        string message = hostKeyChanged
+            ? string.Format(
+                _localizationService.GetString("SshHostKeyChangedDialogMessage"),
+                exception.Host,
+                exception.ExpectedFingerprint,
+                exception.Fingerprint)
+            : string.Format(
+                _localizationService.GetString("SshHostKeyDialogMessage"),
+                exception.Host,
+                exception.Fingerprint);
+        return await _dialogService.ConfirmAsync(
+            _localizationService.GetString(hostKeyChanged
+                ? "SshHostKeyChangedDialogTitle"
+                : "SshHostKeyDialogTitle"),
+            message,
+            _localizationService.GetString(hostKeyChanged
+                ? "SshReplaceHostKeyButton"
+                : "SshTrustHostKeyButton"));
+    }
+
     private static ExecutionConnectionRequest CreateSshConnectionRequest(
         SshConnectionDialogResult result,
-        string? expectedHostKey)
+        string? expectedHostKey,
+        bool persistProfile)
     {
         Dictionary<string, string> settings = new()
         {
@@ -170,7 +192,7 @@ internal sealed class SshConnectionController(
         }
 
         return new ExecutionConnectionRequest(
-            result.RememberProfile ? result.ProfileId : null,
+            persistProfile ? result.ProfileId : null,
             settings,
             secrets);
     }
