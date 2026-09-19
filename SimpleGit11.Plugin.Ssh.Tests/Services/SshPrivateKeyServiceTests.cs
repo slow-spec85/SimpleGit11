@@ -8,8 +8,9 @@ public sealed class SshPrivateKeyServiceTests
 {
     [TestMethod]
     [DataRow(null)]
+    [DataRow("")]
     [DataRow("key passphrase")]
-    public async Task GenerateAsync_CreatesPrivateKeyAcceptedBySshNet(string? passphrase)
+    public async Task GenerateAsync_CreatesMatchingPrivateAndOpenSshPublicKeys(string? passphrase)
     {
         string path = Path.Combine(
             Path.GetTempPath(),
@@ -26,10 +27,22 @@ public sealed class SshPrivateKeyServiceTests
             Assert.IsNotEmpty(privateKey.HostKeyAlgorithms);
             Assert.IsTrue(privateKey.HostKeyAlgorithms.Any(
                 algorithm => algorithm.Name == "ssh-rsa"));
+
+            string publicKey = await File.ReadAllTextAsync(path + ".pub");
+            string[] fields = publicKey.TrimEnd().Split(' ');
+            Assert.HasCount(2, fields);
+            Assert.AreEqual("ssh-rsa", fields[0]);
+            CollectionAssert.AreEqual(
+                privateKey.HostKeyAlgorithms.First(algorithm => algorithm.Name == "ssh-rsa").Data,
+                Convert.FromBase64String(fields[1]));
+            Assert.IsTrue(publicKey.EndsWith(Environment.NewLine, StringComparison.Ordinal));
+            byte[] publicKeyBytes = await File.ReadAllBytesAsync(path + ".pub");
+            Assert.AreEqual((byte)'s', publicKeyBytes[0], "The public key must not contain a UTF-8 BOM.");
         }
         finally
         {
             File.Delete(path);
+            File.Delete(path + ".pub");
         }
     }
 
@@ -50,7 +63,9 @@ public sealed class SshPrivateKeyServiceTests
         finally
         {
             File.Delete(plainPath);
+            File.Delete(plainPath + ".pub");
             File.Delete(encryptedPath);
+            File.Delete(encryptedPath + ".pub");
         }
     }
 
@@ -69,6 +84,7 @@ public sealed class SshPrivateKeyServiceTests
         finally
         {
             File.Delete(path);
+            File.Delete(path + ".pub");
         }
     }
 
@@ -92,6 +108,7 @@ public sealed class SshPrivateKeyServiceTests
         finally
         {
             File.Delete(path);
+            File.Delete(path + ".pub");
         }
     }
 }

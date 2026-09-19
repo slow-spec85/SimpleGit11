@@ -210,18 +210,18 @@ Private SSH dependencies and their licenses belong to the optional feature.
 Publishing fails if required files or licenses are missing. MSI tables, SSH
 isolation and data-removal guards are validated during the build.
 
-The scripts do not create commits, tags or GitHub Releases, push, install the MSI
-or launch the application. Packages are currently unsigned. Before public
-distribution, sign them with a production certificate and timestamp, verify the
-signature and regenerate SHA-256.
+The local scripts do not create commits, tags or GitHub Releases, push, install
+the MSI or launch the application. The MSI is intentionally unsigned. Windows
+SmartScreen or an organization policy may warn about or block unsigned files.
 See [the installer guide](SimpleGit11.Installer/README.md) for details.
 
-## CI and release-tag validation
+## CI and release publication
 
 CI builds Release x64 and runs all solution tests, including the SSH plugin.
-On a release tag, the tag format and the commit's membership in `main` are always
-checked. The latest `ci.yml` run triggered by a push to `main` may be reused only
-for the exact same commit SHA, after its successful Release x64 build and
+On a release tag, the tag format, nonempty annotation, and exact match with the
+current public `main` commit are checked. The latest `ci.yml` run triggered by
+a push to `main` may be reused only for the exact same commit SHA, after its
+successful Release x64 build and
 application/SSH test steps have been confirmed through the GitHub API.
 
 Older successes cannot hide a newer failed, cancelled or running CI. Missing
@@ -229,9 +229,12 @@ results, skipped steps, incomplete history or API errors cause the normal build
 and tests to run again. The workflow summary links to the reused run attempt or
 explains why a fresh check is needed. Only read access to Actions is required.
 
-MSI generation and GitHub Release publication remain manual. A tag affects the
-version calculated by MinVer, so reusing source-code test results does not replace
-building and checking the actual tagged distribution locally.
+After CI is confirmed, `release.yml` builds one unsigned MSI and its SHA-256
+file from the tag, verifies the checksum, and publishes both in a GitHub Release.
+Release notes come from the tag annotation. Preview and RC tags create prereleases.
+The workflow rechecks the exact `main` commit before publication. Push an
+annotated tag only after the public `main` CI succeeds; do not advance `main`
+until the release workflow finishes. The workflow does not create or push tags.
 
 ## Versioning
 

@@ -27,6 +27,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     private readonly IExecutionContextService _executionContextService;
     private readonly IOpenSshService _openSshService;
     private readonly IClipboardService _clipboardService;
+    private readonly ICredentialManagerLauncher _credentialManagerLauncher;
     private GitPullSettings? _savedGlobalPullSettings;
     private GitPullSettings? _savedRepositoryPullSettings;
     private string? _unmanagedRepositorySshCommand;
@@ -42,7 +43,8 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         IMessenger messenger,
         IAsyncCommandExecutor asyncCommandExecutor,
         IOpenSshService openSshService,
-        IClipboardService clipboardService)
+        IClipboardService clipboardService,
+        ICredentialManagerLauncher credentialManagerLauncher)
         : base(messenger)
     {
         _mainWindowViewModel = mainWindowViewModel;
@@ -54,6 +56,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         _executionContextService = executionContextService;
         _openSshService = openSshService;
         _clipboardService = clipboardService;
+        _credentialManagerLauncher = credentialManagerLauncher;
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new ArgumentNullException(nameof(asyncCommandExecutor));
         ThemeOptions =
@@ -294,6 +297,12 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     partial void OnUseCredentialHelperManagerChanged(bool value)
     {
 
+    }
+
+    [RelayCommand]
+    private void OnOpenCredentialManager()
+    {
+        _credentialManagerLauncher.OpenCredentialManager();
     }
 
     private async Task ReadGitConfig()

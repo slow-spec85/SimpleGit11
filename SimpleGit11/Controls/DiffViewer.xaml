@@ -8,7 +8,7 @@
     xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
     xmlns:toolkit="using:CommunityToolkit.WinUI">
 
-    <Grid RowSpacing="12">
+    <Grid Padding="0,0,0,0">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="LayoutStates">
                 <VisualState x:Name="WideLayout">
@@ -224,7 +224,7 @@
             <InfoBar
                 x:Name="DiffEmptyInfoBar"
                 Severity="Informational" 
-                Margin="0,0,32,0"/>
+                Margin="0,32,32,0"/>
 
             <Grid x:Name="EditorHostGrid">
                 <controls:RepositoryEditorSurface

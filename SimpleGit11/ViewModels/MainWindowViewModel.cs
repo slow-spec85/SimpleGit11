@@ -133,18 +133,27 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
     [ObservableProperty]
     public partial string CurrentUserName { get; private set; }
 
+    public Visibility UnsetUserNameVisibility => IsUnsetUser
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
     public Visibility GlobalUserNameVisibility => IsCurrentUserFromGlobalConfig
         ? Visibility.Visible
         : Visibility.Collapsed;
 
-    public Visibility LocalOrUnsetUserNameVisibility => IsCurrentUserFromGlobalConfig
+    public Visibility LocalUserNameVisibility => IsCurrentUserFromGlobalConfig || IsUnsetUser
         ? Visibility.Collapsed
         : Visibility.Visible;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(GlobalUserNameVisibility))]
-    [NotifyPropertyChangedFor(nameof(LocalOrUnsetUserNameVisibility))]
+    [NotifyPropertyChangedFor(nameof(LocalUserNameVisibility))]
     private partial bool IsCurrentUserFromGlobalConfig { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UnsetUserNameVisibility))]
+    [NotifyPropertyChangedFor(nameof(LocalUserNameVisibility))]
+    private partial bool IsUnsetUser { get; set; }
 
     partial void OnCurrentRepositoryChanged(RepositoryInfo? value)
     {
@@ -371,8 +380,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         catch
         { }
 
-        CurrentUserName = string.IsNullOrWhiteSpace(name) ? _localizationService.GetString("NoUser") : name;
         IsCurrentUserFromGlobalConfig = isFromGlobalConfig;
+        IsUnsetUser = string.IsNullOrWhiteSpace(name);
+        CurrentUserName = IsUnsetUser ? _localizationService.GetString("NoUser") : name;
     }
 
     public void UpdateCurrentBranch(string branchName)

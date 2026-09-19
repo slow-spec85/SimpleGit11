@@ -26,6 +26,12 @@ internal sealed class SshPrivateKeyService : ISshPrivateKeyService
             privateKey,
             Utf8WithoutBom,
             cancellationToken);
+        string publicKey = await GetAuthorizedKeyAsync(fullPath, passphrase, cancellationToken);
+        await File.WriteAllTextAsync(
+            fullPath + ".pub",
+            publicKey + Environment.NewLine,
+            Utf8WithoutBom,
+            cancellationToken);
     }
 
     public Task<bool> RequiresPassphraseAsync(

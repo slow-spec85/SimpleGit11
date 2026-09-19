@@ -1778,13 +1778,19 @@
     <value>Git Credential Manager</value>
   </data>
   <data name="CredentialHelperSettingsCardDescriptionTextBlock.Text" xml:space="preserve">
-    <value>Требуется для авторизации на удаленных приватных репозиториях по протоколу HTTPS</value>
+    <value>Требуется локально для HTTPS-аутентификации, включая работу с Git-репозиториями через SSH</value>
   </data>
   <data name="CredentialHelperToggleSwitch.OnContent" xml:space="preserve">
     <value>Вкл.</value>
   </data>
   <data name="CredentialHelperToggleSwitch.OffContent" xml:space="preserve">
     <value>Выкл.</value>
+  </data>
+  <data name="ManageCredentialsButton.Content" xml:space="preserve">
+    <value>Управление</value>
+  </data>
+  <data name="ManageCredentialsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Открыть диспетчер учётных данных Windows</value>
   </data>
   <data name="SshCommandSettingsCardHeaderTextBlock.Text" xml:space="preserve">
     <value>Переопределение SSH-клиента</value>
@@ -4406,5 +4412,8 @@ only — только fast-forward; «Не задано» — наследова
   </data>
   <data name="CheckRemoteAccessAppBarButton.Label" xml:space="preserve">
     <value>Проверить доступ</value>
+  </data>
+  <data name="ManageCredentialsButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Управление учётными данными</value>
   </data>
 </root>

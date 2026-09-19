@@ -38,9 +38,9 @@ The `.publish-staging-win-x64` and `.installer-staging-win-x64` directories are
 internal build inputs, not separate distributions. Existing older artifacts are
 not deleted automatically. The obsolete `-Installer` switch has been removed.
 
-Packages are unsigned. Before distribution, sign with a production certificate
-and trusted timestamp service, verify the signature, then regenerate SHA-256.
-Never commit private keys or certificate passwords.
+Packages are intentionally unsigned. Windows SmartScreen or organization policy
+may warn about or block unsigned files. Download only from the official GitHub
+Releases page and verify the matching SHA-256 file.
 
 MSI automatically uses the application's numeric version core: for example,
 `1.0.0-dev.local.20260831...` becomes `1.0.0`. Windows Installed apps displays

@@ -241,7 +241,8 @@ public sealed class SettingsPullSettingsTests
                 ServiceStub.Create<IOpenSshService>((method, _) => method == "GetIdentitiesAsync"
                     ? Task.FromResult<IReadOnlyList<SshIdentity>>([])
                     : throw new NotSupportedException(method)),
-                ServiceStub.Create<IClipboardService>());
+                ServiceStub.Create<IClipboardService>(),
+                ServiceStub.Create<ICredentialManagerLauncher>());
         }
 
         public void OpenRepository() => MainWindow.SetCurrentRepository(

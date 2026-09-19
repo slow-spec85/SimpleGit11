@@ -8,6 +8,28 @@
     HorizontalAlignment="Stretch"
     Visibility="{x:Bind IsOpen, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
 
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <StaticResource
+                        x:Key="InfoBarInformationalSeverityBackgroundBrush"
+                        ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <StaticResource
+                        x:Key="InfoBarInformationalSeverityBackgroundBrush"
+                        ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <SolidColorBrush
+                        x:Key="InfoBarInformationalSeverityBackgroundBrush"
+                        Color="{ThemeResource SystemColorWindowColor}" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
     <InfoBar
         IsOpen="{x:Bind IsOpen, Mode=TwoWay}"
         Severity="{x:Bind Severity, Mode=OneWay}">

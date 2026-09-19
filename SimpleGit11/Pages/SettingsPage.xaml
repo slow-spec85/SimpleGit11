@@ -440,13 +440,23 @@
                                         <TextBlock
                                             x:Uid="CredentialHelperSettingsCardDescriptionTextBlock"
                                             FontSize="12"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
                                 </controls:SettingsCard.Header>
-                                <ToggleSwitch
-                                    x:Uid="CredentialHelperToggleSwitch"
-                                    IsOn="{x:Bind ViewModel.UseCredentialHelperManager, Mode=TwoWay}" 
-                                    IsEnabled="{x:Bind ViewModel.IsLocalContext, Mode=OneWay}"/>
+                                <StackPanel
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+                                    <Button
+                                        x:Uid="ManageCredentialsButton"
+                                        AutomationProperties.AutomationId="ManageCredentialsButton"
+                                        Command="{x:Bind ViewModel.OpenCredentialManagerCommand, Mode=OneWay}"
+                                        IsEnabled="{x:Bind ViewModel.IsLocalContext, Mode=OneWay}"/>
+                                    <ToggleSwitch
+                                        x:Uid="CredentialHelperToggleSwitch"
+                                        IsOn="{x:Bind ViewModel.UseCredentialHelperManager, Mode=TwoWay}"
+                                        IsEnabled="{x:Bind ViewModel.IsLocalContext, Mode=OneWay}" />
+                                </StackPanel>
                             </controls:SettingsCard>
 
                             <controls:SettingsCard>

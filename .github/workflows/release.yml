@@ -1,0 +1,166 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-release-tag:
+    name: Validate release tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      reuse-ci: ${{ steps.ci.outputs.reuse }}
+
+    steps:
+      - name: Checkout release history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate annotated tag at current main commit
+        id: tag
+        shell: pwsh
+        run: |
+          $releaseTag = $env:GITHUB_REF_NAME
+          $releaseTagPattern = '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:preview|rc)\.(0|[1-9]\d*))?$'
+
+          if ($releaseTag -notmatch $releaseTagPattern) {
+            throw "Release tag '$releaseTag' must use vMAJOR.MINOR.PATCH, vMAJOR.MINOR.PATCH-preview.N, or vMAJOR.MINOR.PATCH-rc.N."
+          }
+
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to fetch the public main branch."
+          }
+
+          $releaseCommit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to resolve the release commit."
+          }
+          $mainCommit = git rev-parse refs/remotes/origin/main
+          if ($LASTEXITCODE -ne 0 -or $releaseCommit -ne $mainCommit) {
+            throw "Release tag '$releaseTag' must point to the current public main commit."
+          }
+
+          $tagType = git cat-file -t "refs/tags/$releaseTag"
+          if ($LASTEXITCODE -ne 0 -or $tagType -ne 'tag') {
+            throw "Release tag '$releaseTag' must be annotated."
+          }
+          $tagSubject = git for-each-ref --format='%(contents:subject)' "refs/tags/$releaseTag"
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($tagSubject)) {
+            throw "Release tag '$releaseTag' must contain release notes."
+          }
+
+          Write-Host "Validated release tag: $releaseTag"
+          "sha=$releaseCommit" >> $env:GITHUB_OUTPUT
+
+      - name: Check previous CI for the release commit
+        id: ci
+        # A lookup failure must fall back to CI, never skip validation.
+        continue-on-error: true
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT_SHA: ${{ steps.tag.outputs.sha }}
+        run: |
+          "reuse=false" >> $env:GITHUB_OUTPUT
+          $result = & ./SimpleGit11/Build/Get-ReleaseCiReuse.ps1 `
+            -Repository $env:GITHUB_REPOSITORY -CommitSha $env:RELEASE_COMMIT_SHA
+          Write-Host $result.Reason
+          if ($result.Reuse -eq $true) {
+            "reuse=true" >> $env:GITHUB_OUTPUT
+            "Reused successful CI: $($result.RunUrl)" >> $env:GITHUB_STEP_SUMMARY
+          }
+          else {
+            "Release build and tests will run: $($result.Reason)" >> $env:GITHUB_STEP_SUMMARY
+          }
+
+  build-and-test:
+    name: Build and test release
+    needs: validate-release-tag
+    if: needs.validate-release-tag.outputs.reuse-ci != 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+
+  publish-release:
+    name: Publish MSI and GitHub release
+    needs: [validate-release-tag, build-and-test]
+    if: ${{ !cancelled() && github.repository == 'slow-spec85/SimpleGit11' && needs.validate-release-tag.result == 'success' && (needs.build-and-test.result == 'success' || (needs.build-and-test.result == 'skipped' && needs.validate-release-tag.outputs.reuse-ci == 'true')) }}
+    runs-on: windows-2025
+    timeout-minutes: 45
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout release history and submodules
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          architecture: x64
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v3
+        with:
+          msbuild-architecture: x64
+
+      - name: Build and verify installer
+        shell: pwsh
+        run: |
+          & ./SimpleGit11/Build/Publish-Release.ps1 -AcceptWixEula | Out-Host
+
+          $version = $env:GITHUB_REF_NAME.Substring(1)
+          $installer = Join-Path 'artifacts' "SimpleGit11-$version-win-x64.msi"
+          $checksum = "$installer.sha256"
+          if (-not (Test-Path -LiteralPath $installer -PathType Leaf) -or
+              -not (Test-Path -LiteralPath $checksum -PathType Leaf)) {
+            throw 'The expected MSI and SHA-256 files were not produced.'
+          }
+          $expectedHash = ((Get-Content -LiteralPath $checksum -Raw).Trim() -split '\s+')[0]
+          $actualHash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash
+          if ($expectedHash -ne $actualHash) {
+            throw 'The MSI checksum does not match the built installer.'
+          }
+
+      - name: Publish GitHub release from tag annotation
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to refresh the public main branch before publication.'
+          }
+          $mainCommit = git rev-parse refs/remotes/origin/main
+          if ($LASTEXITCODE -ne 0 -or $mainCommit -ne (git rev-parse HEAD)) {
+            throw "Release tag '$tag' no longer points to the current public main commit."
+          }
+          $version = $tag.Substring(1)
+          $installer = "artifacts/SimpleGit11-$version-win-x64.msi"
+          $checksum = "$installer.sha256"
+          $releaseArguments = @('release', 'create', $tag, $installer, $checksum,
+            '--verify-tag', '--notes-from-tag', '--title', "SimpleGit11 $version")
+          if ($tag -match '-(?:preview|rc)\.') {
+            $releaseArguments += @('--prerelease', '--latest=false')
+          }
+          & gh @releaseArguments
+          if ($LASTEXITCODE -ne 0) {
+            throw "GitHub release creation failed for $tag."
+          }

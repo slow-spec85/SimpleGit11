@@ -17,10 +17,6 @@ look and feel at home on Windows 11. It provides a visual interface for
 day-to-day work with local and remote repositories while relying on Git itself
 to perform every repository operation.
 
-> [!IMPORTANT]
-> SimpleGit11 is currently a preview. The interface, behavior, and settings
-> format may change before the stable 1.0 release.
-
 ![SimpleGit11 repository page](images/HomePage.png)
 
 ## Features

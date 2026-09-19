@@ -240,7 +240,7 @@
                                     Style="{ThemeResource CaptionTextBlockStyle}"
                                     Text="{x:Bind ViewModel.CurrentUserName, Mode=OneWay}"
                                     TextTrimming="CharacterEllipsis"
-                                    Visibility="{x:Bind ViewModel.LocalOrUnsetUserNameVisibility, Mode=OneWay}" />
+                                    Visibility="{x:Bind ViewModel.LocalUserNameVisibility, Mode=OneWay}" />
                                 <TextBlock
                                     x:Uid="GlobalGitUserWarningTextBlock"
                                     Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
@@ -248,7 +248,12 @@
                                     Text="{x:Bind ViewModel.CurrentUserName, Mode=OneWay}"
                                     TextTrimming="CharacterEllipsis"
                                     Visibility="{x:Bind ViewModel.GlobalUserNameVisibility, Mode=OneWay}" />
-                            </Grid>
+                                <TextBlock
+                                    Foreground="{ThemeResource WarningTextBrush}"
+                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                    Text="{x:Bind ViewModel.CurrentUserName, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis"
+                                    Visibility="{x:Bind ViewModel.UnsetUserNameVisibility, Mode=OneWay}" />                            </Grid>
                         </Grid>
                     </StackPanel>
                     <Image Grid.Column="1"

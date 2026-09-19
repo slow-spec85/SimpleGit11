@@ -10,6 +10,49 @@ public sealed class XamlBindingArchitectureTests
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
 
     [TestMethod]
+    public void ApplicationTheme_IsNotPinnedAtStartup()
+    {
+        string applicationDirectory = Path.Combine(FindRepositoryRoot(), "SimpleGit11");
+        XDocument application = XDocument.Load(Path.Combine(applicationDirectory, "App.xaml"));
+        Assert.IsNull(application.Root!.Attribute("RequestedTheme"),
+            "The application must follow Windows so ElementTheme.Default can restore the current system theme.");
+
+        string applicationCode = File.ReadAllText(Path.Combine(applicationDirectory, "App.xaml.cs"));
+        Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(applicationCode, @"\bRequestedTheme\s*="),
+            "Persisted theme overrides must be applied to the window, not Application.RequestedTheme.");
+    }
+
+    [TestMethod]
+    [DataRow("Light")]
+    [DataRow("Dark")]
+    [DataRow("HighContrast")]
+    public void NotificationBackground_IsResolvedFromEachThemeDictionary(string theme)
+    {
+        XDocument overlay = XDocument.Load(Path.Combine(
+            FindRepositoryRoot(), "SimpleGit11", "Controls", "NotificationOverlay.xaml"));
+        XNamespace presentation = overlay.Root!.Name.Namespace;
+        XElement resources = overlay.Root.Element(presentation + "UserControl.Resources")!
+            .Element(presentation + "ResourceDictionary")!;
+        const string brushKey = "InfoBarInformationalSeverityBackgroundBrush";
+        Assert.IsFalse(resources.Elements().Any(element =>
+            (string?)element.Attribute(XamlNamespace + "Key") == brushKey),
+            "A shared alias would retain the brush resolved when the control was created.");
+
+        XElement dictionary = resources.Element(presentation + "ResourceDictionary.ThemeDictionaries")!
+            .Elements().Single(element => (string?)element.Attribute(XamlNamespace + "Key") == theme);
+        XElement brush = dictionary.Elements().Single(element =>
+            (string?)element.Attribute(XamlNamespace + "Key") == brushKey);
+        if (theme == "HighContrast")
+        {
+            Assert.AreEqual("{ThemeResource SystemColorWindowColor}", (string?)brush.Attribute("Color"));
+        }
+        else
+        {
+            Assert.AreEqual("ApplicationPageBackgroundThemeBrush", (string?)brush.Attribute("ResourceKey"));
+        }
+    }
+
+    [TestMethod]
     public void DataTemplates_DeclareXDataType()
     {
         string repositoryRoot = FindRepositoryRoot();

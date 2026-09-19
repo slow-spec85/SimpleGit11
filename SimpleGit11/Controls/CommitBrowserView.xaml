@@ -46,11 +46,11 @@
                         <Setter Target="CommitListSplitter.Margin" Value="0,0,32,0" />
                         <Setter Target="HistoryDiffPane.(Grid.Row)" Value="2" />
                         <Setter Target="HistoryDiffPane.(Grid.Column)" Value="0" />
-                        <Setter Target="HistoryDiffPane.Padding" Value="0" />
-                        <Setter Target="CommitListHeader.Padding" Value="0,0,4,0" />
-                        <Setter Target="HistoryCommitsListView.Padding" Value="0,0,4,0" />
+                        <Setter Target="HistoryDiffPane.Margin" Value="0,0,0,0" />
+                        <Setter Target="CommitListHeader.Padding" Value="0,0,30,0" />
+                        <Setter Target="HistoryCommitsListView.Padding" Value="0,0,30,0" />
                         <Setter Target="ChangedFilesHeader.Padding" Value="0,0,32,0" />
-                        <Setter Target="HistoryChangedFilesListView.Padding" Value="0,0,28,0" />
+                        <Setter Target="HistoryChangedFilesListView.Padding" Value="0,0,30,0" />
                         <Setter Target="CommitDetailsHeader.Padding" Value="0,0,32,0" />
                     </VisualState.Setters>
                 </VisualState>
@@ -75,11 +75,10 @@
 
         <Grid
             x:Name="HistoryContentGrid"
-            Grid.RowSpan="3"
-            ColumnSpacing="4">
+            Grid.RowSpan="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="HistoryListsColumn" Width="400"/>
-                <ColumnDefinition x:Name="HistoryDiffSplitterColumn" Width="12" />
+                <ColumnDefinition x:Name="HistoryDiffSplitterColumn" Width="4" />
                 <ColumnDefinition x:Name="HistoryDiffColumn" Width="*" MinWidth="360" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -103,8 +102,7 @@
                     <Grid
                         x:Name="CommitListHeader"
                         MinHeight="40"
-                        ColumnSpacing="12"
-                        RowSpacing="8">
+                        Padding="0,0,14,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -257,14 +255,15 @@
                         ItemsSource="{x:Bind ViewModel.CommitRows, Mode=OneWay}"
                         SelectedItem="{x:Bind ViewModel.SelectedCommitRow, Mode=TwoWay}"
                         SelectionChanged="HistoryCommitsListView_SelectionChanged"
-                        SelectionMode="Single">
+                        SelectionMode="Single"
+                        Padding="0,0,10,0">
                         <ListView.ItemContainerStyle>
                             <Style
                                 BasedOn="{StaticResource DefaultListViewItemStyle}"
                                 TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                 <Setter Property="Margin" Value="0" />
-                                <Setter Property="Padding" Value="8,0,0,0" />
+                                <Setter Property="Padding" Value="8,0,4,0" />
                             </Style>
                         </ListView.ItemContainerStyle>
                         <ListView.Footer>
@@ -284,7 +283,13 @@
                                         Graph="{x:Bind Graph, Mode=OneTime}"
                                         Visibility="{x:Bind ShowGraph, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
                                     <StackPanel Grid.Column="1" Margin="4" Spacing="2">
-                                        <StackPanel Orientation="Horizontal">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
                                             <FontIcon
                                                 x:Uid="CommitRequiresSynchronizationIcon"
                                                 Margin="0,0,4,0"
@@ -293,6 +298,7 @@
                                                 Glyph="&#xE74A;"
                                                 Visibility="{x:Bind Commit.NeedsSynchronization, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
                                             <StackPanel 
+                                                Grid.Column="1"
                                                 Orientation="Horizontal"
                                                 Spacing="2"
                                                 Margin="0,0,4,0"
@@ -312,6 +318,7 @@
                                                     Text="{x:Bind Commit.ParentCount, Mode=OneTime}" />
                                             </StackPanel>
                                             <ItemsControl
+                                                Grid.Column="2"
                                                 ItemsSource="{x:Bind Commit.References, Mode=OneTime}"
                                                 Visibility="{x:Bind Commit.HasReferences, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
                                                 <ItemsControl.ItemsPanel>
@@ -365,13 +372,18 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                             <TextBlock
+                                                Grid.Column="3"
                                                 FontWeight="SemiBold"
                                                 MaxLines="1"
                                                 Text="{x:Bind Commit.Message, Mode=OneTime}"
                                                 ToolTipService.ToolTip="{x:Bind Commit.Title, Mode=OneTime}"
                                                 TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal">
+                                        </Grid>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
                                             <Border
                                                 Padding="6,1"
                                                 Margin="0,0,4,0"
@@ -384,21 +396,24 @@
                                                     Text="{x:Bind Commit.RangeSideLabel, Mode=OneTime}" />
                                             </Border>
                                             <TextBlock
-                                                Margin="0,0,4,0"
+                                                Grid.Column="1"
+                                                x:Name="AdditionalCommitInfo"
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Style="{ThemeResource CaptionTextBlockStyle}"
-                                                Text="{x:Bind Commit.DisplayDate, Mode=OneTime}" />
-                                            <TextBlock
-                                                Margin="0,0,4,0"
-                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                Style="{ThemeResource CaptionTextBlockStyle}"
-                                                Text="{x:Bind Commit.ShortHash, Mode=OneTime}" />
-                                            <TextBlock
-                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                MaxLines="1"
-                                                Style="{ThemeResource CaptionTextBlockStyle}"
-                                                Text="{x:Bind Commit.AuthorName, Mode=OneTime}" />
-                                        </StackPanel>
+                                                TextTrimming="CharacterEllipsis"
+                                                TextWrapping="NoWrap">
+                                                <Run Text="{x:Bind Commit.DisplayDate, Mode=OneTime}" />
+                                                <Run Text="{x:Bind Commit.ShortHash, Mode=OneTime}" />
+                                                <Run Text="{x:Bind Commit.AuthorName, Mode=OneTime}" />
+                                                <ToolTipService.ToolTip>
+                                                    <TextBlock>
+                                                        <Run Text="{x:Bind Commit.DisplayDate, Mode=OneTime}" />
+                                                        <Run Text="{x:Bind Commit.ShortHash, Mode=OneTime}" />
+                                                        <Run Text="{x:Bind Commit.AuthorName, Mode=OneTime}" />   
+                                                    </TextBlock>
+                                                </ToolTipService.ToolTip>
+                                            </TextBlock>
+                                        </Grid>
                                     </StackPanel>
                                 </Grid>
                             </DataTemplate>
@@ -446,6 +461,7 @@
                         </Button>
                         <controls:DiffStatPresenter
                             Grid.Column="2"
+                            Margin="0,0,10,0"
                             HorizontalAlignment="Right"
                             AddedText="{x:Bind ViewModel.ChangedFilesStat.AddedText, Mode=OneWay, FallbackValue=''}"
                             ColumnMetrics="{StaticResource HistoryDiffStatColumnMetrics}"
@@ -457,7 +473,8 @@
                         Grid.Row="1"
                         ItemsSource="{x:Bind ViewModel.ChangedFiles, Mode=OneWay}"
                         SelectedItem="{x:Bind ViewModel.SelectedChangedFile, Mode=TwoWay}"
-                        SelectionMode="Single">
+                        SelectionMode="Single"
+                        Padding="0,0,10,0">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="models:GitChangedFile">
                                 <Grid
@@ -538,6 +555,7 @@
                 <Grid
                     Grid.Row="2"
                     RowSpacing="8"
+                    Padding="0,0,12,12"
                     Visibility="{x:Bind ViewModel.CommitDetailsBlockVisibility, Mode=OneWay}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -592,7 +610,9 @@
                             <TextBlock
                                 FontFamily="Consolas"
                                 Text="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}"
-                                TextWrapping="WrapWholeWords"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}"
+                                TextWrapping="NoWrap"
+                                TextTrimming="CharacterEllipsis"
                                 Margin="10,0,0,0">
                                 <TextBlock.ContextFlyout>
                                     <MenuFlyout>
@@ -611,7 +631,9 @@
                             <TextBlock
                                 FontFamily="Consolas"
                                 Text="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}"
-                                TextWrapping="WrapWholeWords"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}"
+                                TextWrapping="NoWrap"
+                                TextTrimming="CharacterEllipsis"
                                 Margin="10,0,0,0">
                                 <TextBlock.ContextFlyout>
                                     <MenuFlyout>
@@ -630,7 +652,9 @@
                             <TextBlock
                                 FontFamily="Consolas"
                                 Text="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}"
-                                TextWrapping="WrapWholeWords"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}"
+                                TextWrapping="NoWrap"
+                                TextTrimming="CharacterEllipsis"
                                 Margin="10,0,0,0">
                                 <TextBlock.ContextFlyout>
                                     <MenuFlyout>
@@ -759,9 +783,9 @@
                 Style="{StaticResource VerticalSplitterStyle}" />
 
             <controls:DiffViewer
-                x:Name="HistoryDiffPane"
                 Grid.Column="2"
-                Padding="20,0,0,0"
+                x:Name="HistoryDiffPane"
+                Margin="12,0,0,0"
                 CopyTextCommand="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                 DiffLinesSource="{x:Bind ViewModel.DiffLines, Mode=OneWay}"
                 EmptyMessage="{x:Bind ViewModel.DiffEmptyMessage, Mode=OneWay}"

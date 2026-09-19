@@ -9,7 +9,6 @@ using Microsoft.UI.Xaml;
 using CommunityToolkit.Mvvm.Messaging;
 using SimpleGit11.Extensibility.Plugins;
 using SimpleGit11.Extensibility.Presentation;
-using SimpleGit11.Models;
 using SimpleGit11.Presentation.Services;
 using SimpleGit11.Services;
 using SimpleGit11.Services.Execution;
@@ -29,7 +28,7 @@ public partial class App : Application
     public App()
     {
         _services = ConfigureServices();
-        ApplyStartupTheme();
+        // Keep the application theme system-controlled; user overrides belong on the window root.
         GetService<ILocalizationService>().ApplyLanguage();
         InitializeComponent();
     }
@@ -106,6 +105,7 @@ public partial class App : Application
             new HttpClient { Timeout = TimeSpan.FromMinutes(15) }));
         services.AddSingleton<IInstallerLauncher, InstallerLauncher>();
         services.AddSingleton<IApplicationInstanceLauncher, ApplicationInstanceLauncher>();
+        services.AddSingleton<ICredentialManagerLauncher, CredentialManagerLauncher>();
         services.AddSingleton<ILocalSettingsStore, JsonLocalSettingsStore>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<ILocalizationService, LocalizationService>();
@@ -183,16 +183,6 @@ public partial class App : Application
         }
 
         return services.BuildServiceProvider();
-    }
-
-    private void ApplyStartupTheme()
-    {
-        RequestedTheme = GetService<IThemeService>().CurrentTheme switch
-        {
-            AppThemeMode.Light => ApplicationTheme.Light,
-            AppThemeMode.Dark => ApplicationTheme.Dark,
-            _ => RequestedTheme
-        };
     }
 
     private static async Task EnsureCredentialHelperConfiguredAsync()

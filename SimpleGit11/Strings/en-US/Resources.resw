@@ -1778,13 +1778,19 @@
     <value>Git Credential Manager</value>
   </data>
   <data name="CredentialHelperSettingsCardDescriptionTextBlock.Text" xml:space="preserve">
-    <value>It is required for authorization on private remote repositories over HTTPS protocol.</value>
+    <value>Required locally for HTTPS authentication, including working with Git repositories via SSH</value>
   </data>
   <data name="CredentialHelperToggleSwitch.OnContent" xml:space="preserve">
     <value>On</value>
   </data>
   <data name="CredentialHelperToggleSwitch.OffContent" xml:space="preserve">
     <value>Off</value>
+  </data>
+  <data name="ManageCredentialsButton.Content" xml:space="preserve">
+    <value>Manage</value>
+  </data>
+  <data name="ManageCredentialsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Open Windows Credential Manager</value>
   </data>
   <data name="SshCommandSettingsCardHeaderTextBlock.Text" xml:space="preserve">
     <value>SSH client override</value>
@@ -4406,5 +4412,8 @@ Continue only if these IdentityFile entries may be removed.</value>
   </data>
   <data name="CheckRemoteAccessAppBarButton.Label" xml:space="preserve">
     <value>Check access</value>
+  </data>
+  <data name="ManageCredentialsButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Manage credentials</value>
   </data>
 </root>

@@ -1,4 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Text.RegularExpressions;
 using SimpleGit11.Models;
 using SimpleGit11.Presentation.Editor;
 using TextControlBoxNS;
@@ -8,6 +10,34 @@ namespace SimpleGit11.Tests.Presentation;
 [TestClass]
 public sealed class TextControlBoxSyntaxMapperTests
 {
+    [TestMethod]
+    [DataRow("import (", "import", SyntaxHighlightRole.Keyword)]
+    [DataRow("var (", "var", SyntaxHighlightRole.Keyword)]
+    [DataRow("func (value int) {}", "func", SyntaxHighlightRole.Keyword)]
+    [DataRow("func main() {}", "main", SyntaxHighlightRole.Function)]
+    public void GoTokensBeforeParenthesis_KeepTheirSemanticRoles(
+        string line,
+        string token,
+        SyntaxHighlightRole expectedRole)
+    {
+        SyntaxHighlightLanguage language = TextControlBox.GetSyntaxHighlightingFromID(SyntaxHighlightID.Go);
+        int tokenIndex = line.IndexOf(token, StringComparison.Ordinal);
+        SyntaxHighlightRole role = SyntaxHighlightRole.Custom;
+
+        foreach (SyntaxHighlights rule in language.Highlights)
+        {
+            foreach (Match match in Regex.Matches(line, rule.Pattern))
+            {
+                if (tokenIndex >= match.Index && tokenIndex < match.Index + match.Length)
+                {
+                    role = rule.Role;
+                }
+            }
+        }
+
+        Assert.AreEqual(expectedRole, role);
+    }
+
     [TestMethod]
     [DataRow("source.asm", SyntaxHighlightID.x86Assembly)]
     [DataRow("build.cmd", SyntaxHighlightID.Batch)]

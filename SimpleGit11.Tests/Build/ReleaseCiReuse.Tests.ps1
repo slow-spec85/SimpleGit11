@@ -162,25 +162,115 @@ try {
 
     # Verify the fail-safe wiring, without evaluating untrusted workflow commands.
     [string]$root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $CiReuseScript))
-    [string]$workflow = Get-Content -LiteralPath (Join-Path $root '.github/workflows/release-validation.yml') -Raw
+    [string]$workflow = Get-Content -LiteralPath (Join-Path $root '.github/workflows/release.yml') -Raw
     foreach ($required in @(
         'actions: read', 'needs: validate-release-tag',
         'reuse-ci: ${{ steps.ci.outputs.reuse }}',
         "if: needs.validate-release-tag.outputs.reuse-ci != 'true'",
         'continue-on-error: true', '"reuse=false" >> $env:GITHUB_OUTPUT',
-        'git rev-parse HEAD', 'git merge-base --is-ancestor HEAD refs/remotes/origin/main',
-        '-Repository $env:GITHUB_REPOSITORY -CommitSha $env:RELEASE_COMMIT_SHA'
+        'git rev-parse HEAD', 'git rev-parse refs/remotes/origin/main',
+        'git cat-file -t "refs/tags/$releaseTag"',
+        "git for-each-ref --format='%(contents:subject)'",
+        '-Repository $env:GITHUB_REPOSITORY -CommitSha $env:RELEASE_COMMIT_SHA',
+        "github.repository == 'slow-spec85/SimpleGit11'",
+        "needs.build-and-test.result == 'success'",
+        "needs.build-and-test.result == 'skipped'",
+        "needs.validate-release-tag.outputs.reuse-ci == 'true'",
+        'contents: write', 'submodules: recursive',
+        'Publish-Release.ps1 -AcceptWixEula',
+        '--verify-tag', '--notes-from-tag', '--prerelease',
+        'no longer points to the current public main commit.'
     )) {
         if (-not $workflow.Contains($required)) { throw "Missing release workflow guard: $required" }
     }
     $runBlocks = [regex]::Matches($workflow, '(?m)^        run: \|\r?\n(?<Script>(?:^          .*\r?\n|^\r?\n)+)')
-    if ($runBlocks.Count -ne 2) { throw 'Expected tag-validation and CI-lookup PowerShell blocks.' }
+    if ($runBlocks.Count -ne 4) { throw 'Expected tag-validation, CI-lookup, installer and release PowerShell blocks.' }
     foreach ($block in $runBlocks) {
         [string]$scriptText = $block.Groups['Script'].Value -replace '(?m)^          ', ''
         $tokens = $null
         $parseErrors = $null
         [void][Management.Automation.Language.Parser]::ParseInput($scriptText, [ref]$tokens, [ref]$parseErrors)
         if ($parseErrors.Count -ne 0) { throw 'A release workflow PowerShell block has syntax errors.' }
+    }
+
+    # Execute the tag-validation block with isolated Git responses, without network access.
+    [string]$tagValidation = $runBlocks[0].Groups['Script'].Value -replace '(?m)^          ', ''
+    $script:tagFixture = [pscustomobject]@{
+        MainCommit = $testSha; TagType = 'tag'; Subject = 'Release notes'
+    }
+    function git {
+        $global:LASTEXITCODE = 0
+        switch ($args[0]) {
+            'fetch' { return }
+            'rev-parse' {
+                if ($args[1] -eq 'HEAD') { return $testSha }
+                if ($args[1] -eq 'refs/remotes/origin/main') { return $tagFixture.MainCommit }
+            }
+            'cat-file' { return $tagFixture.TagType }
+            'for-each-ref' { return $tagFixture.Subject }
+        }
+        throw "Unexpected Git call in tag validation: $($args -join ' ')"
+    }
+    function gh {
+        $script:releaseArgumentsSeen = @($args)
+        $global:LASTEXITCODE = 0
+    }
+    function Assert-WorkflowFailure {
+        param([scriptblock]$Action, [string]$ExpectedMessage)
+        try { & $Action | Out-Null }
+        catch {
+            if ($_.Exception.Message -notlike "*$ExpectedMessage*") { throw }
+            return
+        }
+        throw "Expected workflow failure: $ExpectedMessage"
+    }
+    [string]$originalRefName = $env:GITHUB_REF_NAME
+    [string]$originalOutputPath = $env:GITHUB_OUTPUT
+    [string]$testOutput = Join-Path ([IO.Path]::GetTempPath()) ('SimpleGit11-release-' + [guid]::NewGuid().ToString('N'))
+    try {
+        $env:GITHUB_OUTPUT = $testOutput
+        $env:GITHUB_REF_NAME = 'v1.2.3'
+        & ([scriptblock]::Create($tagValidation))
+        if ((Get-Content -LiteralPath $testOutput -Raw) -notmatch "sha=$testSha") {
+            throw 'Valid annotated tag was not accepted.'
+        }
+        $tagFixture.MainCommit = '2222222222222222222222222222222222222222'
+        Assert-WorkflowFailure { & ([scriptblock]::Create($tagValidation)) } 'current public main commit'
+        $tagFixture.MainCommit = $testSha
+        $tagFixture.TagType = 'commit'
+        Assert-WorkflowFailure { & ([scriptblock]::Create($tagValidation)) } 'must be annotated'
+        $tagFixture.TagType = 'tag'
+        $tagFixture.Subject = ''
+        Assert-WorkflowFailure { & ([scriptblock]::Create($tagValidation)) } 'must contain release notes'
+
+        [string]$releaseScript = $runBlocks[3].Groups['Script'].Value -replace '(?m)^          ', ''
+        $tagFixture.MainCommit = $testSha
+        $env:GITHUB_REF_NAME = 'v1.2.3'
+        & ([scriptblock]::Create($releaseScript))
+        if ($releaseArgumentsSeen -notcontains '--verify-tag' -or
+            $releaseArgumentsSeen -notcontains '--notes-from-tag' -or
+            $releaseArgumentsSeen -contains '--prerelease' -or
+            $releaseArgumentsSeen -notcontains 'artifacts/SimpleGit11-1.2.3-win-x64.msi' -or
+            $releaseArgumentsSeen -notcontains 'artifacts/SimpleGit11-1.2.3-win-x64.msi.sha256') {
+            throw 'Stable release arguments are incorrect.'
+        }
+        $env:GITHUB_REF_NAME = 'v1.2.4-preview.1'
+        & ([scriptblock]::Create($releaseScript))
+        if ($releaseArgumentsSeen -notcontains '--prerelease' -or
+            $releaseArgumentsSeen -notcontains '--latest=false') {
+            throw 'Prerelease flags are missing.'
+        }
+        $tagFixture.MainCommit = '2222222222222222222222222222222222222222'
+        $script:releaseArgumentsSeen = @()
+        Assert-WorkflowFailure { & ([scriptblock]::Create($releaseScript)) } 'no longer points to the current public main commit'
+        if ($releaseArgumentsSeen.Count -ne 0) { throw 'Release was created after main moved.' }
+    }
+    finally {
+        $env:GITHUB_REF_NAME = $originalRefName
+        $env:GITHUB_OUTPUT = $originalOutputPath
+        Remove-Item -LiteralPath $testOutput -ErrorAction SilentlyContinue
+        Remove-Item Function:git -ErrorAction SilentlyContinue
+        Remove-Item Function:gh -ErrorAction SilentlyContinue
     }
     Write-Host "Release CI reuse: $scenarioCount scenarios and workflow guards passed without network access."
 }

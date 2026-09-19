@@ -14,16 +14,19 @@
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="DefaultLineAccentBrush" Color="#000000" />
+                    
                     <SolidColorBrush x:Key="DiffAddedLineBackgroundBrush" Color="#E7F4E7" />
                     <SolidColorBrush x:Key="DiffRemovedLineBackgroundBrush" Color="#FFE8E3" />
                     <SolidColorBrush x:Key="DiffInlineAddedTextBorderBrush" Color="#B7E6C0" />
                     <SolidColorBrush x:Key="DiffInlineRemovedTextBorderBrush" Color="#F5B5B5" />
                     <SolidColorBrush x:Key="DiffHunkLineBackgroundBrush" Color="#F0F0F0" />
                     <SolidColorBrush x:Key="DiffConflictMarkerLineBackgroundBrush" Color="#FFF4CE" />
-
                     <SolidColorBrush x:Key="DiffHunkLineAccentBrush" Color="#969696" />
                     <SolidColorBrush x:Key="DiffConflictMarkerLineAccentBrush" Color="#784600" />
-                    <SolidColorBrush x:Key="DefaultLineAccentBrush" Color="#000000" />
+                    <SolidColorBrush x:Key="DiffAddedStatTextBrush" Color="#00A240" />
+                    <SolidColorBrush x:Key="DiffRemovedStatTextBrush" Color="#E02E2A" />
+                    
                     <SolidColorBrush x:Key="SyntaxCommentForegroundBrush" Color="#008000" />
                     <SolidColorBrush x:Key="SyntaxKeywordForegroundBrush" Color="#0000FF" />
                     <SolidColorBrush x:Key="SyntaxControlFlowForegroundBrush" Color="#D899BE" />
@@ -40,9 +43,6 @@
                     <SolidColorBrush x:Key="SyntaxVariableForegroundBrush" Color="#001080" />
                     <SolidColorBrush x:Key="SyntaxLabelForegroundBrush" Color="#795E26" />
                     <SolidColorBrush x:Key="SyntaxKeyForegroundBrush" Color="#0451A5" />
-
-                    <SolidColorBrush x:Key="DiffAddedStatTextBrush" Color="#00A240" />
-                    <SolidColorBrush x:Key="DiffRemovedStatTextBrush" Color="#E02E2A" />
 
                     <SolidColorBrush x:Key="SuccessfulOperationColor" Color="#00A240" />
                     <SolidColorBrush x:Key="MetadataIndicatorBackgroundBrush" Color="#50808080" />
@@ -61,19 +61,23 @@
                     <SolidColorBrush x:Key="CommitGraphLane4Brush" Color="#CA5010" />
                     <SolidColorBrush x:Key="CommitGraphLane5Brush" Color="#038387" />
                     <SolidColorBrush x:Key="CommitGraphLane6Brush" Color="#C239B3" />
+                    <SolidColorBrush x:Key="WarningTextBrush" Color="#D0B400" />
                     
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="DefaultLineAccentBrush" Color="#FFFFFF" />
+                    
                     <SolidColorBrush x:Key="DiffAddedLineBackgroundBrush" Color="#265E4D" />
                     <SolidColorBrush x:Key="DiffRemovedLineBackgroundBrush" Color="#3C0000" />
                     <SolidColorBrush x:Key="DiffInlineAddedTextBorderBrush" Color="#6A9955" />
                     <SolidColorBrush x:Key="DiffInlineRemovedTextBorderBrush" Color="#7A3434" />
                     <SolidColorBrush x:Key="DiffHunkLineBackgroundBrush" Color="#2D2D2D" />
                     <SolidColorBrush x:Key="DiffConflictMarkerLineBackgroundBrush" Color="#582F00" />
-
                     <SolidColorBrush x:Key="DiffHunkLineAccentBrush" Color="#969696" />
                     <SolidColorBrush x:Key="DiffConflictMarkerLineAccentBrush" Color="#FFD278" />
-                    <SolidColorBrush x:Key="DefaultLineAccentBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="DiffAddedStatTextBrush" Color="#40C877" />
+                    <SolidColorBrush x:Key="DiffRemovedStatTextBrush" Color="#C83B38" />
+
                     <SolidColorBrush x:Key="SyntaxCommentForegroundBrush" Color="#6A9955" />
                     <SolidColorBrush x:Key="SyntaxKeywordForegroundBrush" Color="#569CD6" />
                     <SolidColorBrush x:Key="SyntaxControlFlowForegroundBrush" Color="#D899BE" />
@@ -91,8 +95,6 @@
                     <SolidColorBrush x:Key="SyntaxLabelForegroundBrush" Color="#DCDCAA" />
                     <SolidColorBrush x:Key="SyntaxKeyForegroundBrush" Color="#9CDCFE" />
 
-                    <SolidColorBrush x:Key="DiffAddedStatTextBrush" Color="#40C877" />
-                    <SolidColorBrush x:Key="DiffRemovedStatTextBrush" Color="#C83B38" />
 
                     <SolidColorBrush x:Key="SuccessfulOperationColor" Color="#40C877" />
                     <SolidColorBrush x:Key="MetadataIndicatorBackgroundBrush" Color="#50808080" />
@@ -111,6 +113,7 @@
                     <SolidColorBrush x:Key="CommitGraphLane4Brush" Color="#FF9349" />
                     <SolidColorBrush x:Key="CommitGraphLane5Brush" Color="#4EC9B0" />
                     <SolidColorBrush x:Key="CommitGraphLane6Brush" Color="#F17CB0" />
+                    <SolidColorBrush x:Key="WarningTextBrush" Color="#F4CA16" />
 
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
@@ -158,6 +161,7 @@
                     <SolidColorBrush x:Key="CommitGraphLane4Brush" Color="{ThemeResource SystemColorWindowTextColor}" />
                     <SolidColorBrush x:Key="CommitGraphLane5Brush" Color="{ThemeResource SystemColorWindowTextColor}" />
                     <SolidColorBrush x:Key="CommitGraphLane6Brush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="WarningTextBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
