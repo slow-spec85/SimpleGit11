@@ -21,6 +21,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     protected const int CommitPageSize = 300;
     private readonly List<GitCommit> _allCommits = [];
     private string _exactFilePathSearchText = "";
+    private bool _isCommitGraphVisible = true;
     private CommitBrowserRowViewItem? _selectedCommitRow;
 
     protected CommitBrowserViewModelBase(
@@ -96,6 +97,29 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         ApplyFilters();
     }
 
+    public bool IsCommitGraphVisible
+    {
+        get => _isCommitGraphVisible;
+        set
+        {
+            if (SetProperty(ref _isCommitGraphVisible, value))
+            {
+                UpdateCommitRowGraphs();
+                OnPropertyChanged(nameof(CommitGraphToggleText));
+            }
+        }
+    }
+
+    public string CommitGraphToggleText => IsCommitGraphVisible
+        ? _localizationService.GetString("HideCommitGraphMenuFlyoutItemText")
+        : _localizationService.GetString("ShowCommitGraphMenuFlyoutItemText");
+
+    [RelayCommand]
+    private void OnToggleCommitGraph()
+    {
+        IsCommitGraphVisible = !IsCommitGraphVisible;
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsCommitFilterApplied))]
     [NotifyPropertyChangedFor(nameof(IsFilterFromTimeEnabled))]
@@ -165,8 +189,6 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     }
 
     public bool HasParentCommits => ParentCommits.Count > 0;
-
-    public virtual Visibility EditCommitMessageActionVisibility => Visibility.Collapsed;
 
     public string CommitsTitle => PluralizationService.FormatCommitCount(
         Commits.Count,
@@ -299,7 +321,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     private void RebuildCommitRows(IReadOnlyList<GitCommit> filteredCommits)
     {
         CommitRows.Clear();
-        if (!ShowsCommitGraph)
+        if (!ShowsCommitGraph || !IsCommitGraphVisible)
         {
             foreach (GitCommit commit in filteredCommits)
             {
@@ -327,6 +349,35 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
                 graph,
                 true,
                 GetAccessibleGraphDescription(commit, graph)));
+        }
+    }
+
+    private void UpdateCommitRowGraphs()
+    {
+        if (!ShowsCommitGraph || !IsCommitGraphVisible)
+        {
+            foreach (CommitBrowserRowViewItem row in CommitRows)
+            {
+                row.UpdateGraph(CommitGraphRow.Empty, false, "");
+            }
+
+            return;
+        }
+
+        HashSet<string> visibleHashes = Commits
+            .Select(commit => commit.Hash)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        CommitGraphLayout layout = CommitGraphLayoutBuilder.Build(
+            _allCommits,
+            visibleHashes,
+            IsMainlineOnly);
+
+        foreach (CommitBrowserRowViewItem row in CommitRows)
+        {
+            CommitGraphRow graph = layout.Rows.TryGetValue(row.Commit.Hash, out CommitGraphRow? graphRow)
+                ? graphRow
+                : CommitGraphRow.Empty;
+            row.UpdateGraph(graph, true, GetAccessibleGraphDescription(row.Commit, graph));
         }
     }
 

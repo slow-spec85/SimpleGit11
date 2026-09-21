@@ -13,12 +13,12 @@
             <VisualStateGroup x:Name="LayoutStates">
                 <VisualState x:Name="WideLayout">
                     <VisualState.StateTriggers>
-                        <toolkit:ControlSizeTrigger MinWidth="900" TargetElement="{Binding ElementName=Root}" />
+                        <toolkit:ControlSizeTrigger MinWidth="600" TargetElement="{Binding ElementName=Root}" />
                     </VisualState.StateTriggers>
                 </VisualState>
                 <VisualState x:Name="NarrowLayout">
                     <VisualState.StateTriggers>
-                        <toolkit:ControlSizeTrigger MaxWidth="900" TargetElement="{Binding ElementName=Root}" />
+                        <toolkit:ControlSizeTrigger MaxWidth="600" TargetElement="{Binding ElementName=Root}" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
                         <Setter Target="NarrowLayoutControlsRow.Height" Value="Auto" />
@@ -50,12 +50,10 @@
                 VerticalAlignment="Center"
                 ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock
-                    Grid.Column="1"
                     x:Name="DiffHeading"
                     VerticalAlignment="Center"
                     MaxLines="1"
@@ -64,7 +62,7 @@
                     TextTrimming="CharacterEllipsis"
                     ToolTipService.ToolTip="{Binding SelectedDiffFileTooltip}" />
                 <TextBlock
-                    Grid.Column="2"
+                    Grid.Column="1"
                     x:Uid="DiffEditorModifiedStatusTextBlock"
                     x:Name="DiffEditorModifiedStatusTextBlock"    
                     VerticalAlignment="Center"
@@ -86,8 +84,6 @@
                         MinWidth="0"
                         VerticalAlignment="Center"
                         AutomationProperties.AutomationId="DiffViewerSearchToggle"
-                        Background="Transparent"
-                        BorderThickness="0"
                         Click="DiffSearchToggleButton_Click"
                         Padding="5">
                         <SymbolIcon Symbol="Find" />
@@ -142,41 +138,52 @@
                             </Flyout>
                         </primitives:FlyoutBase.AttachedFlyout>
                     </ToggleButton>
-                    <ToggleSwitch 
-                        x:Name="IgnoreWhitespaceToggleSwitch"
-                        x:Uid="IgnoreWhitespaceToggleSwitch"
-                        VerticalAlignment="Center"
-                        AutomationProperties.AutomationId="DiffViewerIgnoreWhitespaceToggle"
-                        IsOn="{Binding IgnoreWhitespaceInDiff, Mode=TwoWay}" />
-                    <ComboBox 
-                        x:Uid="DiffViewerSyntaxHighlightingComboBox"
-                        Width="160"
-                        VerticalAlignment="Center"
-                        AutomationProperties.AutomationId="DiffViewerSyntaxSelector"
-                        DisplayMemberPath="DisplayName"
-                        ItemsSource="{Binding SyntaxHighlightingOptions}"
-                        SelectedItem="{Binding SelectedSyntaxHighlightingOption, Mode=TwoWay}">
-                        <ToolTipService.ToolTip>
-                            <ToolTip x:Uid="SyntaxHighlightingTooltip" />
-                        </ToolTipService.ToolTip>
-                    </ComboBox>
-                    <controls:RepositoryEditorZoomControl
-                        VerticalAlignment="Center"
-                        EditorSurface="{x:Bind EditorSurface}" />
-                    <ToggleButton
-                        x:Name="FullFileModeButton"
-                        Width="32"
+                    <Button
+                        x:Name="DiffViewOptionsButton"
+                        x:Uid="DiffViewOptionsButton"
                         Height="32"
                         MinWidth="0"
-                        AutomationProperties.Name="{Binding DiffModeToggleText}"
-                        AutomationProperties.AutomationId="DiffViewerFullFileToggle"
-                        Command="{Binding ToggleFullFileCommand}"
-                        IsChecked="{Binding IsFullFileMode, Mode=TwoWay}"
-                        ToolTipService.ToolTip="{Binding DiffModeToggleText}"
+                        Padding="12,0"
                         VerticalAlignment="Center"
-                        Padding="1">
-                        <SymbolIcon Symbol="Document" />
-                    </ToggleButton>
+                        AutomationProperties.AutomationId="DiffViewerViewOptionsButton">
+                        <Button.Flyout>
+                            <Flyout
+                                Placement="BottomEdgeAlignedRight"
+                                Opening="DiffViewOptionsFlyout_Opening">
+                                <StackPanel
+                                    Width="280"
+                                    Spacing="12">
+                                    <ToggleSwitch
+                                        x:Name="IgnoreWhitespaceToggleSwitch"
+                                        x:Uid="IgnoreWhitespaceToggleSwitch"
+                                        AutomationProperties.AutomationId="DiffViewerIgnoreWhitespaceToggle"
+                                        IsOn="{Binding IgnoreWhitespaceInDiff, Mode=TwoWay}" />
+                                    <ToggleSwitch
+                                        x:Name="FullFileModeToggleSwitch"
+                                        x:Uid="FullFileModeToggleSwitch"
+                                        AutomationProperties.AutomationId="DiffViewerFullFileToggle"
+                                        IsOn="{Binding IsFullFileMode, ElementName=Root, Mode=OneWay}"
+                                        Toggled="FullFileModeToggleSwitch_Toggled" />
+                                    <ComboBox
+                                        x:Name="DiffViewerSyntaxHighlightingComboBox"
+                                        x:Uid="DiffViewerSyntaxHighlightingComboBox"
+                                        HorizontalAlignment="Stretch"
+                                        AutomationProperties.AutomationId="DiffViewerSyntaxSelector"
+                                        DisplayMemberPath="DisplayName"
+                                        ItemsSource="{Binding SyntaxHighlightingOptions}"
+                                        SelectedItem="{Binding SelectedSyntaxHighlightingOption, Mode=TwoWay}">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip x:Uid="SyntaxHighlightingTooltip" />
+                                        </ToolTipService.ToolTip>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                    <controls:RepositoryEditorZoomControl
+                        x:Name="RepositoryEditorZoomControl"
+                        VerticalAlignment="Center"
+                        EditorSurface="{x:Bind EditorSurface}" />
                     <Button
                         x:Name="EditFileButton"
                         x:Uid="EditDiffFileButton"

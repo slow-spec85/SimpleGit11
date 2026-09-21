@@ -207,6 +207,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         }
     }
 
+    public void OpenLastRecentRepositoryIfEnabled()
+    {
+        if (_settingsService.Current.OpenLastRepositoryOnStartup && RecentRepositories.Count > 0)
+        {
+            App.GetService<RepositoryViewModel>().OpenRecentRepositoryCommand.TryExecute(RecentRepositories[0]);
+        }
+    }
+
     public void SelectRemote(string? remoteName)
     {
         SelectedRemoteName = remoteName ?? _localizationService.GetString("NoRemote");

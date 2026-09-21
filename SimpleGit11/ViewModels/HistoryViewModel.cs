@@ -60,8 +60,6 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
         OnPropertyChanged(nameof(HistoryVisible));
     }
 
-    public override Visibility EditCommitMessageActionVisibility => Visibility.Visible;
-
     protected override bool ShowsCommitGraph => true;
 
     public bool CanEditSelectedCommitMessage =>

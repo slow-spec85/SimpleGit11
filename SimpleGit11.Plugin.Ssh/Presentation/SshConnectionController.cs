@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using SimpleGit11.Extensibility.Presentation;
 using SimpleGit11.Plugin.Ssh.Models;
 using SimpleGit11.Plugin.Ssh.Services;
 using SimpleGit11.Services;
@@ -17,15 +18,20 @@ internal sealed class SshConnectionController(
     IExecutionContextService executionContextService,
     ISshConnectionProfileStore sshConnectionProfileStore,
     ISshConnectionDialogService dialogService,
-    ISshLocalizationService localizationService) : ObservableObject
+    ISshLocalizationService localizationService,
+    IPluginOperationFeedback feedback) : ObservableObject
 {
     private readonly IExecutionContextService _executionContextService = executionContextService;
     private readonly ISshConnectionProfileStore _sshConnectionProfileStore = sshConnectionProfileStore;
     private readonly ISshConnectionDialogService _dialogService = dialogService;
     private readonly ISshLocalizationService _localizationService = localizationService;
+    private readonly IPluginOperationFeedback _feedback = feedback;
+    private CancellationTokenSource? _connectionCancellation;
     private int _isBusy;
 
     public bool IsBusy => Volatile.Read(ref _isBusy) != 0;
+
+    private void CancelConnection() => _connectionCancellation?.Cancel();
 
     public async Task ToggleAsync()
     {
@@ -105,11 +111,16 @@ internal sealed class SshConnectionController(
             string? expectedHostKey = result.ExpectedHostKey;
             while (_executionContextService.Current.Id == initialContextId)
             {
+                using CancellationTokenSource cancellation = new();
+                _connectionCancellation = cancellation;
+                _feedback.ClearError(this);
+                _feedback.Start(this, _localizationService.GetString("SshConnectingStatus"), CancelConnection);
                 try
                 {
                     await _executionContextService.ActivateAsync(
                         SshPlugin.ProviderId,
-                        CreateSshConnectionRequest(result, expectedHostKey, persistProfile));
+                        CreateSshConnectionRequest(result, expectedHostKey, persistProfile),
+                        cancellation.Token);
                     if (persistProfile)
                     {
                         _sshConnectionProfileStore.Upsert(new SshConnectionProfile(
@@ -125,12 +136,30 @@ internal sealed class SshConnectionController(
                 }
                 catch (SshHostKeyVerificationException exception)
                 {
+                    // Confirmation must happen after the progress surface is removed.
+                    _feedback.Stop(this);
                     if (!await ConfirmHostKeyAsync(exception))
                     {
                         return;
                     }
 
                     expectedHostKey = exception.Fingerprint;
+                }
+                catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+                {
+                    return;
+                }
+                catch (Exception exception)
+                {
+                    _feedback.ShowError(this,
+                        _localizationService.GetString("SshConnectionFailedMessage"),
+                        exception.Message);
+                    return;
+                }
+                finally
+                {
+                    _connectionCancellation = null;
+                    _feedback.Stop(this);
                 }
             }
         }

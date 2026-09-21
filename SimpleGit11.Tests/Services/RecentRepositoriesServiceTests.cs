@@ -10,6 +10,25 @@ namespace SimpleGit11.Tests.Services;
 public sealed class RecentRepositoriesServiceTests
 {
     [TestMethod]
+    public void Add_UsesConfiguredLimitForStoredAndLoadedRepositories()
+    {
+        MemorySettingsStore store = new();
+        SettingsService settings = new(store);
+        settings.SetRecentRepositoriesCount(2);
+        TestExecutionContextService context = new(
+            new InMemoryRepositoryFileSystem(), RepositoryPathStyle.Windows, isLocal: true);
+        RecentRepositoriesService service = new(store, settings, new NullDiscoveryService(), context);
+
+        service.Add(new RepositoryInfo(@"D:\repos\one", "one", "main"));
+        service.Add(new RepositoryInfo(@"D:\repos\two", "two", "main"));
+        service.Add(new RepositoryInfo(@"D:\repos\three", "three", "main"));
+
+        Assert.HasCount(2, service.Load());
+        Assert.HasCount(2, JsonSerializer.Deserialize<List<RepositoryInfo>>(store.GetString("RecentRepositories")!)!);
+        Assert.AreEqual("three", service.Load()[0].Name);
+    }
+
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public void Add_LocalPathWithDifferentSeparators_ReplacesExistingRepository(bool hasCommonDirectory)
@@ -83,7 +102,7 @@ public sealed class RecentRepositoriesServiceTests
     {
         TestExecutionContextService context = new(
             new InMemoryRepositoryFileSystem(), RepositoryPathStyle.Windows, isLocal: true);
-        return new RecentRepositoriesService(settings, new NullDiscoveryService(), context);
+        return new RecentRepositoriesService(settings, new SettingsService(settings), new NullDiscoveryService(), context);
     }
 
     [TestMethod]
@@ -93,7 +112,7 @@ public sealed class RecentRepositoriesServiceTests
         TestExecutionContextService context = new(
             new InMemoryRepositoryFileSystem(),
             connectionProfileId: "server-one");
-        RecentRepositoriesService service = new(settings, new NullDiscoveryService(), context);
+        RecentRepositoriesService service = new(settings, new SettingsService(settings), new NullDiscoveryService(), context);
         RepositoryInfo repository = new("/srv/repository", "repository", "main");
 
         IReadOnlyList<RepositoryInfo> repositories = service.Add(repository);
@@ -147,7 +166,7 @@ public sealed class RecentRepositoriesServiceTests
         TestExecutionContextService context = new(
             new InMemoryRepositoryFileSystem(),
             connectionProfileId: profileId);
-        return new RecentRepositoriesService(settings, new NullDiscoveryService(), context);
+        return new RecentRepositoriesService(settings, new SettingsService(settings), new NullDiscoveryService(), context);
     }
 
     private sealed class NullDiscoveryService : IGitRepositoryDiscoveryService

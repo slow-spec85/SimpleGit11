@@ -222,6 +222,12 @@
   <data name="SshConnectionBusyStatus" xml:space="preserve">
     <value>Connection settings are being processed</value>
   </data>
+  <data name="SshConnectingStatus" xml:space="preserve">
+    <value>Connecting to the SSH host…</value>
+  </data>
+  <data name="SshConnectionFailedMessage" xml:space="preserve">
+    <value>SSH connection failed.</value>
+  </data>
   <data name="SshConnectionActiveStatusFormat" xml:space="preserve">
     <value>Connected to {0}. Select to disconnect.</value>
   </data>

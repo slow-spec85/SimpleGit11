@@ -133,13 +133,8 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
     public string SelectedCommitMessage => SelectedCommit?.Message ?? "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ChangedFilesBlockVisibility))]
     [NotifyPropertyChangedFor(nameof(CommitDetailsBlockVisibility))]
-    public partial bool IsCommitDetailsBlockVisible { get; private set; }
-
-    public Visibility ChangedFilesBlockVisibility => IsCommitDetailsBlockVisible
-        ? Visibility.Collapsed
-        : Visibility.Visible;
+    public partial bool IsCommitDetailsBlockVisible { get; set; }
 
     public Visibility CommitDetailsBlockVisibility => IsCommitDetailsBlockVisible
         ? Visibility.Visible
@@ -555,18 +550,6 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
 
         SelectedChangedFile = change;
         return Task.CompletedTask;
-    }
-
-    [RelayCommand]
-    private void OnShowChangedFilesBlock()
-    {
-        IsCommitDetailsBlockVisible = false;
-    }
-
-    [RelayCommand]
-    private void OnShowCommitDetailsBlock()
-    {
-        IsCommitDetailsBlockVisible = true;
     }
 
     [RelayCommand]

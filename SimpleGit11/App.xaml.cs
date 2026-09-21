@@ -59,6 +59,10 @@ public partial class App : Application
                 _ = GetService<IAsyncCommandExecutor>().ExecuteAsync(
                     () => GetService<RepositoryViewModel>().OpenRepositoryPathAsync(startupRepositoryPath));
             }
+            else
+            {
+                GetService<MainWindowViewModel>().OpenLastRecentRepositoryIfEnabled();
+            }
             _ = EnsureCredentialHelperConfiguredAsync();
         }
         catch (Exception exception)
@@ -137,6 +141,7 @@ public partial class App : Application
         services.AddSingleton<DialogService>();
         services.AddSingleton<IDialogService>(provider => provider.GetRequiredService<DialogService>());
         services.AddSingleton<IPluginDialogHost>(provider => provider.GetRequiredService<DialogService>());
+        services.AddSingleton<IPluginOperationFeedback, PluginOperationFeedback>();
         services.AddSingleton<IHostKeyConfirmationService, HostKeyConfirmationService>();
         services.AddSingleton<IOpenSshService, OpenSshService>();
         services.AddSingleton<IGitRemoteService, GitRemoteService>();

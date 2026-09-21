@@ -10,6 +10,8 @@ public interface IGitStashService
 
     Task<string> CreateStashAsync(RepositoryInfo repository);
 
+    Task<string> CreateStashAsync(RepositoryInfo repository, IReadOnlyList<string> paths);
+
     Task<string> ApplyStashAsync(RepositoryInfo repository, GitStash stash);
 
     Task<string> PopStashAsync(RepositoryInfo repository, GitStash stash);

@@ -10,7 +10,7 @@
                 <ControlTemplate TargetType="primitives:Thumb">
                     <Grid Background="Transparent">
                         <Border
-                            Width="4"
+                            Width="8"
                             HorizontalAlignment="Center"
                             Background="{ThemeResource ControlStrokeColorDefaultBrush}"
                             CornerRadius="2"
@@ -27,7 +27,7 @@
                 <ControlTemplate TargetType="primitives:Thumb">
                     <Grid Background="Transparent">
                         <Border
-                            Height="4"
+                            Height="8"
                             VerticalAlignment="Center"
                             Background="{ThemeResource ControlStrokeColorDefaultBrush}"
                             CornerRadius="2"

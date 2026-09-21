@@ -17,6 +17,10 @@ public interface ISettingsService
 
     void SetFetchOnRepositoryOpen(bool fetch);
 
+    void SetRecentRepositoriesCount(int count);
+
+    void SetOpenLastRepositoryOnStartup(bool open);
+
     void SetIgnoreWhitespaceInDiff(bool ignoreWhitespace);
 
     void SetEditorFont(string fontFamily, int fontSize);

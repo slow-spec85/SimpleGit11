@@ -46,6 +46,9 @@ public sealed partial class DiffViewer : UserControl
     public static readonly DependencyProperty EditContentChangedCommandProperty = RegisterCommand(
         nameof(EditContentChangedCommand));
 
+    public static readonly DependencyProperty ToggleFullFileCommandProperty = RegisterCommand(
+        nameof(ToggleFullFileCommand));
+
     public static readonly DependencyProperty RevertActionVisibilityProperty = DependencyProperty.Register(
         nameof(RevertActionVisibility),
         typeof(Visibility),
@@ -171,6 +174,12 @@ public sealed partial class DiffViewer : UserControl
     {
         get => (ICommand?)GetValue(EditContentChangedCommandProperty);
         set => SetValue(EditContentChangedCommandProperty, value);
+    }
+
+    public ICommand? ToggleFullFileCommand
+    {
+        get => (ICommand?)GetValue(ToggleFullFileCommandProperty);
+        set => SetValue(ToggleFullFileCommandProperty, value);
     }
 
     public Visibility RevertActionVisibility
@@ -468,6 +477,33 @@ public sealed partial class DiffViewer : UserControl
             RepositorySyntaxHighlightPalette.Create());
         EditorSurface.SetSyntaxHighlightingStateBoundaries(
             IsEditing ? [] : _projection.SyntaxStateBoundaryLines);
+    }
+
+    private void DiffViewOptionsFlyout_Opening(object sender, object args)
+    {
+        if (sender is Flyout { Content: FrameworkElement content })
+        {
+            content.DataContext = DataContext;
+        }
+
+        FullFileModeToggleSwitch.IsOn = IsFullFileMode;
+        FullFileModeToggleSwitch.IsEnabled = ToggleFullFileCommand?.CanExecute(null) == true;
+    }
+
+    private void FullFileModeToggleSwitch_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (FullFileModeToggleSwitch.IsOn == IsFullFileMode)
+        {
+            return;
+        }
+
+        if (ToggleFullFileCommand?.CanExecute(null) == true)
+        {
+            ToggleFullFileCommand.Execute(null);
+            return;
+        }
+
+        FullFileModeToggleSwitch.IsOn = IsFullFileMode;
     }
 
     private void ApplyDecorations()

@@ -29,10 +29,29 @@
             </StackPanel>
 
             <CommandBar DefaultLabelPosition="Right" VerticalAlignment="Center">
-                <AppBarButton
-                    x:Uid="CreateStashAppBarButton"
-                    Command="{Binding CreateStashCommand}"
-                    Icon="Download" />
+                <AppBarElementContainer>
+                    <SplitButton
+                        x:Uid="CreateStashSplitButton"
+                        Command="{Binding CreateStashCommand}"
+                        Style="{StaticResource SplitButtonCommandBarStyle}">
+                        <SplitButton.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <SymbolIcon Symbol="Download" />
+                                <TextBlock
+                                    x:Uid="CreateStashSplitButtonTextBlock"
+                                    Margin="8,0,0,0" />
+                            </StackPanel>
+                        </SplitButton.Content>
+                        <SplitButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem
+                                    x:Uid="CreateSelectedStashMenuFlyoutItem"
+                                    Command="{Binding CreateSelectedStashCommand}"
+                                    Icon="Download" />
+                            </MenuFlyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+                </AppBarElementContainer>
                 <AppBarButton
                     x:Uid="ApplyStashAppBarButton"
                     Command="{Binding ApplyStashCommand}"

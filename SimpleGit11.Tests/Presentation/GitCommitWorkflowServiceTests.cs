@@ -157,6 +157,8 @@ public sealed class GitCommitWorkflowServiceTests
         public Task<SshIdentityCreationRequest?> ShowCreateSshIdentityAsync(string machineName) =>
             throw new NotSupportedException();
 
+        public Task ShowSshPublicKeyAsync(string publicKey) => throw new NotSupportedException();
+
         public Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit) =>
             throw new NotSupportedException();
 

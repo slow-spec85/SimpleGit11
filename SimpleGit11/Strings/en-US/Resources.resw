@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -465,6 +465,18 @@
   <data name="CommitFilterToggleButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Search and filter commits</value>
   </data>
+  <data name="ShowCommitGraphMenuFlyoutItemText" xml:space="preserve">
+    <value>Show graph</value>
+  </data>
+  <data name="HideCommitGraphMenuFlyoutItemText" xml:space="preserve">
+    <value>Hide graph</value>
+  </data>
+  <data name="CommitDetailsToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Show commit details</value>
+  </data>
+  <data name="CommitDetailsToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Show commit details</value>
+  </data>
   <data name="MainlineOnlyToggleSwitch.OnContent" xml:space="preserve">
     <value>Mainline only</value>
   </data>
@@ -570,14 +582,20 @@
   <data name="ParentCommitNotLoaded" xml:space="preserve">
     <value>Parent commit {0} is outside the loaded history.</value>
   </data>
-  <data name="ShowCommitDetailsBlockAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Show commit details</value>
+  <data name="CopyCommitDateMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Copy date</value>
   </data>
-  <data name="ShowCommitFilesBlockAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Show changed files</value>
+  <data name="CopyCommitAuthorMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Copy author</value>
   </data>
-  <data name="EditCommitMessageAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Edit commit message</value>
+  <data name="CopyCommitHashMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Copy hash</value>
+  </data>
+  <data name="EditCommitMessageContextButton.Label" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="CopyCommitMessageButton.Label" xml:space="preserve">
+    <value>Copy</value>
   </data>
   <data name="EditCommitMessageDialogTitle" xml:space="preserve">
     <value>Edit commit message</value>
@@ -1444,8 +1462,11 @@
   <data name="StashDialogTitleTextBlock.Text" xml:space="preserve">
     <value>Stash</value>
   </data>
-  <data name="CreateStashAppBarButton.Label" xml:space="preserve">
+  <data name="CreateStashSplitButtonTextBlock.Text" xml:space="preserve">
     <value>Stash</value>
+  </data>
+  <data name="CreateSelectedStashMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Stash selected</value>
   </data>
   <data name="ApplyStashAppBarButton.Label" xml:space="preserve">
     <value>Apply</value>
@@ -1780,11 +1801,8 @@
   <data name="CredentialHelperSettingsCardDescriptionTextBlock.Text" xml:space="preserve">
     <value>Required locally for HTTPS authentication, including working with Git repositories via SSH</value>
   </data>
-  <data name="CredentialHelperToggleSwitch.OnContent" xml:space="preserve">
+  <data name="ToggleSwitch.OnContent" xml:space="preserve">
     <value>On</value>
-  </data>
-  <data name="CredentialHelperToggleSwitch.OffContent" xml:space="preserve">
-    <value>Off</value>
   </data>
   <data name="ManageCredentialsButton.Content" xml:space="preserve">
     <value>Manage</value>
@@ -1803,12 +1821,6 @@
   </data>
   <data name="SshCommandTextBox.AutomationProperties.Name" xml:space="preserve">
     <value>SSH client path</value>
-  </data>
-  <data name="SshCommandToggleSwitch.OnContent" xml:space="preserve">
-    <value>On</value>
-  </data>
-  <data name="SshCommandToggleSwitch.OffContent" xml:space="preserve">
-    <value>Off</value>
   </data>
   <data name="InitialBranchNameSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
     <value>How Git names a branch after the first save in a new repository</value>
@@ -2128,7 +2140,7 @@
   <data name="PaneHeaderCloseRepositoryMenuFlyoutItem.Text" xml:space="preserve">
     <value>Close</value>
   </data>
-  <data name="CreateStashAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="CreateStashSplitButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Stash changes</value>
   </data>
   <data name="ApplyStashAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -2221,17 +2233,32 @@
   <data name="ChangeOverviewBar.ToolTipService.ToolTip" xml:space="preserve">
     <value>File change overview. Click or drag to navigate.</value>
   </data>
-  <data name="IgnoreWhitespaceToggleSwitch.OnContent" xml:space="preserve">
-    <value>Whitespace ignored</value>
+  <data name="DiffViewOptionsButton.Content" xml:space="preserve">
+    <value>View</value>
   </data>
-  <data name="IgnoreWhitespaceToggleSwitch.OffContent" xml:space="preserve">
-    <value>Whitespace included</value>
+  <data name="DiffViewOptionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="DiffViewOptionsButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Configure file display</value>
+  </data>
+  <data name="IgnoreWhitespaceToggleSwitch.OnContent" xml:space="preserve">
+    <value>Ignore whitespace</value>
   </data>
   <data name="IgnoreWhitespaceToggleSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>Ignore whitespace in diff</value>
   </data>
   <data name="IgnoreWhitespaceToggleSwitch.ToolTipService.ToolTip" xml:space="preserve">
     <value>Ignore spaces and tabs when comparing files</value>
+  </data>
+  <data name="FullFileModeToggleSwitch.OnContent" xml:space="preserve">
+    <value>Show full file</value>
+  </data>
+  <data name="FullFileModeToggleSwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Show full file</value>
+  </data>
+  <data name="FullFileModeToggleSwitch.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Switch between the full file and changed sections</value>
   </data>
   <data name="EditDiffFileButton.AutomationProperties.Name" xml:space="preserve">
     <value>Edit file</value>
@@ -2240,6 +2267,9 @@
     <value>Edit the selected file in the diff viewer</value>
   </data>
   <data name="DiffViewerSyntaxHighlightingComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Syntax highlighting</value>
+  </data>
+  <data name="DiffViewerSyntaxHighlightingComboBox.Header" xml:space="preserve">
     <value>Syntax highlighting</value>
   </data>
   <data name="DiffEditorModifiedStatusTextBlock.Text" xml:space="preserve">
@@ -4236,12 +4266,6 @@ only — fast-forward only; Not set — inherit.</value>
   <data name="FetchOnRepositoryOpenToggleSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Fetch changes from the server when opening a repository</value>
   </data>
-  <data name="FetchOnRepositoryOpenToggleSwitch.OffContent" xml:space="preserve">
-    <value>Off</value>
-  </data>
-  <data name="FetchOnRepositoryOpenToggleSwitch.OnContent" xml:space="preserve">
-    <value>On</value>
-  </data>
   <data name="ApplicationSettingsTitleTextBlock.Text" xml:space="preserve">
     <value>Application settings</value>
   </data>
@@ -4304,14 +4328,20 @@ If you trust this server, its public keys will be added to known_hosts on {1}. E
   <data name="SshIdentityActionsButton.AutomationProperties.Name" xml:space="preserve">
     <value>SSH key actions</value>
   </data>
-  <data name="CopySshPublicKeyMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy public key</value>
+  <data name="ShowSshPublicKeyMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Show public key</value>
   </data>
-  <data name="CopySshPublicKeyMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Only the public key is copied</value>
+  <data name="SshPublicKeyDialogTitle" xml:space="preserve">
+    <value>Public SSH key</value>
   </data>
-  <data name="CopySshPrivateKeyPathMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Copy key path</value>
+  <data name="SshPublicKeyTextBoxHeader" xml:space="preserve">
+    <value>Public key</value>
+  </data>
+  <data name="SshPublicKeyCopyButton" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="SshPublicKeyCloseButton" xml:space="preserve">
+    <value>Close</value>
   </data>
   <data name="DeleteSshIdentityMenuFlyoutItem.Text" xml:space="preserve">
     <value>Delete</value>
@@ -4415,5 +4445,29 @@ Continue only if these IdentityFile entries may be removed.</value>
   </data>
   <data name="ManageCredentialsButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Manage credentials</value>
+  </data>
+  <data name="RecentRepositoriesCountHeaderTextBlock.Text" xml:space="preserve">
+    <value>Recent repositories to show</value>
+  </data>
+  <data name="RecentRepositoriesCountDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Maximum number of repositories kept in the recent list (1-50).</value>
+  </data>
+  <data name="RecentRepositoriesCountNumberBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Number of recent repositories</value>
+  </data>
+  <data name="OpenLastRepositoryHeaderTextBlock.Text" xml:space="preserve">
+    <value>Open the last repository automatically</value>
+  </data>
+  <data name="OpenLastRepositoryDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Open the most recent repository when the app starts or a remote machine is connected.</value>
+  </data>
+  <data name="OpenLastRepositoryToggleSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Open the last repository automatically</value>
+  </data>
+  <data name="FullFileModeToggleSwitch.OffContent" xml:space="preserve">
+    <value>Show full file</value>
+  </data>
+  <data name="IgnoreWhitespaceToggleSwitch.OffContent" xml:space="preserve">
+    <value>Ignore whitespace</value>
   </data>
 </root>

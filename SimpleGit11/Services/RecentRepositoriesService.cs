@@ -10,17 +10,19 @@ namespace SimpleGit11.Services;
 public sealed class RecentRepositoriesService : IRecentRepositoriesService
 {
     private const string SettingsKey = "RecentRepositories";
-    private const int MaxRecentRepositories = 8;
     private readonly ILocalSettingsStore _localSettingsStore;
+    private readonly ISettingsService _settingsService;
     private readonly IGitRepositoryDiscoveryService _repositoryDiscoveryService;
     private readonly IExecutionContextService _executionContextService;
 
     public RecentRepositoriesService(
         ILocalSettingsStore localSettingsStore,
+        ISettingsService settingsService,
         IGitRepositoryDiscoveryService repositoryDiscoveryService,
         IExecutionContextService executionContextService)
     {
         _localSettingsStore = localSettingsStore;
+        _settingsService = settingsService;
         _repositoryDiscoveryService = repositoryDiscoveryService;
         _executionContextService = executionContextService;
     }
@@ -51,7 +53,7 @@ public sealed class RecentRepositoriesService : IRecentRepositoriesService
                 .Select(NormalizeRepository)
                 .GroupBy(GetRepositoryIdentity, GetPathComparer())
                 .Select(group => group.First())
-                .Take(MaxRecentRepositories)
+                .Take(_settingsService.Current.RecentRepositoriesCount)
                 .ToList();
         }
         catch (JsonException)
@@ -74,7 +76,7 @@ public sealed class RecentRepositoriesService : IRecentRepositoriesService
         List<RepositoryInfo> repositories = Load()
             .Where(item => !comparer.Equals(GetRepositoryIdentity(item), repositoryIdentity))
             .Prepend(repository)
-            .Take(MaxRecentRepositories)
+            .Take(_settingsService.Current.RecentRepositoriesCount)
             .ToList();
 
         _localSettingsStore.SetString(settingsKey, JsonSerializer.Serialize(repositories));

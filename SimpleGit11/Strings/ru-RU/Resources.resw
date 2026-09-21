@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -465,6 +465,18 @@
   <data name="CommitFilterToggleButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Поиск и фильтрация коммитов</value>
   </data>
+  <data name="ShowCommitGraphMenuFlyoutItemText" xml:space="preserve">
+    <value>Показать граф</value>
+  </data>
+  <data name="HideCommitGraphMenuFlyoutItemText" xml:space="preserve">
+    <value>Скрыть граф</value>
+  </data>
+  <data name="CommitDetailsToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Показать сведения о коммите</value>
+  </data>
+  <data name="CommitDetailsToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Показать сведения о коммите</value>
+  </data>
   <data name="MainlineOnlyToggleSwitch.OnContent" xml:space="preserve">
     <value>Только основная линия</value>
   </data>
@@ -570,14 +582,20 @@
   <data name="ParentCommitNotLoaded" xml:space="preserve">
     <value>Родительский коммит {0} находится за пределами загруженной истории.</value>
   </data>
-  <data name="ShowCommitDetailsBlockAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Показать сведения о коммите</value>
+  <data name="CopyCommitDateMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать дату</value>
   </data>
-  <data name="ShowCommitFilesBlockAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Показать измененные файлы</value>
+  <data name="CopyCommitAuthorMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать автора</value>
   </data>
-  <data name="EditCommitMessageAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Изменить сообщение коммита</value>
+  <data name="CopyCommitHashMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Копировать хэш</value>
+  </data>
+  <data name="EditCommitMessageContextButton.Label" xml:space="preserve">
+    <value>Редактировать</value>
+  </data>
+  <data name="CopyCommitMessageButton.Label" xml:space="preserve">
+    <value>Копировать</value>
   </data>
   <data name="EditCommitMessageDialogTitle" xml:space="preserve">
     <value>Изменить сообщение коммита</value>
@@ -1444,8 +1462,11 @@
   <data name="StashDialogTitleTextBlock.Text" xml:space="preserve">
     <value>Заначки</value>
   </data>
-  <data name="CreateStashAppBarButton.Label" xml:space="preserve">
+  <data name="CreateStashSplitButtonTextBlock.Text" xml:space="preserve">
     <value>Спрятать</value>
+  </data>
+  <data name="CreateSelectedStashMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Спрятать выбранное</value>
   </data>
   <data name="ApplyStashAppBarButton.Label" xml:space="preserve">
     <value>Применить</value>
@@ -1780,11 +1801,8 @@
   <data name="CredentialHelperSettingsCardDescriptionTextBlock.Text" xml:space="preserve">
     <value>Требуется локально для HTTPS-аутентификации, включая работу с Git-репозиториями через SSH</value>
   </data>
-  <data name="CredentialHelperToggleSwitch.OnContent" xml:space="preserve">
+  <data name="ToggleSwitch.OnContent" xml:space="preserve">
     <value>Вкл.</value>
-  </data>
-  <data name="CredentialHelperToggleSwitch.OffContent" xml:space="preserve">
-    <value>Выкл.</value>
   </data>
   <data name="ManageCredentialsButton.Content" xml:space="preserve">
     <value>Управление</value>
@@ -1803,12 +1821,6 @@
   </data>
   <data name="SshCommandTextBox.AutomationProperties.Name" xml:space="preserve">
     <value>Путь к SSH-клиенту</value>
-  </data>
-  <data name="SshCommandToggleSwitch.OnContent" xml:space="preserve">
-    <value>Вкл.</value>
-  </data>
-  <data name="SshCommandToggleSwitch.OffContent" xml:space="preserve">
-    <value>Выкл.</value>
   </data>
   <data name="InitialBranchNameSettingsCardHeaderDescriptionTextBlock.Text" xml:space="preserve">
     <value>Как Git называет ветку после первого сохранения в новом репозитории</value>
@@ -2128,7 +2140,7 @@
   <data name="PaneHeaderCloseRepositoryMenuFlyoutItem.Text" xml:space="preserve">
     <value>Закрыть</value>
   </data>
-  <data name="CreateStashAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="CreateStashSplitButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Спрятать изменения</value>
   </data>
   <data name="ApplyStashAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -2221,17 +2233,32 @@
   <data name="ChangeOverviewBar.ToolTipService.ToolTip" xml:space="preserve">
     <value>Обзор изменений файла. Щёлкните или перетащите для навигации.</value>
   </data>
-  <data name="IgnoreWhitespaceToggleSwitch.OnContent" xml:space="preserve">
-    <value>Пробелы игнорируются</value>
+  <data name="DiffViewOptionsButton.Content" xml:space="preserve">
+    <value>Вид</value>
   </data>
-  <data name="IgnoreWhitespaceToggleSwitch.OffContent" xml:space="preserve">
-    <value>Пробелы учитываются</value>
+  <data name="DiffViewOptionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Вид</value>
+  </data>
+  <data name="DiffViewOptionsButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Настроить отображение файла</value>
+  </data>
+  <data name="IgnoreWhitespaceToggleSwitch.OnContent" xml:space="preserve">
+    <value>Игнорировать пробелы</value>
   </data>
   <data name="IgnoreWhitespaceToggleSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>Игнорировать пробелы в сравнении</value>
   </data>
   <data name="IgnoreWhitespaceToggleSwitch.ToolTipService.ToolTip" xml:space="preserve">
     <value>Не учитывать пробелы и табуляцию при сравнении файлов</value>
+  </data>
+  <data name="FullFileModeToggleSwitch.OnContent" xml:space="preserve">
+    <value>Показывать файл целиком</value>
+  </data>
+  <data name="FullFileModeToggleSwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Показывать файл целиком</value>
+  </data>
+  <data name="FullFileModeToggleSwitch.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переключить между полным файлом и изменёнными фрагментами</value>
   </data>
   <data name="EditDiffFileButton.AutomationProperties.Name" xml:space="preserve">
     <value>Редактировать файл</value>
@@ -2240,6 +2267,9 @@
     <value>Редактировать выбранный файл в окне сравнения</value>
   </data>
   <data name="DiffViewerSyntaxHighlightingComboBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Подсветка синтаксиса</value>
+  </data>
+  <data name="DiffViewerSyntaxHighlightingComboBox.Header" xml:space="preserve">
     <value>Подсветка синтаксиса</value>
   </data>
   <data name="DiffEditorModifiedStatusTextBlock.Text" xml:space="preserve">
@@ -4236,12 +4266,6 @@ only — только fast-forward; «Не задано» — наследова
   <data name="FetchOnRepositoryOpenToggleSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Получать изменения с сервера при открытии репозитория</value>
   </data>
-  <data name="FetchOnRepositoryOpenToggleSwitch.OffContent" xml:space="preserve">
-    <value>Выключено</value>
-  </data>
-  <data name="FetchOnRepositoryOpenToggleSwitch.OnContent" xml:space="preserve">
-    <value>Включено</value>
-  </data>
   <data name="ApplicationSettingsTitleTextBlock.Text" xml:space="preserve">
     <value>Параметры приложения</value>
   </data>
@@ -4304,14 +4328,20 @@ only — только fast-forward; «Не задано» — наследова
   <data name="SshIdentityActionsButton.AutomationProperties.Name" xml:space="preserve">
     <value>Действия с SSH-ключом</value>
   </data>
-  <data name="CopySshPublicKeyMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать публичный ключ</value>
+  <data name="ShowSshPublicKeyMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Показать публичный ключ</value>
   </data>
-  <data name="CopySshPublicKeyMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Копируется только публичный ключ</value>
+  <data name="SshPublicKeyDialogTitle" xml:space="preserve">
+    <value>Публичный SSH-ключ</value>
   </data>
-  <data name="CopySshPrivateKeyPathMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Копировать путь к ключу</value>
+  <data name="SshPublicKeyTextBoxHeader" xml:space="preserve">
+    <value>Публичный ключ</value>
+  </data>
+  <data name="SshPublicKeyCopyButton" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="SshPublicKeyCloseButton" xml:space="preserve">
+    <value>Закрыть</value>
   </data>
   <data name="DeleteSshIdentityMenuFlyoutItem.Text" xml:space="preserve">
     <value>Удалить</value>
@@ -4415,5 +4445,29 @@ only — только fast-forward; «Не задано» — наследова
   </data>
   <data name="ManageCredentialsButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Управление учётными данными</value>
+  </data>
+  <data name="RecentRepositoriesCountHeaderTextBlock.Text" xml:space="preserve">
+    <value>Количество последних репозиториев</value>
+  </data>
+  <data name="RecentRepositoriesCountDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Максимальное количество репозиториев в списке последних (от 1 до 50).</value>
+  </data>
+  <data name="RecentRepositoriesCountNumberBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Количество последних репозиториев</value>
+  </data>
+  <data name="OpenLastRepositoryHeaderTextBlock.Text" xml:space="preserve">
+    <value>Открывать последний репозиторий автоматически</value>
+  </data>
+  <data name="OpenLastRepositoryDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Открывать последний репозиторий при запуске программы или подключении к удалённой машине.</value>
+  </data>
+  <data name="OpenLastRepositoryToggleSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Открывать последний репозиторий автоматически</value>
+  </data>
+  <data name="FullFileModeToggleSwitch.OffContent" xml:space="preserve">
+    <value>Показывать файл целиком</value>
+  </data>
+  <data name="IgnoreWhitespaceToggleSwitch.OffContent" xml:space="preserve">
+    <value>Игнорировать пробелы</value>
   </data>
 </root>

@@ -100,6 +100,9 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     private bool CanCreateStash() =>
         (StagedChanges.Count > 0 || UnstagedChanges.Count > 0) && CanRunWhenIdle();
 
+    private bool CanCreateSelectedStash() =>
+        SelectedChanges.Count > 0 && SelectedChanges.All(change => !change.IsConflicted) && CanRunWhenIdle();
+
     private bool CanRunSelectedStashOperation() => SelectedStash is not null && CanRunWhenIdle();
 
     private bool CanDropAllStashes() => HasStashes && CanRunWhenIdle();
@@ -156,6 +159,9 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
 
     [RelayCommand(CanExecute = nameof(CanCreateStash), FlowExceptionsToTaskScheduler = true)]
     private Task OnCreateStashAsync() => _asyncCommandExecutor.ExecuteAsync(CreateStashAsync);
+
+    [RelayCommand(CanExecute = nameof(CanCreateSelectedStash), FlowExceptionsToTaskScheduler = true)]
+    private Task OnCreateSelectedStashAsync() => _asyncCommandExecutor.ExecuteAsync(CreateSelectedStashAsync);
 
     [RelayCommand(CanExecute = nameof(CanRunSelectedStashOperation), FlowExceptionsToTaskScheduler = true)]
     private Task OnApplyStashAsync() => _asyncCommandExecutor.ExecuteAsync(ApplyStashAsync);
@@ -1333,6 +1339,30 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
             _localizationService.GetString("CreateStashSucceeded"));
     }
 
+    private async Task CreateSelectedStashAsync()
+    {
+        if (_mainWindowViewModel.CurrentRepository is null)
+        {
+            ShowError(_localizationService.GetString("OpenRepositoryBeforeStatus"));
+            return;
+        }
+
+        if (!CanCreateSelectedStash())
+        {
+            return;
+        }
+
+        List<string> paths = SelectedChanges
+            .Select(change => change.Path)
+            .Distinct(System.StringComparer.Ordinal)
+            .ToList();
+
+        RepositoryInfo repository = _mainWindowViewModel.CurrentRepository;
+        await RunDangerousOperationAsync(
+            () => _gitService.Stashes.CreateStashAsync(repository, paths),
+            _localizationService.GetString("CreateStashSucceeded"));
+    }
+
     private async Task ApplyStashAsync()
     {
         if (_mainWindowViewModel.CurrentRepository is null || SelectedStash is null)
@@ -1944,6 +1974,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         DiscardAllUnstagedCommand.NotifyCanExecuteChanged();
         CleanUntrackedCommand.NotifyCanExecuteChanged();
         CreateStashCommand.NotifyCanExecuteChanged();
+        CreateSelectedStashCommand.NotifyCanExecuteChanged();
         ApplyStashCommand.NotifyCanExecuteChanged();
         PopStashCommand.NotifyCanExecuteChanged();
         DropStashCommand.NotifyCanExecuteChanged();

@@ -222,6 +222,12 @@
   <data name="SshConnectionBusyStatus" xml:space="preserve">
     <value>Выполняется настройка подключения</value>
   </data>
+  <data name="SshConnectingStatus" xml:space="preserve">
+    <value>Подключение к серверу SSH…</value>
+  </data>
+  <data name="SshConnectionFailedMessage" xml:space="preserve">
+    <value>Не удалось подключиться по SSH.</value>
+  </data>
   <data name="SshConnectionActiveStatusFormat" xml:space="preserve">
     <value>Подключено к {0}. Нажмите для отключения.</value>
   </data>

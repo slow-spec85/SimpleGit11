@@ -11,6 +11,7 @@ internal sealed class ConnectionTestContexts : IExecutionContextService
     public AppExecutionContext Current { get; private set; } = Create(true);
     public List<ExecutionConnectionRequest> Requests { get; } = [];
     public Func<ExecutionConnectionRequest, Task>? Connect { get; set; }
+    public Func<CancellationToken, Task>? ConnectWithCancellation { get; set; }
     public int UseLocalCalls { get; private set; }
     public event EventHandler<ExecutionContextChangedEventArgs>? CurrentChanged;
     public event EventHandler<ExecutionConnectionLostEventArgs>? ConnectionLost;
@@ -21,6 +22,10 @@ internal sealed class ConnectionTestContexts : IExecutionContextService
         if (Connect is not null)
         {
             await Connect(request);
+        }
+        if (ConnectWithCancellation is not null)
+        {
+            await ConnectWithCancellation(cancellationToken);
         }
         Switch(false, providerId);
     }

@@ -130,4 +130,40 @@ public sealed class GitChangeServicesIntegrationTests
 
         Assert.IsEmpty(await service.GetStashesAsync(repository.Repository));
     }
+
+    [TestMethod]
+    public async Task CreateStashAsync_SelectedPaths_StashesOnlyThosePathsIncludingUntrackedFiles()
+    {
+        await using TemporaryGitRepository repository =
+            await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile("selected.txt", "original");
+        repository.WriteFile("keep.txt", "original");
+        await repository.CommitAllAsync();
+
+        repository.WriteFile("selected.txt", "staged");
+        await repository.RunGitAsync("add", "selected.txt");
+        repository.WriteFile("selected.txt", "unstaged");
+        repository.WriteFile("keep.txt", "keep modified");
+        repository.WriteFile("-selected [draft].txt", "new file");
+        repository.WriteFile("other untracked.txt", "keep untracked");
+        GitStashService service = new();
+
+        await service.CreateStashAsync(
+            repository.Repository,
+            ["selected.txt", "-selected [draft].txt"]);
+
+        Assert.AreEqual("original", repository.ReadFile("selected.txt"));
+        Assert.IsFalse(repository.FileExists("-selected [draft].txt"));
+        Assert.AreEqual("keep modified", repository.ReadFile("keep.txt"));
+        Assert.IsTrue(repository.FileExists("other untracked.txt"));
+        Assert.AreEqual(string.Empty, await repository.RunGitAsync("diff", "--cached", "--", "selected.txt"));
+        IReadOnlyList<GitStash> stashes = await service.GetStashesAsync(repository.Repository);
+        Assert.HasCount(1, stashes);
+
+        await service.ApplyStashAsync(repository.Repository, stashes[0]);
+
+        Assert.AreEqual("unstaged", repository.ReadFile("selected.txt"));
+        Assert.IsTrue(repository.FileExists("-selected [draft].txt"));
+        Assert.AreEqual("keep modified", repository.ReadFile("keep.txt"));
+    }
 }

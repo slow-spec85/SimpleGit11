@@ -19,15 +19,18 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILocalizationService _localizationService;
+    private readonly IClipboardService _clipboardService;
     private bool _isAboutDialogOpen;
     private Window? _window;
 
     public DialogService(
         IServiceProvider serviceProvider,
-        ILocalizationService localizationService)
+        ILocalizationService localizationService,
+        IClipboardService clipboardService)
     {
         _serviceProvider = serviceProvider;
         _localizationService = localizationService;
+        _clipboardService = clipboardService;
     }
 
     public void RegisterWindow(Window window)
@@ -189,6 +192,46 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
                 passphraseBox.Password,
                 confirmationBox.Password)
             : null;
+    }
+
+    public async Task ShowSshPublicKeyAsync(string publicKey)
+    {
+        ArgumentNullException.ThrowIfNull(publicKey);
+        EnsureWindowRegistered();
+
+        TextBox keyTextBox = new()
+        {
+            Header = _localizationService.GetString("SshPublicKeyTextBoxHeader"),
+            Text = publicKey,
+            IsReadOnly = true,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            MinHeight = 112,
+            MinWidth = 420
+        };
+        AutomationProperties.SetAutomationId(keyTextBox, "SshPublicKeyTextBox");
+        Button copyButton = new()
+        {
+            Content = _localizationService.GetString("SshPublicKeyCopyButton"),
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        AutomationProperties.SetAutomationId(copyButton, "SshPublicKeyCopyButton");
+        copyButton.Click += (_, _) => _clipboardService.SetText(publicKey);
+
+        ContentDialog dialog = new()
+        {
+            Title = _localizationService.GetString("SshPublicKeyDialogTitle"),
+            Content = new StackPanel
+            {
+                Spacing = 12,
+                Children = { keyTextBox, copyButton }
+            },
+            CloseButtonText = _localizationService.GetString("SshPublicKeyCloseButton"),
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = _window!.Content.XamlRoot
+        };
+        ApplyTheme(dialog);
+        await dialog.ShowAsync();
     }
 
     public async Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit)

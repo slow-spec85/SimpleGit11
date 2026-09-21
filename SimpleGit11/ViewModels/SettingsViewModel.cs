@@ -87,6 +87,8 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         EditorFontSize = _settingsService.Current.EditorFontSize;
         EditorLineSpacing = _settingsService.Current.EditorLineSpacing;
         DefaultRemoteName = _settingsService.Current.DefaultRemoteName;
+        RecentRepositoriesCount = _settingsService.Current.RecentRepositoriesCount;
+        OpenLastRepositoryOnStartup = _settingsService.Current.OpenLastRepositoryOnStartup;
         FetchOnRepositoryOpen = _settingsService.Current.FetchOnRepositoryOpen;
         RepositoryUserName = "";
         GlobalRepositoryUserName = "";
@@ -119,6 +121,29 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     [ObservableProperty]
     public partial bool FetchOnRepositoryOpen { get; set; }
+
+    [ObservableProperty]
+    public partial double RecentRepositoriesCount { get; set; }
+
+    [ObservableProperty]
+    public partial bool OpenLastRepositoryOnStartup { get; set; }
+
+    partial void OnRecentRepositoriesCountChanged(double value)
+    {
+        if (!_isInitializing && !double.IsNaN(value))
+        {
+            _settingsService.SetRecentRepositoriesCount((int)value);
+            _mainWindowViewModel.RefreshRecentRepositoriesForExecutionContext();
+        }
+    }
+
+    partial void OnOpenLastRepositoryOnStartupChanged(bool value)
+    {
+        if (!_isInitializing)
+        {
+            _settingsService.SetOpenLastRepositoryOnStartup(value);
+        }
+    }
 
     partial void OnDefaultRemoteNameChanged(string value)
     {
@@ -709,7 +734,8 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
             .Select(identity => new SshIdentityViewItem(
                 identity,
                 RemoveSshIdentityAsync,
-                _clipboardService.SetText))
+                _clipboardService.SetText,
+                _dialogService.ShowSshPublicKeyAsync))
             .ToList();
     }
 

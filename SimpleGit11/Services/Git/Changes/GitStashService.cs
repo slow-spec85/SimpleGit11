@@ -33,6 +33,24 @@ public sealed class GitStashService : IGitStashService
         return RunGitAsync(repository, "stash", "push", "-u", "-m", message);
     }
 
+    public Task<string> CreateStashAsync(RepositoryInfo repository, IReadOnlyList<string> paths)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        if (paths.Count == 0)
+        {
+            throw new ArgumentException("At least one path is required.", nameof(paths));
+        }
+
+        string message = $"SimpleGit11 stash {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}";
+        List<string> arguments = ["stash", "push", "-u", "-m", message, "--"];
+        foreach (string path in paths)
+        {
+            arguments.Add($":(literal){path}");
+        }
+
+        return RunGitAsync(repository, arguments.ToArray());
+    }
+
     public Task<string> ApplyStashAsync(RepositoryInfo repository, GitStash stash)
     {
         return RunGitAsync(repository, "stash", "apply", stash.Reference);

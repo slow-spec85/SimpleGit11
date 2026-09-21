@@ -166,6 +166,12 @@
                             Command="{x:Bind ViewModel.ResetHardCommand, Mode=OneWay}"
                             Icon="Delete" />
                     </SplitMenuFlyoutItem>
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem
+                        x:Name="CommitGraphMenuFlyoutItem"
+                        AutomationProperties.AutomationId="CommitGraphMenuFlyoutItem"
+                        Command="{x:Bind ViewModel.ToggleCommitGraphCommand, Mode=OneWay}"
+                        Text="{x:Bind ViewModel.CommitGraphToggleText, Mode=OneWay}" />
                 </MenuFlyout>
             </controls:CommitBrowserView.CommitContextFlyout>
         </controls:CommitBrowserView>

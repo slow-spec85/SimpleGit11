@@ -14,6 +14,8 @@ public interface IDialogService
 
     Task<SshIdentityCreationRequest?> ShowCreateSshIdentityAsync(string machineName);
 
+    Task ShowSshPublicKeyAsync(string publicKey);
+
     Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit);
 
     Task<bool> ConfirmCherryPickAsync(

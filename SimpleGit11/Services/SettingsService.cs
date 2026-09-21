@@ -9,6 +9,8 @@ public sealed class SettingsService : ISettingsService
     private const int MaximumEditorFontSize = 32;
     private const int MinimumEditorLineSpacing = 0;
     private const int MaximumEditorLineSpacing = 16;
+    private const int MinimumRecentRepositoriesCount = 1;
+    private const int MaximumRecentRepositoriesCount = 50;
     private const string ThemeModeKey = "ThemeMode";
     private const string LanguageKey = "Language";
     private const string IgnoreWhitespaceInDiffKey = "IgnoreWhitespaceInDiff";
@@ -26,6 +28,9 @@ public sealed class SettingsService : ISettingsService
             Language = LoadEnum(LanguageKey, AppLanguage.System),
             DefaultRemoteName = LoadString(nameof(AppSettings.DefaultRemoteName), "origin"),
             FetchOnRepositoryOpen = LoadBool(nameof(AppSettings.FetchOnRepositoryOpen), false),
+            RecentRepositoriesCount = LoadInt(nameof(AppSettings.RecentRepositoriesCount),
+                AppSettings.DefaultRecentRepositoriesCount, MinimumRecentRepositoriesCount, MaximumRecentRepositoriesCount),
+            OpenLastRepositoryOnStartup = LoadBool(nameof(AppSettings.OpenLastRepositoryOnStartup), false),
             IgnoreWhitespaceInDiff = LoadBool(IgnoreWhitespaceInDiffKey, false),
             EditorFontFamily = LoadString(
                 EditorFontFamilyKey,
@@ -75,6 +80,18 @@ public sealed class SettingsService : ISettingsService
     {
         Current.FetchOnRepositoryOpen = fetch;
         _localSettingsStore.SetString(nameof(AppSettings.FetchOnRepositoryOpen), fetch.ToString());
+    }
+
+    public void SetRecentRepositoriesCount(int count)
+    {
+        Current.RecentRepositoriesCount = Math.Clamp(count, MinimumRecentRepositoriesCount, MaximumRecentRepositoriesCount);
+        _localSettingsStore.SetString(nameof(AppSettings.RecentRepositoriesCount), Current.RecentRepositoriesCount.ToString());
+    }
+
+    public void SetOpenLastRepositoryOnStartup(bool open)
+    {
+        Current.OpenLastRepositoryOnStartup = open;
+        _localSettingsStore.SetString(nameof(AppSettings.OpenLastRepositoryOnStartup), open.ToString());
     }
 
     public void SetEditorFont(string fontFamily, int fontSize)

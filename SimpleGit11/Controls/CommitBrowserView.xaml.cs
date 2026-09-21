@@ -16,6 +16,8 @@ public delegate void ShowMergedCommitsRequestedEventHandler(
 
 public sealed partial class CommitBrowserView : UserControl
 {
+    private double _commitDetailsHeight = 220;
+
     public static readonly DependencyProperty ViewModelProperty = DependencyProperty.Register(
         nameof(ViewModel),
         typeof(CommitBrowserViewModelBase),
@@ -117,6 +119,69 @@ public sealed partial class CommitBrowserView : UserControl
         if (sender is FrameworkElement element)
         {
             FlyoutBase.ShowAttachedFlyout(element);
+        }
+    }
+
+    private void CommitDetailsToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleButton button)
+        {
+            UpdateCommitDetailsRows(button.IsChecked == true);
+        }
+    }
+
+    private void HistoryRightPane_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (CommitDetailsToggleButton.IsChecked == true)
+        {
+            UpdateCommitDetailsRows(true);
+        }
+    }
+
+    private void UpdateCommitDetailsRows(bool visible)
+    {
+        CommitDetailsSplitterRow.Height = new GridLength(visible ? 8 : 0);
+        double availableHeight = HistoryRightPane.ActualHeight;
+        double detailsHeight = availableHeight > 0
+            ? Math.Min(_commitDetailsHeight, Math.Max(0, availableHeight - 8 - 120))
+            : _commitDetailsHeight;
+        CommitDetailsRow.Height = new GridLength(visible ? detailsHeight : 0);
+    }
+
+    private void CommitDetailsSplitter_DragDelta(object sender, DragDeltaEventArgs e)
+    {
+        double availableHeight = CommitDetailsRow.ActualHeight + HistoryDiffPane.ActualHeight;
+        if (availableHeight <= 0)
+        {
+            return;
+        }
+
+        double maximumDetailsHeight = Math.Max(0, availableHeight - 120);
+        double minimumDetailsHeight = Math.Min(120, maximumDetailsHeight);
+        _commitDetailsHeight = Math.Clamp(
+            CommitDetailsRow.ActualHeight + e.VerticalChange,
+            minimumDetailsHeight,
+            maximumDetailsHeight);
+        CommitDetailsRow.Height = new GridLength(_commitDetailsHeight);
+    }
+
+    private void CommitMessageContextFlyout_Opening(object sender, object args)
+    {
+        bool canEdit = ViewModel?.EditCommitMessageCommand.CanExecute(null) == true;
+        EditCommitMessageContextButton.Visibility = canEdit ? Visibility.Visible : Visibility.Collapsed;
+        CommitMessageEditSeparator.Visibility = canEdit ? Visibility.Visible : Visibility.Collapsed;
+        CopyCommitMessageButton.IsEnabled = CommitMessageTextBox.Text.Length > 0;
+    }
+
+    private void CopyCommitMessageButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (CommitMessageTextBox.SelectionLength > 0)
+        {
+            CommitMessageTextBox.CopySelectionToClipboard();
+        }
+        else
+        {
+            ViewModel?.CopyTextCommand.Execute(CommitMessageTextBox.Text);
         }
     }
 

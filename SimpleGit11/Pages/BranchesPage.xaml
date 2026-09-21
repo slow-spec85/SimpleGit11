@@ -57,7 +57,7 @@
                         <Setter Target="PaneSplitterColumn.Width" Value="0" />
                         <Setter Target="DetailsColumn.Width" Value="0" />
                         <Setter Target="ListRow.Height" Value="300" />
-                        <Setter Target="PaneSplitterRow.Height" Value="12" />
+                        <Setter Target="PaneSplitterRow.Height" Value="8" />
                         <Setter Target="DetailsRow.Height" Value="*" />
                         <Setter Target="PaneSplitter.(Grid.Row)" Value="1" />
                         <Setter Target="PaneSplitter.(Grid.Column)" Value="0" />
@@ -148,7 +148,7 @@
             Padding="32,0,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="ListColumn" Width="380" />
-                <ColumnDefinition x:Name="PaneSplitterColumn" Width="4" />
+                <ColumnDefinition x:Name="PaneSplitterColumn" Width="8" />
                 <ColumnDefinition x:Name="DetailsColumn" Width="*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>

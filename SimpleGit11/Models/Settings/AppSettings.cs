@@ -5,6 +5,7 @@ public sealed class AppSettings
     public const string DefaultEditorFontFamily = "Consolas";
     public const int DefaultEditorFontSize = 14;
     public const int DefaultEditorLineSpacing = 2;
+    public const int DefaultRecentRepositoriesCount = 8;
 
     public AppThemeMode ThemeMode { get; set; } = AppThemeMode.System;
 
@@ -13,6 +14,10 @@ public sealed class AppSettings
     public string DefaultRemoteName { get; set; } = "origin";
 
     public bool FetchOnRepositoryOpen { get; set; }
+
+    public int RecentRepositoriesCount { get; set; } = DefaultRecentRepositoriesCount;
+
+    public bool OpenLastRepositoryOnStartup { get; set; }
 
     public bool IgnoreWhitespaceInDiff { get; set; }
 

@@ -1,5 +1,4 @@
-using System.Security.Cryptography;
-using System.Text;
+using System.Diagnostics;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using Renci.SshNet.Security;
@@ -8,9 +7,6 @@ namespace SimpleGit11.Plugin.Ssh.Services;
 
 internal sealed class SshPrivateKeyService : ISshPrivateKeyService
 {
-    private const int KeySize = 3072;
-    private static readonly UTF8Encoding Utf8WithoutBom = new(false);
-
     public async Task GenerateAsync(
         string path,
         string? passphrase,
@@ -18,20 +14,53 @@ internal sealed class SshPrivateKeyService : ISshPrivateKeyService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         string fullPath = Path.GetFullPath(path);
-        string privateKey = await Task.Run(
-            () => CreatePrivateKey(passphrase),
-            cancellationToken);
-        await File.WriteAllTextAsync(
-            fullPath,
-            privateKey,
-            Utf8WithoutBom,
-            cancellationToken);
-        string publicKey = await GetAuthorizedKeyAsync(fullPath, passphrase, cancellationToken);
-        await File.WriteAllTextAsync(
-            fullPath + ".pub",
-            publicKey + Environment.NewLine,
-            Utf8WithoutBom,
-            cancellationToken);
+        if (File.Exists(fullPath) || File.Exists(fullPath + ".pub"))
+        {
+            throw new IOException("The SSH key path or its public-key file already exists.");
+        }
+
+        string keygenPath = Path.Combine(Environment.SystemDirectory, "OpenSSH", "ssh-keygen.exe");
+        if (!File.Exists(keygenPath))
+        {
+            throw new FileNotFoundException("OpenSSH ssh-keygen is required to create an ED25519 key.", keygenPath);
+        }
+
+        ProcessStartInfo startInfo = new(keygenPath)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardError = true
+        };
+        startInfo.ArgumentList.Add("-q");
+        startInfo.ArgumentList.Add("-t");
+        startInfo.ArgumentList.Add("ed25519");
+        startInfo.ArgumentList.Add("-N");
+        startInfo.ArgumentList.Add(passphrase ?? "");
+        startInfo.ArgumentList.Add("-f");
+        startInfo.ArgumentList.Add(fullPath);
+
+        using Process process = new() { StartInfo = startInfo };
+        process.Start();
+        Task<string> errorOutput = process.StandardError.ReadToEndAsync(cancellationToken);
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync();
+            }
+            throw;
+        }
+
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"The ED25519 SSH key could not be generated. {await errorOutput}");
+        }
     }
 
     public Task<bool> RequiresPassphraseAsync(
@@ -99,22 +128,6 @@ internal sealed class SshPrivateKeyService : ISshPrivateKeyService
                 return $"{algorithm.Name} {Convert.ToBase64String(algorithm.Data)}";
             },
             cancellationToken);
-    }
-
-    private static string CreatePrivateKey(string? passphrase)
-    {
-        using RSA rsa = RSA.Create();
-        rsa.KeySize = KeySize;
-        if (string.IsNullOrEmpty(passphrase))
-        {
-            return rsa.ExportPkcs8PrivateKeyPem();
-        }
-
-        PbeParameters encryption = new(
-            PbeEncryptionAlgorithm.Aes256Cbc,
-            HashAlgorithmName.SHA256,
-            100_000);
-        return rsa.ExportEncryptedPkcs8PrivateKeyPem(passphrase, encryption);
     }
 
     private static bool HasEncryptedPemHeader(string path)

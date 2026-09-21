@@ -52,16 +52,118 @@ public sealed class EditorHeaderXamlTests
     }
 
     [TestMethod]
+    public void CommitBrowserGraphToggle_IsLastHistoryContextMenuCommand()
+    {
+        XDocument browserDocument = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
+        XDocument historyDocument = LoadApplicationXaml("Pages", "HistoryPage.xaml");
+        XElement graph = FindByXName(historyDocument, "CommitGraphMenuFlyoutItem");
+        XElement menu = graph.Parent!;
+
+        Assert.IsFalse(browserDocument.Descendants().Any(element =>
+            (string?)element.Attribute(XamlNamespace + "Name") == "CommitGraphToggleButton"));
+        Assert.AreEqual("MenuFlyout", menu.Name.LocalName);
+        Assert.AreSame(graph, menu.Elements().Last());
+        Assert.AreEqual("MenuFlyoutSeparator", graph.ElementsBeforeSelf().Last().Name.LocalName);
+        StringAssert.Contains(RequiredAttribute(graph, "Command"), "ViewModel.ToggleCommitGraphCommand");
+        StringAssert.Contains(RequiredAttribute(graph, "Text"), "ViewModel.CommitGraphToggleText");
+        Assert.AreEqual("CommitGraphMenuFlyoutItem", RequiredAttribute(graph, "AutomationProperties.AutomationId"));
+    }
+
+    [TestMethod]
+    public void CommitDetailsToggle_PlacesDetailsAboveDiffWithoutReplacingChangedFiles()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
+        XElement filterToggle = FindByXName(document, "CommitFilterToggleButton");
+        XElement detailsToggle = FindByXName(document, "CommitDetailsToggleButton");
+        XElement rightPane = FindByXName(document, "HistoryRightPane");
+        XElement details = FindByXName(document, "CommitDetailsHeader").Parent!;
+        XElement splitter = FindByXName(document, "CommitDetailsSplitter");
+        XElement diff = FindByXName(document, "HistoryDiffPane");
+        XElement metadata = FindByXName(document, "CommitMetadataTextBlock");
+
+        Assert.AreSame(detailsToggle, filterToggle.ElementsAfterSelf().First());
+        StringAssert.Contains(RequiredAttribute(detailsToggle, "IsChecked"), "ViewModel.IsCommitDetailsBlockVisible");
+        Assert.AreSame(rightPane, details.Parent);
+        Assert.AreSame(rightPane, splitter.Parent);
+        Assert.AreSame(rightPane, diff.Parent);
+        Assert.AreEqual("0", RequiredAttribute(details, "Grid.Row"));
+        Assert.AreEqual("1", RequiredAttribute(splitter, "Grid.Row"));
+        Assert.AreEqual("2", RequiredAttribute(diff, "Grid.Row"));
+        Assert.AreEqual("0", RequiredAttribute(FindByXName(document, "CommitDetailsRow"), "Height"));
+        Assert.AreEqual("0", RequiredAttribute(FindByXName(document, "CommitDetailsSplitterRow"), "Height"));
+        StringAssert.Contains(RequiredAttribute(details, "Visibility"), "CommitDetailsBlockVisibility");
+        StringAssert.Contains(RequiredAttribute(metadata, "TextWrapping"), "Wrap");
+        Assert.AreEqual("100", RequiredAttribute(FindByXName(document, "ParentCommitsItemsControl").Parent!, "MaxHeight"));
+        CollectionAssert.AreEqual(
+            new[] { "ViewModel.SelectedCommitDate", "ViewModel.SelectedCommitAuthor", "ViewModel.SelectedCommitHash" },
+            metadata.Elements().Where(element => element.Name.LocalName == "Run")
+                .Select(element => RequiredAttribute(element, "Text"))
+                .Where(text => text.Contains("ViewModel.", StringComparison.Ordinal))
+                .Select(text => text.TrimStart('{').Split(',')[0].Replace("x:Bind ", ""))
+                .ToArray());
+        Assert.IsNotNull(FindByXName(document, "HistoryChangedFilesListView"));
+        AssertVisualStateSetter(document, "HistoryRightPane.(Grid.Row)", "2");
+    }
+
+    [TestMethod]
+    public void CommitMessageContextMenu_OffersConditionalEditAndCopyWithoutHeaderButton()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
+        XElement message = FindByXName(document, "CommitMessageTextBox");
+        XElement flyout = message.Descendants().Single(element => element.Name.LocalName == "CommandBarFlyout");
+        XElement edit = FindByXName(document, "EditCommitMessageContextButton");
+        XElement copy = FindByXName(document, "CopyCommitMessageButton");
+
+        Assert.AreEqual("True", RequiredAttribute(message, "IsReadOnly"));
+        Assert.AreEqual("CommitMessageContextFlyout_Opening", RequiredAttribute(flyout, "Opening"));
+        Assert.AreSame(flyout, edit.Parent!.Parent);
+        StringAssert.Contains(RequiredAttribute(edit, "Command"), "ViewModel.EditCommitMessageCommand");
+        Assert.AreEqual("Collapsed", RequiredAttribute(edit, "Visibility"));
+        Assert.AreEqual("Collapsed", RequiredAttribute(FindByXName(document, "CommitMessageEditSeparator"), "Visibility"));
+        Assert.AreEqual("CopyCommitMessageButton_Click", RequiredAttribute(copy, "Click"));
+        Assert.IsFalse(document.Descendants().Any(element =>
+            (string?)element.Attribute(XamlNamespace + "Uid") == "EditCommitMessageAppBarButton"));
+        Assert.IsFalse(message.Elements().Any(element => element.Name.LocalName == "TextBox.SelectionFlyout"));
+    }
+
+    [TestMethod]
     public void DiffViewerHeader_SearchAndAdaptiveControlsRemainAvailable()
     {
         XDocument document = LoadApplicationXaml("Controls", "DiffViewer.xaml");
         XElement searchToggle = FindByXName(document, "DiffSearchToggleButton");
+        XElement viewOptions = FindByXName(document, "DiffViewOptionsButton");
+        XElement controlsContainer = FindByXName(document, "ControlsContainer");
+        XElement toolbar = controlsContainer.Elements().Single(element => element.Name.LocalName == "StackPanel");
+        XElement[] toolbarControls = toolbar.Elements().ToArray();
 
         AssertSearchFlyout(
             searchToggle,
             "DiffSearchTextBox",
             "PreviousDiffSearchMatchButton",
             "NextDiffSearchMatchButton");
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "DiffSearchToggleButton",
+                "DiffViewOptionsButton",
+                "RepositoryEditorZoomControl"
+            },
+            toolbarControls.Take(3).Select(GetControlIdentifier).ToArray());
+        Assert.AreEqual("Button", viewOptions.Name.LocalName);
+        Assert.IsFalse(viewOptions.Elements().Any(element =>
+            element.Name.LocalName is "SymbolIcon" or "FontIcon" or "PathIcon"));
+        Assert.AreEqual("DiffViewOptionsFlyout_Opening", RequiredAttribute(
+            viewOptions.Descendants().Single(element => element.Name.LocalName == "Flyout"),
+            "Opening"));
+        Assert.AreEqual("FullFileModeToggleSwitch_Toggled", RequiredAttribute(
+            FindByXName(document, "FullFileModeToggleSwitch"),
+            "Toggled"));
+        StringAssert.Contains(
+            RequiredAttribute(FindByXName(document, "FullFileModeToggleSwitch"), "IsOn"),
+            "IsFullFileMode");
+        Assert.IsTrue(viewOptions.Descendants().Contains(FindByXName(document, "IgnoreWhitespaceToggleSwitch")));
+        Assert.IsTrue(viewOptions.Descendants().Contains(FindByXName(document, "FullFileModeToggleSwitch")));
+        Assert.IsTrue(viewOptions.Descendants().Contains(FindByXName(document, "DiffViewerSyntaxHighlightingComboBox")));
         AssertVisualStateSetter(document, "NarrowLayoutControlsRow.Height", "Auto");
         AssertVisualStateSetter(document, "ControlsContainer.(Grid.Row)", "1");
     }

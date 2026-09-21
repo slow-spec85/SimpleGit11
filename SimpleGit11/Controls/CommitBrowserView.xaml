@@ -35,7 +35,7 @@
                         <Setter Target="HistoryDiffColumn.Width" Value="0" />
                         <Setter Target="HistoryDiffColumn.MinWidth" Value="0" />
                         <Setter Target="HistoryListsRow.Height" Value="2*" />
-                        <Setter Target="HistoryDiffSplitterRow.Height" Value="12" />
+                        <Setter Target="HistoryDiffSplitterRow.Height" Value="8" />
                         <Setter Target="HistoryDiffRow.Height" Value="3*" />
                         <Setter Target="HistoryDiffSplitter.(Grid.Row)" Value="1" />
                         <Setter Target="HistoryDiffSplitter.(Grid.Column)" Value="0" />
@@ -44,14 +44,15 @@
                         <Setter Target="HistoryDiffSplitter.Margin" Value="0,0,32,0" />
                         <Setter Target="HistoryContentGrid.ColumnSpacing" Value="0" />
                         <Setter Target="CommitListSplitter.Margin" Value="0,0,32,0" />
-                        <Setter Target="HistoryDiffPane.(Grid.Row)" Value="2" />
-                        <Setter Target="HistoryDiffPane.(Grid.Column)" Value="0" />
-                        <Setter Target="HistoryDiffPane.Margin" Value="0,0,0,0" />
+                        <Setter Target="HistoryRightPane.(Grid.Row)" Value="2" />
+                        <Setter Target="HistoryRightPane.(Grid.Column)" Value="0" />
+                        <Setter Target="HistoryRightPane.(Grid.ColumnSpan)" Value="3" />
+                        <Setter Target="HistoryRightPane.Margin" Value="0,0,0,0" />
                         <Setter Target="CommitListHeader.Padding" Value="0,0,30,0" />
                         <Setter Target="HistoryCommitsListView.Padding" Value="0,0,30,0" />
                         <Setter Target="ChangedFilesHeader.Padding" Value="0,0,32,0" />
                         <Setter Target="HistoryChangedFilesListView.Padding" Value="0,0,30,0" />
-                        <Setter Target="CommitDetailsHeader.Padding" Value="0,0,32,0" />
+                        <Setter Target="CommitDetailsHeader.Padding" Value="0,0,30,0" />
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="WideLayout">
@@ -78,7 +79,7 @@
             Grid.RowSpan="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="HistoryListsColumn" Width="400"/>
-                <ColumnDefinition x:Name="HistoryDiffSplitterColumn" Width="4" />
+                <ColumnDefinition x:Name="HistoryDiffSplitterColumn" Width="8" />
                 <ColumnDefinition x:Name="HistoryDiffColumn" Width="*" MinWidth="360" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -90,7 +91,7 @@
             <Grid x:Name="HistoryListsPane">
                 <Grid.RowDefinitions>
                     <RowDefinition x:Name="CommitsListsRow" Height="*" />
-                    <RowDefinition x:Name="CommitListSplitterRow" Height="12" />
+                    <RowDefinition x:Name="CommitListSplitterRow" Height="8" />
                     <RowDefinition x:Name="FilesListsRow" Height="*" />
                 </Grid.RowDefinitions>
 
@@ -101,10 +102,11 @@
                     </Grid.RowDefinitions>
                     <Grid
                         x:Name="CommitListHeader"
-                        MinHeight="40"
+                        ColumnSpacing="4"
                         Padding="0,0,14,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock
@@ -116,13 +118,12 @@
                             Grid.Column="1"
                             x:Name="CommitFilterToggleButton"
                             x:Uid="CommitFilterToggleButton"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
                             Click="CommitFilterToggleButton_Click"
                             IsChecked="{x:Bind ViewModel.IsCommitFilterApplied, Mode=OneWay}"
-                            Visibility="{Binding IsCommitListVisible, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            Visibility="{Binding IsCommitListVisible, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Width="32"
+                            Height="32"
+                            Padding="1">
                             <SymbolIcon Symbol="Find" />
                             <primitives:FlyoutBase.AttachedFlyout>
                                 <Flyout Placement="BottomEdgeAlignedRight">
@@ -247,6 +248,19 @@
                                 </Flyout>
                             </primitives:FlyoutBase.AttachedFlyout>
                         </ToggleButton>
+                        <ToggleButton
+                            Grid.Column="2"
+                            x:Name="CommitDetailsToggleButton"
+                            x:Uid="CommitDetailsToggleButton"
+                            AutomationProperties.AutomationId="CommitDetailsToggleButton"
+                            Click="CommitDetailsToggleButton_Click"
+                            IsChecked="{x:Bind ViewModel.IsCommitDetailsBlockVisible, Mode=TwoWay}"
+                            Visibility="{Binding IsCommitListVisible, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Width="32"
+                            Height="32"
+                            Padding="1">
+                            <SymbolIcon Symbol="List" />
+                        </ToggleButton>
                     </Grid>
                     <ListView
                         x:Name="HistoryCommitsListView"
@@ -274,14 +288,14 @@
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="viewmodels:CommitBrowserRowViewItem">
                                 <Grid
-                                    AutomationProperties.HelpText="{x:Bind AccessibleGraphDescription, Mode=OneTime}">
+                                    AutomationProperties.HelpText="{x:Bind AccessibleGraphDescription, Mode=OneWay}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <controls:CommitGraphCell
-                                        Graph="{x:Bind Graph, Mode=OneTime}"
-                                        Visibility="{x:Bind ShowGraph, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                        Graph="{x:Bind Graph, Mode=OneWay}"
+                                        Visibility="{x:Bind ShowGraph, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                                     <StackPanel Grid.Column="1" Margin="4" Spacing="2">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -429,8 +443,7 @@
 
                 <Grid
                     Grid.Row="2"
-                    RowSpacing="12"
-                    Visibility="{x:Bind ViewModel.ChangedFilesBlockVisibility, Mode=OneWay}">
+                    RowSpacing="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -440,7 +453,6 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <TextBlock
@@ -448,19 +460,8 @@
                             MaxLines="1" TextWrapping="WrapWholeWords"
                             Style="{ThemeResource SubtitleTextBlockStyle}"
                             Text="{x:Bind ViewModel.ChangedFilesTitle, Mode=OneWay}" />
-                        <Button
-                            Grid.Column="1"
-                            Margin="0,0,4,0"
-                            x:Uid="ShowCommitDetailsBlockAppBarButton"
-                            Command="{x:Bind ViewModel.ShowCommitDetailsBlockCommand, Mode=OneWay}"
-                            Style="{ThemeResource SubtleButtonStyle}"
-                            Width="36"
-                            Height="36"
-                            Padding="5">
-                            <SymbolIcon Symbol="More" />
-                        </Button>
                         <controls:DiffStatPresenter
-                            Grid.Column="2"
+                            Grid.Column="1"
                             Margin="0,0,10,0"
                             HorizontalAlignment="Right"
                             AddedText="{x:Bind ViewModel.ChangedFilesStat.AddedText, Mode=OneWay, FallbackValue=''}"
@@ -552,228 +553,6 @@
                     </ListView>
                 </Grid>
 
-                <Grid
-                    Grid.Row="2"
-                    RowSpacing="8"
-                    Padding="0,0,12,12"
-                    Visibility="{x:Bind ViewModel.CommitDetailsBlockVisibility, Mode=OneWay}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <Grid x:Name="CommitDetailsHeader">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock
-                            x:Uid="CommitDetailsTitleTextBlock"
-                            MaxLines="1" TextWrapping="WrapWholeWords"
-                            VerticalAlignment="Center"
-                            Style="{ThemeResource SubtitleTextBlockStyle}" />
-                        <StackPanel
-                            Grid.Column="1"
-                            Orientation="Horizontal"
-                            Spacing="4">
-                            <Button
-                                x:Uid="EditCommitMessageAppBarButton"
-                                Command="{x:Bind ViewModel.EditCommitMessageCommand, Mode=OneWay}"
-                                Visibility="{x:Bind ViewModel.EditCommitMessageActionVisibility, Mode=OneWay}"
-                                Style="{ThemeResource SubtleButtonStyle}"
-                                Padding="8">
-                                <SymbolIcon Symbol="Edit" />
-                            </Button>
-                            <Button
-                                x:Uid="ShowCommitFilesBlockAppBarButton"
-                                Command="{x:Bind ViewModel.ShowChangedFilesBlockCommand, Mode=OneWay}"
-                                Style="{ThemeResource SubtleButtonStyle}"
-                                Padding="8">
-                                <SymbolIcon Symbol="List" />
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-
-                    <Grid
-                        Grid.Row="1"
-                        RowSpacing="5">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-
-                        <StackPanel Spacing="0">
-                            <TextBlock
-                                FontFamily="Consolas"
-                                Text="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}"
-                                ToolTipService.ToolTip="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}"
-                                TextWrapping="NoWrap"
-                                TextTrimming="CharacterEllipsis"
-                                Margin="10,0,0,0">
-                                <TextBlock.ContextFlyout>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem
-                                            x:Uid="CopyTextMenuFlyoutItem"
-                                            Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
-                                            CommandParameter="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}" />
-                                    </MenuFlyout>
-                                </TextBlock.ContextFlyout>
-                            </TextBlock>
-                        </StackPanel>
-
-                        <StackPanel
-                            Grid.Row="1"
-                            Spacing="0">
-                            <TextBlock
-                                FontFamily="Consolas"
-                                Text="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}"
-                                ToolTipService.ToolTip="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}"
-                                TextWrapping="NoWrap"
-                                TextTrimming="CharacterEllipsis"
-                                Margin="10,0,0,0">
-                                <TextBlock.ContextFlyout>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem
-                                            x:Uid="CopyTextMenuFlyoutItem"
-                                            Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
-                                            CommandParameter="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}" />
-                                    </MenuFlyout>
-                                </TextBlock.ContextFlyout>
-                            </TextBlock>
-                        </StackPanel>
-
-                        <StackPanel
-                            Grid.Row="2"
-                            Spacing="0">
-                            <TextBlock
-                                FontFamily="Consolas"
-                                Text="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}"
-                                ToolTipService.ToolTip="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}"
-                                TextWrapping="NoWrap"
-                                TextTrimming="CharacterEllipsis"
-                                Margin="10,0,0,0">
-                                <TextBlock.ContextFlyout>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem
-                                            x:Uid="CopyTextMenuFlyoutItem"
-                                            Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
-                                            CommandParameter="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" />
-                                    </MenuFlyout>
-                                </TextBlock.ContextFlyout>
-                            </TextBlock>
-                        </StackPanel>
-
-                        <StackPanel
-                            Grid.Row="3"
-                            Margin="0,4,0,0"
-                            Spacing="0"
-                            Visibility="{x:Bind ViewModel.HasParentCommits, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                            <ItemsControl
-                                x:Name="ParentCommitsItemsControl"
-                                x:Load="{x:Bind ViewModel.HasParentCommits, Mode=OneWay}"
-                                ItemsSource="{x:Bind ViewModel.ParentCommits, Mode=OneWay}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Spacing="0" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="viewmodels:CommitParentViewItem">
-                                        <Button
-                                            HorizontalAlignment="Stretch"
-                                            HorizontalContentAlignment="Stretch"
-                                            Command="{Binding DataContext.NavigateToParentCommitCommand, ElementName=PageLayout}"
-                                            CommandParameter="{x:Bind}"
-                                            Padding="2"
-                                            Style="{ThemeResource SubtleButtonStyle}"
-                                            ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneTime}">
-                                            <Button.ContextFlyout>
-                                                <MenuFlyout>
-                                                    <MenuFlyoutItem
-                                                        x:Uid="NavigateToParentCommitMenuFlyoutItem"
-                                                        Command="{Binding DataContext.NavigateToParentCommitCommand, ElementName=PageLayout}"
-                                                        CommandParameter="{x:Bind}" />
-                                                    <MenuFlyoutItem
-                                                        x:Uid="ShowMergedCommitsMenuFlyoutItem"
-                                                        Click="ShowMergedCommitsMenuFlyoutItem_Click"
-                                                        Icon="List"
-                                                        Visibility="{x:Bind IsMergedHistory, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                                </MenuFlyout>
-                                            </Button.ContextFlyout>
-                                            <Grid ColumnSpacing="8">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="16" />
-                                                    <ColumnDefinition Width="100" />
-                                                    <ColumnDefinition Width="54" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <Viewbox
-                                                    Width="16"
-                                                    Height="16"
-                                                    VerticalAlignment="Center">
-                                                    <Canvas
-                                                        Width="16"
-                                                        Height="16">
-                                                        <Ellipse
-                                                            Width="5"
-                                                            Height="5"
-                                                            Canvas.Left="5.5"
-                                                            Canvas.Top="1"
-                                                            Fill="{ThemeResource TextFillColorSecondaryBrush}" />
-                                                        <Rectangle
-                                                            Width="1.5"
-                                                            Height="4.5"
-                                                            Canvas.Left="7.25"
-                                                            Canvas.Top="5"
-                                                            Fill="{ThemeResource TextFillColorSecondaryBrush}" />
-                                                        <Ellipse
-                                                            Width="6"
-                                                            Height="6"
-                                                            Canvas.Left="5"
-                                                            Canvas.Top="9"
-                                                            Stroke="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            StrokeThickness="1.5" />
-                                                    </Canvas>
-                                                </Viewbox>
-                                                <TextBlock
-                                                    Grid.Column="1"
-                                                    VerticalAlignment="Center"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    Style="{ThemeResource CaptionTextBlockStyle}"
-                                                    Text="{x:Bind Relationship, Mode=OneTime}" />
-                                                <TextBlock
-                                                    Grid.Column="2"
-                                                    VerticalAlignment="Center"
-                                                    FontFamily="Consolas"
-                                                    Style="{ThemeResource CaptionTextBlockStyle}"
-                                                    Text="{x:Bind ShortHash, Mode=OneTime}" />
-                                                <TextBlock
-                                                    Grid.Column="3"
-                                                    VerticalAlignment="Center"
-                                                    MaxLines="1"
-                                                    Text="{x:Bind Title, Mode=OneTime}"
-                                                    TextTrimming="CharacterEllipsis" />
-                                            </Grid>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-
-                        <TextBox
-                            Grid.Row="4"
-                            AcceptsReturn="True"
-                            FontFamily="Consolas"
-                            IsReadOnly="True"
-                            ScrollViewer.VerticalScrollBarVisibility="Auto"
-                            Text="{x:Bind ViewModel.SelectedCommitMessage, Mode=OneWay}"
-                            TextWrapping="Wrap" />
-                    </Grid>
-                </Grid>
             </Grid>
 
             <primitives:Thumb
@@ -782,17 +561,231 @@
                 DragDelta="DiffSplitter_DragDelta"
                 Style="{StaticResource VerticalSplitterStyle}" />
 
-            <controls:DiffViewer
+            <Grid
                 Grid.Column="2"
-                x:Name="HistoryDiffPane"
+                x:Name="HistoryRightPane"
                 Margin="12,0,0,0"
-                CopyTextCommand="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
-                DiffLinesSource="{x:Bind ViewModel.DiffLines, Mode=OneWay}"
-                EmptyMessage="{x:Bind ViewModel.DiffEmptyMessage, Mode=OneWay}"
-                FilePath="{x:Bind ViewModel.SelectedDiffFileTooltip, Mode=OneWay}"
-                HasEmptyState="{x:Bind ViewModel.HasDiffEmptyState, Mode=OneWay}"
-                IsFullFileMode="{x:Bind ViewModel.IsFullFileMode, Mode=OneWay}"
-                SyntaxHighlightingMode="{x:Bind ViewModel.SelectedSyntaxHighlightingMode, Mode=OneWay}" />
+                SizeChanged="HistoryRightPane_SizeChanged">
+                <Grid.RowDefinitions>
+                    <RowDefinition x:Name="CommitDetailsRow" Height="0" />
+                    <RowDefinition x:Name="CommitDetailsSplitterRow" Height="0" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid
+                    Grid.Row="0"
+                    RowSpacing="8"
+                    Padding="0,0,30,0"
+                    Visibility="{x:Bind ViewModel.CommitDetailsBlockVisibility, Mode=OneWay}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel
+                        x:Name="CommitDetailsHeader"
+                        Orientation="Horizontal"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="CommitDetailsTitleTextBlock"
+                            MaxLines="1" TextWrapping="WrapWholeWords"
+                            VerticalAlignment="Center"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                    </StackPanel>
+
+                    <Grid
+                        Grid.Row="1"
+                        RowSpacing="5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            x:Name="CommitMetadataTextBlock"
+                            Margin="10,0,0,0"
+                            FontFamily="Consolas"
+                            TextWrapping="Wrap">
+                            <TextBlock.ContextFlyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem
+                                        x:Uid="CopyCommitDateMenuFlyoutItem"
+                                        Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                        CommandParameter="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}" />
+                                    <MenuFlyoutItem
+                                        x:Uid="CopyCommitAuthorMenuFlyoutItem"
+                                        Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                        CommandParameter="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}" />
+                                    <MenuFlyoutItem
+                                        x:Uid="CopyCommitHashMenuFlyoutItem"
+                                        Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                        CommandParameter="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" />
+                                </MenuFlyout>
+                            </TextBlock.ContextFlyout>
+                            <Run Text="{x:Bind ViewModel.SelectedCommitDate, Mode=OneWay}" />
+                            <Run Text=" · " />
+                            <Run Text="{x:Bind ViewModel.SelectedCommitAuthor, Mode=OneWay}" />
+                            <Run Text=" · " />
+                            <Run Text="{x:Bind ViewModel.SelectedCommitHash, Mode=OneWay}" />
+                        </TextBlock>
+                        <StackPanel
+                            Grid.Row="1"
+                            Margin="0,4,0,0"
+                            Spacing="0"
+                            Visibility="{x:Bind ViewModel.HasParentCommits, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                            <ScrollViewer
+                                MaxHeight="100"
+                                HorizontalScrollBarVisibility="Disabled"
+                                VerticalScrollBarVisibility="Auto"
+                                VerticalScrollMode="Auto">
+                                <ItemsControl
+                                    x:Name="ParentCommitsItemsControl"
+                                    x:Load="{x:Bind ViewModel.HasParentCommits, Mode=OneWay}"
+                                    ItemsSource="{x:Bind ViewModel.ParentCommits, Mode=OneWay}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Spacing="0" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="viewmodels:CommitParentViewItem">
+                                            <Button
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Stretch"
+                                                Command="{Binding DataContext.NavigateToParentCommitCommand, ElementName=PageLayout}"
+                                                CommandParameter="{x:Bind}"
+                                                Padding="2"
+                                                Style="{ThemeResource SubtleButtonStyle}"
+                                                ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneTime}">
+                                                <Button.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem
+                                                            x:Uid="NavigateToParentCommitMenuFlyoutItem"
+                                                            Command="{Binding DataContext.NavigateToParentCommitCommand, ElementName=PageLayout}"
+                                                            CommandParameter="{x:Bind}" />
+                                                        <MenuFlyoutItem
+                                                            x:Uid="ShowMergedCommitsMenuFlyoutItem"
+                                                            Click="ShowMergedCommitsMenuFlyoutItem_Click"
+                                                            Icon="List"
+                                                            Visibility="{x:Bind IsMergedHistory, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                    </MenuFlyout>
+                                                </Button.ContextFlyout>
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="16" />
+                                                        <ColumnDefinition Width="100" />
+                                                        <ColumnDefinition Width="54" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Viewbox
+                                                        Width="16"
+                                                        Height="16"
+                                                        VerticalAlignment="Center">
+                                                        <Canvas
+                                                            Width="16"
+                                                            Height="16">
+                                                            <Ellipse
+                                                                Width="5"
+                                                                Height="5"
+                                                                Canvas.Left="5.5"
+                                                                Canvas.Top="1"
+                                                                Fill="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                            <Rectangle
+                                                                Width="1.5"
+                                                                Height="4.5"
+                                                                Canvas.Left="7.25"
+                                                                Canvas.Top="5"
+                                                                Fill="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                            <Ellipse
+                                                                Width="6"
+                                                                Height="6"
+                                                                Canvas.Left="5"
+                                                                Canvas.Top="9"
+                                                                Stroke="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                StrokeThickness="1.5" />
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                    <TextBlock
+                                                        Grid.Column="1"
+                                                        VerticalAlignment="Center"
+                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                        Style="{ThemeResource CaptionTextBlockStyle}"
+                                                        Text="{x:Bind Relationship, Mode=OneTime}" />
+                                                    <TextBlock
+                                                        Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        FontFamily="Consolas"
+                                                        Style="{ThemeResource CaptionTextBlockStyle}"
+                                                        Text="{x:Bind ShortHash, Mode=OneTime}" />
+                                                    <TextBlock
+                                                        Grid.Column="3"
+                                                        VerticalAlignment="Center"
+                                                        MaxLines="1"
+                                                        Text="{x:Bind Title, Mode=OneTime}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </StackPanel>
+
+                        <TextBox
+                            Grid.Row="2"
+                            x:Name="CommitMessageTextBox"
+                            AcceptsReturn="True"
+                            FontFamily="Consolas"
+                            IsReadOnly="True"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            Text="{x:Bind ViewModel.SelectedCommitMessage, Mode=OneWay}"
+                            TextWrapping="Wrap">
+                            <TextBox.ContextFlyout>
+                                <CommandBarFlyout Opening="CommitMessageContextFlyout_Opening">
+                                    <CommandBarFlyout.SecondaryCommands>
+                                        <AppBarButton
+                                            x:Name="EditCommitMessageContextButton"
+                                            x:Uid="EditCommitMessageContextButton"
+                                            AutomationProperties.AutomationId="EditCommitMessageContextButton"
+                                            Command="{x:Bind ViewModel.EditCommitMessageCommand, Mode=OneWay}"
+                                            Icon="Edit"
+                                            Visibility="Collapsed" />
+                                        <AppBarSeparator
+                                            x:Name="CommitMessageEditSeparator"
+                                            Visibility="Collapsed" />
+                                        <AppBarButton
+                                            x:Name="CopyCommitMessageButton"
+                                            x:Uid="CopyCommitMessageButton"
+                                            Click="CopyCommitMessageButton_Click"
+                                            Icon="Copy" />
+                                    </CommandBarFlyout.SecondaryCommands>
+                                </CommandBarFlyout>
+                            </TextBox.ContextFlyout>
+                        </TextBox>
+                    </Grid>
+                </Grid>
+
+                <primitives:Thumb
+                    x:Name="CommitDetailsSplitter"
+                    Grid.Row="1"
+                    DragDelta="CommitDetailsSplitter_DragDelta"
+                    Style="{StaticResource HorizontalSplitterStyle}"
+                    Visibility="{x:Bind ViewModel.CommitDetailsBlockVisibility, Mode=OneWay}"
+                    Margin="0,0,30,0"/>
+
+                <controls:DiffViewer
+                    Grid.Row="2"
+                    x:Name="HistoryDiffPane"
+                    CopyTextCommand="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                    DiffLinesSource="{x:Bind ViewModel.DiffLines, Mode=OneWay}"
+                    EmptyMessage="{x:Bind ViewModel.DiffEmptyMessage, Mode=OneWay}"
+                    FilePath="{x:Bind ViewModel.SelectedDiffFileTooltip, Mode=OneWay}"
+                    HasEmptyState="{x:Bind ViewModel.HasDiffEmptyState, Mode=OneWay}"
+                    IsFullFileMode="{x:Bind ViewModel.IsFullFileMode, Mode=OneWay}"
+                    SyntaxHighlightingMode="{x:Bind ViewModel.SelectedSyntaxHighlightingMode, Mode=OneWay}"
+                    ToggleFullFileCommand="{x:Bind ViewModel.ToggleFullFileCommand, Mode=OneWay}" />
+            </Grid>
         </Grid>
 
     </Grid>

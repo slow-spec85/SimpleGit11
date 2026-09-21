@@ -23,6 +23,7 @@
                         <Setter Target="ThemeComboBox.MinWidth" Value="0" />
                         <Setter Target="LanguageComboBox.MinWidth" Value="0" />
                         <Setter Target="DefaultRemoteNameTextBox.MinWidth" Value="0" />
+                        <Setter Target="RecentRepositoriesCountNumberBox.MinWidth" Value="0" />
                         <Setter Target="EditorFontFamilyComboBox.MinWidth" Value="0" />
                         <Setter Target="InitialBranchNameTextBox.MinWidth" Value="0" />
                         <Setter Target="GlobalPushDefaultRemoteTextBox.MinWidth" Value="0" />
@@ -179,6 +180,28 @@
 
                     <controls:SettingsCard>
                         <controls:SettingsCard.HeaderIcon>
+                            <FontIcon Glyph="&#xE8F2;" />
+                        </controls:SettingsCard.HeaderIcon>
+                        <controls:SettingsCard.Header>
+                            <TextBlock x:Uid="RecentRepositoriesCountHeaderTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Header>
+                        <controls:SettingsCard.Description>
+                            <TextBlock x:Uid="RecentRepositoriesCountDescriptionTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Description>
+                        <NumberBox
+                            x:Name="RecentRepositoriesCountNumberBox"
+                            x:Uid="RecentRepositoriesCountNumberBox"
+                            Width="96"
+                            AutomationProperties.AutomationId="RecentRepositoriesCountInput"
+                            Minimum="1"
+                            Maximum="50"
+                            SmallChange="1"
+                            SpinButtonPlacementMode="Compact"
+                            Value="{x:Bind ViewModel.RecentRepositoriesCount, Mode=TwoWay}" />
+                    </controls:SettingsCard>
+
+                    <controls:SettingsCard>
+                        <controls:SettingsCard.HeaderIcon>
                             <FontIcon Glyph="&#xE8B7;" />
                         </controls:SettingsCard.HeaderIcon>
                         <controls:SettingsCard.Header>
@@ -197,6 +220,22 @@
 
                     <controls:SettingsCard>
                         <controls:SettingsCard.HeaderIcon>
+                            <FontIcon Glyph="&#xE8A7;" />
+                        </controls:SettingsCard.HeaderIcon>
+                        <controls:SettingsCard.Header>
+                            <TextBlock x:Uid="OpenLastRepositoryHeaderTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Header>
+                        <controls:SettingsCard.Description>
+                            <TextBlock x:Uid="OpenLastRepositoryDescriptionTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Description>
+                        <ToggleSwitch
+                            x:Uid="ToggleSwitch"
+                            AutomationProperties.AutomationId="OpenLastRepositoryToggle"
+                            IsOn="{x:Bind ViewModel.OpenLastRepositoryOnStartup, Mode=TwoWay}" />
+                    </controls:SettingsCard>
+
+                    <controls:SettingsCard>
+                        <controls:SettingsCard.HeaderIcon>
                             <FontIcon Glyph="&#xE72C;" />
                         </controls:SettingsCard.HeaderIcon>
                         <controls:SettingsCard.Header>
@@ -206,7 +245,7 @@
                             <TextBlock x:Uid="FetchOnRepositoryOpenDescriptionTextBlock" TextWrapping="WrapWholeWords" />
                         </controls:SettingsCard.Description>
                         <ToggleSwitch
-                            x:Uid="FetchOnRepositoryOpenToggleSwitch"
+                            x:Uid="ToggleSwitch"
                             AutomationProperties.AutomationId="FetchOnRepositoryOpenToggle"
                             IsOn="{x:Bind ViewModel.FetchOnRepositoryOpen, Mode=TwoWay}" />
                     </controls:SettingsCard>
@@ -247,12 +286,30 @@
                                                 FontWeight="SemiBold"
                                                 Text="{x:Bind PrivateKeyPath, Mode=OneTime}"
                                                 TextTrimming="CharacterEllipsis"
-                                                ToolTipService.ToolTip="{x:Bind PrivateKeyPath, Mode=OneTime}" />
+                                                ToolTipService.ToolTip="{x:Bind PrivateKeyPath, Mode=OneTime}">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem
+                                                            x:Uid="CopyTextMenuFlyoutItem"
+                                                            Command="{x:Bind CopyPathCommand, Mode=OneTime}"
+                                                            Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
                                             <TextBlock
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Style="{ThemeResource CaptionTextBlockStyle}"
                                                 Text="{x:Bind Fingerprint, Mode=OneTime}"
-                                                TextWrapping="WrapWholeWords" />
+                                                TextWrapping="WrapWholeWords">
+                                                <TextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem
+                                                            x:Uid="CopyTextMenuFlyoutItem"
+                                                            Command="{x:Bind CopyFingerprintCommand, Mode=OneTime}"
+                                                            Icon="Copy" />
+                                                    </MenuFlyout>
+                                                </TextBlock.ContextFlyout>
+                                            </TextBlock>
                                         </StackPanel>
                                     </controls:SettingsCard.Header>
                                     <Button
@@ -264,18 +321,14 @@
                                         <Button.Flyout>
                                             <MenuFlyout>
                                                 <MenuFlyoutItem
-                                                x:Uid="CopySshPublicKeyMenuFlyoutItem"
-                                                Command="{x:Bind CopyPublicKeyCommand, Mode=OneTime}"
-                                                Icon="Copy" />
-                                                <MenuFlyoutItem
-                                                x:Uid="CopySshPrivateKeyPathMenuFlyoutItem"
-                                                Command="{x:Bind CopyPathCommand, Mode=OneTime}"
-                                                Icon="Copy" />
+                                                    x:Uid="ShowSshPublicKeyMenuFlyoutItem"
+                                                    Command="{x:Bind ShowPublicKeyCommand, Mode=OneTime}"
+                                                    Icon="View" />
                                                 <MenuFlyoutSeparator />
                                                 <MenuFlyoutItem
-                                                x:Uid="DeleteSshIdentityMenuFlyoutItem"
-                                                Command="{x:Bind RemoveCommand, Mode=OneTime}"
-                                                Icon="Delete" />
+                                                    x:Uid="DeleteSshIdentityMenuFlyoutItem"
+                                                    Command="{x:Bind RemoveCommand, Mode=OneTime}"
+                                                    Icon="Delete" />
                                             </MenuFlyout>
                                         </Button.Flyout>
                                     </Button>
@@ -453,7 +506,7 @@
                                         Command="{x:Bind ViewModel.OpenCredentialManagerCommand, Mode=OneWay}"
                                         IsEnabled="{x:Bind ViewModel.IsLocalContext, Mode=OneWay}"/>
                                     <ToggleSwitch
-                                        x:Uid="CredentialHelperToggleSwitch"
+                                        x:Uid="ToggleSwitch"
                                         IsOn="{x:Bind ViewModel.UseCredentialHelperManager, Mode=TwoWay}"
                                         IsEnabled="{x:Bind ViewModel.IsLocalContext, Mode=OneWay}" />
                                 </StackPanel>
@@ -478,7 +531,7 @@
                                         AutomationProperties.AutomationId="SshCommandPath"
                                         Text="{x:Bind ViewModel.SshCommand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                     <ToggleSwitch
-                                        x:Uid="SshCommandToggleSwitch"
+                                        x:Uid="ToggleSwitch"
                                         VerticalAlignment="Center"
                                         IsOn="{x:Bind ViewModel.UseSshCommandOverride, Mode=TwoWay}" />
                                 </StackPanel>

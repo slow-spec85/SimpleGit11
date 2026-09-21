@@ -13,6 +13,8 @@ public sealed class SettingsServiceTests
         SettingsService service = CreateService(new MemoryLocalSettingsStore());
         Assert.AreEqual("origin", service.Current.DefaultRemoteName);
         Assert.IsFalse(service.Current.FetchOnRepositoryOpen);
+        Assert.AreEqual(8, service.Current.RecentRepositoriesCount);
+        Assert.IsFalse(service.Current.OpenLastRepositoryOnStartup);
     }
 
     [TestMethod]
@@ -22,10 +24,14 @@ public sealed class SettingsServiceTests
         SettingsService service = CreateService(store);
         service.SetDefaultRemoteName(" upstream ");
         service.SetFetchOnRepositoryOpen(true);
+        service.SetRecentRepositoriesCount(12);
+        service.SetOpenLastRepositoryOnStartup(true);
 
         SettingsService reloaded = CreateService(store);
         Assert.AreEqual("upstream", reloaded.Current.DefaultRemoteName);
         Assert.IsTrue(reloaded.Current.FetchOnRepositoryOpen);
+        Assert.AreEqual(12, reloaded.Current.RecentRepositoriesCount);
+        Assert.IsTrue(reloaded.Current.OpenLastRepositoryOnStartup);
 
         reloaded.SetDefaultRemoteName("  ");
         reloaded.SetFetchOnRepositoryOpen(false);
@@ -40,9 +46,26 @@ public sealed class SettingsServiceTests
         MemoryLocalSettingsStore store = new();
         store.SetString("DefaultRemoteName", " ");
         store.SetString("FetchOnRepositoryOpen", "invalid");
+        store.SetString("RecentRepositoriesCount", "invalid");
+        store.SetString("OpenLastRepositoryOnStartup", "invalid");
         SettingsService service = CreateService(store);
         Assert.AreEqual("origin", service.Current.DefaultRemoteName);
         Assert.IsFalse(service.Current.FetchOnRepositoryOpen);
+        Assert.AreEqual(8, service.Current.RecentRepositoriesCount);
+        Assert.IsFalse(service.Current.OpenLastRepositoryOnStartup);
+    }
+
+    [TestMethod]
+    public void RecentRepositoriesCount_IsClampedWhenSavedAndLoaded()
+    {
+        MemoryLocalSettingsStore store = new();
+        SettingsService service = CreateService(store);
+
+        service.SetRecentRepositoriesCount(100);
+        Assert.AreEqual(50, CreateService(store).Current.RecentRepositoriesCount);
+
+        service.SetRecentRepositoriesCount(0);
+        Assert.AreEqual(1, CreateService(store).Current.RecentRepositoriesCount);
     }
 
     [TestMethod]

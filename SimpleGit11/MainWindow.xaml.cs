@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AppExecutionContext = SimpleGit11.Services.Execution.ExecutionContext;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -52,6 +53,7 @@ public sealed partial class MainWindow : Window
     private static readonly TimeSpan MinimumWindowInactiveDuration = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan AutomaticRefreshCooldown = TimeSpan.FromSeconds(10);
     private readonly ILocalizationService _localizationService;
+    private readonly IExecutionContextService _executionContextService;
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly IDialogService _dialogService;
     private readonly ExecutionContextShellCoordinator _executionContextCoordinator;
@@ -89,6 +91,7 @@ public sealed partial class MainWindow : Window
     {
         ViewModel = viewModel;
         _localizationService = localizationService;
+        _executionContextService = executionContextService;
         _asyncCommandExecutor = asyncCommandExecutor;
         _dialogService = dialogService;
         _gitRepositoryChangeDetector = gitRepositoryChangeDetector;
@@ -103,7 +106,9 @@ public sealed partial class MainWindow : Window
             executionContextService, DispatchExecutionContextAction, asyncCommandExecutor,
             ResetRepositoryForExecutionContext, () => RefreshCurrentPageAsync(),
             messenger, localizationService);
+        _executionContextService.CurrentChanged += ExecutionContextService_CurrentChanged;
         ConfigureTitleBar();
+        UpdateExecutionContextChrome(_executionContextService.Current);
         AppWindow.Closing += AppWindow_Closing;
         SizeChanged += MainWindow_SizeChanged;
         UpdateRecentRepositoriesMaxHeight(Bounds.Height);
@@ -118,8 +123,40 @@ public sealed partial class MainWindow : Window
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
+        _executionContextService.CurrentChanged -= ExecutionContextService_CurrentChanged;
         _executionContextCoordinator.Dispose();
         _pluginMenuHost.Dispose();
+    }
+
+    private void ExecutionContextService_CurrentChanged(
+        object? sender,
+        ExecutionContextChangedEventArgs args)
+    {
+        DispatchExecutionContextAction(() =>
+        {
+            if (_executionContextService.Current.Id == args.Current.Id)
+            {
+                UpdateExecutionContextChrome(args.Current);
+            }
+        });
+    }
+
+    private void UpdateExecutionContextChrome(AppExecutionContext context)
+    {
+        (string titleBarText, string windowTitle) = ResolveExecutionContextTitles(
+            context,
+            ViewModel.AppName);
+        ExecutionHostTitleTextBlock.Text = titleBarText;
+        Title = windowTitle;
+    }
+
+    internal static (string TitleBarText, string WindowTitle) ResolveExecutionContextTitles(
+        AppExecutionContext context,
+        string appName)
+    {
+        return context.IsLocal
+            ? (string.Empty, appName)
+            : (context.DisplayMachineName, context.DisplayMachineName);
     }
 
     private void DispatchExecutionContextAction(Action action)
@@ -141,6 +178,10 @@ public sealed partial class MainWindow : Window
         {
             RepositoryViewModel.CloseForExecutionContextChange();
             ViewModel.RefreshRecentRepositoriesForExecutionContext();
+            if (!_executionContextService.Current.IsLocal)
+            {
+                ViewModel.OpenLastRecentRepositoryIfEnabled();
+            }
         }
         finally
         {

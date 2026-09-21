@@ -1,7 +1,19 @@
 using SimpleGit11.Plugin.Ssh.Models;
 using SimpleGit11.Plugin.Ssh.Services;
+using SimpleGit11.Extensibility.Presentation;
 
 namespace SimpleGit11.Plugin.Ssh.Tests.Presentation;
+
+internal sealed class ConnectionTestFeedback : IPluginOperationFeedback
+{
+    public List<(string Message, Action Cancel)> Started { get; } = [];
+    public List<(string Message, string Details)> Errors { get; } = [];
+    public int Stopped { get; private set; }
+    public void Start(object source, string message, Action cancel) => Started.Add((message, cancel));
+    public void Stop(object source) => Stopped++;
+    public void ShowError(object source, string message, string details) => Errors.Add((message, details));
+    public void ClearError(object source) => Errors.Clear();
+}
 
 internal sealed class ConnectionTestProfiles : ISshConnectionProfileStore
 {

@@ -437,6 +437,16 @@
             Height="32"
             Margin="0,0,138,0"
             VerticalAlignment="Top"
-            Background="Transparent" />
+            Background="Transparent">
+            <TextBlock
+                x:Name="ExecutionHostTitleTextBlock"
+                AutomationProperties.AutomationId="ExecutionHostTitleTextBlock"
+                Margin="16,0,0,0"
+                VerticalAlignment="Center"
+                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                IsHitTestVisible="False"
+                Style="{ThemeResource CaptionTextBlockStyle}"
+                TextTrimming="CharacterEllipsis" />
+        </Grid>
     </Grid>
 </Window>

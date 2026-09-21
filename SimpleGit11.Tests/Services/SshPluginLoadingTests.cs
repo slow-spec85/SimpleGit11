@@ -129,6 +129,7 @@ public sealed class SshPluginLoadingTests
         services.AddSingleton<ILocalizationService>(new Localization());
         services.AddSingleton<IPluginDialogHost>(dialogHost);
         services.AddSingleton<IPluginStoragePicker>(dialogHost);
+        services.AddSingleton<IPluginOperationFeedback>(dialogHost);
         return services;
     }
 
@@ -146,7 +147,7 @@ public sealed class SshPluginLoadingTests
         public void SetLanguage(AppLanguage language) { }
     }
 
-    private sealed class DialogHost : IPluginDialogHost, IPluginStoragePicker
+    private sealed class DialogHost : IPluginDialogHost, IPluginStoragePicker, IPluginOperationFeedback
     {
         public int ConfirmationCount { get; private set; }
 
@@ -162,5 +163,10 @@ public sealed class SshPluginLoadingTests
             ConfirmationCount++;
             return Task.FromResult(true);
         }
+
+        public void Start(object source, string message, Action cancel) { }
+        public void Stop(object source) { }
+        public void ShowError(object source, string message, string details) { }
+        public void ClearError(object source) { }
     }
 }

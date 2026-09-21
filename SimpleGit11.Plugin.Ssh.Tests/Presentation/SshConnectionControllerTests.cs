@@ -15,8 +15,9 @@ public sealed class SshConnectionControllerTests
     private readonly ConnectionTestProfiles _profiles = new();
     private readonly ConnectionTestDialogs _dialogs = new();
     private readonly ConnectionTestLocalization _localization = new();
+    private readonly ConnectionTestFeedback _feedback = new();
 
-    private SshConnectionController CreateController() => new(_contexts, _profiles, _dialogs, _localization);
+    private SshConnectionController CreateController() => new(_contexts, _profiles, _dialogs, _localization, _feedback);
 
     private static SshConnectionDialogResult Connection(bool remember = true) => new(
         SshConnectionDialogAction.Connect, "profile", "server", 2222, "user",
@@ -58,6 +59,9 @@ public sealed class SshConnectionControllerTests
         Assert.AreEqual("profile", profile.Id);
         Assert.AreEqual("trusted-key", profile.ExpectedHostKey);
         Assert.AreEqual("key-file", profile.PrivateKeyPath);
+        Assert.HasCount(1, _feedback.Started);
+        Assert.AreEqual(1, _feedback.Stopped);
+        Assert.IsEmpty(_feedback.Errors);
     }
 
     [TestMethod]
@@ -114,7 +118,7 @@ public sealed class SshConnectionControllerTests
         });
         _contexts.Connect = _ => Task.FromException(new IOException("Connection failed"));
 
-        await Assert.ThrowsExactlyAsync<IOException>(CreateController().ToggleAsync);
+        await CreateController().ToggleAsync();
 
         Assert.AreEqual("original-key", _profiles.Profiles.Single().PrivateKeyPath);
     }
@@ -209,18 +213,41 @@ public sealed class SshConnectionControllerTests
     }
 
     [TestMethod]
-    public async Task ToggleAsync_ConnectionFailure_PropagatesWithoutSavingAndClearsBusy()
+    public async Task ToggleAsync_ConnectionFailure_ShowsBannerWithoutSavingAndClearsBusy()
     {
         Guid previous = _contexts.Current.Id;
         _dialogs.Results.Enqueue(Connection());
         _contexts.Connect = _ => Task.FromException(new IOException("Connection failed"));
         SshConnectionController controller = CreateController();
 
-        await Assert.ThrowsExactlyAsync<IOException>(controller.ToggleAsync);
+        await controller.ToggleAsync();
 
         Assert.IsFalse(controller.IsBusy);
         Assert.AreEqual(previous, _contexts.Current.Id);
         Assert.IsEmpty(_profiles.Profiles);
+        Assert.AreEqual("Connection failed", _feedback.Errors.Single().Details);
+        Assert.HasCount(1, _feedback.Started);
+        Assert.AreEqual(1, _feedback.Stopped);
+    }
+
+    [TestMethod]
+    public async Task ToggleAsync_ConnectionProgress_CancelStopsAttemptWithoutErrorBanner()
+    {
+        _dialogs.Results.Enqueue(Connection());
+        _contexts.ConnectWithCancellation = async token =>
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+        SshConnectionController controller = CreateController();
+
+        Task connection = controller.ToggleAsync();
+        Assert.HasCount(1, _feedback.Started);
+        _feedback.Started.Single().Cancel();
+        await connection;
+
+        Assert.IsFalse(controller.IsBusy);
+        Assert.IsTrue(_contexts.Current.IsLocal);
+        Assert.IsEmpty(_profiles.Profiles);
+        Assert.IsEmpty(_feedback.Errors);
+        Assert.AreEqual(1, _feedback.Stopped);
     }
 
     [TestMethod]
