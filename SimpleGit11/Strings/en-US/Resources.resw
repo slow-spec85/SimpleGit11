@@ -665,7 +665,7 @@
     <value>Select a commit to view its diff.</value>
   </data>
   <data name="SelectCommitFileToViewDiff" xml:space="preserve">
-    <value>Select a changed file or review the full commit diff.</value>
+    <value>Select a changed file.</value>
   </data>
   <data name="NoCommitDiffAvailable" xml:space="preserve">
     <value>No textual diff is available for this commit.</value>
@@ -1600,13 +1600,13 @@
   <data name="FoundRepositoryFilterTextBox.PlaceholderText" xml:space="preserve">
     <value>Find</value>
   </data>
-  <data name="BrowseRepositorySearchStartPathAppBarButton.Label" xml:space="preserve">
+  <data name="BrowseRepositorySearchStartPathActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Select</value>
   </data>
-  <data name="BrowseRepositorySearchStartPathAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="BrowseRepositorySearchStartPathActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Choose start folder</value>
   </data>
-  <data name="BrowseRepositorySearchStartPathAppBarButton.AutomationProperties.Name" xml:space="preserve">
+  <data name="BrowseRepositorySearchStartPathActionMenuFlyoutItem.AutomationProperties.Name" xml:space="preserve">
     <value>Choose start folder</value>
   </data>
   <data name="RefreshRepositorySearchButton.Content" xml:space="preserve">
@@ -3202,25 +3202,25 @@ Push will use the configured destinations, not the selected remote.</value>
   <data name="CreateWorktreeButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Create new worktree</value>
   </data>
-  <data name="RepairWorktreesAppBarButton.Label" xml:space="preserve">
+  <data name="RepairWorktreesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Repair</value>
   </data>
-  <data name="PruneWorktreesAppBarButton.Label" xml:space="preserve">
+  <data name="PruneWorktreesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Prune</value>
   </data>
   <data name="NoWorktreesInfoBar.Title" xml:space="preserve">
     <value>No worktrees found</value>
   </data>
-  <data name="MoveWorktreeAppBarButton.Label" xml:space="preserve">
+  <data name="MoveWorktreeActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Move</value>
   </data>
-  <data name="LockWorktreeAppBarButton.Label" xml:space="preserve">
+  <data name="LockWorktreeActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Lock</value>
   </data>
-  <data name="UnlockWorktreeAppBarButton.Label" xml:space="preserve">
+  <data name="UnlockWorktreeActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Unlock</value>
   </data>
-  <data name="RemoveWorktreeAppBarButton.Label" xml:space="preserve">
+  <data name="RemoveWorktreeActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Remove</value>
   </data>
   <data name="CreateBranchWorktreeMenuFlyoutItem.Text" xml:space="preserve">
@@ -3359,10 +3359,10 @@ Forced removal will delete the worktree folder, including uncommitted changes an
   <data name="WorktreeFolderOpenFailed" xml:space="preserve">
     <value>Could not open the worktree folder.</value>
   </data>
-  <data name="OpenWorktreeFolderAppBarButton.Label" xml:space="preserve">
+  <data name="OpenWorktreeFolderActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Location</value>
   </data>
-  <data name="OpenWorktreeFolderAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="OpenWorktreeFolderActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Open the worktree folder in File Explorer</value>
   </data>
   <data name="CloseApplicationConfirmation" xml:space="preserve">
@@ -3572,19 +3572,19 @@ Forced removal will delete the worktree folder, including uncommitted changes an
   <data name="ValidationSelectionRequired" xml:space="preserve">
     <value>Select a value.</value>
   </data>
-  <data name="OpenWorktreeAppBarButton.Label" xml:space="preserve">
+  <data name="OpenWorktreeActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Open</value>
   </data>
   <data name="OpenWorktreeItemButton.AutomationProperties.Name" xml:space="preserve">
     <value>Open worktree</value>
   </data>
-  <data name="OpenFoundRepositoryAppBarButton.Label" xml:space="preserve">
+  <data name="OpenFoundRepositoryActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Open</value>
   </data>
-  <data name="OpenFoundRepositoryInNewWindowAppBarButton.Label" xml:space="preserve">
+  <data name="OpenFoundRepositoryInNewWindowActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Open in new window</value>
   </data>
-  <data name="OpenFoundRepositoryFolderAppBarButton.Label" xml:space="preserve">
+  <data name="OpenFoundRepositoryFolderActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Location</value>
   </data>
   <data name="FoundRepositoryFolderOpenFailed" xml:space="preserve">
@@ -3596,25 +3596,25 @@ Forced removal will delete the worktree folder, including uncommitted changes an
   <data name="RemotesCardDescriptionTextBlock.Text" xml:space="preserve">
     <value>Adding and managing remote repositories</value>
   </data>
-  <data name="RemoveRemoteAppBarButton.Label" xml:space="preserve">
+  <data name="RemoveRemoteActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Remove remote</value>
   </data>
   <data name="RemoteCurrentStatus" xml:space="preserve">
     <value>Current</value>
   </data>
-  <data name="EditRemoteUrlAppBarButton.Label" xml:space="preserve">
+  <data name="EditRemoteUrlActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Edit URL</value>
   </data>
-  <data name="SelectRemoteAppBarButton.Label" xml:space="preserve">
+  <data name="SelectRemoteActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Select</value>
   </data>
-  <data name="SelectRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SelectRemoteActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Make the repository selected by default when sending and receiving changes</value>
   </data>
-  <data name="EditRemoteUrlAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="EditRemoteUrlActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Change the URL of a remote repository</value>
   </data>
-  <data name="RemoveRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="RemoveRemoteActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Unlink a remote repository from a local one</value>
   </data>
   <data name="AddRemoteButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -3743,10 +3743,10 @@ Forced removal will delete the worktree folder, including uncommitted changes an
   <data name="RemoteNameUpdated" xml:space="preserve">
     <value>The name of the remote repository '{0}' has been changed to '{1}'</value>
   </data>
-  <data name="RenameRemoteAppBarButton.Label" xml:space="preserve">
+  <data name="RenameRemoteActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Rename</value>
   </data>
-  <data name="RenameRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="RenameRemoteActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Change the name of a remote repository</value>
   </data>
   <data name="PrepareBranchSnapshotMenuFlyoutItem.Text" xml:space="preserve">
@@ -3823,19 +3823,19 @@ The rule has been quarantined for this editor session and will be skipped until 
   <data name="SubmoduleTreeView.AutomationProperties.Name" xml:space="preserve">
     <value>Submodules</value>
   </data>
-  <data name="OpenSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="OpenSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Open</value>
   </data>
-  <data name="OpenSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="OpenSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Open the submodule as the current repository</value>
   </data>
-  <data name="OpenSubmoduleInNewWindowAppBarButton.Label" xml:space="preserve">
+  <data name="OpenSubmoduleInNewWindowActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Open in new window</value>
   </data>
-  <data name="OpenSubmoduleFolderAppBarButton.Label" xml:space="preserve">
+  <data name="OpenSubmoduleFolderActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Location</value>
   </data>
-  <data name="OpenSubmoduleFolderAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="OpenSubmoduleFolderActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Open the submodule folder in File Explorer</value>
   </data>
   <data name="SubmoduleStatusNotInitialized" xml:space="preserve">
@@ -3907,40 +3907,40 @@ The rule has been quarantined for this editor session and will be skipped until 
   <data name="AddSubmoduleButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Clone a repository into the selected path and stage its configuration and pinned commit</value>
   </data>
-  <data name="InitializeAllSubmodulesAppBarButton.Label" xml:space="preserve">
+  <data name="InitializeAllSubmodulesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Initialize all</value>
   </data>
-  <data name="CheckoutAllSubmodulesAppBarButton.Label" xml:space="preserve">
+  <data name="CheckoutAllSubmodulesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Restore pinned versions</value>
   </data>
-  <data name="UpdateAllSubmodulesAppBarButton.Label" xml:space="preserve">
+  <data name="UpdateAllSubmodulesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Switch to submodule versions</value>
   </data>
-  <data name="SyncAllSubmodulesAppBarButton.Label" xml:space="preserve">
+  <data name="SyncAllSubmodulesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Synchronize URLs</value>
   </data>
-  <data name="InitializeSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="InitializeSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Initialize</value>
   </data>
-  <data name="CheckoutSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="CheckoutSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Restore pinned version</value>
   </data>
-  <data name="UpdateSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="UpdateSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Switch to submodule version</value>
   </data>
-  <data name="SyncSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="SyncSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Synchronize URL</value>
   </data>
-  <data name="EditSubmoduleUrlAppBarButton.Label" xml:space="preserve">
+  <data name="EditSubmoduleUrlActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Edit URL</value>
   </data>
-  <data name="EditSubmoduleBranchAppBarButton.Label" xml:space="preserve">
+  <data name="EditSubmoduleBranchActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Edit tracked branch</value>
   </data>
-  <data name="DeinitializeSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="DeinitializeSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Deinitialize</value>
   </data>
-  <data name="RemoveSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="RemoveSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Remove from repository</value>
   </data>
   <data name="SubmoduleUrlTextBoxHeader" xml:space="preserve">
@@ -4045,40 +4045,40 @@ The rule has been quarantined for this editor session and will be skipped until 
   <data name="SubmoduleOperationFailed" xml:space="preserve">
     <value>Could not complete the submodule operation.</value>
   </data>
-  <data name="InitializeAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="InitializeAllSubmodulesActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Clone missing submodules and recursively checkout the commits recorded by the parent repository</value>
   </data>
-  <data name="CheckoutAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="CheckoutAllSubmodulesActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Restore all initialized submodules to the versions pinned by their parent repositories</value>
   </data>
-  <data name="UpdateAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="UpdateAllSubmodulesActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Fetch the latest commits from the branches configured for the submodules in .gitmodules and switch to them; the parent repository will show changed submodule pointers</value>
   </data>
-  <data name="SyncAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SyncAllSubmodulesActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Copy all submodule URLs from .gitmodules to the local Git configuration recursively</value>
   </data>
-  <data name="InitializeSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="InitializeSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Clone this submodule if needed and recursively checkout the commit recorded by its parent repository</value>
   </data>
-  <data name="CheckoutSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="CheckoutSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Restore the submodule version pinned by its parent repository</value>
   </data>
-  <data name="UpdateSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="UpdateSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Fetch the latest commit from the branch configured for the submodule in .gitmodules and switch to it; the parent repository will show a changed submodule pointer</value>
   </data>
-  <data name="SyncSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SyncSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Copy this submodule URL from .gitmodules to the local Git configuration</value>
   </data>
-  <data name="EditSubmoduleUrlAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="EditSubmoduleUrlActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Change the repository URL stored for this submodule</value>
   </data>
-  <data name="EditSubmoduleBranchAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="EditSubmoduleBranchActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Choose the branch used by “Switch to submodule version”; leave it empty to use the remote default</value>
   </data>
-  <data name="DeinitializeSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="DeinitializeSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Remove the submodule working directory while keeping it registered in the parent repository</value>
   </data>
-  <data name="RemoveSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="RemoveSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Deinitialize the submodule and stage its removal from the parent repository</value>
   </data>
   <data name="SubmoduleChangeBadgeTextBlock.Text" xml:space="preserve">
@@ -4440,7 +4440,7 @@ Continue only if these IdentityFile entries may be removed.</value>
   <data name="OpenSshSettingsButton" xml:space="preserve">
     <value>Open SSH settings</value>
   </data>
-  <data name="CheckRemoteAccessAppBarButton.Label" xml:space="preserve">
+  <data name="CheckRemoteAccessActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Check access</value>
   </data>
   <data name="ManageCredentialsButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -4469,5 +4469,26 @@ Continue only if these IdentityFile entries may be removed.</value>
   </data>
   <data name="IgnoreWhitespaceToggleSwitch.OffContent" xml:space="preserve">
     <value>Ignore whitespace</value>
+  </data>
+  <data name="RemoteActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>RemoteActionsButton</value>
+  </data>
+  <data name="WorktreeSectionActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>WorktreeSectionActionsButton</value>
+  </data>
+  <data name="WorktreeActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>WorktreeActionsButton</value>
+  </data>
+  <data name="SubmoduleSectionActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>SubmoduleSectionActionsButton</value>
+  </data>
+  <data name="SubmoduleActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>SubmoduleActionsButton</value>
+  </data>
+  <data name="FoundRepositorySectionActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>FoundRepositorySectionActionsButton</value>
+  </data>
+  <data name="FoundRepositoryActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>FoundRepositoryActionsButton</value>
   </data>
 </root>

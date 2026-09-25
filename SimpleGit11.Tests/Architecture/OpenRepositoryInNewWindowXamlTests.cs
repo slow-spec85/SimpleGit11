@@ -9,14 +9,13 @@ public sealed class OpenRepositoryInNewWindowXamlTests
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
 
     [TestMethod]
-    [DataRow("OpenRepositoryInNewWindowAppBarButton")]
-    [DataRow("OpenSubmoduleInNewWindowAppBarButton")]
-    [DataRow("OpenFoundRepositoryInNewWindowAppBarButton")]
+    [DataRow("OpenSubmoduleInNewWindowActionMenuFlyoutItem")]
+    [DataRow("OpenFoundRepositoryInNewWindowActionMenuFlyoutItem")]
     public void RepositoryPage_NewWindowCommands_AreFollowedBySeparator(string uid)
     {
         XDocument document = LoadApplicationXml("Pages", "RepositoryPage.xaml");
 
-        AssertFollowedBySeparator(document, uid, "AppBarSeparator");
+        AssertFollowedBySeparator(document, uid, "MenuFlyoutSeparator");
     }
 
     [TestMethod]
@@ -43,8 +42,8 @@ public sealed class OpenRepositoryInNewWindowXamlTests
         [
             "OpenRepositoryInNewWindowAppBarButton.Label",
             "OpenRecentRepositoryInNewWindowMenuFlyoutItem.Text",
-            "OpenSubmoduleInNewWindowAppBarButton.Label",
-            "OpenFoundRepositoryInNewWindowAppBarButton.Label"
+            "OpenSubmoduleInNewWindowActionMenuFlyoutItem.Text",
+            "OpenFoundRepositoryInNewWindowActionMenuFlyoutItem.Text"
         ];
 
         foreach (string resourceName in expectedResources)

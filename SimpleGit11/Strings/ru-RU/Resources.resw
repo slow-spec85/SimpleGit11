@@ -665,7 +665,7 @@
     <value>Выберите коммит, чтобы посмотреть сравнение.</value>
   </data>
   <data name="SelectCommitFileToViewDiff" xml:space="preserve">
-    <value>Выберите измененный файл или просмотрите полное сравнение.</value>
+    <value>Выберите измененный файл.</value>
   </data>
   <data name="NoCommitDiffAvailable" xml:space="preserve">
     <value>Для этого коммита нет текстового сравнения.</value>
@@ -1600,13 +1600,13 @@
   <data name="FoundRepositoryFilterTextBox.PlaceholderText" xml:space="preserve">
     <value>Найти</value>
   </data>
-  <data name="BrowseRepositorySearchStartPathAppBarButton.Label" xml:space="preserve">
+  <data name="BrowseRepositorySearchStartPathActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Выбрать</value>
   </data>
-  <data name="BrowseRepositorySearchStartPathAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="BrowseRepositorySearchStartPathActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Выбрать начальную папку</value>
   </data>
-  <data name="BrowseRepositorySearchStartPathAppBarButton.AutomationProperties.Name" xml:space="preserve">
+  <data name="BrowseRepositorySearchStartPathActionMenuFlyoutItem.AutomationProperties.Name" xml:space="preserve">
     <value>Выбрать начальную папку</value>
   </data>
   <data name="RefreshRepositorySearchButton.Content" xml:space="preserve">
@@ -3202,25 +3202,25 @@ Push будет выполнен в настроенные направлени�
   <data name="CreateWorktreeButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Создать новое рабочее дерево</value>
   </data>
-  <data name="RepairWorktreesAppBarButton.Label" xml:space="preserve">
+  <data name="RepairWorktreesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Восстановить</value>
   </data>
-  <data name="PruneWorktreesAppBarButton.Label" xml:space="preserve">
+  <data name="PruneWorktreesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Очистить</value>
   </data>
   <data name="NoWorktreesInfoBar.Title" xml:space="preserve">
     <value>Рабочие деревья не найдены</value>
   </data>
-  <data name="MoveWorktreeAppBarButton.Label" xml:space="preserve">
+  <data name="MoveWorktreeActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Переместить</value>
   </data>
-  <data name="LockWorktreeAppBarButton.Label" xml:space="preserve">
+  <data name="LockWorktreeActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Заблокировать</value>
   </data>
-  <data name="UnlockWorktreeAppBarButton.Label" xml:space="preserve">
+  <data name="UnlockWorktreeActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Разблокировать</value>
   </data>
-  <data name="RemoveWorktreeAppBarButton.Label" xml:space="preserve">
+  <data name="RemoveWorktreeActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Удалить</value>
   </data>
   <data name="CreateBranchWorktreeMenuFlyoutItem.Text" xml:space="preserve">
@@ -3359,10 +3359,10 @@ Push будет выполнен в настроенные направлени�
   <data name="WorktreeFolderOpenFailed" xml:space="preserve">
     <value>Не удалось открыть папку рабочего дерева.</value>
   </data>
-  <data name="OpenWorktreeFolderAppBarButton.Label" xml:space="preserve">
+  <data name="OpenWorktreeFolderActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Расположение</value>
   </data>
-  <data name="OpenWorktreeFolderAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="OpenWorktreeFolderActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Открыть папку рабочего дерева в Проводнике</value>
   </data>
   <data name="CloseApplicationConfirmation" xml:space="preserve">
@@ -3572,19 +3572,19 @@ Push будет выполнен в настроенные направлени�
   <data name="ValidationSelectionRequired" xml:space="preserve">
     <value>Выберите значение.</value>
   </data>
-  <data name="OpenWorktreeAppBarButton.Label" xml:space="preserve">
+  <data name="OpenWorktreeActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Открыть</value>
   </data>
   <data name="OpenWorktreeItemButton.AutomationProperties.Name" xml:space="preserve">
     <value>Открыть рабочее дерево</value>
   </data>
-  <data name="OpenFoundRepositoryAppBarButton.Label" xml:space="preserve">
+  <data name="OpenFoundRepositoryActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Открыть</value>
   </data>
-  <data name="OpenFoundRepositoryInNewWindowAppBarButton.Label" xml:space="preserve">
+  <data name="OpenFoundRepositoryInNewWindowActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Открыть в новом окне</value>
   </data>
-  <data name="OpenFoundRepositoryFolderAppBarButton.Label" xml:space="preserve">
+  <data name="OpenFoundRepositoryFolderActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Расположение</value>
   </data>
   <data name="FoundRepositoryFolderOpenFailed" xml:space="preserve">
@@ -3596,25 +3596,25 @@ Push будет выполнен в настроенные направлени�
   <data name="RemotesCardDescriptionTextBlock.Text" xml:space="preserve">
     <value>Добавление и управление удаленными репозиториями</value>
   </data>
-  <data name="RemoveRemoteAppBarButton.Label" xml:space="preserve">
+  <data name="RemoveRemoteActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Отвязать</value>
   </data>
   <data name="RemoteCurrentStatus" xml:space="preserve">
     <value>Текущий</value>
   </data>
-  <data name="EditRemoteUrlAppBarButton.Label" xml:space="preserve">
+  <data name="EditRemoteUrlActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Изменить URL</value>
   </data>
-  <data name="SelectRemoteAppBarButton.Label" xml:space="preserve">
+  <data name="SelectRemoteActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Выбрать</value>
   </data>
-  <data name="SelectRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SelectRemoteActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Сделать репозиторий выбранным по-умолчанию при отправке и получении изменений</value>
   </data>
-  <data name="EditRemoteUrlAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="EditRemoteUrlActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Изменить URL удаленного репозитория</value>
   </data>
-  <data name="RemoveRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="RemoveRemoteActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Отвязать удаленный репозиторий от локального</value>
   </data>
   <data name="AddRemoteButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -3743,10 +3743,10 @@ Push будет выполнен в настроенные направлени�
   <data name="RemoteNameUpdated" xml:space="preserve">
     <value>Имя удаленного репозитория '{0}' изменено на '{1}'</value>
   </data>
-  <data name="RenameRemoteAppBarButton.Label" xml:space="preserve">
+  <data name="RenameRemoteActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Переименовать</value>
   </data>
-  <data name="RenameRemoteAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="RenameRemoteActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Изменить имя удаленного репозитория</value>
   </data>
   <data name="PrepareBranchSnapshotMenuFlyoutItem.Text" xml:space="preserve">
@@ -3823,19 +3823,19 @@ Push будет выполнен в настроенные направлени�
   <data name="SubmoduleTreeView.AutomationProperties.Name" xml:space="preserve">
     <value>Подмодули</value>
   </data>
-  <data name="OpenSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="OpenSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Открыть</value>
   </data>
-  <data name="OpenSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="OpenSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Открыть подмодуль как текущий репозиторий</value>
   </data>
-  <data name="OpenSubmoduleInNewWindowAppBarButton.Label" xml:space="preserve">
+  <data name="OpenSubmoduleInNewWindowActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Открыть в новом окне</value>
   </data>
-  <data name="OpenSubmoduleFolderAppBarButton.Label" xml:space="preserve">
+  <data name="OpenSubmoduleFolderActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Расположение</value>
   </data>
-  <data name="OpenSubmoduleFolderAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="OpenSubmoduleFolderActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Открыть папку подмодуля в Проводнике</value>
   </data>
   <data name="SubmoduleStatusNotInitialized" xml:space="preserve">
@@ -3907,40 +3907,40 @@ Push будет выполнен в настроенные направлени�
   <data name="AddSubmoduleButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Клонировать репозиторий в выбранный путь и добавить в индекс его конфигурацию и зафиксированный коммит</value>
   </data>
-  <data name="InitializeAllSubmodulesAppBarButton.Label" xml:space="preserve">
+  <data name="InitializeAllSubmodulesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Инициализировать все</value>
   </data>
-  <data name="CheckoutAllSubmodulesAppBarButton.Label" xml:space="preserve">
+  <data name="CheckoutAllSubmodulesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Восстановить закреплённые версии</value>
   </data>
-  <data name="UpdateAllSubmodulesAppBarButton.Label" xml:space="preserve">
+  <data name="UpdateAllSubmodulesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Перейти на версии подмодулей</value>
   </data>
-  <data name="SyncAllSubmodulesAppBarButton.Label" xml:space="preserve">
+  <data name="SyncAllSubmodulesActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Синхронизировать URL</value>
   </data>
-  <data name="InitializeSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="InitializeSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Инициализировать</value>
   </data>
-  <data name="CheckoutSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="CheckoutSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Восстановить закреплённую версию</value>
   </data>
-  <data name="UpdateSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="UpdateSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Перейти на версию подмодуля</value>
   </data>
-  <data name="SyncSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="SyncSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Синхронизировать URL</value>
   </data>
-  <data name="EditSubmoduleUrlAppBarButton.Label" xml:space="preserve">
+  <data name="EditSubmoduleUrlActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Изменить URL</value>
   </data>
-  <data name="EditSubmoduleBranchAppBarButton.Label" xml:space="preserve">
+  <data name="EditSubmoduleBranchActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Изменить отслеживаемую ветку</value>
   </data>
-  <data name="DeinitializeSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="DeinitializeSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Деинициализировать</value>
   </data>
-  <data name="RemoveSubmoduleAppBarButton.Label" xml:space="preserve">
+  <data name="RemoveSubmoduleActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Удалить из репозитория</value>
   </data>
   <data name="SubmoduleUrlTextBoxHeader" xml:space="preserve">
@@ -4045,40 +4045,40 @@ Push будет выполнен в настроенные направлени�
   <data name="SubmoduleOperationFailed" xml:space="preserve">
     <value>Не удалось выполнить операцию с подмодулем.</value>
   </data>
-  <data name="InitializeAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="InitializeAllSubmodulesActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Клонировать отсутствующие подмодули и рекурсивно перейти на коммиты, записанные родительским репозиторием</value>
   </data>
-  <data name="CheckoutAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="CheckoutAllSubmodulesActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Восстановить во всех инициализированных подмодулях версии, закреплённые родительскими репозиториями</value>
   </data>
-  <data name="UpdateAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="UpdateAllSubmodulesActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Получить последние коммиты веток, указанных для подмодулей в .gitmodules, и перейти на них; указатели подмодулей в родительском репозитории изменятся</value>
   </data>
-  <data name="SyncAllSubmodulesAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SyncAllSubmodulesActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Рекурсивно скопировать URL всех подмодулей из .gitmodules в локальную конфигурацию Git</value>
   </data>
-  <data name="InitializeSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="InitializeSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>При необходимости клонировать подмодуль и рекурсивно перейти на коммит, записанный его родительским репозиторием</value>
   </data>
-  <data name="CheckoutSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="CheckoutSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Восстановить версию подмодуля, закреплённую его родительским репозиторием</value>
   </data>
-  <data name="UpdateSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="UpdateSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Получить последний коммит ветки, указанной для подмодуля в .gitmodules, и перейти на него; указатель подмодуля в родительском репозитории изменится</value>
   </data>
-  <data name="SyncSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SyncSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Скопировать URL подмодуля из .gitmodules в локальную конфигурацию Git</value>
   </data>
-  <data name="EditSubmoduleUrlAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="EditSubmoduleUrlActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Изменить URL репозитория, сохранённый для этого подмодуля</value>
   </data>
-  <data name="EditSubmoduleBranchAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="EditSubmoduleBranchActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Выбрать ветку для команды «Перейти на версию подмодуля»; оставьте поле пустым для ветки удалённого репозитория по умолчанию</value>
   </data>
-  <data name="DeinitializeSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="DeinitializeSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Удалить рабочий каталог подмодуля, сохранив его регистрацию в родительском репозитории</value>
   </data>
-  <data name="RemoveSubmoduleAppBarButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="RemoveSubmoduleActionMenuFlyoutItem.ToolTipService.ToolTip" xml:space="preserve">
     <value>Деинициализировать подмодуль и добавить его удаление из родительского репозитория в индекс</value>
   </data>
   <data name="SubmoduleChangeBadgeTextBlock.Text" xml:space="preserve">
@@ -4440,7 +4440,7 @@ only — только fast-forward; «Не задано» — наследова
   <data name="OpenSshSettingsButton" xml:space="preserve">
     <value>Открыть параметры SSH</value>
   </data>
-  <data name="CheckRemoteAccessAppBarButton.Label" xml:space="preserve">
+  <data name="CheckRemoteAccessActionMenuFlyoutItem.Text" xml:space="preserve">
     <value>Проверить доступ</value>
   </data>
   <data name="ManageCredentialsButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -4469,5 +4469,26 @@ only — только fast-forward; «Не задано» — наследова
   </data>
   <data name="IgnoreWhitespaceToggleSwitch.OffContent" xml:space="preserve">
     <value>Игнорировать пробелы</value>
+  </data>
+  <data name="RemoteActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Действия с удалённым репозиторием</value>
+  </data>
+  <data name="WorktreeSectionActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Действия с рабочими деревьями</value>
+  </data>
+  <data name="WorktreeActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Действия с рабочим деревом</value>
+  </data>
+  <data name="SubmoduleSectionActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Действия с подмодулями</value>
+  </data>
+  <data name="SubmoduleActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Действия с подмодулем</value>
+  </data>
+  <data name="FoundRepositorySectionActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Действия с поиском репозиториев</value>
+  </data>
+  <data name="FoundRepositoryActionsButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Действия с репозиторием</value>
   </data>
 </root>

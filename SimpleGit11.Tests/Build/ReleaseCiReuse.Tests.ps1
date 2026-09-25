@@ -163,6 +163,9 @@ try {
     # Verify the fail-safe wiring, without evaluating untrusted workflow commands.
     [string]$root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $CiReuseScript))
     [string]$workflow = Get-Content -LiteralPath (Join-Path $root '.github/workflows/release.yml') -Raw
+    if ($workflow -notmatch '(?m)^  validate-release-tag:\r?\n    name: Validate release tag\r?\n    if: github\.event\.repository\.visibility == ''public''\r?$') {
+        throw 'Release validation must be skipped outside public repositories.'
+    }
     foreach ($required in @(
         'actions: read', 'needs: validate-release-tag',
         'reuse-ci: ${{ steps.ci.outputs.reuse }}',

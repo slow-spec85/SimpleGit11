@@ -829,7 +829,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
 
     private async Task ToggleFullFileAsync()
     {
-        if (IsFullFileMode)
+        if (GetNextFullFileMode(IsFullFileMode))
         {
             await ShowFullFileAsync();
         }
@@ -837,6 +837,11 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         {
             await ShowDiffAsync();
         }
+    }
+
+    internal static bool GetNextFullFileMode(bool isFullFileMode)
+    {
+        return !isFullFileMode;
     }
 
     private async Task EditSelectedFileAsync()
@@ -988,7 +993,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
             return Task.CompletedTask;
         }
 
-        bool showFullFile = !IsFullFileMode;
+        bool showFullFile = GetNextFullFileMode(IsFullFileMode);
         IsFullFileMode = showFullFile;
         if (ReferenceEquals(SelectedChange, change))
         {
@@ -1468,6 +1473,43 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
 
     private async Task OpenCommitDialogAsync(bool isAmend)
     {
+        bool allowEmpty = false;
+        if (!isAmend && !IsMergeInProgress)
+        {
+            if (_mainWindowViewModel.CurrentRepository is not RepositoryInfo repository)
+            {
+                return;
+            }
+
+            bool? prepared;
+            try
+            {
+                prepared = await _gitService.CommitWorkflow.PrepareCreateAsync(repository);
+            }
+            catch (FileNotFoundException)
+            {
+                ShowError(_localizationService.GetString("GitExecutableNotFound"));
+                return;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
+                return;
+            }
+            catch (GitCommandException exception)
+            {
+                ShowError(_localizationService.GetString("GitCommitCommandFailed"), exception.Message);
+                return;
+            }
+
+            if (prepared is null)
+            {
+                return;
+            }
+
+            allowEmpty = prepared.Value;
+        }
+
         IReadOnlyList<GitChangedFile> changedFiles = AllChanges.ToArray();
         CommitDialogRequest request = isAmend
             ? CommitDialogRequest.CreateAmend(changedFiles, !HasLocalCommits)
@@ -1482,7 +1524,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
             return;
         }
 
-        await CommitAsync(answer.Message, answer.Amend);
+        await CommitAsync(answer.Message, answer.Amend, allowEmpty);
     }
 
     private async Task RevertDiffLineAsync(object? parameter)
@@ -1497,7 +1539,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         await RevertChangeAsync(diffLine.SourceLineNumber.Value);
     }
 
-    public async Task CommitAsync(string? message, bool isAmend)
+    private async Task CommitAsync(string? message, bool isAmend, bool allowEmpty)
     {
         if (_mainWindowViewModel.CurrentRepository is null)
         {
@@ -1539,7 +1581,8 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
                     {
                         operationResult = await _gitService.CommitWorkflow.CreateAsync(
                             repository,
-                            trimmedMessage!);
+                            trimmedMessage!,
+                            allowEmpty);
                     }
                 });
 

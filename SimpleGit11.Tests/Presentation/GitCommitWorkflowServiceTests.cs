@@ -9,19 +9,40 @@ namespace SimpleGit11.Tests.Presentation;
 public sealed class GitCommitWorkflowServiceTests
 {
     [TestMethod]
-    public async Task CreateAsync_EmptyCommitConfirmed_UsesAllowEmpty()
+    public async Task PrepareCreateAsync_EmptyCommitConfirmed_BeforeCreate()
     {
         TestGitCommitService commitService = new() { WouldCreateEmptyCommit = true };
         TestDialogService dialogService = new() { ConfirmationResult = true };
         GitCommitWorkflowService service = CreateService(commitService, dialogService);
 
+        RepositoryInfo repository = CreateRepository();
+        bool? allowEmpty = await service.PrepareCreateAsync(repository);
+
+        Assert.AreEqual(true, allowEmpty);
+        Assert.AreEqual("EmptyCommitDialogTitle", dialogService.LastTitle);
+
         GitCommitOperationResult result = await service.CreateAsync(
-            CreateRepository(),
-            "empty");
+            repository,
+            "empty",
+            allowEmpty is true);
 
         Assert.IsTrue(result.Completed);
         Assert.IsTrue(commitService.LastOptions?.AllowEmpty);
-        Assert.AreEqual("EmptyCommitDialogTitle", dialogService.LastTitle);
+        Assert.AreEqual(1, dialogService.ConfirmationCount);
+        Assert.AreEqual(1, commitService.EmptyCheckCount);
+    }
+
+    [TestMethod]
+    public async Task PrepareCreateAsync_EmptyCommitRejected_CancelsBeforeCreate()
+    {
+        TestGitCommitService commitService = new() { WouldCreateEmptyCommit = true };
+        TestDialogService dialogService = new() { ConfirmationResult = false };
+        GitCommitWorkflowService service = CreateService(commitService, dialogService);
+
+        bool? allowEmpty = await service.PrepareCreateAsync(CreateRepository());
+
+        Assert.IsNull(allowEmpty);
+        Assert.AreEqual(0, commitService.CommitCallCount);
     }
 
     [TestMethod]
@@ -47,13 +68,18 @@ public sealed class GitCommitWorkflowServiceTests
         TestDialogService dialogService = new();
         GitCommitWorkflowService service = CreateService(commitService, dialogService);
 
+        RepositoryInfo repository = CreateRepository();
+        bool? allowEmpty = await service.PrepareCreateAsync(repository);
         GitCommitOperationResult result = await service.CreateAsync(
-            CreateRepository(),
-            "message");
+            repository,
+            "message",
+            allowEmpty!.Value);
 
         Assert.IsTrue(result.Completed);
+        Assert.AreEqual(false, allowEmpty);
         Assert.IsFalse(commitService.LastOptions?.AllowEmpty);
         Assert.AreEqual(0, dialogService.ConfirmationCount);
+        Assert.AreEqual(1, commitService.EmptyCheckCount);
     }
 
     [TestMethod]
@@ -93,6 +119,8 @@ public sealed class GitCommitWorkflowServiceTests
 
         public int AmendCallCount { get; private set; }
 
+        public int CommitCallCount { get; private set; }
+
         public GitCommitOptions? LastOptions { get; private set; }
 
         public Task<string> CommitAsync(
@@ -100,6 +128,7 @@ public sealed class GitCommitWorkflowServiceTests
             string message,
             GitCommitOptions options)
         {
+            CommitCallCount++;
             LastOptions = options;
             return Task.FromResult("created");
         }

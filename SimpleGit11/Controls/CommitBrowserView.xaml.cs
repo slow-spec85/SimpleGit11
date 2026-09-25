@@ -140,10 +140,10 @@ public sealed partial class CommitBrowserView : UserControl
 
     private void UpdateCommitDetailsRows(bool visible)
     {
-        CommitDetailsSplitterRow.Height = new GridLength(visible ? 8 : 0);
+        CommitDetailsSplitterRow.Height = new GridLength(visible ? 20 : 0);
         double availableHeight = HistoryRightPane.ActualHeight;
         double detailsHeight = availableHeight > 0
-            ? Math.Min(_commitDetailsHeight, Math.Max(0, availableHeight - 8 - 120))
+            ? Math.Min(_commitDetailsHeight, Math.Max(0, availableHeight - 20 - 120))
             : _commitDetailsHeight;
         CommitDetailsRow.Height = new GridLength(visible ? detailsHeight : 0);
     }

@@ -5,9 +5,12 @@ namespace SimpleGit11.Services;
 
 public interface IGitCommitWorkflowService
 {
+    Task<bool?> PrepareCreateAsync(RepositoryInfo repository);
+
     Task<GitCommitOperationResult> CreateAsync(
         RepositoryInfo repository,
-        string message);
+        string message,
+        bool allowEmpty);
 
     Task<GitCommitOperationResult> AmendAsync(
         RepositoryInfo repository,

@@ -441,8 +441,10 @@
             <TextBlock
                 x:Name="ExecutionHostTitleTextBlock"
                 AutomationProperties.AutomationId="ExecutionHostTitleTextBlock"
-                Margin="16,0,0,0"
+                Margin="48,0,0,0"
                 VerticalAlignment="Center"
+                FontWeight="SemiBold"
+                FontSize="14"
                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                 IsHitTestVisible="False"
                 Style="{ThemeResource CaptionTextBlockStyle}"

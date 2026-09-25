@@ -564,7 +564,6 @@
             <Grid
                 Grid.Column="2"
                 x:Name="HistoryRightPane"
-                Margin="12,0,0,0"
                 SizeChanged="HistoryRightPane_SizeChanged">
                 <Grid.RowDefinitions>
                     <RowDefinition x:Name="CommitDetailsRow" Height="0" />
@@ -576,9 +575,10 @@
                     Grid.Row="0"
                     RowSpacing="8"
                     Padding="0,0,30,0"
+                    Margin="12,0,0,0"
                     Visibility="{x:Bind ViewModel.CommitDetailsBlockVisibility, Mode=OneWay}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="32" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
@@ -772,11 +772,12 @@
                     DragDelta="CommitDetailsSplitter_DragDelta"
                     Style="{StaticResource HorizontalSplitterStyle}"
                     Visibility="{x:Bind ViewModel.CommitDetailsBlockVisibility, Mode=OneWay}"
-                    Margin="0,0,30,0"/>
+                    Margin="0,4,30,8"/>
 
                 <controls:DiffViewer
                     Grid.Row="2"
                     x:Name="HistoryDiffPane"
+                    Margin="12,0,0,0"
                     CopyTextCommand="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                     DiffLinesSource="{x:Bind ViewModel.DiffLines, Mode=OneWay}"
                     EmptyMessage="{x:Bind ViewModel.DiffEmptyMessage, Mode=OneWay}"

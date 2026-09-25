@@ -75,7 +75,6 @@
                     <AppBarButton
                         x:Uid="OpenRepositoryInNewWindowAppBarButton"
                         Command="{x:Bind ViewModel.OpenRepositoryInNewWindowCommand, Mode=OneWay}" />
-                    <AppBarSeparator />
                 </CommandBar.SecondaryCommands>
                 <AppBarButton
                     x:Uid="RefreshRepositoryAppBarButton"
@@ -451,31 +450,35 @@
                                                 </StackPanel>
                                             </toolkit:SettingsCard.Header>
                                             <toolkit:SettingsCard.Content>
-                                                <CommandBar
+                                                <Button
+                                                    x:Uid="RemoteActionsButton"
+                                                    AutomationProperties.AutomationId="RemoteActionsButton"
                                                     Background="Transparent"
-                                                    DefaultLabelPosition="Right"
-                                                    IsDynamicOverflowEnabled="False"
+                                                    BorderThickness="0"
                                                     VerticalAlignment="Center"
                                                     Margin="0,0,28,0">
-                                                    <CommandBar.SecondaryCommands>
-                                                        <AppBarButton
-                                                            x:Uid="SelectRemoteAppBarButton"
-                                                            Command="{x:Bind SelectCommand}" />
-                                                        <AppBarSeparator/>
-                                                        <AppBarButton
-                                                            x:Uid="RenameRemoteAppBarButton"
-                                                            Command="{x:Bind RenameCommand, Mode=OneWay}" />
-                                                        <AppBarButton
-                                                            x:Uid="EditRemoteUrlAppBarButton"
-                                                            Command="{x:Bind EditCommand, Mode=OneWay}" />
-                                                        <AppBarButton
-                                                            x:Uid="CheckRemoteAccessAppBarButton"
-                                                            Command="{x:Bind CheckAccessCommand, Mode=OneWay}" />
-                                                        <AppBarButton
-                                                            x:Uid="RemoveRemoteAppBarButton"
-                                                            Command="{x:Bind RemoveCommand, Mode=OneWay}" />
-                                                    </CommandBar.SecondaryCommands>
-                                                </CommandBar>
+                                                    <FontIcon Glyph="&#xE712;" />
+                                                    <Button.Flyout>
+                                                        <MenuFlyout>
+                                                            <MenuFlyoutItem
+                                                                x:Uid="SelectRemoteActionMenuFlyoutItem"
+                                                                Command="{x:Bind SelectCommand}" />
+                                                            <MenuFlyoutSeparator/>
+                                                            <MenuFlyoutItem
+                                                                x:Uid="RenameRemoteActionMenuFlyoutItem"
+                                                                Command="{x:Bind RenameCommand, Mode=OneWay}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="EditRemoteUrlActionMenuFlyoutItem"
+                                                                Command="{x:Bind EditCommand, Mode=OneWay}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="CheckRemoteAccessActionMenuFlyoutItem"
+                                                                Command="{x:Bind CheckAccessCommand, Mode=OneWay}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="RemoveRemoteActionMenuFlyoutItem"
+                                                                Command="{x:Bind RemoveCommand, Mode=OneWay}" />
+                                                        </MenuFlyout>
+                                                    </Button.Flyout>
+                                                </Button>
                                             </toolkit:SettingsCard.Content>
                                         </toolkit:SettingsCard>
                                     </DataTemplate>
@@ -514,28 +517,32 @@
                                     </StackPanel>
                                 </toolkit:SettingsCard.Header>
                                 <toolkit:SettingsCard.Content>
-                                    <CommandBar
-                                        Background="Transparent"
-                                        DefaultLabelPosition="Right"
-                                        IsDynamicOverflowEnabled="False"
-                                        VerticalAlignment="Center">
-                                        <AppBarElementContainer VerticalContentAlignment="Center">
-                                            <Button
-                                                x:Uid="CreateWorktreeButton"
-                                                Width="140"
-                                                Margin="0,0,8,0"
-                                                VerticalAlignment="Center"
-                                                Command="{x:Bind ViewModel.CreateWorktreeCommand, Mode=OneWay}" />
-                                        </AppBarElementContainer>
-                                        <CommandBar.SecondaryCommands>
-                                            <AppBarButton
-                                                x:Uid="RepairWorktreesAppBarButton"
-                                                Command="{x:Bind ViewModel.RepairWorktreesCommand, Mode=OneWay}" />
-                                            <AppBarButton
-                                                x:Uid="PruneWorktreesAppBarButton"
-                                                Command="{x:Bind ViewModel.PruneWorktreesCommand, Mode=OneWay}" />
-                                        </CommandBar.SecondaryCommands>
-                                    </CommandBar>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button
+                                            x:Uid="CreateWorktreeButton"
+                                            Width="140"
+                                            Margin="0,0,8,0"
+                                            VerticalAlignment="Center"
+                                            Command="{x:Bind ViewModel.CreateWorktreeCommand, Mode=OneWay}" />
+                                        <Button
+                                            x:Uid="WorktreeSectionActionsButton"
+                                            AutomationProperties.AutomationId="WorktreeSectionActionsButton"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE712;" />
+                                            <Button.Flyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem
+                                                        x:Uid="RepairWorktreesActionMenuFlyoutItem"
+                                                        Command="{x:Bind ViewModel.RepairWorktreesCommand, Mode=OneWay}" />
+                                                    <MenuFlyoutItem
+                                                        x:Uid="PruneWorktreesActionMenuFlyoutItem"
+                                                        Command="{x:Bind ViewModel.PruneWorktreesCommand, Mode=OneWay}" />
+                                                </MenuFlyout>
+                                            </Button.Flyout>
+                                        </Button>
+                                    </StackPanel>
                                 </toolkit:SettingsCard.Content>
 
                             </toolkit:SettingsCard>
@@ -623,37 +630,41 @@
                                                 </StackPanel>
                                             </toolkit:SettingsCard.Header>
                                             <toolkit:SettingsCard.Content>
-                                                <CommandBar
+                                                <Button
+                                                    x:Uid="WorktreeActionsButton"
+                                                    AutomationProperties.AutomationId="WorktreeActionsButton"
                                                     Background="Transparent"
-                                                    DefaultLabelPosition="Right"
-                                                    IsDynamicOverflowEnabled="False"
+                                                    BorderThickness="0"
                                                     VerticalAlignment="Center"
                                                     Margin="0,0,28,0">
-                                                    <CommandBar.SecondaryCommands>
-                                                        <AppBarButton
-                                                            x:Uid="OpenWorktreeAppBarButton"
-                                                            Command="{x:Bind OpenCommand, Mode=OneTime}" />
-                                                        <AppBarButton
-                                                            x:Uid="OpenWorktreeFolderAppBarButton"
-                                                            Command="{x:Bind OpenFolderCommand, Mode=OneTime}" />
-                                                        <AppBarSeparator />
-                                                        <AppBarButton
-                                                            x:Uid="MoveWorktreeAppBarButton"
-                                                            Command="{x:Bind MoveCommand, Mode=OneTime}" />
-                                                        <AppBarButton
-                                                            x:Uid="LockWorktreeAppBarButton"
-                                                            Command="{x:Bind ToggleLockCommand, Mode=OneTime}"
-                                                            Visibility="{x:Bind LockVisibility, Mode=OneTime}" />
-                                                        <AppBarButton
-                                                            x:Uid="UnlockWorktreeAppBarButton"
-                                                            Command="{x:Bind ToggleLockCommand, Mode=OneTime}"
-                                                            Visibility="{x:Bind UnlockVisibility, Mode=OneTime}" />
-                                                        <AppBarSeparator />
-                                                        <AppBarButton
-                                                            x:Uid="RemoveWorktreeAppBarButton"
-                                                            Command="{x:Bind RemoveCommand, Mode=OneTime}" />
-                                                    </CommandBar.SecondaryCommands>
-                                                </CommandBar>
+                                                    <FontIcon Glyph="&#xE712;" />
+                                                    <Button.Flyout>
+                                                        <MenuFlyout>
+                                                            <MenuFlyoutItem
+                                                                x:Uid="OpenWorktreeActionMenuFlyoutItem"
+                                                                Command="{x:Bind OpenCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="OpenWorktreeFolderActionMenuFlyoutItem"
+                                                                Command="{x:Bind OpenFolderCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutSeparator />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="MoveWorktreeActionMenuFlyoutItem"
+                                                                Command="{x:Bind MoveCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="LockWorktreeActionMenuFlyoutItem"
+                                                                Command="{x:Bind ToggleLockCommand, Mode=OneTime}"
+                                                                Visibility="{x:Bind LockVisibility, Mode=OneTime}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="UnlockWorktreeActionMenuFlyoutItem"
+                                                                Command="{x:Bind ToggleLockCommand, Mode=OneTime}"
+                                                                Visibility="{x:Bind UnlockVisibility, Mode=OneTime}" />
+                                                            <MenuFlyoutSeparator />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="RemoveWorktreeActionMenuFlyoutItem"
+                                                                Command="{x:Bind RemoveCommand, Mode=OneTime}" />
+                                                        </MenuFlyout>
+                                                    </Button.Flyout>
+                                                </Button>
                                             </toolkit:SettingsCard.Content>
                                         </toolkit:SettingsCard>
                                     </DataTemplate>
@@ -692,33 +703,37 @@
                                     </StackPanel>
                                 </toolkit:SettingsCard.Header>
                                 <toolkit:SettingsCard.Content>
-                                    <CommandBar
-                                        Background="Transparent"
-                                        DefaultLabelPosition="Right"
-                                        IsDynamicOverflowEnabled="False"
-                                        VerticalAlignment="Center">
-                                        <AppBarElementContainer VerticalContentAlignment="Center">
-                                            <Button
-                                                x:Uid="AddSubmoduleButton"
-                                                Width="140"
-                                                Margin="0,0,8,0"
-                                                Command="{x:Bind ViewModel.AddSubmoduleCommand, Mode=OneWay}" />
-                                        </AppBarElementContainer>
-                                        <CommandBar.SecondaryCommands>
-                                            <AppBarButton
-                                                x:Uid="InitializeAllSubmodulesAppBarButton"
-                                                Command="{x:Bind ViewModel.InitializeAllSubmodulesCommand, Mode=OneWay}" />
-                                            <AppBarButton
-                                                x:Uid="CheckoutAllSubmodulesAppBarButton"
-                                                Command="{x:Bind ViewModel.CheckoutAllSubmodulesCommand, Mode=OneWay}" />
-                                            <AppBarButton
-                                                x:Uid="UpdateAllSubmodulesAppBarButton"
-                                                Command="{x:Bind ViewModel.UpdateAllSubmodulesCommand, Mode=OneWay}" />
-                                            <AppBarButton
-                                                x:Uid="SyncAllSubmodulesAppBarButton"
-                                                Command="{x:Bind ViewModel.SyncAllSubmodulesCommand, Mode=OneWay}" />
-                                        </CommandBar.SecondaryCommands>
-                                    </CommandBar>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button
+                                            x:Uid="AddSubmoduleButton"
+                                            Width="140"
+                                            Margin="0,0,8,0"
+                                            Command="{x:Bind ViewModel.AddSubmoduleCommand, Mode=OneWay}" />
+                                        <Button
+                                            x:Uid="SubmoduleSectionActionsButton"
+                                            AutomationProperties.AutomationId="SubmoduleSectionActionsButton"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE712;" />
+                                            <Button.Flyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem
+                                                        x:Uid="InitializeAllSubmodulesActionMenuFlyoutItem"
+                                                        Command="{x:Bind ViewModel.InitializeAllSubmodulesCommand, Mode=OneWay}" />
+                                                    <MenuFlyoutItem
+                                                        x:Uid="CheckoutAllSubmodulesActionMenuFlyoutItem"
+                                                        Command="{x:Bind ViewModel.CheckoutAllSubmodulesCommand, Mode=OneWay}" />
+                                                    <MenuFlyoutItem
+                                                        x:Uid="UpdateAllSubmodulesActionMenuFlyoutItem"
+                                                        Command="{x:Bind ViewModel.UpdateAllSubmodulesCommand, Mode=OneWay}" />
+                                                    <MenuFlyoutItem
+                                                        x:Uid="SyncAllSubmodulesActionMenuFlyoutItem"
+                                                        Command="{x:Bind ViewModel.SyncAllSubmodulesCommand, Mode=OneWay}" />
+                                                </MenuFlyout>
+                                            </Button.Flyout>
+                                        </Button>
+                                    </StackPanel>
                                 </toolkit:SettingsCard.Content>
                             </toolkit:SettingsCard>
 
@@ -837,56 +852,60 @@
                                                     </StackPanel>
                                                 </StackPanel>
 
-                                                <CommandBar
+                                                <Button
                                                     Grid.Column="1"
-                                                    Margin="0,0,28,0"
+                                                    x:Uid="SubmoduleActionsButton"
+                                                    AutomationProperties.AutomationId="SubmoduleActionsButton"
                                                     Background="Transparent"
-                                                    DefaultLabelPosition="Right"
-                                                    IsDynamicOverflowEnabled="False"
-                                                    VerticalAlignment="Center">
-                                                    <CommandBar.SecondaryCommands>
-                                                        <AppBarButton
-                                                            x:Uid="OpenSubmoduleAppBarButton"
-                                                            AutomationProperties.AutomationId="OpenSubmoduleAppBarButton"
-                                                            Command="{x:Bind OpenCommand, Mode=OneTime}" />
-                                                        <AppBarButton
-                                                            x:Uid="OpenSubmoduleInNewWindowAppBarButton"
-                                                            AutomationProperties.AutomationId="OpenSubmoduleInNewWindowAppBarButton"
-                                                            Command="{x:Bind OpenInNewWindowCommand, Mode=OneTime}" />
-                                                        <AppBarSeparator />
-                                                        <AppBarButton
-                                                            x:Uid="OpenSubmoduleFolderAppBarButton"
-                                                            AutomationProperties.AutomationId="OpenSubmoduleFolderAppBarButton"
-                                                            Command="{x:Bind OpenFolderCommand, Mode=OneTime}" />
-                                                        <AppBarSeparator />
-                                                        <AppBarButton
-                                                            x:Uid="InitializeSubmoduleAppBarButton"
-                                                            Command="{x:Bind InitializeCommand, Mode=OneTime}" />
-                                                        <AppBarButton
-                                                            x:Uid="CheckoutSubmoduleAppBarButton"
-                                                            Command="{x:Bind CheckoutRecordedCommand, Mode=OneTime}" />
-                                                        <AppBarButton
-                                                            x:Uid="UpdateSubmoduleAppBarButton"
-                                                            Command="{x:Bind UpdateFromRemoteCommand, Mode=OneTime}" />
-                                                        <AppBarButton
-                                                            x:Uid="SyncSubmoduleAppBarButton"
-                                                            Command="{x:Bind SyncCommand, Mode=OneTime}" />
-                                                        <AppBarSeparator />
-                                                        <AppBarButton
-                                                            x:Uid="EditSubmoduleUrlAppBarButton"
-                                                            Command="{x:Bind EditUrlCommand, Mode=OneTime}" />
-                                                        <AppBarButton
-                                                            x:Uid="EditSubmoduleBranchAppBarButton"
-                                                            Command="{x:Bind EditBranchCommand, Mode=OneTime}" />
-                                                        <AppBarSeparator />
-                                                        <AppBarButton
-                                                            x:Uid="DeinitializeSubmoduleAppBarButton"
-                                                            Command="{x:Bind DeinitializeCommand, Mode=OneTime}" />
-                                                        <AppBarButton
-                                                            x:Uid="RemoveSubmoduleAppBarButton"
-                                                            Command="{x:Bind RemoveCommand, Mode=OneTime}" />
-                                                    </CommandBar.SecondaryCommands>
-                                                </CommandBar>
+                                                    BorderThickness="0"
+                                                    VerticalAlignment="Center"
+                                                    Margin="0,0,28,0">
+                                                    <FontIcon Glyph="&#xE712;" />
+                                                    <Button.Flyout>
+                                                        <MenuFlyout>
+                                                            <MenuFlyoutItem
+                                                                x:Uid="OpenSubmoduleActionMenuFlyoutItem"
+                                                                AutomationProperties.AutomationId="OpenSubmoduleAppBarButton"
+                                                                Command="{x:Bind OpenCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="OpenSubmoduleInNewWindowActionMenuFlyoutItem"
+                                                                AutomationProperties.AutomationId="OpenSubmoduleInNewWindowAppBarButton"
+                                                                Command="{x:Bind OpenInNewWindowCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutSeparator />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="OpenSubmoduleFolderActionMenuFlyoutItem"
+                                                                AutomationProperties.AutomationId="OpenSubmoduleFolderAppBarButton"
+                                                                Command="{x:Bind OpenFolderCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutSeparator />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="InitializeSubmoduleActionMenuFlyoutItem"
+                                                                Command="{x:Bind InitializeCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="CheckoutSubmoduleActionMenuFlyoutItem"
+                                                                Command="{x:Bind CheckoutRecordedCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="UpdateSubmoduleActionMenuFlyoutItem"
+                                                                Command="{x:Bind UpdateFromRemoteCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="SyncSubmoduleActionMenuFlyoutItem"
+                                                                Command="{x:Bind SyncCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutSeparator />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="EditSubmoduleUrlActionMenuFlyoutItem"
+                                                                Command="{x:Bind EditUrlCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="EditSubmoduleBranchActionMenuFlyoutItem"
+                                                                Command="{x:Bind EditBranchCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutSeparator />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="DeinitializeSubmoduleActionMenuFlyoutItem"
+                                                                Command="{x:Bind DeinitializeCommand, Mode=OneTime}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="RemoveSubmoduleActionMenuFlyoutItem"
+                                                                Command="{x:Bind RemoveCommand, Mode=OneTime}" />
+                                                        </MenuFlyout>
+                                                    </Button.Flyout>
+                                                </Button>
                                             </Grid>
                                         </TreeViewItem>
                                     </DataTemplate>
@@ -931,26 +950,29 @@
                                     Height="32"
                                     VerticalAlignment="Center"
                                     Text="{x:Bind ViewModel.FoundRepositoryFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                <CommandBar
-                                    Grid.Column="1"
-                                    Background="Transparent"
-                                    DefaultLabelPosition="Right"
-                                    IsDynamicOverflowEnabled="False"
-                                    VerticalAlignment="Center">
-                                    <AppBarElementContainer VerticalContentAlignment="Center">
-                                        <Button
-                                            x:Uid="RefreshRepositorySearchButton"
-                                            Width="140"
-                                            Margin="0,0,8,0"
-                                            VerticalAlignment="Center"
-                                            Command="{x:Bind ViewModel.SearchRepositoriesCommand, Mode=OneWay}" />
-                                    </AppBarElementContainer>
-                                    <CommandBar.SecondaryCommands>
-                                        <AppBarButton
-                                            x:Uid="BrowseRepositorySearchStartPathAppBarButton"
-                                            Command="{x:Bind ViewModel.BrowseRepositorySearchStartPathCommand, Mode=OneWay}" />
-                                    </CommandBar.SecondaryCommands>
-                                </CommandBar>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button
+                                        x:Uid="RefreshRepositorySearchButton"
+                                        Width="140"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Command="{x:Bind ViewModel.SearchRepositoriesCommand, Mode=OneWay}" />
+                                    <Button
+                                        x:Uid="FoundRepositorySectionActionsButton"
+                                        AutomationProperties.AutomationId="FoundRepositorySectionActionsButton"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE712;" />
+                                        <Button.Flyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem
+                                                    x:Uid="BrowseRepositorySearchStartPathActionMenuFlyoutItem"
+                                                    Command="{x:Bind ViewModel.BrowseRepositorySearchStartPathCommand, Mode=OneWay}" />
+                                            </MenuFlyout>
+                                        </Button.Flyout>
+                                    </Button>
+                                </StackPanel>
                             </Grid>
                         </toolkit:SettingsExpander.Content>
 
@@ -1006,26 +1028,30 @@
                                         </StackPanel>
                                     </toolkit:SettingsCard.Header>
                                     <toolkit:SettingsCard.Content>
-                                        <CommandBar
+                                        <Button
                                             Grid.Column="1"
+                                            x:Uid="FoundRepositoryActionsButton"
+                                            AutomationProperties.AutomationId="FoundRepositoryActionsButton"
                                             Background="Transparent"
-                                            DefaultLabelPosition="Right"
-                                            IsDynamicOverflowEnabled="False"
+                                            BorderThickness="0"
                                             VerticalAlignment="Center"
                                             Margin="0,0,28,0">
-                                            <CommandBar.SecondaryCommands>
-                                                <AppBarButton
-                                                    x:Uid="OpenFoundRepositoryAppBarButton"
-                                                    Command="{x:Bind OpenCommand, Mode=OneTime}" />
-                                                <AppBarButton
-                                                    x:Uid="OpenFoundRepositoryInNewWindowAppBarButton"
-                                                    Command="{x:Bind OpenInNewWindowCommand, Mode=OneTime}" />
-                                                <AppBarSeparator />
-                                                <AppBarButton
-                                                    x:Uid="OpenFoundRepositoryFolderAppBarButton"
-                                                    Command="{x:Bind OpenFolderCommand, Mode=OneTime}" />
-                                            </CommandBar.SecondaryCommands>
-                                        </CommandBar>
+                                            <FontIcon Glyph="&#xE712;" />
+                                            <Button.Flyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem
+                                                        x:Uid="OpenFoundRepositoryActionMenuFlyoutItem"
+                                                        Command="{x:Bind OpenCommand, Mode=OneTime}" />
+                                                    <MenuFlyoutItem
+                                                        x:Uid="OpenFoundRepositoryInNewWindowActionMenuFlyoutItem"
+                                                        Command="{x:Bind OpenInNewWindowCommand, Mode=OneTime}" />
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem
+                                                        x:Uid="OpenFoundRepositoryFolderActionMenuFlyoutItem"
+                                                        Command="{x:Bind OpenFolderCommand, Mode=OneTime}" />
+                                                </MenuFlyout>
+                                            </Button.Flyout>
+                                        </Button>
                                     </toolkit:SettingsCard.Content>
                                 </toolkit:SettingsCard>
                             </DataTemplate>

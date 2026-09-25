@@ -20,11 +20,26 @@ public sealed class GitCommitWorkflowService : IGitCommitWorkflowService
         _localizationService = localizationService;
     }
 
+    public async Task<bool?> PrepareCreateAsync(RepositoryInfo repository)
+    {
+        if (!await _commitService.WouldCreateEmptyCommitAsync(repository, amend: false))
+        {
+            return false;
+        }
+
+        bool confirmed = await _dialogService.ConfirmAsync(
+            _localizationService.GetString("EmptyCommitDialogTitle"),
+            _localizationService.GetString("EmptyCommitDialogMessage"),
+            _localizationService.GetString("EmptyCommitDialogPrimaryButton"));
+        return confirmed ? true : null;
+    }
+
     public Task<GitCommitOperationResult> CreateAsync(
         RepositoryInfo repository,
-        string message)
+        string message,
+        bool allowEmpty)
     {
-        return ExecuteAsync(repository, message, amend: false, checkForEmptyCommit: true);
+        return ExecuteAsync(repository, message, amend: false, checkForEmptyCommit: false, allowEmpty: allowEmpty);
     }
 
     public Task<GitCommitOperationResult> AmendAsync(
@@ -45,9 +60,10 @@ public sealed class GitCommitWorkflowService : IGitCommitWorkflowService
         RepositoryInfo repository,
         string? message,
         bool amend,
-        bool checkForEmptyCommit)
+        bool checkForEmptyCommit,
+        bool allowEmpty = false)
     {
-        GitCommitOptions options = GitCommitOptions.Default;
+        GitCommitOptions options = new(AllowEmpty: allowEmpty);
         if (checkForEmptyCommit
             && await _commitService.WouldCreateEmptyCommitAsync(repository, amend))
         {

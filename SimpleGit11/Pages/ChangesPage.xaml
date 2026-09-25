@@ -431,9 +431,15 @@
                                         MaxLines="1"
                                         Text="{x:Bind FileName, Mode=OneTime}"
                                         TextTrimming="CharacterEllipsis" />
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
                                         <Border
                                             Padding="4,1"
+                                            Margin="0,0,6,0"
                                             Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
                                             CornerRadius="3"
                                             Visibility="{x:Bind IsSubmodule, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
@@ -443,7 +449,9 @@
                                                 Style="{ThemeResource CaptionTextBlockStyle}" />
                                         </Border>
                                         <Border
+                                            Grid.Column="1"
                                             Padding="4,1"
+                                            Margin="0,0,6,0"
                                             Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
                                             CornerRadius="3"
                                             Visibility="{x:Bind IsStaged, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}">
@@ -456,12 +464,13 @@
                                                 HorizontalAlignment="Center"/>
                                         </Border>
                                         <TextBlock
+                                            Grid.Column="2"
                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                             MaxLines="1"
                                             Style="{ThemeResource CaptionTextBlockStyle}"
                                             Text="{x:Bind DirectoryPath, Mode=OneTime}"
                                             TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
+                                    </Grid>
                                 </StackPanel>
 
                                 <Grid
