@@ -12,11 +12,11 @@ public sealed class InstallerLauncherTests
         InstallerLauncher launcher = new();
 
         Assert.ThrowsExactly<FileNotFoundException>(() => launcher.Launch(
-            Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing.msi")));
+            Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing.exe")));
     }
 
     [TestMethod]
-    public void Launch_NonMsiFile_ThrowsBeforeStartingProcess()
+    public void Launch_NonExeFile_ThrowsBeforeStartingProcess()
     {
         using TemporaryDirectory directory = new();
         string path = directory.CreateFile("installer.txt", "fixture");

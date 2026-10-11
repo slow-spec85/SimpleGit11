@@ -13,7 +13,6 @@
     <SuppressIces>ICE03;ICE57</SuppressIces>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="WixToolset.UI.wixext" Version="7.0.0" />
     <PackageReference Include="WixToolset.Util.wixext" Version="7.0.0" />
     <Compile Include="$(PayloadFile)" />
   </ItemGroup>
@@ -22,6 +21,6 @@
     <Error Condition="'$(MsiVersion)' == '' or !Exists('$(PayloadFile)') or !Exists('$(CoreSource)\SimpleGit11.exe')" Text="Build the installer through SimpleGit11/Build/Publish-Release.ps1 -AcceptWixEula." />
   </Target>
   <Target Name="ValidateInstallerDatabase" AfterTargets="Build">
-    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\SimpleGit11\Build\Test-InstallerPackage.ps1&quot; -Path &quot;$(TargetPath)&quot; -WixDirectory &quot;$(WixBinDir).&quot;" />
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\SimpleGit11\Build\Test-InstallerPackage.ps1&quot; -Path &quot;$(TargetPath)&quot; -WixDirectory &quot;$(WixBinDir).&quot;" />
   </Target>
 </Project>

@@ -23,6 +23,21 @@ public sealed class CommitBrowserRowViewItem : ObservableObject
     }
 
     public GitCommit Commit { get; }
+    public string AutomationId => "HistoryCommit-" + Commit.Hash;
+
+    public string? DraftMessage { get; init; }
+    public string DisplayMessage => DraftMessage ?? Commit.Message;
+    public string DisplayTitle => DisplayMessage.Split(['\r', '\n'], 2)[0];
+    public string EditGlyph { get; init; } = "";
+    public bool IsDraftDeleted { get; init; }
+    public bool HasDeletedIndicator => HasEditIndicator && IsDraftDeleted;
+    public bool HasChangedIndicator => HasEditIndicator && !IsDraftDeleted;
+    public string EditIndicator { get; init; } = "";
+    public string EditTooltip { get; init; } = "";
+    public bool HasEditIndicator => EditIndicator.Length > 0;
+    public bool IsSelectable { get; init; } = true;
+    public double DraftOpacity { get; init; } = 1;
+    public bool IsDraftContentUnavailable { get; init; }
 
     public CommitGraphRow Graph
     {

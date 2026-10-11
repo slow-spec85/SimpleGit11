@@ -292,6 +292,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <TextBlock
@@ -299,8 +300,36 @@
                         MaxLines="1" TextWrapping="WrapWholeWords"
                         Style="{ThemeResource SubtitleTextBlockStyle}"
                         Text="{x:Bind ViewModel.ChangedFilesTitle, Mode=OneWay}" />
-                    <Grid
+                    <ToggleButton
                         Grid.Column="1"
+                        x:Name="ChangedFilesFilterToggleButton"
+                        x:Uid="ChangedFilesFilterToggleButton"
+                        AutomationProperties.AutomationId="ChangedFilesFilterToggleButton"
+                        IsEnabled="{x:Bind ViewModel.IsDiffInteractionEnabled, Mode=OneWay}"
+                        IsChecked="{x:Bind ViewModel.IsFileFilterApplied, Mode=OneWay}"
+                        Click="ChangedFilesFilterToggleButton_Click"
+                        Width="32"
+                        Height="32"
+                        Padding="1">
+                        <SymbolIcon Symbol="Find" />
+                        <primitives:FlyoutBase.AttachedFlyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Flyout.FlyoutPresenterStyle>
+                                    <Style TargetType="FlyoutPresenter">
+                                        <Setter Property="CornerRadius" Value="{ThemeResource OverlayCornerRadius}" />
+                                    </Style>
+                                </Flyout.FlyoutPresenterStyle>
+                                <TextBox
+                                    x:Name="ChangedFilesSearchTextBox"
+                                    x:Uid="ChangedFilesSearchTextBox"
+                                    AutomationProperties.AutomationId="ChangedFilesSearchTextBox"
+                                    Width="280"
+                                    Text="{x:Bind ViewModel.FileSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </Flyout>
+                        </primitives:FlyoutBase.AttachedFlyout>
+                    </ToggleButton>
+                    <Grid
+                        Grid.Column="2"
                         HorizontalAlignment="Right"
                         ColumnSpacing="4"
                         Padding="0,0,10,0">
@@ -332,7 +361,7 @@
                     x:Name="ChangedFilesListView"
                     Grid.Row="1"
                     IsEnabled="{x:Bind ViewModel.IsDiffInteractionEnabled, Mode=OneWay}"
-                    ItemsSource="{x:Bind ViewModel.AllChanges, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.VisibleChanges, Mode=OneWay}"
                     SelectionChanged="ChangedFilesListView_SelectionChanged"
                     SelectionMode="Extended"
                     Padding="0,0,10,0">

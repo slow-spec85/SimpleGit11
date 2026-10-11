@@ -12,9 +12,11 @@ internal readonly record struct CommitFilterCriteria(
     DateTimeOffset? ToDate,
     TimeSpan ToTime,
     string SearchText,
-    string ExactFilePathSearchText)
+    string ExactFilePathSearchText,
+    bool TagsOnly = false)
 {
     public bool IsApplied => MainlineOnly
+        || TagsOnly
         || FromDate.HasValue
         || ToDate.HasValue
         || !string.IsNullOrWhiteSpace(SearchText);
@@ -32,6 +34,11 @@ internal static class CommitBrowserFilter
         IEnumerable<GitCommit> filteredCommits = criteria.MainlineOnly
             ? GetMainlineCommits(commits)
             : commits;
+
+        if (criteria.TagsOnly)
+        {
+            filteredCommits = filteredCommits.Where(commit => commit.References.Any(reference => reference.IsTag));
+        }
 
         if (criteria.FromDate.HasValue)
         {

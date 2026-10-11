@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -454,10 +454,22 @@
     <value>History</value>
   </data>
   <data name="HistoryDescriptionTextBlock.Text" xml:space="preserve">
-    <value>Browse commits, changed files, and diffs in the current repository.</value>
+    <value>Browse commits, files and changes. To edit history, select a starting commit or a range using Shift.</value>
   </data>
   <data name="HistorySearchTextBox.PlaceholderText" xml:space="preserve">
     <value>Search</value>
+  </data>
+  <data name="ChangedFilesSearchTextBox.PlaceholderText" xml:space="preserve">
+    <value>Search files</value>
+  </data>
+  <data name="ChangedFilesSearchTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Search files</value>
+  </data>
+  <data name="ChangedFilesFilterToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Filter files</value>
+  </data>
+  <data name="ChangedFilesFilterToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Filter files</value>
   </data>
   <data name="CommitFilterToggleButton.AutomationProperties.Name" xml:space="preserve">
     <value>Search and filter commits</value>
@@ -485,6 +497,15 @@
   </data>
   <data name="MainlineOnlyToggleSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>Mainline only</value>
+  </data>
+  <data name="TagsOnlyToggleSwitch.OnContent" xml:space="preserve">
+    <value>Tags only</value>
+  </data>
+  <data name="TagsOnlyToggleSwitch.OffContent" xml:space="preserve">
+    <value>Tags only</value>
+  </data>
+  <data name="TagsOnlyToggleSwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Tags only</value>
   </data>
   <data name="CommitDateFilterHeaderTextBlock.Text" xml:space="preserve">
     <value>Date and time</value>
@@ -2130,9 +2151,6 @@
   </data>
   <data name="BranchPaneHeaderButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Switch to a local branch</value>
-  </data>
-  <data name="GlobalGitUserWarningTextBlock.ToolTipService.ToolTip" xml:space="preserve">
-    <value>This user name comes from the global Git configuration</value>
   </data>
   <data name="PaneHeaderOpenRepositoryMenuFlyoutItem.Text" xml:space="preserve">
     <value>Open</value>
@@ -4251,7 +4269,7 @@ only — fast-forward only; Not set — inherit.</value>
   <data name="DefaultRemoteNameHeaderTextBlock.Text" xml:space="preserve">
     <value>Default active remote</value>
   </data>
-  <data name="DefaultRemoteNameTextBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="DefaultRemoteNameTextBox.AutomationProperties.Name" xml:space="preserve">
     <value>Default active remote</value>
   </data>
   <data name="DefaultRemoteNameTextBox.PlaceholderText" xml:space="preserve">
@@ -4263,7 +4281,7 @@ only — fast-forward only; Not set — inherit.</value>
   <data name="FetchOnRepositoryOpenHeaderTextBlock.Text" xml:space="preserve">
     <value>Fetch changes from the server when opening a repository</value>
   </data>
-  <data name="FetchOnRepositoryOpenToggleSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="FetchOnRepositoryOpenToggleSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>Fetch changes from the server when opening a repository</value>
   </data>
   <data name="ApplicationSettingsTitleTextBlock.Text" xml:space="preserve">
@@ -4452,7 +4470,7 @@ Continue only if these IdentityFile entries may be removed.</value>
   <data name="RecentRepositoriesCountDescriptionTextBlock.Text" xml:space="preserve">
     <value>Maximum number of repositories kept in the recent list (1-50).</value>
   </data>
-  <data name="RecentRepositoriesCountNumberBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="RecentRepositoriesCountNumberBox.AutomationProperties.Name" xml:space="preserve">
     <value>Number of recent repositories</value>
   </data>
   <data name="OpenLastRepositoryHeaderTextBlock.Text" xml:space="preserve">
@@ -4461,7 +4479,7 @@ Continue only if these IdentityFile entries may be removed.</value>
   <data name="OpenLastRepositoryDescriptionTextBlock.Text" xml:space="preserve">
     <value>Open the most recent repository when the app starts or a remote machine is connected.</value>
   </data>
-  <data name="OpenLastRepositoryToggleSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="OpenLastRepositoryToggleSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>Open the last repository automatically</value>
   </data>
   <data name="FullFileModeToggleSwitch.OffContent" xml:space="preserve">
@@ -4490,5 +4508,173 @@ Continue only if these IdentityFile entries may be removed.</value>
   </data>
   <data name="FoundRepositoryActionsButton.AutomationProperties.Name" xml:space="preserve">
     <value>FoundRepositoryActionsButton</value>
+  </data>
+  <data name="EditHistoryAppBarButton.Label" xml:space="preserve">
+    <value>Edit history</value>
+  </data>
+  <data name="HistoryEditMessage" xml:space="preserve">
+    <value>Commit message</value>
+  </data>
+  <data name="HistoryEditRunning" xml:space="preserve">
+    <value>Editing commit history…</value>
+  </data>
+  <data name="RevisionSelectDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="RevisionSelectDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="RevisionSelectDialog.Title" xml:space="preserve">
+    <value>Select Git reference</value>
+  </data>
+  <data name="HistoryDraftDiffInfoBar.Message" xml:space="preserve">
+    <value>History changes have not been applied. The resulting diff will be available after the operation.</value>
+  </data>
+  <data name="HistoryDraftFilesInfoBar.Message" xml:space="preserve">
+    <value>History changes have not been applied. The resulting files will be available after the operation.</value>
+  </data>
+  <data name="HistoryEditApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="HistoryEditApplyButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Apply history changes</value>
+  </data>
+  <data name="HistoryEditApplyButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Apply history changes</value>
+  </data>
+  <data name="HistoryEditApplyWarning" xml:space="preserve">
+    <value>Apply the prepared history changes? Commits in the selected range and newer commits in the branch may receive new hashes. Merges will be recreated; conflicts may require resolution on the Changes page.</value>
+  </data>
+  <data name="HistoryEditCancelButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Cancel history editing</value>
+  </data>
+  <data name="HistoryEditCancelButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Cancel history editing</value>
+  </data>
+  <data name="HistoryEditCombined" xml:space="preserve">
+    <value>Combined changes</value>
+  </data>
+  <data name="HistoryEditCombinedHint" xml:space="preserve">
+    <value>Contains changes from other commits. Not applied yet.</value>
+  </data>
+  <data name="HistoryEditCompleted" xml:space="preserve">
+    <value>History changes applied.</value>
+  </data>
+  <data name="HistoryEditDelete" xml:space="preserve">
+    <value>Delete commit</value>
+  </data>
+  <data name="HistoryEditDeleted" xml:space="preserve">
+    <value>Deleted</value>
+  </data>
+  <data name="HistoryEditDeletedHint" xml:space="preserve">
+    <value>Will be removed after applying.</value>
+  </data>
+  <data name="HistoryEditHistoryChanged" xml:space="preserve">
+    <value>The branch or history has changed. Cancel this draft and refresh the history.</value>
+  </data>
+  <data name="HistoryEditMerge" xml:space="preserve">
+    <value>Combine with previous</value>
+  </data>
+  <data name="HistoryEditMergeButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Combine with previous</value>
+  </data>
+  <data name="HistoryEditMerged" xml:space="preserve">
+    <value>Combined</value>
+  </data>
+  <data name="HistoryEditMergedInto" xml:space="preserve">
+    <value>Will be combined into {0} — {1}. Undo to restore.</value>
+  </data>
+  <data name="HistoryEditMergeHint" xml:space="preserve">
+    <value>Combine with {0} — {1}</value>
+  </data>
+  <data name="HistoryEditMessageChanged" xml:space="preserve">
+    <value>Message changed</value>
+  </data>
+  <data name="HistoryEditMessageChangedHint" xml:space="preserve">
+    <value>The new message will be saved when applying.</value>
+  </data>
+  <data name="HistoryEditMoved" xml:space="preserve">
+    <value>Moved</value>
+  </data>
+  <data name="HistoryEditMovedHint" xml:space="preserve">
+    <value>The commit order has changed. Not applied yet.</value>
+  </data>
+  <data name="HistoryEditMoveDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Move commit down</value>
+  </data>
+  <data name="HistoryEditMoveDownButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Move commit down</value>
+  </data>
+  <data name="HistoryEditMoveUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Move commit up</value>
+  </data>
+  <data name="HistoryEditMoveUpButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Move commit up</value>
+  </data>
+  <data name="HistoryEditOperationInProgress" xml:space="preserve">
+    <value>Finish or abort the current Git operation on the Changes page first.</value>
+  </data>
+  <data name="HistoryEditPublishedWarning" xml:space="preserve">
+    <value>This range contains published commits. Updating the remote branch may require a force push and coordination with other contributors.</value>
+  </data>
+  <data name="HistoryEditRestore" xml:space="preserve">
+    <value>Restore commit</value>
+  </data>
+  <data name="HistoryEditingCommitsTitle" xml:space="preserve">
+    <value>Editing: {0}</value>
+  </data>
+  <data name="HistoryEditTitle" xml:space="preserve">
+    <value>Edit history</value>
+  </data>
+  <data name="HistoryEditUndoButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Undo last action</value>
+  </data>
+  <data name="HistoryEditUndoButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Undo last action</value>
+  </data>
+  <data name="HistoryEditAffected" xml:space="preserve">
+    <value>Affected by changes</value>
+  </data>
+  <data name="HistoryEditAffectedHint" xml:space="preserve">
+    <value>Earlier history edits may change this commit. The result will be available after applying.</value>
+  </data>
+  <data name="HistoryQuickMergeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Combine with previous…</value>
+  </data>
+  <data name="HistoryQuickDeleteMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Delete commit…</value>
+  </data>
+  <data name="HistoryQuickDeleteWarning" xml:space="preserve">
+    <value>Delete commit {0} — “{1}”? Its changes will be removed from history. Later commits will be rewritten.</value>
+  </data>
+  <data name="HistoryQuickNotAncestor" xml:space="preserve">
+    <value>The selected commit is no longer part of the current branch history. Refresh history.</value>
+  </data>
+  <data name="HistoryEditPlanFailed" xml:space="preserve">
+    <value>Could not prepare the history change plan.</value>
+  </data>
+  <data name="HistoryQuickMessageWarning" xml:space="preserve">
+    <value>Change the message of commit {0} — “{1}”? The branch history will be rewritten.</value>
+  </data>
+  <data name="HistoryQuickMergeWarning" xml:space="preserve">
+    <value>Combine commit {0} — “{1}” with the previous commit {2} — “{3}”? The branch history will be rewritten.</value>
+  </data>
+  <data name="HistoryEditParentDialogTitle" xml:space="preserve">
+    <value>Choose a parent</value>
+  </data>
+  <data name="HistoryEditParentDialogHeader" xml:space="preserve">
+    <value>Which history line should the action use?</value>
+  </data>
+  <data name="HistoryEditParentDialogMessage" xml:space="preserve">
+    <value>The action crosses merge {0}: {1}. Choose the parent relative to which the commit should be moved or combined.</value>
+  </data>
+  <data name="HistoryEditParentDialogPrimaryButton" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="HistoryEditParentOutsideRange" xml:space="preserve">
+    <value>The selected parent is outside the editable range. Extend the range to combine with that commit.</value>
+  </data>
+  <data name="HistoryEditInvalidMove" xml:space="preserve">
+    <value>This move creates cyclic commit relationships. Choose another parent or change the order of actions.</value>
   </data>
 </root>

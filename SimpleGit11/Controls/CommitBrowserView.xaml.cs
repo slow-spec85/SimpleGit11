@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.ComponentModel;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -17,12 +19,15 @@ public delegate void ShowMergedCommitsRequestedEventHandler(
 public sealed partial class CommitBrowserView : UserControl
 {
     private double _commitDetailsHeight = 220;
+    private bool _restoringSelection;
+    private CommitBrowserRowViewItem? _dragAnchor;
+    private bool _dragSelecting;
 
     public static readonly DependencyProperty ViewModelProperty = DependencyProperty.Register(
         nameof(ViewModel),
         typeof(CommitBrowserViewModelBase),
         typeof(CommitBrowserView),
-        new PropertyMetadata(null));
+        new PropertyMetadata(null, OnViewModelChanged));
 
     public static readonly DependencyProperty IsCommitListVisibleProperty = DependencyProperty.Register(
         nameof(IsCommitListVisible),
@@ -48,9 +53,28 @@ public sealed partial class CommitBrowserView : UserControl
         typeof(CommitBrowserView),
         new PropertyMetadata(null));
 
+    public static readonly DependencyProperty CommitListCommandsProperty = DependencyProperty.Register(
+        nameof(CommitListCommands), typeof(object), typeof(CommitBrowserView), new PropertyMetadata(null));
+
+    public object? CommitListCommands
+    {
+        get => GetValue(CommitListCommandsProperty);
+        set => SetValue(CommitListCommandsProperty, value);
+    }
+
     public CommitBrowserView()
     {
         InitializeComponent();
+        Loaded += (_, _) => RestoreSelectionMode();
+        HistoryCommitsListView.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(CommitList_PointerPressed), true);
+        HistoryCommitsListView.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(CommitList_PointerMoved), true);
+        HistoryCommitsListView.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(CommitList_PointerEnded), true);
+        HistoryCommitsListView.PointerCanceled += CommitList_PointerEnded;
+        HistoryCommitsListView.PointerCaptureLost += (_, args) =>
+        {
+            if (ReferenceEquals(args.OriginalSource, HistoryCommitsListView)) { CommitList_PointerEnded(HistoryCommitsListView, args); }
+        };
+        Unloaded += (_, _) => { _dragAnchor = null; _dragSelecting = false; HistoryCommitsListView.ReleasePointerCaptures(); };
     }
 
     public event ShowMergedCommitsRequestedEventHandler? ShowMergedCommitsRequested;
@@ -187,14 +211,112 @@ public sealed partial class CommitBrowserView : UserControl
 
     private void HistoryCommitsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        ViewModel?.SetSelectedCommits(
-            HistoryCommitsListView.SelectedItems
-                .OfType<CommitBrowserRowViewItem>()
-                .Select(item => item.Commit));
-        if (e.AddedItems.Count > 0)
+        if (_restoringSelection) { return; }
+        _restoringSelection = true;
+        try
+        {
+            if (ViewModel is not null)
+            {
+                ViewModel.SelectedCommitRow = HistoryCommitsListView.SelectedItem as CommitBrowserRowViewItem;
+                ViewModel.SetSelectedCommits(HistoryCommitsListView.SelectedItems
+                    .OfType<CommitBrowserRowViewItem>().Select(item => item.Commit));
+            }
+        }
+        finally { _restoringSelection = false; }
+        if (e.AddedItems.Count > 0 && !_dragSelecting)
         {
             HistoryCommitsListView.ScrollIntoView(e.AddedItems[0]);
         }
+    }
+
+    private static void OnViewModelChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+    {
+        CommitBrowserView view = (CommitBrowserView)sender;
+        if (args.OldValue is CommitBrowserViewModelBase previous) { previous.PropertyChanged -= view.ViewModel_PropertyChanged; }
+        if (args.NewValue is CommitBrowserViewModelBase current) { current.PropertyChanged += view.ViewModel_PropertyChanged; }
+        view.RestoreSelectionMode();
+    }
+
+    private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (_restoringSelection) { return; }
+        if (args.PropertyName == nameof(CommitBrowserViewModelBase.CommitSelectionMode)) { RestoreSelectionMode(); }
+        else if (args.PropertyName == nameof(CommitBrowserViewModelBase.SelectedCommitRow))
+        {
+            HistoryCommitsListView.SelectedItem = ViewModel?.SelectedCommitRow;
+        }
+    }
+
+    private void RestoreSelectionMode()
+    {
+        if (ViewModel is null) { return; }
+        GitCommit[] selected = ViewModel.SelectedCommits.ToArray();
+        CommitBrowserRowViewItem? focused = ViewModel.SelectedCommitRow;
+        _restoringSelection = true;
+        try
+        {
+            _dragAnchor = null;
+            _dragSelecting = false;
+            HistoryCommitsListView.ReleasePointerCaptures();
+            HistoryCommitsListView.SelectionMode = ViewModel.CommitSelectionMode;
+            HistoryCommitsListView.SelectedItem = focused;
+            if (HistoryCommitsListView.SelectionMode != ListViewSelectionMode.Single)
+            {
+                HistoryCommitsListView.SelectedItems.Clear();
+                foreach (CommitBrowserRowViewItem row in ViewModel.CommitRows.Where(row => selected.Any(commit => commit.Hash == row.Commit.Hash)))
+                { HistoryCommitsListView.SelectedItems.Add(row); }
+                if (focused is not null && !HistoryCommitsListView.SelectedItems.Contains(focused))
+                { HistoryCommitsListView.SelectedItems.Add(focused); }
+            }
+        }
+        finally { _restoringSelection = false; }
+    }
+
+    private void CommitList_PointerPressed(object sender, PointerRoutedEventArgs args)
+    {
+        _dragAnchor = null;
+        if (args.Pointer.PointerDeviceType != PointerDeviceType.Mouse
+            || !args.GetCurrentPoint(HistoryCommitsListView).Properties.IsLeftButtonPressed
+            || HistoryCommitsListView.SelectionMode is not (ListViewSelectionMode.Extended or ListViewSelectionMode.Multiple)) { return; }
+        _dragAnchor = FindCommitRowDataContext(args.OriginalSource as DependencyObject);
+    }
+
+    private void CommitList_PointerMoved(object sender, PointerRoutedEventArgs args)
+    {
+        if (_dragAnchor is null) { return; }
+        if (!args.GetCurrentPoint(HistoryCommitsListView).Properties.IsLeftButtonPressed)
+        { CommitList_PointerEnded(sender, args); return; }
+        CommitBrowserRowViewItem? row = VisualTreeHelper.FindElementsInHostCoordinates(args.GetCurrentPoint(null).Position, HistoryCommitsListView)
+            .Select(element => FindCommitRowDataContext(element)).FirstOrDefault(item => item is not null);
+        if (row is null || (!_dragSelecting && ReferenceEquals(row, _dragAnchor))) { return; }
+        int anchor = HistoryCommitsListView.Items.IndexOf(_dragAnchor);
+        int end = HistoryCommitsListView.Items.IndexOf(row);
+        if (anchor < 0 || end < 0) { CommitList_PointerEnded(sender, args); return; }
+        _dragSelecting = true;
+        HistoryCommitsListView.CapturePointer(args.Pointer);
+        _restoringSelection = true;
+        try
+        {
+            for (int index = 0; index < HistoryCommitsListView.Items.Count; index++)
+            {
+                if (HistoryCommitsListView.Items[index] is not CommitBrowserRowViewItem item) { continue; }
+                bool include = item.IsSelectable && index >= Math.Min(anchor, end) && index <= Math.Max(anchor, end);
+                bool selected = HistoryCommitsListView.SelectedItems.Contains(item);
+                if (include && !selected) { HistoryCommitsListView.SelectedItems.Add(item); }
+                else if (!include && selected) { HistoryCommitsListView.SelectedItems.Remove(item); }
+            }
+            if (ViewModel is not null) { ViewModel.SelectedCommitRow = row; }
+            ViewModel?.SetSelectedCommits(HistoryCommitsListView.SelectedItems.OfType<CommitBrowserRowViewItem>().Select(item => item.Commit));
+        }
+        finally { _restoringSelection = false; }
+        args.Handled = true;
+    }
+
+    private void CommitList_PointerEnded(object sender, PointerRoutedEventArgs args)
+    {
+        _dragAnchor = null;
+        _dragSelecting = false;
+        HistoryCommitsListView.ReleasePointerCapture(args.Pointer);
     }
 
     private void HistoryCommitsListView_ContextRequested(
@@ -214,6 +336,7 @@ public sealed partial class CommitBrowserView : UserControl
         }
 
         if (row is null
+            || !row.IsSelectable
             || HistoryCommitsListView.ContainerFromItem(row) is not FrameworkElement container)
         {
             return;

@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
+using SimpleGit11.Services.Git.Execution;
 
 namespace SimpleGit11.Services.Git;
 
 public interface IGitService
 {
+    IGitEditorService Editor { get; }
+
     IGitArchiveService Archive { get; }
 
     IGitBranchService Branches { get; }

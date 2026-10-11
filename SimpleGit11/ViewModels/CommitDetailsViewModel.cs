@@ -83,7 +83,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
             ? _localizationService.GetString(_noCommitSelectedMessageKey)
             : _localizationService.GetString(_selectCommitFileMessageKey));
 
-        if (value is not null)
+        if (value is not null && CanLoadCommitContent)
         {
             _ = LoadCommitDetailsAsync(value);
         }
@@ -92,7 +92,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
     partial void OnSelectedChangedFileChanged(GitChangedFile? value)
     {
         RaiseCommitDetailsCommandCanExecuteChanged();
-        if (value is not null && SelectedCommit is GitCommit commit)
+        if (value is not null && CanLoadCommitContent && SelectedCommit is GitCommit commit)
         {
             _ = LoadSelectedFileAsync(commit, value);
         }
@@ -130,7 +130,15 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
         }
     }
     public string SelectedCommitDate => SelectedCommit?.DisplayDate ?? "";
-    public string SelectedCommitMessage => SelectedCommit?.Message ?? "";
+    public virtual string SelectedCommitMessage => SelectedCommit?.Message ?? "";
+
+    protected virtual bool CanLoadCommitContent => true;
+
+    protected void RefreshCommitContent()
+    {
+        ClearCommitDetails();
+        if (CanLoadCommitContent && SelectedCommit is GitCommit commit) { _ = LoadCommitDetailsAsync(commit); }
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CommitDetailsBlockVisibility))]
@@ -237,6 +245,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
     {
         await RunQueuedReadOperationAsync(async () =>
         {
+            if (!CanLoadCommitContent) { return; }
             if (_mainWindowViewModel.CurrentRepository is null)
             {
                 ShowCommitDetailsError(_localizationService.GetString(_openRepositoryMessageKey));
@@ -248,7 +257,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
                 IReadOnlyList<GitChangedFile> files = await _gitService.History.GetChangedFilesAsync(
                     _mainWindowViewModel.CurrentRepository,
                     commit);
-                if (!ReferenceEquals(SelectedCommit, commit))
+                if (!ReferenceEquals(SelectedCommit, commit) || !CanLoadCommitContent)
                 {
                     return;
                 }

@@ -71,12 +71,6 @@
     <Feature Id="Desktop" Title="!(loc.DesktopTitle)" Description="!(loc.DesktopDescription)" Level="2" AllowAdvertise="no">
       <ComponentRef Id="DesktopShortcut" />
     </Feature>
-    <UIRef Id="InstallerUI" />
-    <UIRef Id="PurgeUserDataUI" />
-    <InstallUISequence>
-      <FindRelatedProducts After="RestoreMachineScope" />
-      <Show Dialog="PurgeUserDataDlg" Before="ExecuteAction" Condition="Installed AND NOT ALLUSERS AND REMOVE ~= &quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
-    </InstallUISequence>
     <InstallExecuteSequence>
       <FindRelatedProducts After="RestoreMachineScope" />
     </InstallExecuteSequence>

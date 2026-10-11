@@ -10,6 +10,25 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitCommitServiceTests
 {
     [TestMethod]
+    public async Task MessageOnlyAmendPreservesStagedAndUnstagedFilesAndCommitTree()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile("file.txt", "original");
+        await repository.CommitAllAsync("original title");
+        string tree = await repository.RunGitAsync("rev-parse", "HEAD^{tree}");
+        repository.WriteFile("file.txt", "staged");
+        await repository.RunGitAsync("add", "file.txt");
+        repository.WriteFile("file.txt", "unstaged");
+        string indexTree = await repository.RunGitAsync("write-tree");
+        GitCommitService service = new();
+        await service.AmendAsync(repository.Repository, "New title\n\nBody", new GitCommitOptions(AllowEmpty: true, MessageOnly: true));
+        Assert.AreEqual(tree, await repository.RunGitAsync("rev-parse", "HEAD^{tree}"));
+        Assert.AreEqual(indexTree, await repository.RunGitAsync("write-tree"));
+        Assert.AreEqual("unstaged", repository.ReadFile("file.txt"));
+        Assert.AreEqual("New title\n\nBody", await repository.RunGitAsync("log", "-1", "--format=%B"));
+    }
+
+    [TestMethod]
     public async Task CommitAsync_AllowEmpty_AddsArgumentBeforeMessage()
     {
         RecordingGitCommandRunner runner = new();

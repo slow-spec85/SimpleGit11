@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
+using SimpleGit11.Services.Git.Execution;
 
 namespace SimpleGit11.Services.Git;
 
@@ -12,6 +13,7 @@ internal sealed class GitService : IGitService
 
     public GitService(
         IGitArchiveService archiveService,
+        IGitEditorService editorService,
         IGitBranchService branchService,
         IGitChangeRecoveryService changeRecoveryService,
         IGitCommitService commitService,
@@ -36,6 +38,7 @@ internal sealed class GitService : IGitService
         IGitWorktreeService worktreeService)
     {
         Archive = archiveService;
+        Editor = editorService;
         Branches = branchService;
         ChangeRecovery = changeRecoveryService;
         Commits = commitService;
@@ -61,6 +64,7 @@ internal sealed class GitService : IGitService
     }
 
     public IGitArchiveService Archive { get; }
+    public IGitEditorService Editor { get; }
 
     public IGitBranchService Branches { get; }
 

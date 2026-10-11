@@ -84,34 +84,18 @@ try {
     Remove-Item -LiteralPath (Join-Path $ssh 'Renci.SshNet.dll')
     Assert-Rejected { Write-InstallerPayload $core $ssh $output $testBase } 'missing'
 
-    [xml]$package = Get-Content -LiteralPath (Join-Path $repositoryRoot 'SimpleGit11.Installer\Package.wxs') -Raw
-    if ($package.OuterXml -match 'WixUILicenseRtf|WixUI_FeatureTree') {
-        throw 'The stock license-acceptance wizard must not be included.'
-    }
-    [xml]$installerUi = Get-Content -LiteralPath (Join-Path $repositoryRoot 'SimpleGit11.Installer\InstallerUI.wxs') -Raw
-    if ($installerUi.OuterXml -match 'LicenseAgreementDlg|LicenseAccepted') {
-        throw 'The installer must not display or require license acceptance.'
-    }
-    foreach ($expected in @(
-        @('WelcomeDlg', 'Next', 'SimpleGit11ScopeDlg', 'NOT Installed AND NOT EXISTINGUSERFOLDER AND NOT EXISTINGMACHINEFOLDER'),
-        @('WelcomeDlg', 'Next', 'CustomizeDlg', 'NOT Installed AND (EXISTINGUSERFOLDER OR EXISTINGMACHINEFOLDER)'),
-        @('SimpleGit11ScopeDlg', 'Next', 'InstallDirDlg', ''),
-        @('InstallDirDlg', 'Next', 'CustomizeDlg', ''),
-        @('CustomizeDlg', 'Back', 'InstallDirDlg', 'NOT Installed AND NOT EXISTINGUSERFOLDER AND NOT EXISTINGMACHINEFOLDER'),
-        @('CustomizeDlg', 'Back', 'WelcomeDlg', 'NOT Installed AND (EXISTINGUSERFOLDER OR EXISTINGMACHINEFOLDER)'),
-        @('CustomizeDlg', 'Back', 'MaintenanceTypeDlg', 'Installed')
-    )) {
-        if (@($installerUi.Wix.Fragment.UI.Publish | Where-Object {
-            $_.Dialog -eq $expected[0] -and $_.Control -eq $expected[1] -and $_.GetAttribute('Event') -eq 'NewDialog' -and
-            $_.Value -eq $expected[2] -and $_.GetAttribute('Condition') -eq $expected[3]
-        }).Count -ne 1) { throw "Invalid installer navigation: $($expected -join ' / ')" }
+    [xml]$package = Get-Content -LiteralPath (Join-Path $repositoryRoot 'SimpleGit11.Setup\Msi\Package.wxs') -Raw
+    if ($package.OuterXml -match '<UIRef|<InstallUISequence' -or
+        (Test-Path -LiteralPath (Join-Path $repositoryRoot 'SimpleGit11.Setup\Msi\InstallerUI.wxs')) -or
+        (Test-Path -LiteralPath (Join-Path $repositoryRoot 'SimpleGit11.Setup\Msi\PurgeUserDataUI.wxs'))) {
+        throw 'The embedded MSI must not contain a separate wizard.'
     }
     foreach ($launch in $package.Wix.Package.Launch) {
         if ($launch.Condition -match '\b(WindowsBuild|VersionNT|VersionNT64)\b') {
             throw 'A compatibility-reported Windows version must not block installation on Windows 11.'
         }
     }
-    [xml]$installerProject = Get-Content -LiteralPath (Join-Path $repositoryRoot 'SimpleGit11.Installer\SimpleGit11.Installer.wixproj') -Raw
+    [xml]$installerProject = Get-Content -LiteralPath (Join-Path $repositoryRoot 'SimpleGit11.Setup\Msi\SimpleGit11.Setup.Msi.wixproj') -Raw
     if ($installerProject.Project.PropertyGroup.InstallerPlatform -ne 'x64') {
         throw 'Native MSI x64 architecture enforcement must be preserved.'
     }
@@ -134,23 +118,8 @@ try {
     foreach ($registry in $package.SelectNodes('//w:RegistryValue | //w:RemoveRegistryKey', $packageNs)) {
         if ($registry.Root -ne 'HKMU') { throw 'Installation registry entries must follow the chosen context.' }
     }
-    foreach ($dialog in @('InstallDirDlg', 'BrowseDlg')) {
-        if (@($installerUi.Wix.Fragment.UI.Publish | Where-Object {
-            $_.Dialog -eq $dialog -and $_.GetAttribute('Event') -eq 'CheckTargetPath'
-        }).Count -ne 1) { throw "Directory validation is missing for $dialog." }
-    }
-    if ($installerUi.Wix.Fragment.UI.Dialog.OuterXml -match 'Privileged|AdminUser') {
-        throw 'A standard user must be able to select all-users installation and request elevation.'
-    }
-    if ($package.Wix.Package.InstallUISequence.Show.Condition -notmatch 'NOT ALLUSERS') {
-        throw 'Machine uninstall must not offer deletion of a user profile.'
-    }
     $coreFeature = @($package.Wix.Package.Feature | Where-Object Id -eq 'Core')[0]
     if ($coreFeature.AllowAbsent -ne 'no') { throw 'Core must not be removable during feature maintenance.' }
-    $english = [xml](Get-Content -LiteralPath (Join-Path $repositoryRoot 'SimpleGit11.Installer\Strings\en-US\Resources.wxl') -Raw)
-    if (@($english.WixLocalization.String.Id | Where-Object { $_ -in @('WindowsRequired', 'PerUserRequired') }).Count -ne 0) {
-        throw 'Removed restrictions must not remain in localization.'
-    }
     # Plugin license collection must tolerate optional nuspec metadata and not require host runtimes.
     [string]$licenseFixture = Join-Path $testBase 'license-fixture'
     [string]$packageDirectory = Join-Path $licenseFixture 'packages\fixture\1.0.0'
@@ -176,7 +145,7 @@ try {
     if ((Get-Content -LiteralPath (Join-Path $published 'Licenses\PACKAGES.txt') -Raw) -notmatch 'Package: Fixture') {
         throw 'Plugin dependency license was omitted.'
     }
-    Write-Host 'Installer payload, versions, English localization and cleanup guards passed.'
+    Write-Host 'Internal MSI payload, versions and cleanup guards passed.'
 }
 finally {
     if (Test-Path -LiteralPath $link) { [IO.Directory]::Delete($link) }

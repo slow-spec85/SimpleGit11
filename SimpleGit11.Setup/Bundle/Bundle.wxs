@@ -1,0 +1,21 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Bundle Name="SimpleGit11" Manufacturer="SimpleGit11 contributors"
+          Version="$(var.MsiVersion)"
+          UpgradeCode="8B99E75E-833D-4EFE-B1A7-04DCB6D1369C"
+          IconSourceFile="$(var.SetupDirectory)\Assets\AppIcon.ico">
+    <Variable Name="SetupInstallFolder" Type="string" Value="" />
+    <Variable Name="PurgeUserData" Type="string" Value="0" />
+    <BootstrapperApplication SourceFile="$(var.SetupExe)">
+      <Payloads Include="$(var.SetupDirectory)\**">
+        <Exclude Files="$(var.SetupExe)" />
+        <Exclude Files="$(var.SetupDirectory)\**\*.pdb" />
+      </Payloads>
+    </BootstrapperApplication>
+    <Chain>
+      <MsiPackage Id="SimpleGit11Msi" SourceFile="$(var.MsiPath)" Visible="no" EnableFeatureSelection="yes">
+        <MsiProperty Name="INSTALLFOLDER" Value="[SetupInstallFolder]" Condition="SetupInstallFolder" />
+        <MsiProperty Name="PURGEUSERDATA" Value="[PurgeUserData]" />
+      </MsiPackage>
+    </Chain>
+  </Bundle>
+</Wix>

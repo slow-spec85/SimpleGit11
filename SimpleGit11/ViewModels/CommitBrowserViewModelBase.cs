@@ -65,6 +65,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         get => _selectedCommitRow;
         set
         {
+            if (value is { IsSelectable: false }) { return; }
             if (SetProperty(ref _selectedCommitRow, value))
             {
                 SelectedCommit = value?.Commit;
@@ -97,6 +98,15 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         ApplyFilters();
     }
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCommitFilterApplied))]
+    public partial bool IsTagsOnly { get; set; }
+
+    partial void OnIsTagsOnlyChanged(bool value)
+    {
+        ApplyFilters();
+    }
+
     public bool IsCommitGraphVisible
     {
         get => _isCommitGraphVisible;
@@ -114,11 +124,13 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         ? _localizationService.GetString("HideCommitGraphMenuFlyoutItemText")
         : _localizationService.GetString("ShowCommitGraphMenuFlyoutItemText");
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanToggleCommitGraph))]
     private void OnToggleCommitGraph()
     {
         IsCommitGraphVisible = !IsCommitGraphVisible;
     }
+
+    private bool CanToggleCommitGraph() => !IsHistoryEditing;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsCommitFilterApplied))]
@@ -190,7 +202,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
     public bool HasParentCommits => ParentCommits.Count > 0;
 
-    public string CommitsTitle => PluralizationService.FormatCommitCount(
+    public virtual string CommitsTitle => PluralizationService.FormatCommitCount(
         Commits.Count,
         _localizationService);
 
@@ -201,6 +213,14 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     protected IReadOnlyList<GitCommit> AllCommits => _allCommits;
 
     protected virtual bool ShowsCommitGraph => false;
+
+    public virtual bool IsCommitSearchEnabled => true;
+    public virtual ListViewSelectionMode CommitSelectionMode => ListViewSelectionMode.Single;
+
+    public virtual bool IsHistoryEditing => false;
+    public virtual bool IsCommitContentUnavailable => false;
+    public bool IsCommitContentAvailable => !IsCommitContentUnavailable;
+    public override string SelectedCommitMessage => SelectedCommitRow?.DisplayMessage ?? base.SelectedCommitMessage;
 
     protected bool HasUnfilteredCommits => _allCommits.Count > 0;
 
@@ -412,6 +432,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
                 SelectedCommit.Hash,
                 StringComparison.OrdinalIgnoreCase));
         SetProperty(ref _selectedCommitRow, row, nameof(SelectedCommitRow));
+        OnPropertyChanged(nameof(SelectedCommitMessage));
     }
 
     private CommitFilterCriteria CreateFilterCriteria() => new(
@@ -421,11 +442,13 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         FilterToDate,
         FilterToTime,
         SearchText,
-        _exactFilePathSearchText);
+        _exactFilePathSearchText,
+        IsTagsOnly);
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanFilterByChangedFile))]
     private void OnFilterByChangedFile(GitChangedFile? changedFile)
     {
+        if (!IsCommitSearchEnabled) { return; }
         if (changedFile is null)
         {
             return;
@@ -446,9 +469,12 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     private bool IsExactFilePathSearch => !string.IsNullOrEmpty(_exactFilePathSearchText)
         && string.Equals(_exactFilePathSearchText, SearchText, StringComparison.Ordinal);
 
-    [RelayCommand]
+    private bool CanFilterByChangedFile(GitChangedFile? changedFile) => IsCommitSearchEnabled && changedFile is not null;
+
+    [RelayCommand(CanExecute = nameof(CanNavigateToParentCommit))]
     private void OnNavigateToParentCommit(CommitParentViewItem? parent)
     {
+        if (IsHistoryEditing) { return; }
         if (parent is null)
         {
             return;
@@ -470,9 +496,12 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
             string.Equals(commit.Hash, parent.Hash, StringComparison.OrdinalIgnoreCase));
     }
 
+    private bool CanNavigateToParentCommit(CommitParentViewItem? parent) => !IsHistoryEditing && parent is not null;
+
     private void ClearCommitFilters()
     {
         IsMainlineOnly = false;
+        IsTagsOnly = false;
         FilterFromDate = null;
         FilterFromTime = TimeSpan.Zero;
         FilterToDate = null;

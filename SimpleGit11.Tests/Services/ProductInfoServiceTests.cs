@@ -40,13 +40,13 @@ public sealed class ProductInfoServiceTests
               "published_at": "2026-08-01T11:00:00Z",
               "assets": [
                 {
-                  "name": "SimpleGit11-1.2.3-win-x64.msi",
-                  "browser_download_url": "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.2.3/SimpleGit11-1.2.3-win-x64.msi",
+                  "name": "SimpleGit11-1.2.3-win-x64-setup.exe",
+                  "browser_download_url": "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.2.3/SimpleGit11-1.2.3-win-x64-setup.exe",
                   "size": 123456
                 },
                 {
-                  "name": "SimpleGit11-1.2.3-win-x64.msi.sha256",
-                  "browser_download_url": "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.2.3/SimpleGit11-1.2.3-win-x64.msi.sha256",
+                  "name": "SimpleGit11-1.2.3-win-x64-setup.exe.sha256",
+                  "browser_download_url": "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.2.3/SimpleGit11-1.2.3-win-x64-setup.exe.sha256",
                   "size": 96
                 }
               ]
@@ -66,7 +66,7 @@ public sealed class ProductInfoServiceTests
             firstRelease.Uri.AbsoluteUri);
         Assert.IsFalse(firstRelease.IsPrerelease);
         Assert.IsNotNull(firstRelease.Installer);
-        Assert.AreEqual("SimpleGit11-1.2.3-win-x64.msi", firstRelease.Installer.FileName);
+        Assert.AreEqual("SimpleGit11-1.2.3-win-x64-setup.exe", firstRelease.Installer.FileName);
         Assert.AreEqual(123456, firstRelease.Installer.Size);
         Assert.AreEqual(firstRelease, secondRelease);
         Assert.AreEqual(1, handler.Requests.Count);

@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleGit11.Extensibility\SimpleGit11.Extensibility.csproj" />
+    <ProjectReference Include="..\SimpleGit11.GitEditor\SimpleGit11.GitEditor.csproj" ReferenceOutputAssembly="false" Private="false" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.Triggers" Version="8.2.251219" />
@@ -55,5 +56,19 @@
 
   <Target Name="GenerateApplicationIcon" BeforeTargets="PrepareForBuild" Inputs="@(_ApplicationIconSource);@(_ApplicationIconGenerator)" Outputs="$(MSBuildProjectDirectory)\$(ApplicationIcon)">
     <Exec Command="powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\Build\GenerateAppIcon.ps1&quot; -OutputPath &quot;$(MSBuildProjectDirectory)\$(ApplicationIcon)&quot;" />
+  </Target>
+  <Target Name="CopyGitEditor" AfterTargets="Build">
+    <MSBuild Projects="..\SimpleGit11.GitEditor\SimpleGit11.GitEditor.csproj" Targets="GetGitEditorLayoutFiles" BuildInParallel="false">
+      <Output TaskParameter="TargetOutputs" ItemName="_GitEditorFiles" />
+    </MSBuild>
+    <Error Condition="'@(_GitEditorFiles)' == ''" Text="The Git editor helper has not been built." />
+    <Copy SourceFiles="@(_GitEditorFiles)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="PublishGitEditor" AfterTargets="Publish">
+    <MSBuild Projects="..\SimpleGit11.GitEditor\SimpleGit11.GitEditor.csproj" Targets="GetGitEditorLayoutFiles" BuildInParallel="false">
+      <Output TaskParameter="TargetOutputs" ItemName="_PublishedGitEditorFiles" />
+    </MSBuild>
+    <Error Condition="'@(_PublishedGitEditorFiles)' == ''" Text="The Git editor helper has not been built." />
+    <Copy SourceFiles="@(_PublishedGitEditorFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
   </Target>
 </Project>

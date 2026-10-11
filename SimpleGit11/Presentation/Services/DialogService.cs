@@ -234,14 +234,19 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
         await dialog.ShowAsync();
     }
 
-    public async Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit)
+    public Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit) => ShowParentDialogAsync(commit, "CherryPickMainline");
+
+    public Task<int?> ShowHistoryParentDialogAsync(GitCommit commit) => ShowParentDialogAsync(commit, "HistoryEditParent");
+
+    private async Task<int?> ShowParentDialogAsync(GitCommit commit, string prefix)
     {
         EnsureWindowRegistered();
         RadioButtons parentOptions = new()
         {
-            Header = _localizationService.GetString("CherryPickMainlineDialogHeader"),
+            Header = _localizationService.GetString(prefix + "DialogHeader"),
             SelectedIndex = 0
         };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(parentOptions, prefix + "Options");
         for (int index = 0; index < commit.ParentHashes.Count; index++)
         {
             string parentHash = commit.ParentHashes[index];
@@ -260,7 +265,7 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
         content.Children.Add(new TextBlock
         {
             Text = string.Format(
-                _localizationService.GetString("CherryPickMainlineDialogMessage"),
+                _localizationService.GetString(prefix + "DialogMessage"),
                 commit.ShortHash,
                 commit.Title),
             TextWrapping = TextWrapping.WrapWholeWords
@@ -269,9 +274,9 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
 
         ContentDialog dialog = new()
         {
-            Title = _localizationService.GetString("CherryPickMainlineDialogTitle"),
+            Title = _localizationService.GetString(prefix + "DialogTitle"),
             Content = content,
-            PrimaryButtonText = _localizationService.GetString("CherryPickMainlineDialogPrimaryButton"),
+            PrimaryButtonText = _localizationService.GetString(prefix + "DialogPrimaryButton"),
             CloseButtonText = _localizationService.GetString("ConfirmationDialogCancelButton"),
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = _window!.Content.XamlRoot
@@ -405,8 +410,8 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
             return null;
         }
 
-        string text = viewModel.Text.Trim();
-        return string.IsNullOrWhiteSpace(text) ? null : text;
+        string text = request.IsMultiline ? viewModel.Text : viewModel.Text.Trim();
+        return !request.AllowEmpty && string.IsNullOrWhiteSpace(text) ? null : text;
     }
 
     public async Task<CommitDialogResult?> ShowCommitDialogAsync(CommitDialogRequest request)
@@ -636,6 +641,16 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
             && viewModel.RevisionSelector.ResolvedRevision is not null
                 ? viewModel.CreateResult()
                 : null;
+    }
+
+    public async Task<string?> ShowSelectRevisionAsync(RepositoryInfo repository, string initialValue, GitRevisionKind selectedKind)
+    {
+        EnsureWindowRegistered();
+        using GitRevisionSelectorViewModel viewModel = CreateRevisionSelector(repository,
+            [GitRevisionKind.Head, GitRevisionKind.Branch, GitRevisionKind.Tag, GitRevisionKind.Commit], selectedKind, initialValue);
+        RevisionSelectDialog dialog = new(viewModel) { XamlRoot = _window!.Content.XamlRoot };
+        ApplyTheme(dialog);
+        return await dialog.ShowAsync() == ContentDialogResult.Primary ? viewModel.StartPoint.Trim() : null;
     }
 
     private GitRevisionSelectorViewModel CreateRevisionSelector(

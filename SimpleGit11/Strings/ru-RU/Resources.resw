@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -454,10 +454,22 @@
     <value>История</value>
   </data>
   <data name="HistoryDescriptionTextBlock.Text" xml:space="preserve">
-    <value>Просматривайте коммиты текущей ветки, измененные файлы и разницу между версиями.</value>
+    <value>Просматривайте коммиты, файлы и изменения. Для редактирования выберите начальный коммит или диапазон с помощью Shift.</value>
   </data>
   <data name="HistorySearchTextBox.PlaceholderText" xml:space="preserve">
     <value>Поиск</value>
+  </data>
+  <data name="ChangedFilesSearchTextBox.PlaceholderText" xml:space="preserve">
+    <value>Поиск файлов</value>
+  </data>
+  <data name="ChangedFilesSearchTextBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Поиск файлов</value>
+  </data>
+  <data name="ChangedFilesFilterToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Фильтр файлов</value>
+  </data>
+  <data name="ChangedFilesFilterToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Фильтр файлов</value>
   </data>
   <data name="CommitFilterToggleButton.AutomationProperties.Name" xml:space="preserve">
     <value>Поиск и фильтрация коммитов</value>
@@ -485,6 +497,15 @@
   </data>
   <data name="MainlineOnlyToggleSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>Только основная линия</value>
+  </data>
+  <data name="TagsOnlyToggleSwitch.OnContent" xml:space="preserve">
+    <value>Только теги</value>
+  </data>
+  <data name="TagsOnlyToggleSwitch.OffContent" xml:space="preserve">
+    <value>Только теги</value>
+  </data>
+  <data name="TagsOnlyToggleSwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Только теги</value>
   </data>
   <data name="CommitDateFilterHeaderTextBlock.Text" xml:space="preserve">
     <value>Дата и время</value>
@@ -2130,9 +2151,6 @@
   </data>
   <data name="BranchPaneHeaderButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Переключиться на локальную ветку</value>
-  </data>
-  <data name="GlobalGitUserWarningTextBlock.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Имя пользователя взято из глобальной конфигурации Git</value>
   </data>
   <data name="PaneHeaderOpenRepositoryMenuFlyoutItem.Text" xml:space="preserve">
     <value>Открыть</value>
@@ -4251,7 +4269,7 @@ only — только fast-forward; «Не задано» — наследова
   <data name="DefaultRemoteNameHeaderTextBlock.Text" xml:space="preserve">
     <value>Активный удалённый репозиторий по умолчанию</value>
   </data>
-  <data name="DefaultRemoteNameTextBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="DefaultRemoteNameTextBox.AutomationProperties.Name" xml:space="preserve">
     <value>Активный удалённый репозиторий по умолчанию</value>
   </data>
   <data name="DefaultRemoteNameTextBox.PlaceholderText" xml:space="preserve">
@@ -4263,7 +4281,7 @@ only — только fast-forward; «Не задано» — наследова
   <data name="FetchOnRepositoryOpenHeaderTextBlock.Text" xml:space="preserve">
     <value>Получать изменения с сервера при открытии репозитория</value>
   </data>
-  <data name="FetchOnRepositoryOpenToggleSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="FetchOnRepositoryOpenToggleSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>Получать изменения с сервера при открытии репозитория</value>
   </data>
   <data name="ApplicationSettingsTitleTextBlock.Text" xml:space="preserve">
@@ -4452,7 +4470,7 @@ only — только fast-forward; «Не задано» — наследова
   <data name="RecentRepositoriesCountDescriptionTextBlock.Text" xml:space="preserve">
     <value>Максимальное количество репозиториев в списке последних (от 1 до 50).</value>
   </data>
-  <data name="RecentRepositoriesCountNumberBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="RecentRepositoriesCountNumberBox.AutomationProperties.Name" xml:space="preserve">
     <value>Количество последних репозиториев</value>
   </data>
   <data name="OpenLastRepositoryHeaderTextBlock.Text" xml:space="preserve">
@@ -4461,7 +4479,7 @@ only — только fast-forward; «Не задано» — наследова
   <data name="OpenLastRepositoryDescriptionTextBlock.Text" xml:space="preserve">
     <value>Открывать последний репозиторий при запуске программы или подключении к удалённой машине.</value>
   </data>
-  <data name="OpenLastRepositoryToggleSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="OpenLastRepositoryToggleSwitch.AutomationProperties.Name" xml:space="preserve">
     <value>Открывать последний репозиторий автоматически</value>
   </data>
   <data name="FullFileModeToggleSwitch.OffContent" xml:space="preserve">
@@ -4490,5 +4508,173 @@ only — только fast-forward; «Не задано» — наследова
   </data>
   <data name="FoundRepositoryActionsButton.AutomationProperties.Name" xml:space="preserve">
     <value>Действия с репозиторием</value>
+  </data>
+  <data name="EditHistoryAppBarButton.Label" xml:space="preserve">
+    <value>Редактировать историю</value>
+  </data>
+  <data name="HistoryEditMessage" xml:space="preserve">
+    <value>Сообщение коммита</value>
+  </data>
+  <data name="HistoryEditRunning" xml:space="preserve">
+    <value>Редактирование истории коммитов…</value>
+  </data>
+  <data name="RevisionSelectDialog.CloseButtonText" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="RevisionSelectDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Выбрать</value>
+  </data>
+  <data name="RevisionSelectDialog.Title" xml:space="preserve">
+    <value>Выбор ссылки Git</value>
+  </data>
+  <data name="HistoryDraftDiffInfoBar.Message" xml:space="preserve">
+    <value>Изменения истории ещё не применены. Итоговые различия будут доступны после выполнения операции.</value>
+  </data>
+  <data name="HistoryDraftFilesInfoBar.Message" xml:space="preserve">
+    <value>Изменения истории ещё не применены. Итоговый список файлов будет доступен после выполнения операции.</value>
+  </data>
+  <data name="HistoryEditApply" xml:space="preserve">
+    <value>Применить</value>
+  </data>
+  <data name="HistoryEditApplyButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Применить изменения истории</value>
+  </data>
+  <data name="HistoryEditApplyButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Применить изменения истории</value>
+  </data>
+  <data name="HistoryEditApplyWarning" xml:space="preserve">
+    <value>Применить подготовленные изменения истории? Коммиты выбранного диапазона и более новые коммиты ветки могут получить новые хэши. Слияния будут выполнены заново; при конфликтах потребуется разрешить их на странице изменений.</value>
+  </data>
+  <data name="HistoryEditCancelButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Отменить редактирование истории</value>
+  </data>
+  <data name="HistoryEditCancelButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отменить редактирование истории</value>
+  </data>
+  <data name="HistoryEditCombined" xml:space="preserve">
+    <value>Объединены изменения</value>
+  </data>
+  <data name="HistoryEditCombinedHint" xml:space="preserve">
+    <value>Содержит изменения других коммитов. Изменения ещё не применены.</value>
+  </data>
+  <data name="HistoryEditCompleted" xml:space="preserve">
+    <value>Изменения истории применены.</value>
+  </data>
+  <data name="HistoryEditDelete" xml:space="preserve">
+    <value>Удалить коммит</value>
+  </data>
+  <data name="HistoryEditDeleted" xml:space="preserve">
+    <value>Удалён</value>
+  </data>
+  <data name="HistoryEditDeletedHint" xml:space="preserve">
+    <value>Будет удалён после применения.</value>
+  </data>
+  <data name="HistoryEditHistoryChanged" xml:space="preserve">
+    <value>Ветка или история изменилась. Отмените подготовленные правки и обновите историю.</value>
+  </data>
+  <data name="HistoryEditMerge" xml:space="preserve">
+    <value>Объединить с предыдущим</value>
+  </data>
+  <data name="HistoryEditMergeButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Объединить с предыдущим</value>
+  </data>
+  <data name="HistoryEditMerged" xml:space="preserve">
+    <value>Объединён</value>
+  </data>
+  <data name="HistoryEditMergedInto" xml:space="preserve">
+    <value>Будет объединён с {0} — {1}. Для восстановления отмените действие.</value>
+  </data>
+  <data name="HistoryEditMergeHint" xml:space="preserve">
+    <value>Объединить с {0} — {1}</value>
+  </data>
+  <data name="HistoryEditMessageChanged" xml:space="preserve">
+    <value>Изменено сообщение</value>
+  </data>
+  <data name="HistoryEditMessageChangedHint" xml:space="preserve">
+    <value>Новое сообщение будет сохранено при применении.</value>
+  </data>
+  <data name="HistoryEditMoved" xml:space="preserve">
+    <value>Перемещён</value>
+  </data>
+  <data name="HistoryEditMovedHint" xml:space="preserve">
+    <value>Изменён порядок коммитов. Изменения ещё не применены.</value>
+  </data>
+  <data name="HistoryEditMoveDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Переместить коммит вниз</value>
+  </data>
+  <data name="HistoryEditMoveDownButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переместить коммит вниз</value>
+  </data>
+  <data name="HistoryEditMoveUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Переместить коммит вверх</value>
+  </data>
+  <data name="HistoryEditMoveUpButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переместить коммит вверх</value>
+  </data>
+  <data name="HistoryEditOperationInProgress" xml:space="preserve">
+    <value>Сначала завершите или отмените текущую операцию Git на странице изменений.</value>
+  </data>
+  <data name="HistoryEditPublishedWarning" xml:space="preserve">
+    <value>Диапазон содержит опубликованные коммиты. Для обновления удалённой ветки может потребоваться принудительная отправка и согласование с другими участниками.</value>
+  </data>
+  <data name="HistoryEditRestore" xml:space="preserve">
+    <value>Восстановить коммит</value>
+  </data>
+  <data name="HistoryEditingCommitsTitle" xml:space="preserve">
+    <value>Редактирование: {0}</value>
+  </data>
+  <data name="HistoryEditTitle" xml:space="preserve">
+    <value>Редактировать историю</value>
+  </data>
+  <data name="HistoryEditUndoButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Отменить последнее действие</value>
+  </data>
+  <data name="HistoryEditUndoButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отменить последнее действие</value>
+  </data>
+  <data name="HistoryEditAffected" xml:space="preserve">
+    <value>Зависит от изменений</value>
+  </data>
+  <data name="HistoryEditAffectedHint" xml:space="preserve">
+    <value>Изменения более ранней истории могут повлиять на этот коммит. Результат будет доступен после применения.</value>
+  </data>
+  <data name="HistoryQuickMergeMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Объединить с предыдущим…</value>
+  </data>
+  <data name="HistoryQuickDeleteMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Удалить коммит…</value>
+  </data>
+  <data name="HistoryQuickDeleteWarning" xml:space="preserve">
+    <value>Удалить коммит {0} — «{1}»? Его изменения будут исключены из истории. Последующие коммиты будут переписаны.</value>
+  </data>
+  <data name="HistoryQuickNotAncestor" xml:space="preserve">
+    <value>Выбранный коммит больше не входит в историю текущей ветки. Обновите историю.</value>
+  </data>
+  <data name="HistoryEditPlanFailed" xml:space="preserve">
+    <value>Не удалось подготовить план изменения истории.</value>
+  </data>
+  <data name="HistoryQuickMessageWarning" xml:space="preserve">
+    <value>Изменить сообщение коммита {0} — «{1}»? История ветки будет переписана.</value>
+  </data>
+  <data name="HistoryQuickMergeWarning" xml:space="preserve">
+    <value>Объединить коммит {0} — «{1}» с предыдущим коммитом {2} — «{3}»? История ветки будет переписана.</value>
+  </data>
+  <data name="HistoryEditParentDialogTitle" xml:space="preserve">
+    <value>Выбор родителя</value>
+  </data>
+  <data name="HistoryEditParentDialogHeader" xml:space="preserve">
+    <value>На какой линии истории выполнить действие?</value>
+  </data>
+  <data name="HistoryEditParentDialogMessage" xml:space="preserve">
+    <value>Действие пересекает слияние {0}: {1}. Выберите родителя, относительно которого нужно переместить или объединить коммит.</value>
+  </data>
+  <data name="HistoryEditParentDialogPrimaryButton" xml:space="preserve">
+    <value>Выбрать</value>
+  </data>
+  <data name="HistoryEditParentOutsideRange" xml:space="preserve">
+    <value>Выбранный родитель находится вне диапазона редактирования. Расширьте диапазон, чтобы объединить с ним коммит.</value>
+  </data>
+  <data name="HistoryEditInvalidMove" xml:space="preserve">
+    <value>Это перемещение создаёт циклические связи между коммитами. Выберите другого родителя или измените порядок действий.</value>
   </data>
 </root>

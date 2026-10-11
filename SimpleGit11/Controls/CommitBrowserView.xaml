@@ -109,6 +109,10 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <TextBlock
                             MaxLines="1" TextWrapping="WrapWholeWords"
                             VerticalAlignment="Center"
@@ -118,6 +122,8 @@
                             Grid.Column="1"
                             x:Name="CommitFilterToggleButton"
                             x:Uid="CommitFilterToggleButton"
+                            AutomationProperties.AutomationId="CommitFilterToggleButton"
+                            IsEnabled="{x:Bind ViewModel.IsCommitSearchEnabled, Mode=OneWay}"
                             Click="CommitFilterToggleButton_Click"
                             IsChecked="{x:Bind ViewModel.IsCommitFilterApplied, Mode=OneWay}"
                             Visibility="{Binding IsCommitListVisible, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -139,10 +145,16 @@
                                             x:Uid="HistorySearchTextBox"
                                             AutomationProperties.AutomationId="HistorySearchTextBox"
                                             Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                        <ToggleSwitch
-                                            x:Uid="MainlineOnlyToggleSwitch"
-                                            AutomationProperties.AutomationId="MainlineOnlyToggleSwitch"
-                                            IsOn="{x:Bind ViewModel.IsMainlineOnly, Mode=TwoWay}" />
+                                        <StackPanel Spacing="4">
+                                            <ToggleSwitch
+                                                x:Uid="MainlineOnlyToggleSwitch"
+                                                AutomationProperties.AutomationId="MainlineOnlyToggleSwitch"
+                                                IsOn="{x:Bind ViewModel.IsMainlineOnly, Mode=TwoWay}" />
+                                            <ToggleSwitch
+                                                x:Uid="TagsOnlyToggleSwitch"
+                                                AutomationProperties.AutomationId="TagsOnlyToggleSwitch"
+                                                IsOn="{x:Bind ViewModel.IsTagsOnly, Mode=TwoWay}" />
+                                        </StackPanel>
                                         <StackPanel Spacing="8">
                                             <TextBlock
                                                 x:Uid="CommitDateFilterHeaderTextBlock"
@@ -261,13 +273,18 @@
                             Padding="1">
                             <SymbolIcon Symbol="List" />
                         </ToggleButton>
+                        <ContentPresenter
+                            Grid.Row="1"
+                            Grid.ColumnSpan="3"
+                            Margin="0,8,0,0"
+                            Content="{Binding CommitListCommands, ElementName=PageRoot}"
+                            Visibility="{x:Bind ViewModel.IsHistoryEditing, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                     </Grid>
                     <ListView
                         x:Name="HistoryCommitsListView"
                         Grid.Row="1"
                         ContextRequested="HistoryCommitsListView_ContextRequested"
                         ItemsSource="{x:Bind ViewModel.CommitRows, Mode=OneWay}"
-                        SelectedItem="{x:Bind ViewModel.SelectedCommitRow, Mode=TwoWay}"
                         SelectionChanged="HistoryCommitsListView_SelectionChanged"
                         SelectionMode="Single"
                         Padding="0,0,10,0">
@@ -278,6 +295,8 @@
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                 <Setter Property="Margin" Value="0" />
                                 <Setter Property="Padding" Value="8,0,4,0" />
+                                <Setter Property="IsEnabled" Value="{Binding IsSelectable}" />
+                                <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
                             </Style>
                         </ListView.ItemContainerStyle>
                         <ListView.Footer>
@@ -288,7 +307,9 @@
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="viewmodels:CommitBrowserRowViewItem">
                                 <Grid
-                                    AutomationProperties.HelpText="{x:Bind AccessibleGraphDescription, Mode=OneWay}">
+                                    Opacity="{x:Bind DraftOpacity, Mode=OneWay}"
+                                    AutomationProperties.HelpText="{x:Bind AccessibleGraphDescription, Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind DisplayTitle, Mode=OneWay}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -389,12 +410,13 @@
                                                 Grid.Column="3"
                                                 FontWeight="SemiBold"
                                                 MaxLines="1"
-                                                Text="{x:Bind Commit.Message, Mode=OneTime}"
-                                                ToolTipService.ToolTip="{x:Bind Commit.Title, Mode=OneTime}"
+                                                Text="{x:Bind DisplayTitle, Mode=OneWay}"
+                                                ToolTipService.ToolTip="{x:Bind DisplayTitle, Mode=OneWay}"
                                                 TextTrimming="CharacterEllipsis" />
                                         </Grid>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
@@ -409,8 +431,34 @@
                                                     Style="{ThemeResource CaptionTextBlockStyle}"
                                                     Text="{x:Bind Commit.RangeSideLabel, Mode=OneTime}" />
                                             </Border>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <Border Padding="4,1" Margin="0,0,6,0"
+                                                    Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
+                                                    CornerRadius="3"
+                                                    ToolTipService.ToolTip="{x:Bind EditTooltip, Mode=OneWay}"
+                                                    Visibility="{x:Bind HasChangedIndicator, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                                        <FontIcon Glyph="{x:Bind EditGlyph, Mode=OneWay}" FontSize="10" Foreground="{ThemeResource SuccessfulOperationColor}" />
+                                                        <TextBlock Text="{x:Bind EditIndicator, Mode=OneWay}" FontSize="10"
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Foreground="{ThemeResource SuccessfulOperationColor}" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Border>
+                                                <Border Padding="4,1" Margin="0,0,6,0"
+                                                    Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
+                                                    CornerRadius="3"
+                                                    ToolTipService.ToolTip="{x:Bind EditTooltip, Mode=OneWay}"
+                                                    Visibility="{x:Bind HasDeletedIndicator, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                                        <FontIcon Glyph="{x:Bind EditGlyph, Mode=OneWay}" FontSize="10" Foreground="{ThemeResource DiffRemovedStatTextBrush}" />
+                                                        <TextBlock Text="{x:Bind EditIndicator, Mode=OneWay}" FontSize="10"
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Foreground="{ThemeResource DiffRemovedStatTextBrush}" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock
-                                                Grid.Column="1"
+                                                Grid.Column="2"
                                                 x:Name="AdditionalCommitInfo"
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Style="{ThemeResource CaptionTextBlockStyle}"
@@ -419,13 +467,6 @@
                                                 <Run Text="{x:Bind Commit.DisplayDate, Mode=OneTime}" />
                                                 <Run Text="{x:Bind Commit.ShortHash, Mode=OneTime}" />
                                                 <Run Text="{x:Bind Commit.AuthorName, Mode=OneTime}" />
-                                                <ToolTipService.ToolTip>
-                                                    <TextBlock>
-                                                        <Run Text="{x:Bind Commit.DisplayDate, Mode=OneTime}" />
-                                                        <Run Text="{x:Bind Commit.ShortHash, Mode=OneTime}" />
-                                                        <Run Text="{x:Bind Commit.AuthorName, Mode=OneTime}" />   
-                                                    </TextBlock>
-                                                </ToolTipService.ToolTip>
                                             </TextBlock>
                                         </Grid>
                                     </StackPanel>
@@ -472,6 +513,7 @@
                     <ListView
                         x:Name="HistoryChangedFilesListView"
                         Grid.Row="1"
+                        Visibility="{x:Bind ViewModel.IsCommitContentAvailable, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
                         ItemsSource="{x:Bind ViewModel.ChangedFiles, Mode=OneWay}"
                         SelectedItem="{x:Bind ViewModel.SelectedChangedFile, Mode=TwoWay}"
                         SelectionMode="Single"
@@ -551,6 +593,16 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
+                    <InfoBar
+                        Grid.Row="1"
+                        x:Uid="HistoryDraftFilesInfoBar"
+                        AutomationProperties.AutomationId="HistoryDraftFilesInfoBar"
+                        Margin="0,0,16,0"
+                        VerticalAlignment="Top"
+                        IsOpen="{x:Bind ViewModel.IsCommitContentUnavailable, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.IsCommitContentUnavailable, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                        IsClosable="False"
+                        Severity="Informational" />
                 </Grid>
 
             </Grid>
@@ -735,6 +787,7 @@
                         <TextBox
                             Grid.Row="2"
                             x:Name="CommitMessageTextBox"
+                            AutomationProperties.AutomationId="HistoryCommitMessageTextBox"
                             AcceptsReturn="True"
                             FontFamily="Consolas"
                             IsReadOnly="True"
@@ -774,18 +827,30 @@
                     Visibility="{x:Bind ViewModel.CommitDetailsBlockVisibility, Mode=OneWay}"
                     Margin="0,4,30,8"/>
 
-                <controls:DiffViewer
+                <Grid
                     Grid.Row="2"
                     x:Name="HistoryDiffPane"
-                    Margin="12,0,0,0"
-                    CopyTextCommand="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
-                    DiffLinesSource="{x:Bind ViewModel.DiffLines, Mode=OneWay}"
-                    EmptyMessage="{x:Bind ViewModel.DiffEmptyMessage, Mode=OneWay}"
-                    FilePath="{x:Bind ViewModel.SelectedDiffFileTooltip, Mode=OneWay}"
-                    HasEmptyState="{x:Bind ViewModel.HasDiffEmptyState, Mode=OneWay}"
-                    IsFullFileMode="{x:Bind ViewModel.IsFullFileMode, Mode=OneWay}"
-                    SyntaxHighlightingMode="{x:Bind ViewModel.SelectedSyntaxHighlightingMode, Mode=OneWay}"
-                    ToggleFullFileCommand="{x:Bind ViewModel.ToggleFullFileCommand, Mode=OneWay}" />
+                    Margin="12,0,0,0">
+                    <InfoBar
+                        x:Uid="HistoryDraftDiffInfoBar"
+                        AutomationProperties.AutomationId="HistoryDraftDiffInfoBar"
+                        Margin="0,0,30,0"
+                        VerticalAlignment="Top"
+                        IsOpen="{x:Bind ViewModel.IsCommitContentUnavailable, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.IsCommitContentUnavailable, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                        IsClosable="False"
+                        Severity="Informational" />
+                    <controls:DiffViewer
+                        Visibility="{x:Bind ViewModel.IsCommitContentAvailable, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                        CopyTextCommand="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                        DiffLinesSource="{x:Bind ViewModel.DiffLines, Mode=OneWay}"
+                        EmptyMessage="{x:Bind ViewModel.DiffEmptyMessage, Mode=OneWay}"
+                        FilePath="{x:Bind ViewModel.SelectedDiffFileTooltip, Mode=OneWay}"
+                        HasEmptyState="{x:Bind ViewModel.HasDiffEmptyState, Mode=OneWay}"
+                        IsFullFileMode="{x:Bind ViewModel.IsFullFileMode, Mode=OneWay}"
+                        SyntaxHighlightingMode="{x:Bind ViewModel.SelectedSyntaxHighlightingMode, Mode=OneWay}"
+                        ToggleFullFileCommand="{x:Bind ViewModel.ToggleFullFileCommand, Mode=OneWay}" />
+                </Grid>
             </Grid>
         </Grid>
 

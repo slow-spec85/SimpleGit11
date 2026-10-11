@@ -9,6 +9,29 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitChangeRecoveryOperationTests
 {
     [TestMethod]
+    public async Task ContinueRebase_UsesInteractiveMessageEditorWhenAvailable()
+    {
+        EditorRunner editor = new();
+        GitChangeRecoveryService service = new(new RecordingGitCommandRunner(), editor);
+
+        await service.ContinueOperationAsync(CreateRepository(), GitOperationKind.Rebase);
+
+        CollectionAssert.AreEqual(new[] { "rebase", "--continue" }, editor.Arguments.ToArray());
+    }
+
+    [TestMethod]
+    public async Task ContinueRebase_PropagatesGitFailureForConflictHandling()
+    {
+        EditorRunner editor = new() { ExitCode = 1 };
+        GitChangeRecoveryService service = new(new RecordingGitCommandRunner(), editor);
+
+        GitCommandException exception = await Assert.ThrowsAsync<GitCommandException>(() =>
+            service.ContinueOperationAsync(CreateRepository(), GitOperationKind.Rebase));
+
+        StringAssert.Contains(exception.Message, "conflict");
+    }
+
+    [TestMethod]
     [DataRow(GitOperationKind.Rebase, "rebase")]
     [DataRow(GitOperationKind.CherryPick, "cherry-pick")]
     [DataRow(GitOperationKind.Revert, "revert")]
@@ -76,6 +99,20 @@ public sealed class GitChangeRecoveryOperationTests
             Arguments = arguments;
             Options = options;
             return Task.FromResult(new GitCommandResult(0, "", ""));
+        }
+    }
+
+    private sealed class EditorRunner : IGitEditorService
+    {
+        public IReadOnlyList<string> Arguments { get; private set; } = [];
+        public int ExitCode { get; set; }
+
+        public Task<GitCommandResult> RunAsync(RepositoryInfo repository, IReadOnlyList<string> arguments,
+            Func<bool, string, Task<string?>>? editText = null, CancellationToken cancellationToken = default,
+            IReadOnlyDictionary<string, string>? preparedMessages = null)
+        {
+            Arguments = arguments;
+            return Task.FromResult(new GitCommandResult(ExitCode, "", ExitCode == 0 ? "" : "conflict"));
         }
     }
 }

@@ -12,18 +12,16 @@ public sealed class InstallerLauncher : IInstallerLauncher
         ArgumentException.ThrowIfNullOrWhiteSpace(installerPath);
         string fullPath = Path.GetFullPath(installerPath);
         if (!File.Exists(fullPath)
-            || !string.Equals(Path.GetExtension(fullPath), ".msi", StringComparison.OrdinalIgnoreCase))
+            || !string.Equals(Path.GetExtension(fullPath), ".exe", StringComparison.OrdinalIgnoreCase))
         {
             throw new FileNotFoundException("The downloaded installer was not found.", fullPath);
         }
 
-        ProcessStartInfo startInfo = new("msiexec.exe")
+        ProcessStartInfo startInfo = new(fullPath)
         {
             UseShellExecute = true
         };
-        startInfo.ArgumentList.Add("/i");
-        startInfo.ArgumentList.Add(fullPath);
         using Process process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException("Windows Installer could not be started.");
+            ?? throw new InvalidOperationException("The setup application could not be started.");
     }
 }

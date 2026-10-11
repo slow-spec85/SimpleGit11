@@ -74,6 +74,7 @@
 
         <TextBox
             x:Name="CommitMessageTextBox"
+            AutomationProperties.AutomationId="CommitMessageTextBox"
             AcceptsReturn="True"
             AutomationProperties.HelpText="{x:Bind ViewModel.MessageHelpText, Mode=OneTime}"
             Header="{x:Bind ViewModel.MessageHeader, Mode=OneTime}"

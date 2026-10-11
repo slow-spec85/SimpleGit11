@@ -49,7 +49,7 @@ public sealed partial class MainWindow : Window
     private const double OneRecentRepositoryHeight = 56;
     private const double TwoRecentRepositoriesHeight = 112;
     private const double ThreeRecentRepositoriesHeight = 168;
-    private const double RepositoryMenuMaxHeight = 480;
+    private const double PaneHeaderMenuMaxHeight = 480;
     private static readonly TimeSpan MinimumWindowInactiveDuration = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan AutomaticRefreshCooldown = TimeSpan.FromSeconds(10);
     private readonly ILocalizationService _localizationService;
@@ -145,17 +145,19 @@ public sealed partial class MainWindow : Window
     {
         (string titleBarText, string windowTitle) = ResolveExecutionContextTitles(
             context,
-            ViewModel.AppName);
+            ViewModel.AppName,
+            ViewModel.CurrentRepository?.Name);
         ExecutionHostTitleTextBlock.Text = titleBarText;
         Title = windowTitle;
     }
 
     internal static (string TitleBarText, string WindowTitle) ResolveExecutionContextTitles(
         AppExecutionContext context,
-        string appName)
+        string appName,
+        string? repositoryName)
     {
         return context.IsLocal
-            ? (string.Empty, appName)
+            ? (string.Empty, string.IsNullOrWhiteSpace(repositoryName) ? appName : repositoryName)
             : (context.DisplayMachineName, context.DisplayMachineName);
     }
 
@@ -331,6 +333,12 @@ public sealed partial class MainWindow : Window
 
     private async void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(MainWindowViewModel.CurrentRepository)
+            or nameof(MainWindowViewModel.CurrentRepositoryDisplayName))
+        {
+            UpdateExecutionContextChrome(_executionContextService.Current);
+        }
+
         if (_isChangingExecutionContext)
         {
             return;
@@ -371,16 +379,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        MenuFlyout flyout = new()
-        {
-            MenuFlyoutPresenterStyle = new Style(typeof(MenuFlyoutPresenter))
-            {
-                Setters =
-                {
-                    new Setter(FrameworkElement.MaxHeightProperty, RepositoryMenuMaxHeight)
-                }
-            }
-        };
+        MenuFlyout flyout = CreateScrollablePaneHeaderMenu();
 
         foreach (WorktreeViewItem worktree in worktrees)
         {
@@ -418,6 +417,20 @@ public sealed partial class MainWindow : Window
         }
 
         flyout.ShowAt(RepositoryPaneHeaderButton);
+    }
+
+    private static MenuFlyout CreateScrollablePaneHeaderMenu()
+    {
+        return new MenuFlyout
+        {
+            MenuFlyoutPresenterStyle = new Style(typeof(MenuFlyoutPresenter))
+            {
+                Setters =
+                {
+                    new Setter(FrameworkElement.MaxHeightProperty, PaneHeaderMenuMaxHeight)
+                }
+            }
+        };
     }
 
     private async void RemotePaneHeaderButton_Click(object sender, RoutedEventArgs e)
@@ -492,7 +505,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        MenuFlyout flyout = new();
+        MenuFlyout flyout = CreateScrollablePaneHeaderMenu();
         foreach (GitBranch branch in branches)
         {
             MenuFlyoutItem item = new()

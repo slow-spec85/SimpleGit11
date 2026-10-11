@@ -64,14 +64,14 @@ are needed only when installing for all users or into a protected folder.
 
 ## Installation
 
-1. Download `SimpleGit11-<version>-win-x64.msi` and its
+1. Download `SimpleGit11-<version>-win-x64-setup.exe` and its
    matching `.sha256` file from the repository's Releases page.
-2. Optionally verify the checksum, then run the MSI.
+2. Optionally verify the checksum, then run the setup EXE.
 3. Choose current-user or all-users installation and the installation folder.
 4. Choose whether to install SSH support and a desktop shortcut.
 5. Start SimpleGit11 from the Start menu.
 
-Current-user installation is the default. Re-run the original MSI to modify, repair or uninstall.
+Current-user installation is the default. Re-run the original setup EXE to modify, repair or uninstall.
 Stable updates can be downloaded, verified, and started from the About dialog.
 See [PUBLISHING.md](PUBLISHING.md)
 for installation, updating and optional removal of application data.
@@ -86,7 +86,7 @@ dotnet build .\SimpleGit11.slnx -c Debug -p:Platform=x64
 ```
 
 The project supports `x64` builds only. See [PUBLISHING.md](PUBLISHING.md) for
-local build details and MSI release preparation.
+local build details and setup EXE release preparation.
 
 ## Technology
 

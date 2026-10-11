@@ -8,6 +8,31 @@ namespace SimpleGit11.Tests.Presentation;
 public sealed class CommitBrowserFilterTests
 {
     [TestMethod]
+    public void Apply_TagsOnly_ExcludesUntaggedAndBranchReferencesAndKeepsOrder()
+    {
+        GitCommit tagged = CreateCommit("tagged", references: [new("v1", GitCommitReferenceKind.Tag), new("v2", GitCommitReferenceKind.Tag)]);
+        GitCommit branch = CreateCommit("branch", references: [new("tag-like-name", GitCommitReferenceKind.LocalBranch)]);
+        GitCommit remote = CreateCommit("remote", references: [new("origin/main", GitCommitReferenceKind.RemoteBranch)]);
+        GitCommit another = CreateCommit("another", references: [new("release", GitCommitReferenceKind.Tag)]);
+        GitCommit[] commits = [tagged, branch, CreateCommit("plain"), remote, another];
+        CollectionAssert.AreEqual(new[] { "tagged", "another" }, CommitBrowserFilter.Apply(commits, CreateCriteria(tagsOnly: true)).Select(commit => commit.Hash).ToArray());
+        CollectionAssert.AreEqual(commits, CommitBrowserFilter.Apply(commits, CreateCriteria()).ToArray());
+        Assert.HasCount(0, CommitBrowserFilter.Apply([branch, remote], CreateCriteria(tagsOnly: true)));
+    }
+
+    [TestMethod]
+    public void Apply_TagsOnly_ComposesWithMainlineDateAndSearch()
+    {
+        DateTimeOffset date = LocalDate(2026, 10, 11, 0, 0, 0);
+        GitCommit head = CreateCommit("head", parentHashes: ["main", "side"]);
+        GitCommit main = CreateCommit("main", message: "release", authoredAt: date, references: [new("v1", GitCommitReferenceKind.Tag)], parentHashes: ["old"]);
+        GitCommit side = CreateCommit("side", message: "release", authoredAt: date, references: [new("v2", GitCommitReferenceKind.Tag)]);
+        GitCommit old = CreateCommit("old", message: "release", authoredAt: date.AddDays(-1), references: [new("v0", GitCommitReferenceKind.Tag)]);
+        IReadOnlyList<GitCommit> result = CommitBrowserFilter.Apply([head, side, main, old], CreateCriteria(mainlineOnly: true, fromDate: date, searchText: "release", tagsOnly: true));
+        CollectionAssert.AreEqual(new[] { "main" }, result.Select(commit => commit.Hash).ToArray());
+    }
+
+    [TestMethod]
     public void Apply_MainlineOnly_FollowsFirstParentChain()
     {
         GitCommit head = CreateCommit("head", parentHashes: ["main-parent", "merged-parent"]);
@@ -99,6 +124,7 @@ public sealed class CommitBrowserFilterTests
     {
         Assert.IsFalse(CreateCriteria().IsApplied);
         Assert.IsTrue(CreateCriteria(mainlineOnly: true).IsApplied);
+        Assert.IsTrue(CreateCriteria(tagsOnly: true).IsApplied);
         Assert.IsTrue(CreateCriteria(fromDate: LocalDate(2026, 8, 28, 0, 0, 0)).IsApplied);
         Assert.IsTrue(CreateCriteria(toDate: LocalDate(2026, 8, 28, 0, 0, 0)).IsApplied);
         Assert.IsTrue(CreateCriteria(searchText: "query").IsApplied);
@@ -123,14 +149,16 @@ public sealed class CommitBrowserFilterTests
         DateTimeOffset? toDate = null,
         TimeSpan? toTime = null,
         string searchText = "",
-        string exactFilePathSearchText = "") => new(
+        string exactFilePathSearchText = "",
+        bool tagsOnly = false) => new(
         mainlineOnly,
         fromDate,
         fromTime ?? TimeSpan.Zero,
         toDate,
         toTime ?? new TimeSpan(23, 59, 0),
         searchText,
-        exactFilePathSearchText);
+        exactFilePathSearchText,
+        tagsOnly);
 
     private static DateTimeOffset LocalDate(
         int year,

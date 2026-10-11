@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="SimpleGit11.Dialogs.RevisionSelectDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:SimpleGit11.Models"
+    x:Uid="RevisionSelectDialog"
+    DefaultButton="Primary"
+    IsPrimaryButtonEnabled="{x:Bind ViewModel.CanResolve, Mode=OneWay}"
+    PrimaryButtonClick="Dialog_PrimaryButtonClick"
+    Style="{StaticResource DefaultContentDialogStyle}">
+    <StackPanel MinWidth="360" Spacing="12">
+        <ComboBox x:Uid="BranchCreateSourceComboBox" HorizontalAlignment="Stretch"
+            DisplayMemberPath="DisplayName" ItemsSource="{x:Bind ViewModel.SourceOptions}"
+            SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}" SelectionChanged="Source_SelectionChanged" />
+        <AutoSuggestBox x:Uid="BranchCreateStartPointAutoSuggestBox"
+            IsEnabled="{x:Bind ViewModel.IsStartPointEnabled, Mode=OneWay}"
+            ItemsSource="{x:Bind ViewModel.FilteredSuggestions}" TextMemberPath="Value"
+            Text="{x:Bind ViewModel.StartPoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            TextChanged="Revision_TextChanged" SuggestionChosen="Revision_SuggestionChosen">
+            <AutoSuggestBox.ItemTemplate>
+                <DataTemplate x:DataType="models:GitRevisionSuggestion">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Bind DisplayName}" TextWrapping="Wrap" />
+                        <TextBlock Text="{x:Bind Description}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </DataTemplate>
+            </AutoSuggestBox.ItemTemplate>
+        </AutoSuggestBox>
+        <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="Wrap" />
+        <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" TextWrapping="Wrap"
+            Foreground="{ThemeResource SystemFillColorCriticalBrush}" AutomationProperties.LiveSetting="Polite" />
+    </StackPanel>
+</ContentDialog>

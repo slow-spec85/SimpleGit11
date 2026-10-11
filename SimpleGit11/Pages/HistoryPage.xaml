@@ -6,6 +6,15 @@
     xmlns:controls="using:SimpleGit11.Controls"
     NavigationCacheMode="Required">
 
+    <Page.Resources>
+        <Style x:Key="HistoryEditButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="1" />
+            <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+        </Style>
+    </Page.Resources>
+
     <Grid
         x:Name="PageLayout"
         Padding="0,32,0,0"
@@ -41,7 +50,7 @@
             ColumnSpacing="16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition x:Name="HeaderCommandsColumn" Width="520" />
+                <ColumnDefinition x:Name="HeaderCommandsColumn" Width="Auto" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -64,8 +73,6 @@
             <CommandBar
                 x:Name="HeaderCommands"
                 Grid.Column="1"
-                Padding="0"
-                VerticalAlignment="Center"
                 Background="Transparent"
                 DefaultLabelPosition="Right">
                 <AppBarButton
@@ -108,6 +115,13 @@
                         </SplitButton.Flyout>
                     </SplitButton>
                 </AppBarElementContainer>
+                <CommandBar.SecondaryCommands>
+                    <AppBarButton
+                        x:Uid="EditHistoryAppBarButton"
+                        AutomationProperties.AutomationId="StartHistoryEditButton"
+                        Command="{x:Bind ViewModel.StartHistoryEditCommand, Mode=OneWay}"
+                        Icon="Edit" />
+                </CommandBar.SecondaryCommands>
             </CommandBar>
         </Grid>
 
@@ -129,6 +143,47 @@
             ViewModel="{x:Bind ViewModel, Mode=OneWay}"
             Visibility="{x:Bind ViewModel.HistoryVisible, Mode=OneWay}"
             ShowMergedCommitsRequested="CommitBrowser_ShowMergedCommitsRequested">
+            <controls:CommitBrowserView.CommitListCommands>
+                <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+                    <Button x:Uid="HistoryEditMoveUpButton" AutomationProperties.AutomationId="HistoryEditMoveUpButton" Style="{StaticResource HistoryEditButtonStyle}" Command="{x:Bind ViewModel.MoveDraftUpCommand, Mode=OneWay}">
+                        <FontIcon Glyph="&#xE74A;" FontSize="16" />
+                    </Button>
+                    <Button x:Uid="HistoryEditMoveDownButton" AutomationProperties.AutomationId="HistoryEditMoveDownButton" Style="{StaticResource HistoryEditButtonStyle}" Command="{x:Bind ViewModel.MoveDraftDownCommand, Mode=OneWay}">
+                        <FontIcon Glyph="&#xE74B;" FontSize="16" />
+                    </Button>
+                    <Button
+                        x:Uid="HistoryEditMergeButton"
+                        AutomationProperties.AutomationId="HistoryEditMergeButton"
+                        Style="{StaticResource HistoryEditButtonStyle}"
+                        Command="{x:Bind ViewModel.MergeDraftWithMessageCommand, Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind ViewModel.MergeDraftTooltip, Mode=OneWay}">
+                        <FontIcon Glyph="&#xE71B;" FontSize="16" />
+                    </Button>
+                    <Button
+                        Style="{StaticResource HistoryEditButtonStyle}"
+                        AutomationProperties.AutomationId="HistoryEditDeleteButton"
+                        AutomationProperties.Name="{x:Bind ViewModel.DeleteDraftCaption, Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind ViewModel.DeleteDraftCaption, Mode=OneWay}"
+                        Command="{x:Bind ViewModel.DeleteDraftCommitCommand, Mode=OneWay}">
+                        <FontIcon Glyph="{x:Bind ViewModel.DeleteDraftGlyph, Mode=OneWay}" FontSize="16" />
+                    </Button>
+                    <Button x:Uid="HistoryEditUndoButton" AutomationProperties.AutomationId="HistoryEditUndoButton" Style="{StaticResource HistoryEditButtonStyle}" Command="{x:Bind ViewModel.UndoHistoryEditCommand, Mode=OneWay}">
+                        <SymbolIcon Symbol="Undo" />
+                    </Button>
+                    <Border
+                        Width="1"
+                        Height="20"
+                        Margin="8,0"
+                        VerticalAlignment="Center"
+                        Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                    <Button x:Uid="HistoryEditApplyButton" AutomationProperties.AutomationId="HistoryEditApplyButton" Style="{StaticResource HistoryEditButtonStyle}" Command="{x:Bind ViewModel.ApplyHistoryEditCommand, Mode=OneWay}">
+                        <SymbolIcon Symbol="Accept" />
+                    </Button>
+                    <Button x:Uid="HistoryEditCancelButton" AutomationProperties.AutomationId="HistoryEditCancelButton" Style="{StaticResource HistoryEditButtonStyle}" Command="{x:Bind ViewModel.CancelHistoryEditCommand, Mode=OneWay}">
+                        <SymbolIcon Symbol="Cancel" />
+                    </Button>
+                </StackPanel>
+            </controls:CommitBrowserView.CommitListCommands>
             <controls:CommitBrowserView.CommitListFooter>
                 <Button
                     Margin="0,12,0,0"
@@ -166,6 +221,17 @@
                             Command="{x:Bind ViewModel.ResetHardCommand, Mode=OneWay}"
                             Icon="Delete" />
                     </SplitMenuFlyoutItem>
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem
+                        x:Uid="HistoryQuickMergeMenuFlyoutItem"
+                        AutomationProperties.AutomationId="HistoryQuickMergeMenuFlyoutItem"
+                        Command="{x:Bind ViewModel.MergeCommitWithPreviousCommand, Mode=OneWay}"
+                        Icon="Link" />
+                    <MenuFlyoutItem
+                        x:Uid="HistoryQuickDeleteMenuFlyoutItem"
+                        AutomationProperties.AutomationId="HistoryQuickDeleteMenuFlyoutItem"
+                        Command="{x:Bind ViewModel.DeleteHistoryCommitCommand, Mode=OneWay}"
+                        Icon="Delete" />
                     <MenuFlyoutSeparator />
                     <MenuFlyoutItem
                         x:Name="CommitGraphMenuFlyoutItem"

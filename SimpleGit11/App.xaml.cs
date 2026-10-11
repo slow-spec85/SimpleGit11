@@ -137,6 +137,19 @@ public partial class App : Application
         services.AddSingleton<IGitCommitWorkflowService, GitCommitWorkflowService>();
         services.AddSingleton<IGitHistoryService, GitHistoryService>();
         services.AddSingleton<IGitBranchService, GitBranchService>();
+        services.AddSingleton<IGitEditorService>(provider => new GitEditorService(
+            provider.GetRequiredService<IGitCommandRunner>(),
+            async (sequence, text) =>
+            {
+                if (sequence) { return null; }
+                ILocalizationService strings = provider.GetRequiredService<ILocalizationService>();
+                return await provider.GetRequiredService<IDialogService>().ShowTextInputAsync(new Models.TextInputDialogRequest(
+                    strings.GetString("HistoryEditMessage"),
+                    strings.GetString("HistoryEditMessage"),
+                    text, strings.GetString("HistoryEditApply"), strings.GetString("TextInputDialogCancelButton"),
+                    isMultiline: true, allowEmpty: true));
+            },
+            provider.GetRequiredService<IExecutionContextService>()));
         services.AddSingleton<IGitTagService, GitTagService>();
         services.AddSingleton<DialogService>();
         services.AddSingleton<IDialogService>(provider => provider.GetRequiredService<DialogService>());

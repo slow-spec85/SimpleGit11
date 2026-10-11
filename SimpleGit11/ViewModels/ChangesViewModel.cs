@@ -73,6 +73,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     {
         ClearNotification();
         ClearChanges();
+        FileSearchText = "";
         ClearDiff(_localizationService.GetString("SelectFileToViewDiff"));
         ConflictEditor.Clear();
     }
@@ -85,7 +86,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
 
     private bool CanOpenAmendDialog() => HasStagedChanges
         && !IsMergeInProgress
-        && !HasSequencerOperation
+        && (!HasSequencerOperation || IsRebaseInProgress)
         && CanRunWhenIdle();
 
     private bool CanAbortMerge() => IsMergeInProgress && CanRunWhenIdle();
@@ -247,6 +248,19 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
 
     public ObservableCollection<GitChangedFile> AllChanges { get; } = [];
 
+    public ObservableCollection<GitChangedFile> VisibleChanges { get; } = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsFileFilterApplied))]
+    public partial string FileSearchText { get; set; } = "";
+
+    public bool IsFileFilterApplied => !string.IsNullOrWhiteSpace(FileSearchText);
+
+    partial void OnFileSearchTextChanged(string value)
+    {
+        RefreshVisibleChanges();
+    }
+
     public bool HasStagedChanges => StagedChanges.Count > 0;
     public bool HasUnstagedChanges => UnstagedChanges.Count > 0;
     public bool HasConflictedChanges => ConflictedChanges.Count > 0;
@@ -264,7 +278,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
 
     public bool CanOpenCommitDialog => _mainWindowViewModel.CurrentRepository is not null
         && (HasStagedChanges || !HasConflictedChanges)
-        && !HasSequencerOperation
+        && (!HasSequencerOperation || IsRebaseInProgress)
         && CanRunWhenIdle();
 
     public bool CanDiscardSelected => SelectedChanges.Count > 0
@@ -562,7 +576,12 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
 
     public void SetSelectedChanges(IEnumerable<GitChangedFile> selectedChanges, GitChangedFile? lastSelectedChange)
     {
-        SelectedChanges = selectedChanges.ToList();
+        string searchText = FileSearchText.Trim().Replace('\\', '/');
+        SelectedChanges = selectedChanges.Where(change => MatchesFileFilter(change, searchText)).ToList();
+        if (lastSelectedChange is null || !SelectedChanges.Contains(lastSelectedChange))
+        {
+            lastSelectedChange = SelectedChanges.LastOrDefault();
+        }
 
         if (lastSelectedChange is null)
         {
@@ -661,6 +680,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         UnstagedChanges.Clear();
         ConflictedChanges.Clear();
         AllChanges.Clear();
+        VisibleChanges.Clear();
         SelectedChanges = [];
         Stashes.Clear();
         SelectedStash = null;
@@ -1997,7 +2017,48 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
             AllChanges.Add(item);
         }
 
+        RefreshVisibleChanges();
         OnChangedFilesSummaryChanged();
+    }
+
+    private void RefreshVisibleChanges()
+    {
+        string searchText = FileSearchText.Trim().Replace('\\', '/');
+        List<GitChangedFile> matches = AllChanges
+            .Where(change => MatchesFileFilter(change, searchText))
+            .ToList();
+        HashSet<GitChangedFile> matchingChanges = matches.ToHashSet();
+
+        if (SelectedChanges.Any(change => !matchingChanges.Contains(change)))
+        {
+            List<GitChangedFile> selectedChanges = SelectedChanges.Where(matchingChanges.Contains).ToList();
+            GitChangedFile? selectedChange = SelectedChange is GitChangedFile current && matchingChanges.Contains(current)
+                ? current
+                : selectedChanges.LastOrDefault();
+            SetSelectedChanges(selectedChanges, selectedChange);
+        }
+
+        // Keep matching rows in place so filtering does not deselect them.
+        for (int index = VisibleChanges.Count - 1; index >= 0; index--)
+        {
+            if (!matchingChanges.Contains(VisibleChanges[index]))
+            {
+                VisibleChanges.RemoveAt(index);
+            }
+        }
+
+        for (int index = 0; index < matches.Count; index++)
+        {
+            if (index >= VisibleChanges.Count || !ReferenceEquals(VisibleChanges[index], matches[index]))
+            {
+                VisibleChanges.Insert(index, matches[index]);
+            }
+        }
+    }
+
+    private static bool MatchesFileFilter(GitChangedFile change, string searchText)
+    {
+        return change.Path.Replace('\\', '/').Contains(searchText, StringComparison.OrdinalIgnoreCase);
     }
 
     private void UpdateCommandStates()

@@ -56,7 +56,7 @@ public sealed class AboutDialogViewModelTests
         TestProductUpdateService updateService = new()
         {
             Available = true,
-            InstallerPath = @"C:\Temp\SimpleGit11-1.2.3-win-x64.msi"
+            InstallerPath = @"C:\Temp\SimpleGit11-1.2.3-win-x64-setup.exe"
         };
         TestInstallerLauncher launcher = new();
         using AboutDialogViewModel viewModel = CreateViewModel(
@@ -165,7 +165,7 @@ public sealed class AboutDialogViewModelTests
 
     private static ProductReleaseInfo CreateRelease(string version)
     {
-        string fileName = $"SimpleGit11-{version}-win-x64.msi";
+        string fileName = $"SimpleGit11-{version}-win-x64-setup.exe";
         string baseUrl = $"https://github.com/slow-spec85/SimpleGit11/releases/download/v{version}/";
         return new ProductReleaseInfo(
             version,
@@ -182,7 +182,7 @@ public sealed class AboutDialogViewModelTests
     {
         public bool Available { get; init; }
 
-        public string InstallerPath { get; init; } = @"C:\Temp\SimpleGit11.msi";
+        public string InstallerPath { get; init; } = @"C:\Temp\SimpleGit11.Setup.exe";
 
         public Exception? DownloadException { get; init; }
 

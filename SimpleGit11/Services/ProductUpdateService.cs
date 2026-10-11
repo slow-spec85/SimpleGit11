@@ -44,7 +44,7 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
             throw new InvalidOperationException("Only stable releases can be downloaded.");
         }
 
-        ValidateAsset(asset);
+        ValidateAsset(asset, release.Version);
         string expectedHash = await DownloadChecksumAsync(asset, cancellationToken)
             .ConfigureAwait(false);
         string releaseDirectory = Path.Combine(_updateRoot, release.Version);
@@ -172,9 +172,10 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
         return parts[0].ToUpper(CultureInfo.InvariantCulture);
     }
 
-    private static void ValidateAsset(ProductReleaseAsset asset)
+    private static void ValidateAsset(ProductReleaseAsset asset, string version)
     {
-        if (asset.Size <= 0 || asset.Size > MaximumInstallerSize
+        if (!string.Equals(asset.FileName, $"SimpleGit11-{version}-win-x64-setup.exe", StringComparison.Ordinal)
+            || asset.Size <= 0 || asset.Size > MaximumInstallerSize
             || !IsTrustedDownloadUri(asset.DownloadUri)
             || !IsTrustedDownloadUri(asset.ChecksumUri)
             || !string.Equals(Path.GetFileName(asset.DownloadUri.AbsolutePath), asset.FileName, StringComparison.Ordinal)

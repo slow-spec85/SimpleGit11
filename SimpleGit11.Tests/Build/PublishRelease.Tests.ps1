@@ -62,7 +62,17 @@ param($CoreDirectory, $ReleaseVersion, $InstallerVersion, [switch]$AcceptWixEula
 if (-not $AcceptWixEula) { throw 'Consent was not forwarded.' }
 if ($global:publicationTest.FailInstaller) { throw 'Fixture installer failure.' }
 if ((Split-Path -Leaf $CoreDirectory) -ne '.publish-staging-win-x64') { throw 'Payload must remain internal.' }
-$path = Join-Path (Split-Path -Parent $CoreDirectory) "SimpleGit11-$ReleaseVersion-win-x64.msi"
+[string]$staging = Join-Path (Split-Path -Parent $CoreDirectory) '.installer-staging-win-x64'
+New-Item -ItemType Directory -Path $staging -Force | Out-Null
+$path = Join-Path $staging "SimpleGit11-$ReleaseVersion-win-x64.msi"
+Set-Content -LiteralPath $path -Value $InstallerVersion
+$path
+'@
+    Set-Content -LiteralPath (Join-Path $buildDirectory 'Build-Setup.ps1') -Value @'
+param($MsiPath, $ReleaseVersion, $InstallerVersion, [switch]$AcceptWixEula)
+if (-not $AcceptWixEula) { throw 'Setup consent was not forwarded.' }
+if (-not (Test-Path -LiteralPath $MsiPath -PathType Leaf)) { throw 'MSI payload was not passed to setup.' }
+$path = Join-Path (Split-Path -Parent (Split-Path -Parent $MsiPath)) "SimpleGit11-$ReleaseVersion-win-x64-setup.exe"
 Set-Content -LiteralPath $path -Value $InstallerVersion
 Set-Content -LiteralPath "$path.sha256" -Value 'fixture checksum'
 $path
@@ -78,9 +88,20 @@ $path
     Assert-Rejected { & $fixtureScript -InstallerVersion 1.2.4 -AcceptWixEula } 'must match'
     if ($global:publicationTest.PublishCalls -ne 0) { throw 'Invalid options must fail before publishing.' }
 
+    [string]$obsoleteMsi = Join-Path $testRoot 'artifacts\SimpleGit11-1.2.3-win-x64.msi'
+    New-Item -ItemType Directory -Path (Split-Path -Parent $obsoleteMsi) -Force | Out-Null
+    Set-Content -LiteralPath $obsoleteMsi -Value 'stale installer'
+    Set-Content -LiteralPath "$obsoleteMsi.sha256" -Value 'stale checksum'
     $result = & $fixtureScript -AcceptWixEula
     if ($result.Version -ne '1.2.3' -or $result.InstallerVersion -ne '1.2.3' -or
-        $result.Installers.Count -ne 1 -or $result.ChecksumFiles.Count -ne 1) { throw 'Invalid stable MSI result.' }
+        $result.Installers.Count -ne 1 -or $result.ChecksumFiles.Count -ne 1) { throw 'Invalid stable setup result.' }
+    if ($result.Installers[0] -notlike '*-setup.exe') { throw 'Only the setup EXE may be published.' }
+    if (Test-Path -LiteralPath (Join-Path $testRoot 'artifacts\.installer-staging-win-x64')) {
+        throw 'The internal MSI staging directory must be removed after bundling.'
+    }
+    if ((Test-Path -LiteralPath $obsoleteMsi) -or (Test-Path -LiteralPath "$obsoleteMsi.sha256")) {
+        throw 'A stale standalone MSI must not remain among release artifacts.'
+    }
     if ('Archive' -in $result.PSObject.Properties.Name -or 'Sha256' -in $result.PSObject.Properties.Name) { throw 'Obsolete archive output remains.' }
     foreach ($file in @($result.Installers) + @($result.ChecksumFiles)) {
         if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing output: $file" }

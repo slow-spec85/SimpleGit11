@@ -18,8 +18,8 @@ application:
 Each published version provides the following files on its Releases page:
 
 ```text
-SimpleGit11-<version>-win-x64.msi
-SimpleGit11-<version>-win-x64.msi.sha256
+SimpleGit11-<version>-win-x64-setup.exe
+SimpleGit11-<version>-win-x64-setup.exe.sha256
 ```
 
 The automatically generated GitHub `Source code (zip)` and
@@ -42,16 +42,16 @@ Building from source additionally requires:
 
 ## Installation
 
-### MSI with optional SSH
+### WinUI setup with optional SSH
 
-Choose `SimpleGit11-<version>-win-x64.msi`. The installer wizard is in English;
-the installed application still includes both English and Russian localization.
+Choose `SimpleGit11-<version>-win-x64-setup.exe`. The WinUI wizard follows the
+Windows theme and offers English and Russian interface languages.
 The unified package upgrades installations made by either legacy localized MSI.
 Choose current-user installation (default: `%LOCALAPPDATA%\Programs\SimpleGit11`)
 or all-users installation (default: `%ProgramFiles%\SimpleGit11`, administrator
 approval required). The next page allows changing the folder. Core is
 required; SSH and the desktop shortcut are optional, off by default. Re-run the
-original MSI to modify, repair or uninstall. Close the app first. Upgrades preserve
+original setup EXE to modify, repair or uninstall. Close the app first. Upgrades preserve
 feature selection, installation scope, custom folder and settings. Uninstall first
 to change scope or move an existing installation. Do not install over a portable copy.
 
@@ -65,11 +65,11 @@ personal data; it does not offer profile deletion, even with `PURGEUSERDATA=1`.
 
 ## Verifying SHA-256
 
-Place the MSI and its matching `.sha256` file in the same directory,
+Place the setup EXE and its matching `.sha256` file in the same directory,
 then run the following in PowerShell:
 
 ```powershell
-$installerPath = ".\SimpleGit11-1.0.0-win-x64.msi"
+$installerPath = ".\SimpleGit11-1.0.0-win-x64-setup.exe"
 $checksum = "$installerPath.sha256"
 
 $expected = (Get-Content $checksum).Split(
@@ -89,18 +89,18 @@ Replace `1.0.0` with the downloaded version number.
 ## Updating
 
 The About dialog checks the latest stable GitHub Release. When its version is
-newer and the release contains `SimpleGit11-<version>-win-x64.msi` together with
+newer and the release contains `SimpleGit11-<version>-win-x64-setup.exe` together with
 the matching `.sha256` asset, the **Update** button downloads both files, verifies
-the MSI size and SHA-256 checksum, starts the interactive installer, and closes
+the setup EXE size and SHA-256 checksum, starts the interactive installer, and closes
 SimpleGit11. The files are kept under the user's temporary directory. Prerelease
 updates are not offered by the application.
 
 To update the application manually instead:
 
 1. Close every running SimpleGit11 instance.
-2. Download the MSI for the new version.
+2. Download the setup EXE for the new version.
 3. Optionally verify its SHA-256 checksum.
-4. Run the MSI and complete the upgrade.
+4. Run the setup EXE and complete the upgrade.
 5. Run `SimpleGit11.exe`.
 
 Settings and the recent repository list are stored separately:
@@ -142,11 +142,12 @@ Run the built application:
 & ".\SimpleGit11\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\SimpleGit11.exe"
 ```
 
-## Preparing MSI packages and SHA-256 checksums
+## Preparing installers and SHA-256 checksums
 
-Publishing produces the installer only. The script performs a self-contained
-publish, collects licenses, checks required WinUI files, and builds the
-English-language MSI package. WiX SDK 7 and its UI/Util extensions are build dependencies.
+Publishing produces the setup EXE. The script performs a self-contained
+publish, collects licenses, checks required WinUI files, builds the MSI, then
+packages it with the WinUI interface in a WiX Burn bundle. WiX SDK 7 and its
+UI/Util extensions are build dependencies.
 Read the [WiX terms](https://docs.firegiant.com/wix/osmf/) before passing
 `-AcceptWixEula`.
 
@@ -196,11 +197,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 The distributable artifacts under `artifacts` are:
 
 ```text
-SimpleGit11-<version>-win-x64.msi
-SimpleGit11-<version>-win-x64.msi.sha256
+SimpleGit11-<version>-win-x64-setup.exe
+SimpleGit11-<version>-win-x64-setup.exe.sha256
 ```
 
-The `.publish-staging-win-x64` and `.installer-staging-win-x64` directories
+The `.publish-staging-win-x64`, `.installer-staging-win-x64`, `.setup-staging-win-x64`
+and `.bundle-staging-win-x64` directories
 inside `artifacts` are internal build inputs, not separate distributions.
 Older artifacts are not deleted automatically. The obsolete `-Installer` switch
 has been removed: MSI generation is always enabled.
@@ -211,9 +213,9 @@ Publishing fails if required files or licenses are missing. MSI tables, SSH
 isolation and data-removal guards are validated during the build.
 
 The local scripts do not create commits, tags or GitHub Releases, push, install
-the MSI or launch the application. The MSI is intentionally unsigned. Windows
+the setup EXE or launch the application. The setup EXE is intentionally unsigned. Windows
 SmartScreen or an organization policy may warn about or block unsigned files.
-See [the installer guide](SimpleGit11.Installer/README.md) for details.
+See [the installer guide](SimpleGit11.Setup/Msi/README.md) for details.
 
 ## CI and release publication
 
@@ -229,8 +231,8 @@ results, skipped steps, incomplete history or API errors cause the normal build
 and tests to run again. The workflow summary links to the reused run attempt or
 explains why a fresh check is needed. Only read access to Actions is required.
 
-After CI is confirmed, `release.yml` builds one unsigned MSI and its SHA-256
-file from the tag, verifies the checksum, and publishes both in a GitHub Release.
+After CI is confirmed, `release.yml` builds the unsigned setup EXE with its
+SHA-256 file, verifies the checksum, and publishes them in a GitHub Release.
 Release notes come from the tag annotation. Preview and RC tags create prereleases.
 The workflow rechecks the exact `main` commit before publication. Push an
 annotated tag only after the public `main` CI succeeds; do not advance `main`

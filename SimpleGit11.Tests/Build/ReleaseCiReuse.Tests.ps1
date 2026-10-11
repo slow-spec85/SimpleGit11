@@ -160,8 +160,23 @@ try {
     $env:GITHUB_TOKEN = ''
     Assert-Decision 'no token' $false 0
 
-    # Verify the fail-safe wiring, without evaluating untrusted workflow commands.
+    # Verify CI build arguments and release fail-safe wiring.
     [string]$root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $CiReuseScript))
+    [string]$ciWorkflow = Get-Content -LiteralPath (Join-Path $root '.github/workflows/ci.yml') -Raw
+    $ciBuild = [regex]::Match($ciWorkflow, '(?m)^      - name: Build\r?\n        run: (?<Command>[^\r\n]+)')
+    if (-not $ciBuild.Success) { throw 'The CI solution build step is missing.' }
+    # Capture the actual build arguments without invoking MSBuild or relying on user EULA state.
+    function msbuild { $script:ciBuildArguments = @($args) }
+    try {
+        $script:ciBuildArguments = @()
+        & ([scriptblock]::Create($ciBuild.Groups['Command'].Value))
+        foreach ($requiredArgument in @('SimpleGit11.slnx', '/t:Build', '/p:Configuration=Release', '/p:Platform=x64', '/p:AcceptEula=wix7')) {
+            if ($ciBuildArguments -notcontains $requiredArgument) {
+                throw "CI must build Release x64 on a clean runner with explicit WiX EULA acceptance: $requiredArgument"
+            }
+        }
+    }
+    finally { Remove-Item Function:msbuild -ErrorAction SilentlyContinue }
     [string]$workflow = Get-Content -LiteralPath (Join-Path $root '.github/workflows/release.yml') -Raw
     if ($workflow -notmatch '(?m)^  validate-release-tag:\r?\n    name: Validate release tag\r?\n    if: github\.event\.repository\.visibility == ''public''\r?$') {
         throw 'Release validation must be skipped outside public repositories.'
@@ -253,8 +268,9 @@ try {
         if ($releaseArgumentsSeen -notcontains '--verify-tag' -or
             $releaseArgumentsSeen -notcontains '--notes-from-tag' -or
             $releaseArgumentsSeen -contains '--prerelease' -or
-            $releaseArgumentsSeen -notcontains 'artifacts/SimpleGit11-1.2.3-win-x64.msi' -or
-            $releaseArgumentsSeen -notcontains 'artifacts/SimpleGit11-1.2.3-win-x64.msi.sha256') {
+            $releaseArgumentsSeen -notcontains 'artifacts/SimpleGit11-1.2.3-win-x64-setup.exe' -or
+            $releaseArgumentsSeen -notcontains 'artifacts/SimpleGit11-1.2.3-win-x64-setup.exe.sha256' -or
+            $releaseArgumentsSeen -contains 'artifacts/SimpleGit11-1.2.3-win-x64.msi') {
             throw 'Stable release arguments are incorrect.'
         }
         $env:GITHUB_REF_NAME = 'v1.2.4-preview.1'

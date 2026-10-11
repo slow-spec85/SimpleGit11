@@ -1,0 +1,15 @@
+<Project Sdk="WixToolset.Sdk/7.0.0">
+  <PropertyGroup>
+    <OutputType>Bundle</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <Platforms>x64</Platforms>
+    <OutputName>SimpleGit11-$(ReleaseVersion)-win-x64-setup</OutputName>
+    <DefineConstants>$(DefineConstants);MsiVersion=$(MsiVersion);MsiPath=$(MsiPath);SetupDirectory=$(SetupDirectory);SetupExe=$(SetupExe)</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AcceptEula Condition="'$(AcceptWixEula)' == 'true'">wix7</AcceptEula>
+  </PropertyGroup>
+  <Target Name="ValidateBundleInputs" BeforeTargets="BeforeBuild">
+    <Error Condition="'$(AcceptWixEula)' != 'true'" Text="Pass -AcceptWixEula to the release script." />
+    <Error Condition="'$(MsiVersion)' == '' or !Exists('$(MsiPath)') or !Exists('$(SetupExe)')" Text="Build the bundle through the release script after building the MSI and WinUI setup project." />
+  </Target>
+</Project>

@@ -2,6 +2,9 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
+  <Project Path="SimpleGit11.GitEditor/SimpleGit11.GitEditor.csproj">
+    <Platform Project="x64" />
+  </Project>
   <Project Path="External/TextControlBox-WinUI/TextControlBox.Tests/TextControlBox.Tests.csproj">
     <Platform Project="x64" />
     <Deploy />
@@ -16,6 +19,9 @@
     <Platform Project="x64" />
   </Project>
   <Project Path="SimpleGit11/SimpleGit11.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="SimpleGit11.Setup/SimpleGit11.Setup.csproj">
     <Platform Project="x64" />
   </Project>
   <Project Path="SimpleGit11.Plugin.Ssh/SimpleGit11.Plugin.Ssh.csproj">

@@ -35,6 +35,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
     private string? _pendingChangesNotice;
     private string? _pendingChangesNoticeDetails;
     private long _operationSequence;
+    private long _userIdentityLoadVersion;
 
     public MainWindowViewModel(
         IRecentRepositoriesService recentRepositoriesService,
@@ -66,7 +67,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
             RecentRepositories.Add(repository);
         }
 
-        _ = LoadUserNameAsync(null);
+        _ = LoadCurrentUserAsync(null);
     }
 
     public string AppName => _productInfoService.ProductName;
@@ -133,6 +134,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
     [ObservableProperty]
     public partial string CurrentUserName { get; private set; }
 
+    [ObservableProperty]
+    public partial string? CurrentUserEmail { get; private set; }
+
     public Visibility UnsetUserNameVisibility => IsUnsetUser
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -161,7 +165,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         CurrentRepositoryDisplayName = value is null
             ? _localizationService.GetString("NoRepositoryOpen")
             : value.Name;
-        _ = LoadUserNameAsync(value);
+        _ = LoadCurrentUserAsync(value);
     }
 
     partial void OnSelectedRecentRepositoryChanged(RepositoryInfo? value)
@@ -195,7 +199,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         CurrentRepository = null;
         SelectedRemoteName = _localizationService.GetString("NoRemote");
         Remotes = [];
-        _ = LoadUserNameAsync(null);
+        _ = LoadCurrentUserAsync(null);
     }
 
     public void RefreshRecentRepositoriesForExecutionContext()
@@ -222,7 +226,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
 
     public Task RefreshCurrentUserAsync()
     {
-        return LoadUserNameAsync(CurrentRepository);
+        return LoadCurrentUserAsync(CurrentRepository);
     }
 
     public async Task RefreshRemotesAsync()
@@ -368,8 +372,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         return true;
     }
 
-    private async Task LoadUserNameAsync(RepositoryInfo? repository)
+    private async Task LoadCurrentUserAsync(RepositoryInfo? repository)
     {
+        long loadVersion = ++_userIdentityLoadVersion;
+        CurrentUserEmail = null;
         string name = "";
         bool isFromGlobalConfig = false;
         try
@@ -388,9 +394,31 @@ public sealed partial class MainWindowViewModel : ViewModelBase,
         catch
         { }
 
+        string email = "";
+        try
+        {
+            if (repository is not null)
+            {
+                email = await _gitService.Configuration.GetUserEmailAsync(ConfigScope.Local, repository);
+            }
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                email = await _gitService.Configuration.GetUserEmailAsync(ConfigScope.Global, null);
+            }
+        }
+        catch
+        { }
+
+        if (loadVersion != _userIdentityLoadVersion)
+        {
+            return;
+        }
+
         IsCurrentUserFromGlobalConfig = isFromGlobalConfig;
         IsUnsetUser = string.IsNullOrWhiteSpace(name);
         CurrentUserName = IsUnsetUser ? _localizationService.GetString("NoUser") : name;
+        CurrentUserEmail = string.IsNullOrWhiteSpace(email) ? null : email;
     }
 
     public void UpdateCurrentBranch(string branchName)

@@ -45,10 +45,10 @@ public sealed class ProductUpdateServiceTests
     [TestMethod]
     public async Task DownloadInstallerAsync_ValidChecksum_WritesVerifiedInstaller()
     {
-        byte[] installerBytes = Encoding.UTF8.GetBytes("fixture MSI payload");
+        byte[] installerBytes = Encoding.UTF8.GetBytes("fixture setup payload");
         string checksum = Convert.ToHexString(SHA256.HashData(installerBytes));
         QueueHttpMessageHandler handler = new();
-        handler.Enqueue(CreateTextResponse($"{checksum}  SimpleGit11-1.2.3-win-x64.msi"));
+        handler.Enqueue(CreateTextResponse($"{checksum}  SimpleGit11-1.2.3-win-x64-setup.exe"));
         handler.Enqueue(CreateBinaryResponse(installerBytes));
         using TemporaryDirectory directory = new();
         using ProductUpdateService service = CreateService(handler, directory.Path);
@@ -60,18 +60,18 @@ public sealed class ProductUpdateServiceTests
 
         CollectionAssert.AreEqual(installerBytes, await File.ReadAllBytesAsync(path));
         Assert.AreEqual(2, handler.Requests.Count);
-        StringAssert.EndsWith(handler.Requests[0].AbsolutePath, ".msi.sha256");
-        StringAssert.EndsWith(handler.Requests[1].AbsolutePath, ".msi");
+        StringAssert.EndsWith(handler.Requests[0].AbsolutePath, "-setup.exe.sha256");
+        StringAssert.EndsWith(handler.Requests[1].AbsolutePath, ".exe");
         Assert.AreEqual(0, Directory.GetFiles(directory.Path, "*.partial", SearchOption.AllDirectories).Length);
     }
 
     [TestMethod]
     public async Task DownloadInstallerAsync_ChecksumMismatch_RemovesPartialFile()
     {
-        byte[] installerBytes = Encoding.UTF8.GetBytes("fixture MSI payload");
+        byte[] installerBytes = Encoding.UTF8.GetBytes("fixture setup payload");
         QueueHttpMessageHandler handler = new();
         handler.Enqueue(CreateTextResponse(
-            $"{new string('0', 64)}  SimpleGit11-1.2.3-win-x64.msi"));
+            $"{new string('0', 64)}  SimpleGit11-1.2.3-win-x64-setup.exe"));
         handler.Enqueue(CreateBinaryResponse(installerBytes));
         using TemporaryDirectory directory = new();
         using ProductUpdateService service = CreateService(handler, directory.Path);
@@ -93,9 +93,34 @@ public sealed class ProductUpdateServiceTests
         ProductReleaseInfo release = CreateRelease("1.2.3") with
         {
             Installer = new ProductReleaseAsset(
-                "SimpleGit11-1.2.3-win-x64.msi",
-                new Uri("https://example.com/SimpleGit11-1.2.3-win-x64.msi"),
-                new Uri("https://example.com/SimpleGit11-1.2.3-win-x64.msi.sha256"),
+                "SimpleGit11-1.2.3-win-x64-setup.exe",
+                new Uri("https://example.com/SimpleGit11-1.2.3-win-x64-setup.exe"),
+                new Uri("https://example.com/SimpleGit11-1.2.3-win-x64-setup.exe.sha256"),
+                100)
+        };
+
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => service.DownloadInstallerAsync(
+            release,
+            null,
+            CancellationToken.None));
+
+        Assert.AreEqual(0, handler.Requests.Count);
+    }
+
+    [TestMethod]
+    public async Task DownloadInstallerAsync_MsiAsset_IsRejectedBeforeNetworkRequest()
+    {
+        QueueHttpMessageHandler handler = new();
+        using TemporaryDirectory directory = new();
+        using ProductUpdateService service = CreateService(handler, directory.Path);
+        string name = "SimpleGit11-1.2.3-win-x64.msi";
+        string baseUrl = "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.2.3/";
+        ProductReleaseInfo release = CreateRelease("1.2.3") with
+        {
+            Installer = new ProductReleaseAsset(
+                name,
+                new Uri(baseUrl + name),
+                new Uri(baseUrl + name + ".sha256"),
                 100)
         };
 
@@ -116,7 +141,7 @@ public sealed class ProductUpdateServiceTests
 
     private static ProductReleaseInfo CreateRelease(string version, long size = 100)
     {
-        string fileName = $"SimpleGit11-{version}-win-x64.msi";
+        string fileName = $"SimpleGit11-{version}-win-x64-setup.exe";
         string baseUrl = $"https://github.com/slow-spec85/SimpleGit11/releases/download/v{version}/";
         return new ProductReleaseInfo(
             version,

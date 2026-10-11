@@ -79,4 +79,13 @@ public sealed partial class ChangesPage : Page, IPageRefreshTarget
 
         ViewModel.SetSelectedChanges(selectedChanges, lastSelectedChange);
     }
+
+    private void ChangedFilesFilterToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleButton button)
+        {
+            button.IsChecked = ViewModel.IsFileFilterApplied;
+            FlyoutBase.ShowAttachedFlyout(button);
+        }
+    }
 }

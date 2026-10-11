@@ -37,6 +37,10 @@ try {
             [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($view)
         }
     }
+    $tables = @(Read-MsiRows 'SELECT `Name` FROM `_Tables`' 1)
+    if (@($tables | Where-Object { $_[0] -in @('Dialog', 'Control', 'ControlEvent') }).Count -ne 0) {
+        throw 'The internal MSI must not contain the removed wizard tables.'
+    }
     $launchConditions = @(Read-MsiRows 'SELECT `Condition` FROM `LaunchCondition`' 1)
     foreach ($condition in $launchConditions) {
         if ($condition[0] -match '\b(WindowsBuild|VersionNT|VersionNT64)\b') {
@@ -57,31 +61,6 @@ try {
         }
     }
     finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($session) }
-    $dialogs = @(Read-MsiRows 'SELECT `Dialog` FROM `Dialog`' 1)
-    if (@($dialogs | Where-Object { $_[0] -match 'LicenseAgreement' }).Count -ne 0) {
-        throw 'The license-acceptance page must not be included in the MSI.'
-    }
-    $events = @(Read-MsiRows 'SELECT `Dialog_`, `Control_`, `Event`, `Argument`, `Condition`, `Ordering` FROM `ControlEvent`' 6 | Sort-Object { [int]$_[5] })
-    if (@($events | Where-Object { $_[4] -match 'LicenseAccepted' }).Count -ne 0) {
-        throw 'MSI navigation must not require license acceptance.'
-    }
-    foreach ($expected in @(
-        @('WelcomeDlg', 'Next', 'SimpleGit11ScopeDlg', 'NOT Installed AND NOT EXISTINGUSERFOLDER AND NOT EXISTINGMACHINEFOLDER'),
-        @('WelcomeDlg', 'Next', 'CustomizeDlg', 'NOT Installed AND (EXISTINGUSERFOLDER OR EXISTINGMACHINEFOLDER)'),
-        @('SimpleGit11ScopeDlg', 'Next', 'InstallDirDlg', '1'),
-        @('InstallDirDlg', 'Next', 'CustomizeDlg', '1'),
-        @('CustomizeDlg', 'Back', 'InstallDirDlg', 'NOT Installed AND NOT EXISTINGUSERFOLDER AND NOT EXISTINGMACHINEFOLDER'),
-        @('CustomizeDlg', 'Back', 'WelcomeDlg', 'NOT Installed AND (EXISTINGUSERFOLDER OR EXISTINGMACHINEFOLDER)'),
-        @('CustomizeDlg', 'Back', 'MaintenanceTypeDlg', 'Installed'),
-        @('MaintenanceTypeDlg', 'ChangeButton', 'CustomizeDlg', '1'),
-        @('MaintenanceTypeDlg', 'RepairButton', 'VerifyReadyDlg', '1'),
-        @('MaintenanceTypeDlg', 'RemoveButton', 'VerifyReadyDlg', '1')
-    )) {
-        if (@($events | Where-Object {
-            $_[0] -eq $expected[0] -and $_[1] -eq $expected[1] -and $_[2] -eq 'NewDialog' -and
-            $_[3] -eq $expected[2] -and $_[4] -eq $expected[3]
-        }).Count -ne 1) { throw "Invalid MSI navigation: $($expected -join ' / ')" }
-    }
     $features = @(Read-MsiRows 'SELECT `Feature`, `Level` FROM `Feature`' 2)
     foreach ($expected in @(@('Core', '1'), @('Ssh', '2'), @('Desktop', '2'))) {
         if (@($features | Where-Object { $_[0] -eq $expected[0] -and $_[1] -eq $expected[1] }).Count -ne 1) {
@@ -101,14 +80,8 @@ try {
     if ($cleanup.Count -ne 1 -or $cleanup[0][0] -ne 'SimpleGit11UserDataPath' -or $cleanup[0][1] -ne '2' -or
         $cleanup[0][2] -notmatch 'PURGEUSERDATA = "1"' -or $cleanup[0][2] -notmatch 'NOT UPGRADINGPRODUCTCODE' -or
         $cleanup[0][2] -notmatch 'NOT ALLUSERS' -or $cleanup[0][2] -notmatch 'REMOVE ~= "ALL"') { throw 'Unsafe MSI data cleanup configuration.' }
-    $sequence = @(Read-MsiRows 'SELECT `Action`, `Sequence` FROM `InstallUISequence`' 2)
-    $purge = @($sequence | Where-Object { $_[0] -eq 'PurgeUserDataDlg' })
-    $execute = @($sequence | Where-Object { $_[0] -eq 'ExecuteAction' })
-    if ($purge.Count -ne 1 -or $execute.Count -ne 1 -or [int]$purge[0][1] -ge [int]$execute[0][1]) {
-        throw 'The complete-removal dialog must run before ExecuteAction.'
-    }
     $properties = @(Read-MsiRows 'SELECT `Property`, `Value` FROM `Property`' 2)
-    foreach ($expected in @(@('ALLUSERS', '2'), @('MSIINSTALLPERUSER', '1'), @('WIXUI_INSTALLDIR', 'INSTALLFOLDER'))) {
+    foreach ($expected in @(@('ALLUSERS', '2'), @('MSIINSTALLPERUSER', '1'))) {
         if (@($properties | Where-Object { $_[0] -eq $expected[0] -and $_[1] -eq $expected[1] }).Count -ne 1) {
             throw "Invalid dual-purpose MSI default: $($expected -join '=')"
         }
@@ -137,20 +110,6 @@ try {
         throw 'Data cleanup must use the fixed application data directory.'
     }
     $executeSequence = @(Read-MsiRows 'SELECT `Action`, `Sequence` FROM `InstallExecuteSequence`' 2)
-    foreach ($actionSequence in @($sequence, $executeSequence)) {
-        [int]$appSearch = @($actionSequence | Where-Object { $_[0] -eq 'AppSearch' })[0][1]
-        [int]$restoreScope = @($actionSequence | Where-Object { $_[0] -eq 'RestoreMachineScope' })[0][1]
-        [int]$findRelated = @($actionSequence | Where-Object { $_[0] -eq 'FindRelatedProducts' })[0][1]
-        [int]$launch = @($actionSequence | Where-Object { $_[0] -eq 'LaunchConditions' })[0][1]
-        [int]$costFinalize = @($actionSequence | Where-Object { $_[0] -eq 'CostFinalize' })[0][1]
-        if ($appSearch -ge $restoreScope -or $restoreScope -ge $findRelated -or $findRelated -ge $launch) {
-            throw 'Scope detection/restoration must precede related-product and launch checks in both sequences.'
-        }
-        foreach ($restoreAction in @('RestoreUserFolder', 'RestoreMachineFolder')) {
-            [int]$restorePath = @($actionSequence | Where-Object { $_[0] -eq $restoreAction })[0][1]
-            if ($restorePath -le $appSearch -or $restorePath -ge $costFinalize) { throw 'Restore the saved folder before MSI costing.' }
-        }
-    }
     $setPathSequence = @($executeSequence | Where-Object { $_[0] -eq $setDataPath[0][0] })
     $removeFoldersSequence = @($executeSequence | Where-Object { $_[0] -eq 'Wix4RemoveFoldersEx_X64' })
     $costSequence = @($executeSequence | Where-Object { $_[0] -eq 'CostInitialize' })
@@ -159,9 +118,6 @@ try {
         [int]$removeFoldersSequence[0][1] -ge [int]$costSequence[0][1]) {
         throw 'Data cleanup path must be resolved before folder enumeration and MSI costing.'
     }
-    . (Join-Path $PSScriptRoot 'Test-InstallerSession.ps1')
-    Assert-InstallerSessionBehavior -Installer $installer -Path $fullPath -Actions $actions -Events $events `
-        -LaunchConditions $launchConditions -CleanupCondition $cleanup[0][2]
     if ($WixDirectory) {
         [string[]]$allowedPaths = @(
             'Microsoft.ui.xaml.dll', 'Microsoft.UI.Xaml.Phone.dll',

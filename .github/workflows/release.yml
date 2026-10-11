@@ -93,7 +93,7 @@ jobs:
     uses: ./.github/workflows/ci.yml
 
   publish-release:
-    name: Publish MSI and GitHub release
+    name: Publish setup and GitHub release
     needs: [validate-release-tag, build-and-test]
     if: ${{ !cancelled() && github.repository == 'slow-spec85/SimpleGit11' && needs.validate-release-tag.result == 'success' && (needs.build-and-test.result == 'success' || (needs.build-and-test.result == 'skipped' && needs.validate-release-tag.outputs.reuse-ci == 'true')) }}
     runs-on: windows-2025
@@ -126,16 +126,16 @@ jobs:
           & ./SimpleGit11/Build/Publish-Release.ps1 -AcceptWixEula | Out-Host
 
           $version = $env:GITHUB_REF_NAME.Substring(1)
-          $installer = Join-Path 'artifacts' "SimpleGit11-$version-win-x64.msi"
+          $installer = Join-Path 'artifacts' "SimpleGit11-$version-win-x64-setup.exe"
           $checksum = "$installer.sha256"
           if (-not (Test-Path -LiteralPath $installer -PathType Leaf) -or
               -not (Test-Path -LiteralPath $checksum -PathType Leaf)) {
-            throw 'The expected MSI and SHA-256 files were not produced.'
+            throw 'The expected setup EXE and SHA-256 file were not produced.'
           }
           $expectedHash = ((Get-Content -LiteralPath $checksum -Raw).Trim() -split '\s+')[0]
           $actualHash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash
           if ($expectedHash -ne $actualHash) {
-            throw 'The MSI checksum does not match the built installer.'
+            throw 'The setup EXE checksum does not match the built installer.'
           }
 
       - name: Publish GitHub release from tag annotation
@@ -154,9 +154,8 @@ jobs:
             throw "Release tag '$tag' no longer points to the current public main commit."
           }
           $version = $tag.Substring(1)
-          $installer = "artifacts/SimpleGit11-$version-win-x64.msi"
-          $checksum = "$installer.sha256"
-          $releaseArguments = @('release', 'create', $tag, $installer, $checksum,
+          $setup = "artifacts/SimpleGit11-$version-win-x64-setup.exe"
+          $releaseArguments = @('release', 'create', $tag, $setup, "$setup.sha256",
             '--verify-tag', '--notes-from-tag', '--title', "SimpleGit11 $version")
           if ($tag -match '-(?:preview|rc)\.') {
             $releaseArguments += @('--prerelease', '--latest=false')

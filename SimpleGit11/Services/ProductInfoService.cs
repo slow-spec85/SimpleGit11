@@ -149,7 +149,7 @@ public sealed class ProductInfoService : IProductInfoService, IDisposable
         GitHubRelease release,
         string version)
     {
-        string installerName = $"SimpleGit11-{version}-win-x64.msi";
+        string installerName = $"SimpleGit11-{version}-win-x64-setup.exe";
         GitHubReleaseAsset? installer = release.Assets.FirstOrDefault(asset =>
             string.Equals(asset.Name, installerName, StringComparison.Ordinal));
         GitHubReleaseAsset? checksum = release.Assets.FirstOrDefault(asset =>

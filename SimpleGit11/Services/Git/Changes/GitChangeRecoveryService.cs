@@ -10,10 +10,12 @@ namespace SimpleGit11.Services;
 public sealed class GitChangeRecoveryService : IGitChangeRecoveryService
 {
     private readonly IGitCommandRunner _commandRunner;
+    private readonly IGitEditorService? _editorService;
 
-    public GitChangeRecoveryService(IGitCommandRunner? commandRunner = null)
+    public GitChangeRecoveryService(IGitCommandRunner? commandRunner = null, IGitEditorService? editorService = null)
     {
         _commandRunner = commandRunner ?? new GitCommandRunner();
+        _editorService = editorService;
     }
 
     public async Task DiscardFileAsync(RepositoryInfo repository, GitChangedFile changedFile)
@@ -101,6 +103,16 @@ public sealed class GitChangeRecoveryService : IGitChangeRecoveryService
         string action,
         bool disableEditor = false)
     {
+        if (operationKind == GitOperationKind.Rebase && _editorService is not null)
+        {
+            GitCommandResult result = await _editorService.RunAsync(repository, ["rebase", action]);
+            if (!result.IsSuccess)
+            {
+                throw new GitCommandException(result.StandardError + result.StandardOutput, result.ExitCode);
+            }
+            return;
+        }
+
         string command = operationKind switch
         {
             GitOperationKind.Rebase => "rebase",

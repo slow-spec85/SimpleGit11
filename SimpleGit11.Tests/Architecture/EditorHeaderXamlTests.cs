@@ -9,6 +9,71 @@ public sealed class EditorHeaderXamlTests
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
 
     [TestMethod]
+    public void ChangesFileFilter_PrecedesLineCountersAndFlyoutContainsOnlySearchInput()
+    {
+        XDocument document = LoadApplicationXaml("Pages", "ChangesPage.xaml");
+        XElement header = FindByXName(document, "ChangedFilesHeader");
+        XElement filter = FindByXName(document, "ChangedFilesFilterToggleButton");
+        Assert.AreEqual(header, filter.Parent);
+        Assert.AreEqual("1", RequiredAttribute(filter, "Grid.Column"));
+        Assert.AreEqual("2", RequiredAttribute(FindByXName(document, "AddedLinesHeaderTextBlock").Parent!, "Grid.Column"));
+        Assert.AreEqual("{x:Bind ViewModel.IsFileFilterApplied, Mode=OneWay}", RequiredAttribute(filter, "IsChecked"));
+
+        XElement flyout = filter.Descendants().Single(element => element.Name.LocalName == "Flyout");
+        XElement[] content = flyout.Elements().Where(element => !element.Name.LocalName.Contains('.')).ToArray();
+        Assert.HasCount(1, content);
+        Assert.AreEqual("TextBox", content[0].Name.LocalName);
+        Assert.AreEqual("ChangedFilesSearchTextBox", RequiredXamlAttribute(content[0], "Name"));
+        Assert.AreEqual("{x:Bind ViewModel.FileSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}",
+            RequiredAttribute(content[0], "Text"));
+        Assert.AreEqual("{x:Bind ViewModel.VisibleChanges, Mode=OneWay}",
+            RequiredAttribute(FindByXName(document, "ChangedFilesListView"), "ItemsSource"));
+    }
+
+    [TestMethod]
+    public void StashFlyout_AllowsWiderHeaderWithoutMovingCommandsOrHidingScrollbars()
+    {
+        XDocument document = LoadApplicationXaml("Dialogs", "StashDialog.xaml");
+        XElement root = FindByXName(document, "RootGrid");
+        XElement presenterWidth = document.Descendants().Single(element =>
+            (string?)element.Attribute("Property") == "MaxWidth");
+        Assert.AreEqual("800", RequiredAttribute(presenterWidth, "Value"));
+        Assert.IsNull(root.Attribute("MaxWidth"));
+
+        XElement header = FindByXUid(document, "StashDialogTitleTextBlock").Parent!.Parent!;
+        Assert.AreEqual(root, header.Parent);
+        Assert.AreEqual("Horizontal", (string?)header.Attribute("Orientation"));
+        Assert.IsTrue(header.Elements().Any(element => element.Name.LocalName == "CommandBar"));
+
+        XElement list = root.Elements().Single(element => element.Name.LocalName == "ListView");
+        Assert.AreEqual("DisplayName", RequiredAttribute(list, "DisplayMemberPath"));
+        Assert.IsFalse(document.Descendants().Attributes().Any(attribute =>
+            attribute.Name.LocalName.Contains("HorizontalScroll", StringComparison.Ordinal)
+            || attribute.Value.Contains("HorizontalScroll", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void HistoryEditingEntryPointHasNoAdvancedEditorFlyout()
+    {
+        XDocument document = LoadApplicationXaml("Pages", "HistoryPage.xaml");
+        XElement button = document.Descendants().Single(element =>
+            (string?)element.Attribute("AutomationProperties.AutomationId") == "StartHistoryEditButton");
+        Assert.AreEqual("AppBarButton", button.Name.LocalName);
+        StringAssert.Contains(RequiredAttribute(button, "Command"), "ViewModel.StartHistoryEditCommand");
+        Assert.IsFalse(document.Descendants().Any(element =>
+            (string?)element.Attribute("AutomationProperties.AutomationId") == "AdvancedHistoryEditorButton"));
+    }
+
+    [TestMethod]
+    public void CommitSelectionModeSupportsHistoryRangeAndSingleDraftSelection()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
+        XElement list = FindByXName(document, "HistoryCommitsListView");
+        Assert.AreEqual("Single", RequiredAttribute(list, "SelectionMode"));
+        Assert.IsNull(list.Attribute("SelectedItem"), "Selection is synchronized explicitly so updating the focused row cannot clear a dragged range.");
+    }
+
+    [TestMethod]
     public void CommitBrowserFilterFlyout_BindsEveryFilterAndResetAction()
     {
         XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
@@ -16,6 +81,9 @@ public sealed class EditorHeaderXamlTests
 
         Assert.IsNotNull(filterToggle.Descendants().SingleOrDefault(element => element.Name.LocalName == "Flyout"));
         AssertBinding(document, "MainlineOnlyToggleSwitch", "IsOn", "ViewModel.IsMainlineOnly");
+        AssertBinding(document, "TagsOnlyToggleSwitch", "IsOn", "ViewModel.IsTagsOnly");
+        XElement mainline = document.Descendants().Single(element => (string?)element.Attribute("{http://schemas.microsoft.com/winfx/2006/xaml}Uid") == "MainlineOnlyToggleSwitch");
+        Assert.AreEqual("TagsOnlyToggleSwitch", (string?)mainline.ElementsAfterSelf().First().Attribute("{http://schemas.microsoft.com/winfx/2006/xaml}Uid"));
         AssertBinding(document, "CommitDateFromPicker", "Date", "ViewModel.FilterFromDate");
         AssertDescendantBinding(
             document,
@@ -46,7 +114,7 @@ public sealed class EditorHeaderXamlTests
         XElement graph = template.Descendants().Single(element => element.Name.LocalName == "CommitGraphCell");
 
         StringAssert.Contains(RequiredAttribute(list, "ItemsSource"), "ViewModel.CommitRows");
-        StringAssert.Contains(RequiredAttribute(list, "SelectedItem"), "ViewModel.SelectedCommitRow");
+        Assert.AreEqual("HistoryCommitsListView_SelectionChanged", RequiredAttribute(list, "SelectionChanged"));
         StringAssert.Contains(RequiredAttribute(graph, "Graph"), "Graph");
         StringAssert.Contains(RequiredAttribute(graph, "Visibility"), "ShowGraph");
     }

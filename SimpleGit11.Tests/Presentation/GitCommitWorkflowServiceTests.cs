@@ -188,6 +188,8 @@ public sealed class GitCommitWorkflowServiceTests
 
         public Task ShowSshPublicKeyAsync(string publicKey) => throw new NotSupportedException();
 
+        public Task<int?> ShowHistoryParentDialogAsync(GitCommit commit) => Task.FromResult<int?>(null);
+
         public Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit) =>
             throw new NotSupportedException();
 
@@ -197,6 +199,9 @@ public sealed class GitCommitWorkflowServiceTests
             GitCherryPickOptions options) => throw new NotSupportedException();
 
         public Task<string?> ShowTextInputAsync(TextInputDialogRequest request) =>
+            throw new NotSupportedException();
+
+        public Task<string?> ShowSelectRevisionAsync(RepositoryInfo repository, string initialValue, GitRevisionKind selectedKind) =>
             throw new NotSupportedException();
 
         public Task<CommitDialogResult?> ShowCommitDialogAsync(CommitDialogRequest request) =>

@@ -296,6 +296,8 @@ public sealed class DialogValidationViewModelTests
 
     private sealed class TestGitService : IGitService
     {
+        public SimpleGit11.Services.Git.Execution.IGitEditorService Editor => throw new NotSupportedException();
+
         public TestGitService(IReadOnlyList<GitRevisionSuggestion>? suggestions)
         {
             Revisions = new TestRevisionService(suggestions);

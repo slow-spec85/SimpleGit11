@@ -228,16 +228,23 @@ if ($DevelopmentBuild -and $artifactVersion -ne $developmentVersionOverride) {
 }
 
 # The published directory is an internal MSI payload, not a separate distribution.
-[string[]]$installerPaths = @(& (Join-Path $PSScriptRoot 'Build-Installer.ps1') `
+[string[]]$msiPaths = @(& (Join-Path $PSScriptRoot 'Build-Installer.ps1') `
     -CoreDirectory $stagingDirectory -ReleaseVersion $artifactVersion `
     -InstallerVersion $msiVersion -AcceptWixEula:$AcceptWixEula)
+[string[]]$installerPaths = @(& (Join-Path $PSScriptRoot 'Build-Setup.ps1') `
+    -MsiPath $msiPaths[0] -ReleaseVersion $artifactVersion `
+    -InstallerVersion $msiVersion -AcceptWixEula:$AcceptWixEula)
+Remove-DirectoryUnderRoot -Path (Join-Path $artifactDirectory '.installer-staging-win-x64') -Root $repositoryRoot
+[string]$obsoleteMsi = Join-Path $artifactDirectory "SimpleGit11-$artifactVersion-win-x64.msi"
+Remove-FileUnderRoot -Path $obsoleteMsi -Root $repositoryRoot
+Remove-FileUnderRoot -Path "$obsoleteMsi.sha256" -Root $repositoryRoot
 [string[]]$checksumPaths = @($installerPaths | ForEach-Object { "$_.sha256" })
 
 Write-Host ""
 Write-Host "Publication artifacts are ready:" -ForegroundColor Green
 Write-Host "  Application version: $artifactVersion"
 Write-Host "  MSI product version: $msiVersion"
-Write-Host "  MSI:                 $($installerPaths -join ', ')"
+Write-Host "  Setup EXE:           $($installerPaths -join ', ')"
 Write-Host "  SHA-256:             $($checksumPaths -join ', ')"
 
 [pscustomobject]@{

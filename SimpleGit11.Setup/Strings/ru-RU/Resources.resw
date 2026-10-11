@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="WindowTitle" xml:space="preserve">
+    <value>SimpleGit11 Installer</value>
+  </data>
+  <data name="LanguageLabel" xml:space="preserve">
+    <value>Язык установщика</value>
+  </data>
+  <data name="DetectingTitle" xml:space="preserve">
+    <value>Проверка установки</value>
+  </data>
+  <data name="WelcomeTitle" xml:space="preserve">
+    <value>Установка SimpleGit11</value>
+  </data>
+  <data name="ScopeTitle" xml:space="preserve">
+    <value>Выберите пользователей</value>
+  </data>
+  <data name="FolderTitle" xml:space="preserve">
+    <value>Выберите папку установки</value>
+  </data>
+  <data name="FeaturesTitle" xml:space="preserve">
+    <value>Выберите компоненты</value>
+  </data>
+  <data name="MaintenanceTitle" xml:space="preserve">
+    <value>Управление SimpleGit11</value>
+  </data>
+  <data name="PurgeTitle" xml:space="preserve">
+    <value>Удаление SimpleGit11</value>
+  </data>
+  <data name="ReadyTitle" xml:space="preserve">
+    <value>Подтверждение действия</value>
+  </data>
+  <data name="ProgressTitle" xml:space="preserve">
+    <value>Выполнение</value>
+  </data>
+  <data name="ResultTitle" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="DetectingText" xml:space="preserve">
+    <value>Поиск установленной версии…</value>
+  </data>
+  <data name="WelcomeText" xml:space="preserve">
+    <value>Этот мастер установит SimpleGit11 на компьютер.</value>
+  </data>
+  <data name="WelcomeNote" xml:space="preserve">
+    <value>Git не входит в комплект. Для работы с локальными репозиториями установите Git отдельно.</value>
+  </data>
+  <data name="ScopeText" xml:space="preserve">
+    <value>Выберите, будет ли приложение доступно только вам или всем пользователям компьютера.</value>
+  </data>
+  <data name="UserScope" xml:space="preserve">
+    <value>Только для меня</value>
+  </data>
+  <data name="MachineScope" xml:space="preserve">
+    <value>Для всех пользователей</value>
+  </data>
+  <data name="MachineScopeNote" xml:space="preserve">
+    <value>Для установки всем пользователям потребуется разрешение администратора.</value>
+  </data>
+  <data name="FolderText" xml:space="preserve">
+    <value>Выберите папку для файлов приложения.</value>
+  </data>
+  <data name="FolderLabel" xml:space="preserve">
+    <value>Папка установки</value>
+  </data>
+  <data name="Browse" xml:space="preserve">
+    <value>Обзор…</value>
+  </data>
+  <data name="InvalidFolder" xml:space="preserve">
+    <value>Укажите полный путь к папке.</value>
+  </data>
+  <data name="FeaturesText" xml:space="preserve">
+    <value>Основные файлы и ярлык в меню «Пуск» устанавливаются всегда. Дополнительные компоненты:</value>
+  </data>
+  <data name="SshFeature" xml:space="preserve">
+    <value>Модуль SSH</value>
+  </data>
+  <data name="DesktopFeature" xml:space="preserve">
+    <value>Ярлык на рабочем столе</value>
+  </data>
+  <data name="MaintenanceText" xml:space="preserve">
+    <value>Выберите действие для установленного приложения.</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>Изменить компоненты</value>
+  </data>
+  <data name="Repair" xml:space="preserve">
+    <value>Восстановить</value>
+  </data>
+  <data name="Remove" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="PurgeText" xml:space="preserve">
+    <value>Выберите, нужно ли сохранить данные приложения.</value>
+  </data>
+  <data name="PurgeData" xml:space="preserve">
+    <value>Также удалить настройки и данные SimpleGit11</value>
+  </data>
+  <data name="PurgeWarning" xml:space="preserve">
+    <value>Будут удалены настройки, профили SSH, история и журналы текущего пользователя. Сначала сохраните нужные данные.</value>
+  </data>
+  <data name="ReadyText" xml:space="preserve">
+    <value>Проверьте действие и продолжайте.</value>
+  </data>
+  <data name="ProgressText" xml:space="preserve">
+    <value>Применение изменений…</value>
+  </data>
+  <data name="Cancelling" xml:space="preserve">
+    <value>Отмена…</value>
+  </data>
+  <data name="SuccessText" xml:space="preserve">
+    <value>Операция завершена.</value>
+  </data>
+  <data name="FailureText" xml:space="preserve">
+    <value>Не удалось завершить операцию.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Далее</value>
+  </data>
+  <data name="EnglishLanguage" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="RussianLanguage" xml:space="preserve">
+    <value>Русский</value>
+  </data>
+  <data name="SummaryRemoveAndPurge" xml:space="preserve">
+    <value>SimpleGit11 и данные текущего пользователя будут удалены.</value>
+  </data>
+  <data name="SummaryRemove" xml:space="preserve">
+    <value>SimpleGit11 будет удалён. Данные приложения сохранятся.</value>
+  </data>
+  <data name="SummaryRepair" xml:space="preserve">
+    <value>Установка SimpleGit11 будет восстановлена.</value>
+  </data>
+  <data name="SummaryChange" xml:space="preserve">
+    <value>Выбранные компоненты будут применены.</value>
+  </data>
+  <data name="SummaryUpdate" xml:space="preserve">
+    <value>Установленная версия будет обновлена. Папка и область установки сохранятся.</value>
+  </data>
+  <data name="SummaryInstall" xml:space="preserve">
+    <value>SimpleGit11 будет установлен в папку {0}.</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="Install" xml:space="preserve">
+    <value>Установить</value>
+  </data>
+  <data name="UpdateWelcomeTitle" xml:space="preserve">
+    <value>Обновление SimpleGit11</value>
+  </data>
+  <data name="UpdateWelcomeText" xml:space="preserve">
+    <value>Этот мастер обновит установленную версию SimpleGit11.</value>
+  </data>
+  <data name="UpdateWelcomeNote" xml:space="preserve">
+    <value>Папка установки и область установки будут сохранены. Нажмите «Далее», чтобы проверить действие перед обновлением.</value>
+  </data>
+</root>

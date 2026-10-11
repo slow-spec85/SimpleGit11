@@ -33,6 +33,29 @@ public sealed partial class LocalizationResourceFormattingTests
             $"Every localization resource must be valid and use the canonical multiline format:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
     }
 
+    [TestMethod]
+    public void SetupResources_ContainMatchingLanguageKeys()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string resourceRoot = Path.Combine(repositoryRoot, "SimpleGit11.Setup", "Strings");
+        string englishPath = Path.Combine(resourceRoot, "en-US", "Resources.resw");
+        string russianPath = Path.Combine(resourceRoot, "ru-RU", "Resources.resw");
+
+        HashSet<string> englishKeys = ReadResourceKeys(englishPath);
+        HashSet<string> russianKeys = ReadResourceKeys(russianPath);
+
+        CollectionAssert.AreEquivalent(englishKeys.ToArray(), russianKeys.ToArray());
+    }
+
+    private static HashSet<string> ReadResourceKeys(string path)
+    {
+        return XDocument.Load(path).Root!
+            .Elements("data")
+            .Select(element => (string?)element.Attribute("name"))
+            .OfType<string>()
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

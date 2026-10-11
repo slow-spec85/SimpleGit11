@@ -51,6 +51,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
 
     public void Receive(RepositoryChangedMessage message)
     {
+        CloseHistoryDraft();
         ClearError();
         ClearCommits();
         ClearCommitDetails();
@@ -62,15 +63,11 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
 
     protected override bool ShowsCommitGraph => true;
 
-    public bool CanEditSelectedCommitMessage =>
-        SelectedCommit is not null
-        && SelectedCommit.IsSynchronized == false
-        && AllCommits.FirstOrDefault()?.Hash == SelectedCommit.Hash
-        && !IsGitOperationRunning;
+    public bool CanEditSelectedCommitMessage => IsHistoryEditing ? CanChangeDraftCommit() : CanQuickHistoryChange();
 
     private bool CanRunHistoryOperation()
     {
-        return SelectedCommit is not null && !IsGitOperationRunning;
+        return SelectedCommit is not null && !IsGitOperationRunning && !IsHistoryEditing;
     }
 
     [RelayCommand(CanExecute = nameof(CanRefreshHistory), FlowExceptionsToTaskScheduler = true)]
@@ -81,7 +78,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
 
     private bool CanRefreshHistory()
     {
-        return !IsGitOperationRunning;
+        return !IsGitOperationRunning && !IsHistoryEditing;
     }
 
     [RelayCommand(CanExecute = nameof(CanLoadMoreHistory), FlowExceptionsToTaskScheduler = true)]
@@ -92,7 +89,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
 
     private bool CanLoadMoreHistory()
     {
-        return HasMoreCommits && !IsGitOperationRunning;
+        return HasMoreCommits && !IsGitOperationRunning && !IsHistoryEditing;
     }
 
     [RelayCommand(CanExecute = nameof(CanRunHistoryOperation), FlowExceptionsToTaskScheduler = true)]
@@ -159,13 +156,13 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
 
     partial void OnProgressMessageChanged(string value)
     {
-        PublishOperationState(IsGitOperationRunning, ProgressMessage);
+        PublishOperationState(OperationProgressVisibility == Visibility.Visible, ProgressMessage);
     }
 
     partial void OnIsGitOperationRunningChanged(bool value)
     {
-        UpdateCommandStates();
-        PublishOperationState(value, ProgressMessage);
+        NotifyHistoryEditState();
+        PublishOperationState(OperationProgressVisibility == Visibility.Visible, ProgressMessage);
     }
 
     [ObservableProperty]
@@ -191,6 +188,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
 
     public async Task RefreshHistoryAsync()
     {
+        if (IsHistoryEditing) { return; }
         await RunGitOperationAsync(async () =>
         {
             await RefreshHistoryCoreAsync();
@@ -353,62 +351,8 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
         });
     }
 
-    protected override async Task EditCommitMessageCoreAsync()
-    {
-        if (_mainWindowViewModel.CurrentRepository is null || SelectedCommit is null || !CanEditSelectedCommitMessage)
-        {
-            return;
-        }
-
-        GitCommit commit = SelectedCommit;
-        IReadOnlyList<GitChangedFile> changedFiles = commit.ChangedFilePaths
-            .Select(path => new GitChangedFile(path, "Changed"))
-            .ToArray();
-        CommitDialogResult? answer = await _dialogService.ShowCommitDialogAsync(
-            CommitDialogRequest.CreateMessageEdit(commit.Message, changedFiles));
-        string? message = answer?.Message?.Trim();
-
-        if (string.IsNullOrWhiteSpace(message) || message == commit.Message)
-        {
-            return;
-        }
-
-        RepositoryInfo repository = _mainWindowViewModel.CurrentRepository;
-        await RunGitOperationAsync(async () =>
-        {
-            try
-            {
-                ClearResultMessages();
-                ProgressMessage = _localizationService.GetString("AmendingCommitMessageProgress");
-                GitCommitOperationResult operationResult = await _gitService.CommitWorkflow.AmendAsync(
-                    repository,
-                    message);
-                if (!operationResult.Completed)
-                {
-                    return;
-                }
-
-                await RefreshHistoryCoreAsync();
-                ShowSuccess(_localizationService.GetString("CommitMessageAmended"));
-            }
-            catch (FileNotFoundException)
-            {
-                ShowError(_localizationService.GetString("GitExecutableNotFound"));
-            }
-            catch (DirectoryNotFoundException)
-            {
-                ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
-            }
-            catch (GitCommandException exception)
-            {
-                ShowError(_localizationService.GetString("GitCommitCommandFailed"), exception.Message);
-            }
-            finally
-            {
-                ProgressMessage = "";
-            }
-        });
-    }
+    protected override Task EditCommitMessageCoreAsync() => IsHistoryEditing
+        ? EditDraftMessageAsync() : RunQuickHistoryChangeAsync("reword");
 
     private async Task RevertCommitCoreAsync()
     {
@@ -655,6 +599,8 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
         ResetSoftCommand.NotifyCanExecuteChanged();
         ResetMixedCommand.NotifyCanExecuteChanged();
         ResetHardCommand.NotifyCanExecuteChanged();
+        MergeCommitWithPreviousCommand.NotifyCanExecuteChanged();
+        DeleteHistoryCommitCommand.NotifyCanExecuteChanged();
         RaiseCommitDetailsCommandCanExecuteChanged();
         RepairRepositoryCommand.NotifyCanExecuteChanged();
         EditCommitMessageCommand.NotifyCanExecuteChanged();
@@ -681,6 +627,8 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
 
     protected override void OnBrowserSelectedCommitChanged()
     {
+        StartHistoryEditCommand.NotifyCanExecuteChanged();
+        if (IsHistoryEditing) { NotifyHistoryEditState(); }
         OnPropertyChanged(nameof(CanEditSelectedCommitMessage));
         UpdateCommandStates();
     }

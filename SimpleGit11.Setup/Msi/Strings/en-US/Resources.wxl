@@ -1,0 +1,11 @@
+<WixLocalization xmlns="http://wixtoolset.org/schemas/v4/wxl" Culture="en-US">
+  <String Id="Language" Value="1033" />
+  <String Id="NewerVersionInstalled" Value="A newer or identical version of SimpleGit11 is already installed. Use the original installer to modify or repair it." />
+  <String Id="InstallScopeConflict" Value="An installation already exists in another scope. Uninstall it before changing between current-user and all-users installation." />
+  <String Id="CoreTitle" Value="SimpleGit11" />
+  <String Id="CoreDescription" Value="Application, local Git support, and required runtime libraries. Git is installed separately." />
+  <String Id="SshTitle" Value="SSH support" />
+  <String Id="SshDescription" Value="Adds Connection via SSH to the main menu and connection settings. Git must be installed on the remote machine." />
+  <String Id="DesktopTitle" Value="Desktop shortcut" />
+  <String Id="DesktopDescription" Value="Create a desktop shortcut for the selected installation scope." />
+</WixLocalization>

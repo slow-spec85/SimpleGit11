@@ -18,12 +18,16 @@ public interface IDialogService
 
     Task<int?> ShowCherryPickMainlineDialogAsync(GitCommit commit);
 
+    Task<int?> ShowHistoryParentDialogAsync(GitCommit commit);
+
     Task<bool> ConfirmCherryPickAsync(
         string branchName,
         IReadOnlyList<GitCommit> commits,
         GitCherryPickOptions options);
 
     Task<string?> ShowTextInputAsync(TextInputDialogRequest request);
+
+    Task<string?> ShowSelectRevisionAsync(RepositoryInfo repository, string initialValue, GitRevisionKind selectedKind);
 
     Task<CommitDialogResult?> ShowCommitDialogAsync(CommitDialogRequest request);
 

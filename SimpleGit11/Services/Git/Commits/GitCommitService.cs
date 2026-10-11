@@ -39,6 +39,7 @@ public sealed class GitCommitService : IGitCommitService
     {
         ArgumentNullException.ThrowIfNull(options);
         List<string> arguments = ["commit", "--amend"];
+        if (options.MessageOnly) { arguments.Add("--only"); }
         AddAllowEmptyArgument(arguments, options);
         if (!string.IsNullOrWhiteSpace(message))
         {
