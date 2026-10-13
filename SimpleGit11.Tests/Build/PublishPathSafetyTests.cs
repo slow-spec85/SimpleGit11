@@ -8,7 +8,7 @@ namespace SimpleGit11.Tests.Build;
 public sealed class PublishPathSafetyTests
 {
     [TestMethod]
-    public void CiWorkflow_RunsAllSolutionTestsIncludingSshPlugin()
+    public void CiWorkflow_RunsBuiltApplicationAndSshTestsWithoutEvaluatingSolution()
     {
         string repositoryRoot = FindRepositoryRoot();
         string workflowPath = Path.Combine(repositoryRoot, ".github", "workflows", "ci.yml");
@@ -17,10 +17,16 @@ public sealed class PublishPathSafetyTests
             .Where(line => line.StartsWith("run: dotnet test ", StringComparison.Ordinal))
             .ToArray();
 
-        Assert.AreEqual(1, testCommands.Length, "CI must have one solution-wide test invocation.");
-        StringAssert.Contains(testCommands[0], "--solution SimpleGit11.slnx");
-        StringAssert.Contains(testCommands[0], "--configuration Release");
-        StringAssert.Contains(testCommands[0], "-p:Platform=x64");
+        Assert.AreEqual(1, testCommands.Length, "CI must run the built test modules in one invocation.");
+        const string modulePattern = "SimpleGit11*.Tests/bin/x64/Release/net8.0-windows10.0.19041.0/win-x64/SimpleGit11*.Tests.dll";
+        StringAssert.Contains(testCommands[0], $"--test-modules \"{modulePattern}\"");
+        Assert.IsFalse(testCommands[0].Contains("--solution", StringComparison.Ordinal));
+        Assert.IsFalse(testCommands[0].Contains("--project", StringComparison.Ordinal));
+        StringAssert.Contains(testCommands[0], "--max-parallel-test-modules 1");
+        StringAssert.Contains(testCommands[0], "--output Detailed");
+        StringAssert.Contains(testCommands[0], "--timeout 5m");
+        StringAssert.Contains(testCommands[0], "--diagnostic --diagnostic-output-directory TestResults/diagnostics");
+        StringAssert.Contains(testCommands[0], "--report-trx --results-directory TestResults");
 
         XDocument solution = XDocument.Load(Path.Combine(repositoryRoot, "SimpleGit11.slnx"));
         string[] projectPaths = solution.Descendants("Project")
@@ -28,6 +34,27 @@ public sealed class PublishPathSafetyTests
             .ToArray();
         CollectionAssert.Contains(projectPaths, "SimpleGit11.Tests/SimpleGit11.Tests.csproj");
         CollectionAssert.Contains(projectPaths, "SimpleGit11.Plugin.Ssh.Tests/SimpleGit11.Plugin.Ssh.Tests.csproj");
+        foreach (string projectName in new[] { "SimpleGit11.Tests", "SimpleGit11.Plugin.Ssh.Tests" })
+        {
+            string modulePath = $"{projectName}/bin/x64/Release/net8.0-windows10.0.19041.0/win-x64/{projectName}.dll";
+            Assert.IsTrue(System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(modulePattern, modulePath),
+                $"CI must include the test module for {projectName}.");
+        }
+    }
+
+    [TestMethod]
+    public void CiWorkflow_PreservesDiagnosticsWhenTestsFailOrTimeOut()
+    {
+        string workflow = File.ReadAllText(Path.Combine(FindRepositoryRoot(), ".github", "workflows", "ci.yml"));
+        int testStep = workflow.IndexOf("- name: Test application and SSH plugin", StringComparison.Ordinal);
+        int diagnosticStep = workflow.IndexOf("- name: Upload test diagnostics", StringComparison.Ordinal);
+        Assert.IsTrue(testStep >= 0 && diagnosticStep > testStep);
+        string testConfiguration = workflow[testStep..diagnosticStep];
+        StringAssert.Contains(testConfiguration, "timeout-minutes: 10");
+        string diagnosticConfiguration = workflow[diagnosticStep..];
+        StringAssert.Contains(diagnosticConfiguration, "if: ${{ always() }}");
+        StringAssert.Contains(diagnosticConfiguration, "uses: actions/upload-artifact@");
+        StringAssert.Contains(diagnosticConfiguration, "path: TestResults/");
     }
 
     [TestMethod]

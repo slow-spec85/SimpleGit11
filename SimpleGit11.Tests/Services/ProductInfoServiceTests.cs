@@ -28,7 +28,7 @@ public sealed class ProductInfoServiceTests
     }
 
     [TestMethod]
-    public async Task GetLatestReleaseAsync_StableRelease_ReturnsReleaseAndCachesResponse()
+    public async Task GetLatestReleaseAsync_StableRelease_RefreshesOnEachCall()
     {
         const string responseJson = """
             {
@@ -69,8 +69,53 @@ public sealed class ProductInfoServiceTests
         Assert.AreEqual("SimpleGit11-1.2.3-win-x64-setup.exe", firstRelease.Installer.FileName);
         Assert.AreEqual(123456, firstRelease.Installer.Size);
         Assert.AreEqual(firstRelease, secondRelease);
-        Assert.AreEqual(1, handler.Requests.Count);
+        Assert.AreEqual(2, handler.Requests.Count);
         StringAssert.EndsWith(handler.Requests[0].AbsolutePath, "/releases/latest");
+        StringAssert.EndsWith(handler.Requests[1].AbsolutePath, "/releases/latest");
+    }
+
+    [TestMethod]
+    public async Task GetLatestReleaseAsync_InstallerUploadedAfterRelease_RefreshesAssets()
+    {
+        const string releaseWithoutAssets = """
+            {
+              "tag_name": "v1.5.0",
+              "html_url": "https://github.com/slow-spec85/SimpleGit11/releases/tag/v1.5.0",
+              "assets": []
+            }
+            """;
+        const string releaseWithAssets = """
+            {
+              "tag_name": "v1.5.0",
+              "html_url": "https://github.com/slow-spec85/SimpleGit11/releases/tag/v1.5.0",
+              "assets": [
+                {
+                  "name": "SimpleGit11-1.5.0-win-x64-setup.exe",
+                  "browser_download_url": "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.5.0/SimpleGit11-1.5.0-win-x64-setup.exe",
+                  "size": 123456
+                },
+                {
+                  "name": "SimpleGit11-1.5.0-win-x64-setup.exe.sha256",
+                  "browser_download_url": "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.5.0/SimpleGit11-1.5.0-win-x64-setup.exe.sha256",
+                  "size": 103
+                }
+              ]
+            }
+            """;
+        int requestCount = 0;
+        RecordingHttpMessageHandler handler = new(_ => CreateJsonResponse(
+            Interlocked.Increment(ref requestCount) == 1 ? releaseWithoutAssets : releaseWithAssets));
+        using HttpClient client = new(handler);
+        using ProductInfoService service = new(client);
+
+        ProductReleaseInfo? firstRelease = await service.GetLatestReleaseAsync(CancellationToken.None);
+        ProductReleaseInfo? secondRelease = await service.GetLatestReleaseAsync(CancellationToken.None);
+
+        Assert.IsNotNull(firstRelease);
+        Assert.IsNull(firstRelease.Installer);
+        Assert.IsNotNull(secondRelease);
+        Assert.IsNotNull(secondRelease.Installer);
+        Assert.AreEqual(2, handler.Requests.Count);
     }
 
     [TestMethod]

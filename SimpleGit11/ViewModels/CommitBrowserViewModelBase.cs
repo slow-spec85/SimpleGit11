@@ -54,9 +54,21 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
     public ObservableCollection<GitCommit> Commits { get; } = [];
 
+    [RelayCommand]
+    private void OnOpenReference(GitCommitReference? reference)
+    {
+        if (reference is not null && _mainWindowViewModel.CurrentRepository is not null)
+        {
+            _mainWindowViewModel.RequestNavigation(AppNavigationTarget.Branches, reference);
+        }
+    }
+
     public ObservableCollection<CommitBrowserRowViewItem> CommitRows { get; } = [];
 
     public ObservableCollection<GitCommit> SelectedCommits { get; } = [];
+
+    [ObservableProperty]
+    public partial bool IsUpdatingCommitRows { get; private set; }
 
     public ObservableCollection<CommitParentViewItem> ParentCommits { get; } = [];
 
@@ -318,24 +330,32 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
     private void ApplyFilters()
     {
         string? selectedHash = SelectedCommit?.Hash;
+        HashSet<string> selectedHashes = SelectedCommits.Select(commit => commit.Hash)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         IReadOnlyList<GitCommit> filteredCommits = CommitBrowserFilter.Apply(
             _allCommits,
             CreateFilterCriteria());
 
-        Commits.Clear();
-        foreach (GitCommit commit in filteredCommits)
+        IsUpdatingCommitRows = true;
+        try
         {
-            Commits.Add(commit);
+            Commits.Clear();
+            foreach (GitCommit commit in filteredCommits)
+            {
+                Commits.Add(commit);
+            }
+
+            RebuildCommitRows(filteredCommits);
+
+            SelectedCommit = Commits.FirstOrDefault(commit =>
+                string.Equals(commit.Hash, selectedHash, StringComparison.OrdinalIgnoreCase))
+                ?? Commits.FirstOrDefault();
+            SynchronizeSelectedCommitRow();
+            SetSelectedCommits(Commits.Where(commit => selectedHashes.Contains(commit.Hash)));
+            OnPropertyChanged(nameof(CommitsTitle));
+            OnCommitFilterChanged();
         }
-
-        RebuildCommitRows(filteredCommits);
-
-        SelectedCommit = Commits.FirstOrDefault(commit =>
-            string.Equals(commit.Hash, selectedHash, StringComparison.OrdinalIgnoreCase))
-            ?? Commits.FirstOrDefault();
-        SynchronizeSelectedCommitRow();
-        OnPropertyChanged(nameof(CommitsTitle));
-        OnCommitFilterChanged();
+        finally { IsUpdatingCommitRows = false; }
     }
 
     private void RebuildCommitRows(IReadOnlyList<GitCommit> filteredCommits)

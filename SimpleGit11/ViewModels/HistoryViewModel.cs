@@ -170,7 +170,10 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadMoreHistoryCommand))]
+    [NotifyPropertyChangedFor(nameof(IsLoadMoreHistoryVisible))]
     public partial bool HasMoreCommits { get; private set; }
+
+    public bool IsLoadMoreHistoryVisible => HasMoreCommits && !IsHistoryEditing;
 
     public Visibility HistoryVisible => AllCommits.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 

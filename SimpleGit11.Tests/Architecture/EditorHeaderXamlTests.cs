@@ -138,6 +138,20 @@ public sealed class EditorHeaderXamlTests
     }
 
     [TestMethod]
+    public void CommitReferences_UseAccessibleButtonsWithFullReferenceAsNavigationParameter()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
+        XElement button = document.Descendants().Single(element =>
+            (string?)element.Attribute("AutomationProperties.AutomationId") == "CommitReferenceButton");
+        Assert.AreEqual("Button", button.Name.LocalName);
+        Assert.AreEqual("{Binding ViewModel.OpenReferenceCommand, ElementName=PageRoot}", RequiredAttribute(button, "Command"));
+        Assert.AreEqual("{x:Bind}", RequiredAttribute(button, "CommandParameter"));
+        Assert.AreEqual("{x:Bind Name}", RequiredAttribute(button, "AutomationProperties.Name"));
+        Assert.AreEqual("{x:Bind Name, Mode=OneTime}", RequiredAttribute(button, "ToolTipService.ToolTip"));
+        Assert.AreEqual("models:GitCommitReference", RequiredXamlAttribute(button.Parent!, "DataType"));
+    }
+
+    [TestMethod]
     public void CommitDetailsToggle_PlacesDetailsAboveDiffWithoutReplacingChangedFiles()
     {
         XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
@@ -237,6 +251,26 @@ public sealed class EditorHeaderXamlTests
     }
 
     [TestMethod]
+    public void DiffViewerHeader_CopyMenuUsesCurrentUntrimmedFileNameAndSharedCommand()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "DiffViewer.xaml");
+        XElement heading = FindByXName(document, "DiffHeading");
+        XElement flyout = heading.Descendants().Single(element => element.Name.LocalName == "MenuFlyout");
+        XElement copy = FindByXName(document, "CopyDiffFileNameMenuItem");
+
+        Assert.AreEqual("TextBlock.ContextFlyout", flyout.Parent!.Name.LocalName);
+        Assert.AreSame(heading, flyout.Parent.Parent);
+        Assert.AreSame(flyout, copy.Parent);
+        Assert.HasCount(1, flyout.Elements().ToArray());
+        Assert.AreEqual("{Binding SelectedDiffFileTitle}", RequiredAttribute(heading, "Text"));
+        Assert.AreEqual("{x:Bind CopyTextCommand, Mode=OneWay}", RequiredAttribute(copy, "Command"));
+        Assert.AreEqual("{x:Bind DiffHeading.Text, Mode=OneWay}", RequiredAttribute(copy, "CommandParameter"));
+        Assert.AreEqual("CopyNameMenuFlyoutItem", RequiredXamlAttribute(copy, "Uid"));
+        Assert.AreEqual("Copy", RequiredAttribute(copy, "Icon"));
+        Assert.AreEqual("DiffHeadingContextFlyout_Opening", RequiredAttribute(flyout, "Opening"));
+    }
+
+    [TestMethod]
     public void DiffViewerEditor_AccountsForLineNumberRenderingInset()
     {
         XDocument document = LoadApplicationXaml("Controls", "DiffViewer.xaml");
@@ -320,6 +354,24 @@ public sealed class EditorHeaderXamlTests
                 "AcceptBothConflictBlockMenuFlyoutItem"
             },
             menuItems);
+    }
+
+    [TestMethod]
+    public void ReferenceTrees_UseLoadedContainersAndExplicitSelectionSynchronization()
+    {
+        XDocument document = LoadApplicationXaml("Pages", "BranchesPage.xaml");
+        foreach (string name in new[] { "BranchesTreeView", "TagsTreeView" })
+        {
+            XElement tree = FindByXName(document, name);
+            Assert.IsNull(tree.Attribute("SelectedItem"),
+                "Selection must be applied after the native tree has updated its nodes.");
+            XElement container = tree.Descendants().Single(element => element.Name.LocalName == "TreeViewItem");
+            Assert.AreEqual("ReferenceTreeItem_Loaded", RequiredAttribute(container, "Loaded"));
+            Assert.AreEqual("Single", RequiredAttribute(tree, "SelectionMode"));
+            Assert.IsNotNull(tree.Attribute("SelectionChanged"));
+        }
+        Assert.AreEqual("Page_Loaded", RequiredAttribute(document.Root!, "Loaded"));
+        Assert.AreEqual("Page_Unloaded", RequiredAttribute(document.Root!, "Unloaded"));
     }
 
     private static void AssertSearchFlyout(

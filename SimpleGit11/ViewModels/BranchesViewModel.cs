@@ -66,6 +66,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
     private GitBranch? _selectedLocalBranch;
     private GitBranch? _selectedRemoteBranch;
     private GitTag? _selectedTag;
+    private readonly Dictionary<string, bool> _referenceFolderExpansion = new(StringComparer.Ordinal);
 
     private enum BranchDeleteResult
     {
@@ -123,6 +124,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         Branches.Clear();
         RemoteBranches.Clear();
         FilteredBranches.Clear();
+        BranchTree = [];
+        OnPropertyChanged(nameof(BranchTree));
+        OnPropertyChanged(nameof(SelectedBranchTreeItem));
         SelectedBranch = null;
         HasNoBranches = false;
         SetBranchOperationState(GitOperationState.None);
@@ -329,6 +333,11 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
 
     public ObservableCollection<GitTag> FilteredTags { get; } = [];
 
+    public IReadOnlyList<ReferenceTreeItemViewModel> BranchTree { get; private set; } = [];
+    public IReadOnlyList<ReferenceTreeItemViewModel> TagTree { get; private set; } = [];
+    public ReferenceTreeItemViewModel? SelectedBranchTreeItem => FindReferenceTreeItem(BranchTree, SelectedBranch);
+    public ReferenceTreeItemViewModel? SelectedTagTreeItem => FindReferenceTreeItem(TagTree, SelectedTag);
+
     public ObservableCollection<BranchReflogDisplayItem> SelectedBranchHistoryEntries { get; } = [];
 
     [ObservableProperty]
@@ -531,6 +540,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             }
 
             _selectedBranch = value;
+            RevealReferenceTreeItem(SelectedBranchTreeItem);
+            OnPropertyChanged(nameof(SelectedBranchTreeItem));
             SyncSelectedBranchLists(value);
             SelectedBranchCommit = null;
             SelectedBranchDetails = null;
@@ -589,6 +600,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             }
 
             _selectedTag = value;
+            RevealReferenceTreeItem(SelectedTagTreeItem);
+            OnPropertyChanged(nameof(SelectedTagTreeItem));
             SelectedTagDetails = null;
             SelectedTagSignatureDetails = null;
             _isSelectedTagSignatureLoaded = false;
@@ -1465,6 +1478,26 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
     public bool CanCreateBranchFromSelectedTag => ReferenceKind == ReferenceListKind.Tags
         && SelectedTag is not null
         && !IsGitOperationRunning;
+
+    public async Task SelectReferenceAsync(GitCommitReference reference)
+    {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        SearchText = "";
+        ReferenceKind = reference.IsTag ? ReferenceListKind.Tags : ReferenceListKind.Branches;
+        BranchScope = reference.IsRemoteBranch ? BranchListScope.Remote : BranchListScope.Local;
+        if (reference.IsTag)
+        {
+            await EnsureTagsLoadedAsync();
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
+            SelectedTag = Tags.FirstOrDefault(tag => string.Equals(tag.Name, reference.Name, StringComparison.Ordinal));
+            RevealReferenceTreeItem(SelectedTagTreeItem);
+        }
+        else
+        {
+            SelectedBranch = FilteredBranches.FirstOrDefault(branch => string.Equals(branch.Name, reference.Name, StringComparison.Ordinal));
+            RevealReferenceTreeItem(SelectedBranchTreeItem);
+        }
+    }
 
     public async Task RefreshBranchesLocalAsync()
     {
@@ -4074,6 +4107,14 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             _ => Branches.AsEnumerable()
         };
 
+        IReadOnlyList<ReferenceTreeItemViewModel> tree = BuildReferenceTree(
+            source.Select(branch => (branch.Name, (GitBranch?)branch, (GitTag?)null)), false);
+        // Clear the native TreeView selection while its old nodes are still attached.
+        BranchTree = [];
+        OnPropertyChanged(nameof(SelectedBranchTreeItem));
+        BranchTree = tree;
+        OnPropertyChanged(nameof(BranchTree));
+
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
             source = source.Where(MatchesSearchText);
@@ -4089,6 +4130,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         SelectedBranch = FilteredBranches.FirstOrDefault(branch => branch.Name == selectedBranchName)
             ?? FilteredBranches.FirstOrDefault(branch => branch.IsCurrent)
             ?? FilteredBranches.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(SearchText)) RevealReferenceTreeItem(SelectedBranchTreeItem);
+        OnPropertyChanged(nameof(SelectedBranchTreeItem));
 
         NotifyReferenceListChanged();
     }
@@ -4117,6 +4160,13 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             _ => Tags.AsEnumerable()
         };
 
+        IReadOnlyList<ReferenceTreeItemViewModel> tree = BuildReferenceTree(
+            source.Select(tag => (tag.Name, (GitBranch?)null, (GitTag?)tag)), true);
+        TagTree = [];
+        OnPropertyChanged(nameof(SelectedTagTreeItem));
+        TagTree = tree;
+        OnPropertyChanged(nameof(TagTree));
+
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
             source = source.Where(MatchesSearchText);
@@ -4131,8 +4181,105 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
 
         SelectedTag = FilteredTags.FirstOrDefault(tag => tag.Name == selectedTagName)
             ?? FilteredTags.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(SearchText)) RevealReferenceTreeItem(SelectedTagTreeItem);
+        OnPropertyChanged(nameof(SelectedTagTreeItem));
 
         NotifyReferenceListChanged();
+    }
+
+    private IReadOnlyList<ReferenceTreeItemViewModel> BuildReferenceTree(
+        IEnumerable<(string Name, GitBranch? Branch, GitTag? Tag)> references,
+        bool tags)
+    {
+        List<ReferenceTreeItemViewModel> roots = [];
+        Dictionary<string, ReferenceTreeItemViewModel> folders = new(StringComparer.Ordinal);
+        bool searching = !string.IsNullOrWhiteSpace(SearchText);
+        string statePrefix = $"{_mainWindowViewModel.CurrentRepository?.Path}|{BranchScope}|{tags}|";
+
+        foreach ((string name, GitBranch? branch, GitTag? tag) in references)
+        {
+            string[] segments = name.Split('/');
+            List<ReferenceTreeItemViewModel> siblings = roots;
+            ReferenceTreeItemViewModel? parent = null;
+            string path = "";
+            DateTime? date = branch?.LastCommitDate ?? tag?.CreatedDate;
+            for (int index = 0; index < segments.Length - 1; index++)
+            {
+                path = index == 0 ? segments[index] : $"{path}/{segments[index]}";
+                if (!folders.TryGetValue(path, out ReferenceTreeItemViewModel? folder))
+                {
+                    string stateKey = statePrefix + path;
+                    folder = new ReferenceTreeItemViewModel(segments[index], path, parent)
+                    {
+                        IsExpanded = searching || _referenceFolderExpansion.GetValueOrDefault(stateKey)
+                    };
+                    if (!searching)
+                    {
+                        ReferenceTreeItemViewModel trackedFolder = folder;
+                        folder.PropertyChanged += (_, args) =>
+                        {
+                            if (args.PropertyName == nameof(ReferenceTreeItemViewModel.IsExpanded))
+                            {
+                                _referenceFolderExpansion[stateKey] = trackedFolder.IsExpanded;
+                            }
+                        };
+                    }
+                    folders.Add(path, folder);
+                    siblings.Add(folder);
+                }
+
+                if (date.HasValue && (!folder.LatestDate.HasValue || date > folder.LatestDate))
+                {
+                    folder.LatestDate = date;
+                }
+                parent = folder;
+                siblings = folder.Children;
+            }
+
+            if (!searching || (branch is not null ? MatchesSearchText(branch) : MatchesSearchText(tag!)))
+            {
+                siblings.Add(new ReferenceTreeItemViewModel(segments[^1], name, parent, branch, tag));
+            }
+        }
+
+        PruneAndSort(roots);
+        return roots;
+
+        static void PruneAndSort(List<ReferenceTreeItemViewModel> items)
+        {
+            foreach (ReferenceTreeItemViewModel item in items)
+            {
+                PruneAndSort(item.Children);
+            }
+            items.RemoveAll(item => item.IsFolder && item.Children.Count == 0);
+            items.Sort((left, right) =>
+            {
+                int kind = right.IsFolder.CompareTo(left.IsFolder);
+                int name = StringComparer.OrdinalIgnoreCase.Compare(left.Name, right.Name);
+                return kind != 0 ? kind : name != 0 ? name : StringComparer.Ordinal.Compare(left.Name, right.Name);
+            });
+        }
+    }
+
+    private static ReferenceTreeItemViewModel? FindReferenceTreeItem(
+        IReadOnlyList<ReferenceTreeItemViewModel> items, object? reference)
+    {
+        if (reference is null) return null;
+        foreach (ReferenceTreeItemViewModel item in items)
+        {
+            if (ReferenceEquals(item.Branch, reference) || ReferenceEquals(item.Tag, reference)) return item;
+            ReferenceTreeItemViewModel? child = FindReferenceTreeItem(item.Children, reference);
+            if (child is not null) return child;
+        }
+        return null;
+    }
+
+    private static void RevealReferenceTreeItem(ReferenceTreeItemViewModel? item)
+    {
+        for (ReferenceTreeItemViewModel? parent = item?.Parent; parent is not null; parent = parent.Parent)
+        {
+            parent.IsExpanded = true;
+        }
     }
 
     private bool MatchesSearchText(GitBranch branch)
@@ -4228,6 +4375,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         RemoteTags.Clear();
         FilteredTags.Clear();
         SelectedTag = null;
+        TagTree = [];
+        OnPropertyChanged(nameof(TagTree));
+        OnPropertyChanged(nameof(SelectedTagTreeItem));
         HasNoTags = false;
     }
 

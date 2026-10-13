@@ -1493,41 +1493,45 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
 
     private async Task OpenCommitDialogAsync(bool isAmend)
     {
-        bool allowEmpty = false;
-        if (!isAmend && !IsMergeInProgress)
+        if (_mainWindowViewModel.CurrentRepository is not RepositoryInfo repository)
         {
-            if (_mainWindowViewModel.CurrentRepository is not RepositoryInfo repository)
+            return;
+        }
+
+        bool allowEmpty = false;
+        try
+        {
+            if (!isAmend && !HasStagedChanges && HasUnstagedChanges && !HasConflictedChanges)
             {
-                return;
+                await RunGitOperationAsync(() => RunMutationAndRefreshStatusAsync(
+                    () => _gitService.Staging.StageAllAsync(repository)));
             }
 
-            bool? prepared;
-            try
+            if (!isAmend && !IsMergeInProgress)
             {
-                prepared = await _gitService.CommitWorkflow.PrepareCreateAsync(repository);
-            }
-            catch (FileNotFoundException)
-            {
-                ShowError(_localizationService.GetString("GitExecutableNotFound"));
-                return;
-            }
-            catch (DirectoryNotFoundException)
-            {
-                ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
-                return;
-            }
-            catch (GitCommandException exception)
-            {
-                ShowError(_localizationService.GetString("GitCommitCommandFailed"), exception.Message);
-                return;
-            }
+                bool? prepared = await _gitService.CommitWorkflow.PrepareCreateAsync(repository);
+                if (prepared is null)
+                {
+                    return;
+                }
 
-            if (prepared is null)
-            {
-                return;
+                allowEmpty = prepared.Value;
             }
-
-            allowEmpty = prepared.Value;
+        }
+        catch (FileNotFoundException)
+        {
+            ShowError(_localizationService.GetString("GitExecutableNotFound"));
+            return;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            ShowError(_localizationService.GetString("RepositoryFolderNotFound"));
+            return;
+        }
+        catch (GitCommandException exception)
+        {
+            ShowError(_localizationService.GetString("GitCommitCommandFailed"), exception.Message);
+            return;
         }
 
         IReadOnlyList<GitChangedFile> changedFiles = AllChanges.ToArray();

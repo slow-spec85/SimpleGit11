@@ -48,4 +48,13 @@ jobs:
         run: msbuild SimpleGit11.slnx /t:Build /m /warnaserror /p:Configuration=Release /p:Platform=x64 /p:AcceptEula=wix7
 
       - name: Test application and SSH plugin
-        run: dotnet test --solution SimpleGit11.slnx --configuration Release --no-build --no-restore --verbosity normal -p:Platform=x64
+        timeout-minutes: 10
+        run: dotnet test --test-modules "SimpleGit11*.Tests/bin/x64/Release/net8.0-windows10.0.19041.0/win-x64/SimpleGit11*.Tests.dll" --max-parallel-test-modules 1 --output Detailed --timeout 5m --diagnostic --diagnostic-output-directory TestResults/diagnostics --report-trx --results-directory TestResults
+
+      - name: Upload test diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-diagnostics
+          path: TestResults/
+          if-no-files-found: warn

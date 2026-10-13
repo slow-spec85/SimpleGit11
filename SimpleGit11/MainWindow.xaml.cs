@@ -301,17 +301,20 @@ public sealed partial class MainWindow : Window
 
         Type pageType = GetPageType(e.Target);
         bool refreshCurrentPage = (e.Target == AppNavigationTarget.Changes && ContentFrame.Content is ChangesPage)
-            || (e.Target == AppNavigationTarget.Synchronization && ContentFrame.Content is SynchronizationPage);
+            || (e.Target == AppNavigationTarget.Synchronization && ContentFrame.Content is SynchronizationPage)
+            || (e.Target == AppNavigationTarget.Branches && ContentFrame.Content is BranchesPage && e.Parameter is GitCommitReference);
         NavigationViewItem? navigationItem = ShellNavigation.MenuItems
             .OfType<NavigationViewItem>()
             .Where(item => item.Tag is not PluginMenuItem)
             .FirstOrDefault(item => GetPageType(item.Tag) == pageType);
         if (navigationItem is not null)
         {
-            ShellNavigation.SelectedItem = navigationItem;
+            _isSynchronizingNavigationSelection = true;
+            try { ShellNavigation.SelectedItem = navigationItem; }
+            finally { _isSynchronizingNavigationSelection = false; }
         }
 
-        NavigateToTopLevelPage(pageType);
+        NavigateToTopLevelPage(pageType, e.Parameter);
         if (refreshCurrentPage)
         {
             _ = _asyncCommandExecutor.ExecuteAsync(
@@ -688,11 +691,15 @@ public sealed partial class MainWindow : Window
         };
     }
 
-    private void NavigateToTopLevelPage(Type pageType)
+    private void NavigateToTopLevelPage(Type pageType, object? parameter = null)
     {
         if (ContentFrame.CurrentSourcePageType != pageType)
         {
-            ContentFrame.Navigate(pageType);
+            ContentFrame.Navigate(pageType, parameter);
+        }
+        else if (ContentFrame.Content is BranchesPage branchesPage && parameter is GitCommitReference reference)
+        {
+            branchesPage.RequestReferenceSelection(reference);
         }
 
         UpdateBackNavigationState();
@@ -745,6 +752,8 @@ public sealed partial class MainWindow : Window
         }
 
         UpdateBackNavigationState();
+        // Returning to cached history preserves loaded pages, selection, and the diff.
+        if (e.NavigationMode == NavigationMode.Back && ContentFrame.Content is HistoryPage) { return; }
         _ = _asyncCommandExecutor.ExecuteAsync(
             () => RefreshCurrentPageAsync(refreshRepositoryIdentity: true));
     }

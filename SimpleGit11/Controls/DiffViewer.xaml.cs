@@ -783,6 +783,11 @@ public sealed partial class DiffViewer : UserControl
         }
     }
 
+    private void DiffHeadingContextFlyout_Opening(object sender, object args)
+    {
+        CopyDiffFileNameMenuItem.IsEnabled = !string.IsNullOrEmpty(FilePath);
+    }
+
     private void DiffContextFlyout_Opening(object sender, object args)
     {
         UpdateRevertActionVisibility();

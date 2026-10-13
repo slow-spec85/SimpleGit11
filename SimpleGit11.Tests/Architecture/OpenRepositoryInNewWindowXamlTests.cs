@@ -1,4 +1,7 @@
 using System.Xml.Linq;
+using System.Text.RegularExpressions;
+using System.Windows.Input;
+using SimpleGit11.ViewModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SimpleGit11.Tests.Architecture;
@@ -7,6 +10,38 @@ namespace SimpleGit11.Tests.Architecture;
 public sealed class OpenRepositoryInNewWindowXamlTests
 {
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+    [TestMethod]
+    public void RecentRepositoryCommands_ResolvePropertiesOnTheirActualOwners()
+    {
+        XDocument document = LoadApplicationXml("MainWindow.xaml");
+        XElement list = document.Descendants().Single(element =>
+            (string?)element.Attribute(XamlNamespace + "Name") == "RecentRepositoriesList");
+        foreach (XAttribute command in list.Descendants().Attributes("Command"))
+        {
+            Match binding = Regex.Match(command.Value, @"\{Binding\s+([^,]+),\s*ElementName=RecentRepositoriesList\}");
+            Assert.IsTrue(binding.Success, $"Unexpected recent repository command binding: {command.Value}");
+            string path = binding.Groups[1].Value;
+            Type owner;
+            string property;
+            if (path == "Tag")
+            {
+                Match compiledBinding = Regex.Match((string?)list.Attribute("Tag") ?? "", @"\{x:Bind RepositoryViewModel\.(\w+),");
+                Assert.IsTrue(compiledBinding.Success, "The command on Tag must be bound to RepositoryViewModel.");
+                owner = typeof(RepositoryViewModel);
+                property = compiledBinding.Groups[1].Value;
+            }
+            else
+            {
+                Assert.IsTrue(path.StartsWith("DataContext.", StringComparison.Ordinal));
+                owner = typeof(MainWindowViewModel);
+                property = path["DataContext.".Length..];
+            }
+            System.Reflection.PropertyInfo? commandProperty = owner.GetProperty(property);
+            Assert.IsNotNull(commandProperty, $"{owner.Name} does not expose {property}.");
+            Assert.IsTrue(typeof(ICommand).IsAssignableFrom(commandProperty.PropertyType));
+        }
+    }
 
     [TestMethod]
     [DataRow("OpenSubmoduleInNewWindowActionMenuFlyoutItem")]

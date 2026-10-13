@@ -91,6 +91,59 @@ public sealed class SetupStartupTests
         Assert.AreEqual(true, field.GetValue(bootstrapper));
     }
 
+    [TestMethod]
+    [DataRow(true, true)]
+    [DataRow(true, false)]
+    [DataRow(false, true)]
+    [DataRow(false, false)]
+    public void Upgrade_NewMsiAbsentFeatures_PreserveRelatedProductSelection(bool ssh, bool desktop)
+    {
+        object bootstrapper = CreateBootstrapper("Install", installed: false);
+        Type type = bootstrapper.GetType();
+        // OnDetectRelatedMsiPackage reads these states from the old product via MSI.
+        type.GetField("_relatedMsiInstalled", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(bootstrapper, true);
+        type.GetField("_sshInstalled", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(bootstrapper, ssh);
+        type.GetField("_desktopInstalled", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(bootstrapper, desktop);
+
+        InvokeBootstrapperEvent(bootstrapper, "OnDetectMsiFeature", "SimpleGit11Msi", "Ssh", "Absent", false);
+        InvokeBootstrapperEvent(bootstrapper, "OnDetectMsiFeature", "SimpleGit11Msi", "Desktop", "Absent", false);
+
+        foreach ((string feature, string fieldName, bool expected) in new[]
+        {
+            ("Ssh", "_sshInstalled", ssh),
+            ("Desktop", "_desktopInstalled", desktop)
+        })
+        {
+            bool detected = (bool)type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(bootstrapper)!;
+            Assert.AreEqual(expected, detected, $"Upgrade must preserve {feature} from the related product.");
+            // Both the UI upgrade and headless install pass the detected selection to StartOperation.
+            string selectedField = feature == "Ssh" ? "_sshSelected" : "_desktopSelected";
+            type.GetField(selectedField, BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(bootstrapper, detected);
+            object args = InvokeBootstrapperEvent(bootstrapper, "OnPlanMsiFeature",
+                "SimpleGit11Msi", feature, "Unknown", "Unknown", false);
+            Assert.AreEqual(expected ? "Local" : "Absent", args.GetType().GetProperty("State")!.GetValue(args)!.ToString());
+        }
+    }
+
+    [TestMethod]
+    [DataRow("Local", true)]
+    [DataRow("Absent", false)]
+    public void Detection_WithoutRelatedProduct_UsesCurrentMsiFeatures(string state, bool expected)
+    {
+        object bootstrapper = CreateBootstrapper("Modify", installed: true);
+        Type type = bootstrapper.GetType();
+        foreach ((string feature, string fieldName) in new[] { ("Ssh", "_sshInstalled"), ("Desktop", "_desktopInstalled") })
+        {
+            FieldInfo field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance)!;
+            field.SetValue(bootstrapper, !expected);
+            InvokeBootstrapperEvent(bootstrapper, "OnDetectMsiFeature", "SimpleGit11Msi", feature, state, false);
+            Assert.AreEqual(expected, field.GetValue(bootstrapper));
+            InvokeBootstrapperEvent(bootstrapper, "OnDetectMsiFeature", "unrelated-package", feature,
+                expected ? "Absent" : "Local", false);
+            Assert.AreEqual(expected, field.GetValue(bootstrapper));
+        }
+    }
+
     private static object CreateBootstrapper(string action, bool installed)
     {
         Type type = LoadSetupAssembly().GetType("SimpleGit11.Setup.SetupBootstrapperApplication", throwOnError: true)!;

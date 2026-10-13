@@ -1,4 +1,6 @@
 using System.Xml.Linq;
+using System.Text.RegularExpressions;
+using Microsoft.UI.Xaml;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SimpleGit11.Tests.Architecture;
@@ -7,6 +9,22 @@ namespace SimpleGit11.Tests.Architecture;
 public sealed class BranchesDetailsXamlTests
 {
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+    [TestMethod]
+    public void VisibilityBindings_FallbackValuesMatchTargetTypeEvenWhenConverterIsPresent()
+    {
+        XDocument document = LoadBranchesPage();
+        foreach (XAttribute attribute in document.Descendants().Attributes("Visibility"))
+        {
+            Match fallback = Regex.Match(attribute.Value, @"FallbackValue\s*=\s*([^,}]+)");
+            if (!fallback.Success) continue;
+
+            string value = fallback.Groups[1].Value.Trim().Trim('\'', '"');
+            Assert.IsTrue(
+                Enum.TryParse(value, out Visibility visibility) && Enum.IsDefined(visibility),
+                $"Visibility fallback '{value}' on {attribute.Parent!.Name.LocalName} must be a Visibility value; converters do not convert fallback values.");
+        }
+    }
 
     [TestMethod]
     public void DetailsValues_ExposeUniversalCopyCommand()

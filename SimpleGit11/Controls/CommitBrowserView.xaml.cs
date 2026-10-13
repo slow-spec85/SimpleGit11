@@ -211,7 +211,7 @@ public sealed partial class CommitBrowserView : UserControl
 
     private void HistoryCommitsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_restoringSelection) { return; }
+        if (_restoringSelection || !IsLoaded || ViewModel?.IsUpdatingCommitRows == true) { return; }
         _restoringSelection = true;
         try
         {
@@ -239,11 +239,12 @@ public sealed partial class CommitBrowserView : UserControl
 
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (_restoringSelection) { return; }
+        if (_restoringSelection || !IsLoaded || ViewModel?.IsUpdatingCommitRows == true) { return; }
         if (args.PropertyName == nameof(CommitBrowserViewModelBase.CommitSelectionMode)) { RestoreSelectionMode(); }
-        else if (args.PropertyName == nameof(CommitBrowserViewModelBase.SelectedCommitRow))
+        else if (args.PropertyName is nameof(CommitBrowserViewModelBase.SelectedCommitRow)
+            or nameof(CommitBrowserViewModelBase.IsUpdatingCommitRows))
         {
-            HistoryCommitsListView.SelectedItem = ViewModel?.SelectedCommitRow;
+            RestoreSelectionMode();
         }
     }
 
@@ -275,6 +276,12 @@ public sealed partial class CommitBrowserView : UserControl
     private void CommitList_PointerPressed(object sender, PointerRoutedEventArgs args)
     {
         _dragAnchor = null;
+        for (DependencyObject? element = args.OriginalSource as DependencyObject;
+            element is not null && !ReferenceEquals(element, HistoryCommitsListView);
+            element = VisualTreeHelper.GetParent(element))
+        {
+            if (element is Button { DataContext: GitCommitReference }) { return; }
+        }
         if (args.Pointer.PointerDeviceType != PointerDeviceType.Mouse
             || !args.GetCurrentPoint(HistoryCommitsListView).Properties.IsLeftButtonPressed
             || HistoryCommitsListView.SelectionMode is not (ListViewSelectionMode.Extended or ListViewSelectionMode.Multiple)) { return; }

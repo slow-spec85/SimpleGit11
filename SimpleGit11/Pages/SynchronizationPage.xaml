@@ -87,6 +87,16 @@
                     </ToolTipService.ToolTip>
                 </AppBarButton>
                 <AppBarButton
+                    x:Uid="SynchronizeAppBarButton"
+                    AutomationProperties.AutomationId="SynchronizeButton"
+                    Command="{x:Bind ViewModel.SynchronizeCommand, Mode=OneWay}"
+                    Icon="Sync">
+                    <ToolTipService.ToolTip>
+                        <ToolTip x:Uid="SynchronizeTooltip" />
+                    </ToolTipService.ToolTip>
+                </AppBarButton>
+                <AppBarSeparator />
+                <AppBarButton
                     x:Uid="PullAppBarButton"
                     AutomationProperties.AutomationId="PullCurrentBranchButton"
                     Command="{x:Bind ViewModel.PullCommand, Mode=OneWay}"

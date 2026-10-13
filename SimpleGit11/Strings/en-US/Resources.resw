@@ -1141,6 +1141,12 @@
   <data name="PullAppBarButton.Label" xml:space="preserve">
     <value>Pull</value>
   </data>
+  <data name="SynchronizeAppBarButton.Label" xml:space="preserve">
+    <value>Synchronize</value>
+  </data>
+  <data name="SynchronizeTooltip.Content" xml:space="preserve">
+    <value>Pull changes into the current branch, then push its local changes</value>
+  </data>
   <data name="PushSplitButtonTextBlock.Text" xml:space="preserve">
     <value>Push</value>
   </data>

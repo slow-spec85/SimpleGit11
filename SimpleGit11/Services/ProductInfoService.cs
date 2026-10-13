@@ -22,8 +22,6 @@ public sealed class ProductInfoService : IProductInfoService, IDisposable
     private static readonly Uri GitHubApiBaseUri = new("https://api.github.com/");
     private readonly HttpClient _httpClient;
     private readonly SemaphoreSlim _releaseSemaphore = new(1, 1);
-    private ProductReleaseInfo? _cachedRelease;
-    private bool _releaseLoaded;
 
     public ProductInfoService(HttpClient httpClient)
     {
@@ -42,14 +40,7 @@ public sealed class ProductInfoService : IProductInfoService, IDisposable
         await _releaseSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_releaseLoaded)
-            {
-                return _cachedRelease;
-            }
-
-            _cachedRelease = await GetLatestStableReleaseAsync(cancellationToken).ConfigureAwait(false);
-            _releaseLoaded = true;
-            return _cachedRelease;
+            return await GetLatestStableReleaseAsync(cancellationToken).ConfigureAwait(false);
         }
         finally
         {

@@ -191,7 +191,7 @@
                     AutomationProperties.AutomationId="LoadMoreHistoryButton"
                     Command="{x:Bind ViewModel.LoadMoreHistoryCommand, Mode=OneWay}"
                     Content="{x:Bind ViewModel.LoadMoreCommitsButtonText, Mode=OneWay}"
-                    Visibility="{x:Bind ViewModel.HasMoreCommits, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                    Visibility="{x:Bind ViewModel.IsLoadMoreHistoryVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
             </controls:CommitBrowserView.CommitListFooter>
             <controls:CommitBrowserView.CommitContextFlyout>
                 <MenuFlyout>

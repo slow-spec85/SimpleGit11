@@ -253,7 +253,7 @@ public sealed partial class HistoryViewModel
     private void NotifyHistoryEditState()
     {
         foreach (string property in new[] { nameof(CommitsTitle), nameof(CommitSelectionMode), nameof(IsHistoryEditing), nameof(IsCommitSearchEnabled), nameof(IsCommitContentUnavailable), nameof(IsCommitContentAvailable),
-            nameof(SelectedCommitMessage), nameof(DeleteDraftCaption), nameof(DeleteDraftGlyph), nameof(MergeDraftTooltip) }) { OnPropertyChanged(property); }
+            nameof(IsLoadMoreHistoryVisible), nameof(SelectedCommitMessage), nameof(DeleteDraftCaption), nameof(DeleteDraftGlyph), nameof(MergeDraftTooltip) }) { OnPropertyChanged(property); }
         StartHistoryEditCommand.NotifyCanExecuteChanged();
         MoveDraftUpCommand.NotifyCanExecuteChanged();
         MoveDraftDownCommand.NotifyCanExecuteChanged();

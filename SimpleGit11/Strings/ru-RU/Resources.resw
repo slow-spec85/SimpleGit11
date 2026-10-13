@@ -1141,6 +1141,12 @@
   <data name="PullAppBarButton.Label" xml:space="preserve">
     <value>Вытянуть</value>
   </data>
+  <data name="SynchronizeAppBarButton.Label" xml:space="preserve">
+    <value>Синхронизировать</value>
+  </data>
+  <data name="SynchronizeTooltip.Content" xml:space="preserve">
+    <value>Получить изменения в текущую ветку, затем отправить её локальные изменения</value>
+  </data>
   <data name="PushSplitButtonTextBlock.Text" xml:space="preserve">
     <value>Отправить</value>
   </data>

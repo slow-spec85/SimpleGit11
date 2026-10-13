@@ -119,7 +119,9 @@ internal sealed class SetupBootstrapperApplication : BootstrapperApplication
     protected override void OnDetectMsiFeature(DetectMsiFeatureEventArgs args)
     {
         base.OnDetectMsiFeature(args);
-        if (args.PackageId != MsiPackageId)
+        // During a major upgrade Burn reports the new MSI's features as absent.
+        // Keep the states read from the installed related product instead.
+        if (args.PackageId != MsiPackageId || _relatedMsiInstalled)
         {
             return;
         }

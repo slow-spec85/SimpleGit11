@@ -60,7 +60,19 @@
                     Style="{ThemeResource SubtitleTextBlockStyle}"
                     Text="{Binding SelectedDiffFileTitle}"
                     TextTrimming="CharacterEllipsis"
-                    ToolTipService.ToolTip="{Binding SelectedDiffFileTooltip}" />
+                    ToolTipService.ToolTip="{Binding SelectedDiffFileTooltip}">
+                    <TextBlock.ContextFlyout>
+                        <MenuFlyout Opening="DiffHeadingContextFlyout_Opening">
+                            <MenuFlyoutItem
+                                x:Name="CopyDiffFileNameMenuItem"
+                                x:Uid="CopyNameMenuFlyoutItem"
+                                AutomationProperties.AutomationId="DiffViewerCopyFileName"
+                                Command="{x:Bind CopyTextCommand, Mode=OneWay}"
+                                CommandParameter="{x:Bind DiffHeading.Text, Mode=OneWay}"
+                                Icon="Copy" />
+                        </MenuFlyout>
+                    </TextBlock.ContextFlyout>
+                </TextBlock>
                 <TextBlock
                     Grid.Column="1"
                     x:Uid="DiffEditorModifiedStatusTextBlock"

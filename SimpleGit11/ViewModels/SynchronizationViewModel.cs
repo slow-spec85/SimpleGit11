@@ -107,6 +107,27 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
 
     private bool CanRefreshSynchronization() => !IsGitOperationRunning;
 
+    [RelayCommand(CanExecute = nameof(CanSynchronize), FlowExceptionsToTaskScheduler = true)]
+    private Task OnSynchronizeAsync() => _asyncCommandExecutor.ExecuteAsync(SynchronizeAsync);
+
+    private bool CanSynchronize() => CanRunRemoteOperation && Snapshot?.CurrentBranch is not null;
+
+    private async Task SynchronizeAsync()
+    {
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        if (!CanSynchronize() || !await PullAsync()
+            || _mainWindowViewModel.CurrentRepository != repository)
+        {
+            return;
+        }
+
+        BranchSynchronizationViewItem? currentBranch = LocalBranches.FirstOrDefault(branch => branch.IsCurrentBranch);
+        if (CanPushBranch(currentBranch))
+        {
+            await PushBranchAsync(currentBranch);
+        }
+    }
+
     [RelayCommand(CanExecute = nameof(CanPull), FlowExceptionsToTaskScheduler = true)]
     private Task OnPullAsync() => _asyncCommandExecutor.ExecuteAsync(PullAsync);
 
@@ -299,7 +320,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
     public bool CanRemoveRemote => CanRunRemoteOperation;
 
     public bool CanPull => CanRunRemoteOperation
-        && Snapshot?.CurrentBranch?.HasIncomingCommits == true;
+        && Snapshot?.CurrentBranch is not null;
 
     public bool CanPushBranches => CanRunRemoteOperation
         && LocalBranches.Any(item => item.CanPush);
@@ -430,7 +451,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         }
     }
 
-    private async Task RefreshSnapshotAsync(
+    private async Task<bool> RefreshSnapshotAsync(
         CancellationToken cancellationToken,
         bool useKnownRemoteTagState = false)
     {
@@ -439,7 +460,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         if (repository is null || remote is null)
         {
             ClearSnapshot();
-            return;
+            return false;
         }
 
         try
@@ -466,16 +487,18 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
             if (_mainWindowViewModel.CurrentRepository?.Path != repository.Path
                 || SelectedRemote?.Name != remote.Name)
             {
-                return;
+                return false;
             }
 
             await ApplySynchronizationSnapshotAsync(snapshot, repository, cancellationToken);
+            return true;
         }
         catch (Exception exception) when (IsExpectedGitException(exception))
         {
             ShowGitError(
                 exception,
                 SelectedRemote is null ? [] : [SelectedRemote.FetchUrl]);
+            return false;
         }
     }
 
@@ -649,14 +672,14 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         }, canCancel: true);
     }
 
-    private Task PullAsync()
+    private Task<bool> PullAsync()
     {
         RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
         BranchSynchronizationItem? currentBranch = Snapshot?.CurrentBranch;
         GitRemote? defaultRemote = SelectedRemote;
         if (repository is null || currentBranch is null || defaultRemote is null)
         {
-            return Task.CompletedTask;
+            return Task.FromResult(false);
         }
 
         return RunRemoteOperationAsync(
@@ -1148,7 +1171,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
             canCancel: true);
     }
 
-    private Task RunRemoteOperationAsync(
+    private async Task<bool> RunRemoteOperationAsync(
         string progressMessage,
         Func<CancellationToken, Task<GitRemoteOperationResult>> operation,
         string successMessage,
@@ -1156,14 +1179,19 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         IReadOnlyList<string>? remoteUrls = null)
     {
         RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
-        return RunGitOperationAsync(progressMessage, async cancellationToken =>
+        bool succeeded = false;
+        await RunGitOperationAsync(progressMessage, async cancellationToken =>
         {
             try
             {
                 ClearNotification();
                 GitRemoteOperationResult result = await operation(cancellationToken);
-                await RefreshSnapshotAsync(cancellationToken);
+                if (!await RefreshSnapshotAsync(cancellationToken))
+                {
+                    return;
+                }
                 ShowNotification(AppNotificationSeverity.Success, successMessage, result.Output);
+                succeeded = true;
             }
             catch (Exception exception) when (IsExpectedGitException(exception))
             {
@@ -1177,6 +1205,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
                 ShowGitError(exception, remoteUrls ?? []);
             }
         }, canCancel: true);
+        return succeeded;
     }
 
     private async Task RunGitOperationAsync(
@@ -1314,6 +1343,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
     private void UpdateCommandStates()
     {
         RefreshSynchronizationCommand.NotifyCanExecuteChanged();
+        SynchronizeCommand.NotifyCanExecuteChanged();
         PullCommand.NotifyCanExecuteChanged();
         SwitchAndPullCommand.NotifyCanExecuteChanged();
         PushCommand.NotifyCanExecuteChanged();

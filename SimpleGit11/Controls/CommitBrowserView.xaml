@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl
     x:Class="SimpleGit11.Controls.CommitBrowserView"
     x:Name="PageRoot"
@@ -363,46 +363,56 @@
                                                 </ItemsControl.ItemsPanel>
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate x:DataType="models:GitCommitReference">
-                                                        <Grid
+                                                        <Button
                                                             Margin="0,0,4,2"
                                                             MaxWidth="100"
+                                                            MinWidth="0"
+                                                            MinHeight="0"
+                                                            Padding="0"
+                                                            Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
+                                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="4"
+                                                            HorizontalContentAlignment="Stretch"
+                                                            Style="{StaticResource SubtleButtonStyle}"
+                                                            AutomationProperties.AutomationId="CommitReferenceButton"
+                                                            AutomationProperties.Name="{x:Bind Name}"
+                                                            Command="{Binding ViewModel.OpenReferenceCommand, ElementName=PageRoot}"
+                                                            CommandParameter="{x:Bind}"
                                                             ToolTipService.ToolTip="{x:Bind Name, Mode=OneTime}">
-                                                            <Border
-                                                                Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
-                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                                BorderThickness="1"
-                                                                CornerRadius="4" />
-                                                            <Border
-                                                                BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
-                                                                BorderThickness="1"
-                                                                CornerRadius="4"
-                                                                Visibility="{x:Bind IsRemoteBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                                            <Grid
-                                                                Padding="5,1"
-                                                                ColumnSpacing="4">
-                                                                    <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="12" />
-                                                                        <ColumnDefinition Width="*" />
-                                                                    </Grid.ColumnDefinitions>
-                                                                    <controls:BranchIcon
-                                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                                        Visibility="{x:Bind IsLocalBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                                                    <controls:BranchIcon
-                                                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                                                        Visibility="{x:Bind IsRemoteBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                                                    <FontIcon
-                                                                        FontSize="10"
-                                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                                        Glyph="&#xE8EC;"
-                                                                        Visibility="{x:Bind IsTag, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                                                    <TextBlock
-                                                                        Grid.Column="1"
-                                                                        MaxLines="1"
-                                                                        Style="{ThemeResource CaptionTextBlockStyle}"
-                                                                        Text="{x:Bind DisplayName, Mode=OneTime}"
-                                                                        TextTrimming="CharacterEllipsis" />
+                                                            <Grid>
+                                                                <Border
+                                                                    BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="4"
+                                                                    Visibility="{x:Bind IsRemoteBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                                <Grid
+                                                                    Padding="5,1"
+                                                                    ColumnSpacing="4">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="12" />
+                                                                            <ColumnDefinition Width="*" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <controls:BranchIcon
+                                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                            Visibility="{x:Bind IsLocalBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                                        <controls:BranchIcon
+                                                                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                                            Visibility="{x:Bind IsRemoteBranch, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                                        <FontIcon
+                                                                            FontSize="10"
+                                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                            Glyph="&#xE8EC;"
+                                                                            Visibility="{x:Bind IsTag, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                                        <TextBlock
+                                                                            Grid.Column="1"
+                                                                            MaxLines="1"
+                                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                                            Text="{x:Bind DisplayName, Mode=OneTime}"
+                                                                            TextTrimming="CharacterEllipsis" />
+                                                                </Grid>
                                                             </Grid>
-                                                        </Grid>
+                                                        </Button>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>

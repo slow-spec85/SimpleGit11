@@ -15,6 +15,51 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class HistoryEditingViewModelTests
 {
     [TestMethod]
+    public async Task SelectedCommitFile_LoadsDiffUsingTheHistoryFixture()
+    {
+        Fixture fixture = new();
+        await fixture.ViewModel.RefreshHistoryAsync();
+        fixture.ViewModel.SelectedCommit = fixture.Commits[0];
+        fixture.ViewModel.SelectedChangedFile = new GitChangedFile("selected.txt", "A");
+        await fixture.ViewModel.ShowDiffCommand.ExecuteAsync(null);
+
+        Assert.IsTrue(fixture.DiffLoads > 0);
+        Assert.IsFalse(fixture.ViewModel.IsDiffLoading);
+        Assert.IsTrue(fixture.ViewModel.HasDiffEmptyState);
+        Assert.AreEqual("", fixture.ViewModel.DiffText);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task LoadMoreVisibilityTracksPaginationAndHistoryEditing(bool hasMoreCommits)
+    {
+        Fixture fixture = new() { HasMoreCommits = hasMoreCommits };
+        List<string?> changedProperties = [];
+        fixture.ViewModel.PropertyChanged += (_, args) => changedProperties.Add(args.PropertyName);
+
+        Assert.IsFalse(fixture.ViewModel.IsLoadMoreHistoryVisible);
+        await fixture.ViewModel.RefreshHistoryAsync();
+        Assert.AreEqual(hasMoreCommits, fixture.ViewModel.IsLoadMoreHistoryVisible);
+        if (hasMoreCommits)
+        {
+            CollectionAssert.Contains(changedProperties, nameof(HistoryViewModel.IsLoadMoreHistoryVisible));
+        }
+
+        changedProperties.Clear();
+        fixture.ViewModel.SelectedCommit = fixture.Commits[1];
+        await fixture.ViewModel.StartHistoryEditCommand.ExecuteAsync(null);
+        Assert.IsTrue(fixture.ViewModel.IsHistoryEditing);
+        Assert.IsFalse(fixture.ViewModel.IsLoadMoreHistoryVisible);
+        CollectionAssert.Contains(changedProperties, nameof(HistoryViewModel.IsLoadMoreHistoryVisible));
+
+        changedProperties.Clear();
+        fixture.ViewModel.CancelHistoryEditCommand.Execute(null);
+        Assert.AreEqual(hasMoreCommits, fixture.ViewModel.IsLoadMoreHistoryVisible);
+        CollectionAssert.Contains(changedProperties, nameof(HistoryViewModel.IsLoadMoreHistoryVisible));
+    }
+
+    [TestMethod]
     public async Task TagsFilterUpdatesVisibleCommitsAndResetRestoresHistory()
     {
         Fixture fixture = new();
@@ -34,6 +79,57 @@ public sealed class HistoryEditingViewModelTests
         Assert.HasCount(3, fixture.ViewModel.Commits);
         Assert.HasCount(3, fixture.ViewModel.CommitRows);
         Assert.IsTrue(notifications >= 2);
+    }
+
+    [TestMethod]
+    public async Task RefreshHistory_PreservesFocusedCommitAndRangeUsingReloadedInstances()
+    {
+        Fixture fixture = new();
+        await fixture.ViewModel.RefreshHistoryAsync();
+        fixture.ViewModel.SelectedCommitRow = fixture.ViewModel.CommitRows[1];
+        fixture.ViewModel.SetSelectedCommits([fixture.ViewModel.Commits[0], fixture.ViewModel.Commits[1]]);
+        List<bool> updates = [];
+        fixture.ViewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(HistoryViewModel.IsUpdatingCommitRows))
+            {
+                updates.Add(fixture.ViewModel.IsUpdatingCommitRows);
+            }
+        };
+        fixture.ViewModel.CommitRows.CollectionChanged += (_, _) =>
+        {
+            Assert.IsTrue(fixture.ViewModel.IsUpdatingCommitRows,
+                "The view must ignore transient selection loss while row collections are being rebuilt.");
+        };
+        fixture.Commits[0] = Commit("ccccccc", "Updated newest", "bbbbbbb");
+        fixture.Commits[1] = Commit("bbbbbbb", "Updated selected", "aaaaaaa");
+
+        await fixture.ViewModel.RefreshHistoryAsync();
+
+        Assert.AreSame(fixture.Commits[1], fixture.ViewModel.SelectedCommit);
+        Assert.AreSame(fixture.ViewModel.CommitRows[1], fixture.ViewModel.SelectedCommitRow);
+        CollectionAssert.AreEquivalent(new[] { "ccccccc", "bbbbbbb" },
+            fixture.ViewModel.SelectedCommits.Select(commit => commit.Hash).ToArray());
+        Assert.AreSame(fixture.Commits[0], fixture.ViewModel.SelectedCommits[0]);
+        Assert.AreSame(fixture.Commits[1], fixture.ViewModel.SelectedCommits[1]);
+        CollectionAssert.AreEqual(new[] { true, false }, updates);
+        Assert.IsFalse(fixture.ViewModel.IsUpdatingCommitRows);
+    }
+
+    [TestMethod]
+    public async Task FilteringHistory_RemovesOnlyHiddenCommitsFromSelection()
+    {
+        Fixture fixture = new();
+        await fixture.ViewModel.RefreshHistoryAsync();
+        fixture.ViewModel.SelectedCommit = fixture.Commits[1];
+        fixture.ViewModel.SetSelectedCommits([fixture.Commits[0], fixture.Commits[1]]);
+
+        fixture.ViewModel.SearchText = fixture.Commits[1].Title;
+
+        Assert.AreSame(fixture.Commits[1], fixture.ViewModel.SelectedCommit);
+        Assert.AreSame(fixture.Commits[1], fixture.ViewModel.SelectedCommits.Single());
+        Assert.AreSame(fixture.ViewModel.CommitRows.Single(), fixture.ViewModel.SelectedCommitRow);
+        Assert.IsFalse(fixture.ViewModel.IsUpdatingCommitRows);
     }
 
     [TestMethod]
@@ -243,6 +339,29 @@ public sealed class HistoryEditingViewModelTests
         Assert.IsNull(target);
         Assert.AreEqual(2, fixture.ViewModel.CommitRows.Count);
         Assert.AreEqual(0, fixture.Editor.RebaseCalls);
+    }
+
+    [TestMethod]
+    public void OpenReference_RequestsBranchesNavigationWithOriginalReference()
+    {
+        Fixture fixture = new();
+        NavigationRequestedEventArgs? navigation = null;
+        fixture.Window.NavigationRequested += (_, args) => navigation = args;
+        foreach (GitCommitReferenceKind kind in Enum.GetValues<GitCommitReferenceKind>())
+        {
+            GitCommitReference reference = new("feature/nested/name", kind);
+            fixture.ViewModel.OpenReferenceCommand.Execute(reference);
+            Assert.IsNotNull(navigation);
+            Assert.AreEqual(AppNavigationTarget.Branches, navigation.Target);
+            Assert.AreSame(reference, navigation.Parameter);
+        }
+
+        navigation = null;
+        fixture.ViewModel.OpenReferenceCommand.Execute(null);
+        Assert.IsNull(navigation);
+        fixture.Window.CloseCurrentRepository();
+        fixture.ViewModel.OpenReferenceCommand.Execute(new("main", GitCommitReferenceKind.LocalBranch));
+        Assert.IsNull(navigation);
     }
 
     [TestMethod]
@@ -630,6 +749,8 @@ public sealed class HistoryEditingViewModelTests
         public int AmendCalls { get; private set; }
         public GitCommitOptions? AmendOptions { get; private set; }
         public int NativePageSize { get; set; } = 300;
+        public bool HasMoreCommits { get; set; }
+        public int DiffLoads { get; private set; }
 
         public Fixture(TemporaryGitRepository? nativeRepository = null)
         {
@@ -659,19 +780,26 @@ public sealed class HistoryEditingViewModelTests
             }) : new GitCommitService(runner);
             IGitHistoryService history = nativeHistory ?? Stub.Create<IGitHistoryService>((method, _) => method == "GetChangedFilesAsync"
                 ? Task.FromResult<IReadOnlyList<GitChangedFile>>([]) : throw new NotSupportedException(method));
+            ISettingsService settings = Stub.Create<ISettingsService>((_, _) => new AppSettings());
+            IGitDiffService diff = Stub.Create<IGitDiffService>((method, _) =>
+            {
+                if (method != "GetCommitDiffAsync") { throw new NotSupportedException(method); }
+                DiffLoads++;
+                return Task.FromResult(new DiffResult([], false, true, ""));
+            });
             IGitService git = Stub.Create<IGitService>((method, args) => method switch
             {
                 "get_Editor" => editor,
                 "get_Commits" => commitService,
                 "get_History" => history,
+                "get_Diff" => diff,
                 "ExecuteAsync" => ((Func<Task>)args![0]!)(),
                 "GetOperationStateAsync" => Task.FromResult(new GitOperationState(OperationKind)),
                 "GetLastCommitAsync" => nativeHistory?.GetLastCommitAsync(nativeRepository!.Repository) ?? Task.FromResult(Head),
-                "GetHistoryPageAsync" => nativeHistory?.GetCommitsPageAsync(nativeRepository!.Repository, 0, NativePageSize) ?? Task.FromResult(new GitCommitPage(Commits, false)),
+                "GetHistoryPageAsync" => nativeHistory?.GetCommitsPageAsync(nativeRepository!.Repository, 0, NativePageSize) ?? Task.FromResult(new GitCommitPage(Commits, HasMoreCommits)),
                 "GetStatusAsync" => Task.FromResult(new GitStatusSnapshot([], [], HasConflicts ? [new GitChangedFile("conflict.txt", "UU")] : [])),
                 _ => throw new NotSupportedException(method)
             });
-            ISettingsService settings = Stub.Create<ISettingsService>((_, _) => new AppSettings());
             Window = new MainWindowViewModel(Stub.Create<IRecentRepositoriesService>((_, _) => Array.Empty<RepositoryInfo>()), strings, git,
                 Stub.Create<IClipboardService>(), new TestProductInfoService(), messenger, settings);
             Window.SetCurrentRepository(nativeRepository?.Repository ?? new RepositoryInfo(Environment.CurrentDirectory, "repo", "main"), []);

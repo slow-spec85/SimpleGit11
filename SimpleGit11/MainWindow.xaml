@@ -278,6 +278,7 @@
                         Style="{ThemeResource CaptionTextBlockStyle}" />
                     <ListView
                         x:Name="RecentRepositoriesList"
+                        Tag="{x:Bind RepositoryViewModel.OpenRecentRepositoryInNewWindowCommand, Mode=OneWay}"
                         Height="{x:Bind RecentRepositoriesList.MaxHeight, Mode=OneWay}"
                         ItemsSource="{x:Bind ViewModel.RecentRepositories, Mode=OneWay}"
                         MaxHeight="168"
@@ -377,7 +378,7 @@
                                         <MenuFlyout>
                                             <MenuFlyoutItem
                                                 x:Uid="OpenRecentRepositoryInNewWindowMenuFlyoutItem"
-                                                Command="{Binding DataContext.OpenRecentRepositoryInNewWindowCommand, ElementName=RecentRepositoriesList}"
+                                                Command="{Binding Tag, ElementName=RecentRepositoriesList}"
                                                 CommandParameter="{x:Bind}"
                                                 Icon="OpenFile" />
                                             <MenuFlyoutSeparator />

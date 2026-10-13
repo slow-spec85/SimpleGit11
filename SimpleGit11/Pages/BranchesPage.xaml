@@ -5,12 +5,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:SimpleGit11.Controls"
     xmlns:models="using:SimpleGit11.Models"
+    xmlns:viewModels="using:SimpleGit11.ViewModels"
     xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
     xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
     Loaded="Page_Loaded"
     Unloaded="Page_Unloaded"
     NavigationCacheMode="Required">
     <Page.Resources>
+        <Thickness x:Key="TreeViewItemPresenterPadding">0</Thickness>
+        <Thickness x:Key="TreeViewItemPresenterMargin">4,0</Thickness>
         <Style x:Key="ReferenceHeaderToggleButtonStyle" TargetType="ToggleButton">
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="Padding" Value="0" />
@@ -157,9 +160,7 @@
                 <RowDefinition x:Name="DetailsRow" Height="0" />
             </Grid.RowDefinitions>
 
-            <ScrollViewer x:Name="ListPane" 
-                          VerticalScrollBarVisibility="Auto"
-                          Padding="0,0,12,0">
+            <Grid x:Name="ListPane" Padding="0,0,12,0">
 
                 <Grid RowSpacing="10">
                     <Grid.RowDefinitions>
@@ -178,7 +179,7 @@
                         Grid.Row="1"
                         SelectionChanged="BranchScopeSelectorBar_SelectionChanged">
                         <SelectorBarItem x:Name="LocalBranchScopeSelectorBarItem" x:Uid="LocalBranchScopeSelectorBarItem" Tag="Local" />
-                        <SelectorBarItem x:Uid="RemoteBranchScopeSelectorBarItem" Tag="Remote" />
+                        <SelectorBarItem x:Name="RemoteBranchScopeSelectorBarItem" x:Uid="RemoteBranchScopeSelectorBarItem" Tag="Remote" />
                     </SelectorBar>
                     <StackPanel Grid.Row="2" Spacing="6">
                         <InfoBar x:Uid="NoBranchesInfoBar" IsOpen="{x:Bind ViewModel.HasNoBranchesNotice, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoBranchesNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
@@ -187,90 +188,120 @@
                         <InfoBar x:Uid="NoFilteredTagsInfoBar" IsOpen="{x:Bind ViewModel.HasNoFilteredTags, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoFilteredTags, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                     </StackPanel>
 
-                    <ListView
-                        x:Name="BranchesListView"
+                    <TreeView
+                        x:Name="BranchesTreeView"
                         Grid.Row="3"
                         AutomationProperties.AutomationId="BranchesList"
-                        ItemsSource="{x:Bind ViewModel.FilteredBranches, Mode=OneWay}"
-                        SelectedItem="{x:Bind ViewModel.SelectedBranch, Mode=TwoWay}"
+                        ItemsSource="{x:Bind ViewModel.BranchTree, Mode=OneWay}"
                         SelectionMode="Single"
+                        CanDragItems="False" CanReorderItems="False" AllowDrop="False"
+                        SelectionChanged="BranchTree_SelectionChanged"
                         Visibility="{x:Bind ViewModel.BranchesModeVisibility, Mode=OneWay}">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="models:GitBranch">
-                                <Grid Padding="6" ColumnSpacing="10" RightTapped="BranchItem_RightTapped">
-                                    <Grid.ContextFlyout>
-                                        <MenuFlyout>
-                                            <MenuFlyoutItem x:Uid="CheckoutBranchMenuFlyoutItem" Command="{Binding DataContext.BranchPrimaryCommand, ElementName=BranchesListView}" Icon="Forward" />
-                                            <MenuFlyoutSeparator />
-                                            <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Name}" Icon="Copy" />
-                                            <MenuFlyoutItem x:Uid="RenameBranchMenuFlyoutItem" Command="{Binding DataContext.RenameBranchCommand, ElementName=BranchesListView}" Icon="Edit" Visibility="{x:Bind IsLocal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                            <MenuFlyoutItem x:Uid="AddBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.EditContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Add" Visibility="{x:Bind CanAddConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                            <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.DeleteContextBranchDescriptionCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind}" Icon="Delete" Visibility="{x:Bind CanEditConfigDescription, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                            <MenuFlyoutSeparator />
-                                            <MenuFlyoutItem x:Uid="MergeBranchMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesListView}" Icon="Link" />
-                                            <MenuFlyoutItem x:Uid="MergeBranchWithoutCommitMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesListView}" CommandParameter="True" Icon="Link" />
-                                            <MenuFlyoutItem x:Uid="SquashMergeBranchMenuFlyoutItem" Command="{Binding DataContext.SquashMergeBranchCommand, ElementName=BranchesListView}" Icon="Copy" />
-                                            <MenuFlyoutItem x:Uid="RebaseBranchMenuFlyoutItem" Command="{Binding DataContext.RebaseBranchCommand, ElementName=BranchesListView}" Icon="Refresh" />
-                                            <MenuFlyoutItem x:Uid="PrepareBranchSnapshotMenuFlyoutItem" Command="{Binding DataContext.PrepareBranchSnapshotCommand, ElementName=BranchesListView}" Icon="Copy" />
-                                            <MenuFlyoutSeparator />
-                                            <MenuFlyoutItem x:Uid="DeleteBranchMenuFlyoutItem" Command="{Binding DataContext.DeleteBranchCommand, ElementName=BranchesListView}" Icon="Delete" />
-                                        </MenuFlyout>
-                                    </Grid.ContextFlyout>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="28" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource MetadataIndicatorBackgroundBrush}" CornerRadius="4">
-                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Spacing="2">
-                                        <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind CommitMetadata, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind LastCommitMessage, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                </Grid>
+                        <TreeView.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:ReferenceTreeItemViewModel">
+                                <TreeViewItem ItemsSource="{x:Bind Children}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" HorizontalContentAlignment="Stretch" GlyphSize="12" Loaded="ReferenceTreeItem_Loaded" AutomationProperties.Name="{x:Bind FullName}" ToolTipService.ToolTip="{x:Bind FullName}">
+                                    <Grid>
+                                        <Grid Padding="0,4,4,4" ColumnSpacing="10" Visibility="{x:Bind IsReference, Converter={StaticResource BooleanToVisibilityConverter}}" RightTapped="BranchItem_RightTapped">
+                                            <Grid.ContextFlyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem x:Uid="CheckoutBranchMenuFlyoutItem" Command="{Binding DataContext.BranchPrimaryCommand, ElementName=BranchesTreeView}" Icon="Forward" />
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesTreeView}" CommandParameter="{x:Bind FullName}" Icon="Copy" />
+                                                    <MenuFlyoutItem x:Uid="RenameBranchMenuFlyoutItem" Command="{Binding DataContext.RenameBranchCommand, ElementName=BranchesTreeView}" Icon="Edit" Visibility="{x:Bind Branch.IsLocal, FallbackValue=Collapsed, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                    <MenuFlyoutItem x:Uid="AddBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.EditContextBranchDescriptionCommand, ElementName=BranchesTreeView}" CommandParameter="{x:Bind Branch}" Icon="Add" Visibility="{x:Bind Branch.CanAddConfigDescription, FallbackValue=Collapsed, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                    <MenuFlyoutItem x:Uid="DeleteBranchDescriptionMenuFlyoutItem" Command="{Binding DataContext.DeleteContextBranchDescriptionCommand, ElementName=BranchesTreeView}" CommandParameter="{x:Bind Branch}" Icon="Delete" Visibility="{x:Bind Branch.CanEditConfigDescription, FallbackValue=Collapsed, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem x:Uid="MergeBranchMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesTreeView}" Icon="Link" />
+                                                    <MenuFlyoutItem x:Uid="MergeBranchWithoutCommitMenuFlyoutItem" Command="{Binding DataContext.MergeBranchCommand, ElementName=BranchesTreeView}" CommandParameter="True" Icon="Link" />
+                                                    <MenuFlyoutItem x:Uid="SquashMergeBranchMenuFlyoutItem" Command="{Binding DataContext.SquashMergeBranchCommand, ElementName=BranchesTreeView}" Icon="Copy" />
+                                                    <MenuFlyoutItem x:Uid="RebaseBranchMenuFlyoutItem" Command="{Binding DataContext.RebaseBranchCommand, ElementName=BranchesTreeView}" Icon="Refresh" />
+                                                    <MenuFlyoutItem x:Uid="PrepareBranchSnapshotMenuFlyoutItem" Command="{Binding DataContext.PrepareBranchSnapshotCommand, ElementName=BranchesTreeView}" Icon="Copy" />
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem x:Uid="DeleteBranchMenuFlyoutItem" Command="{Binding DataContext.DeleteBranchCommand, ElementName=BranchesTreeView}" Icon="Delete" />
+                                                </MenuFlyout>
+                                            </Grid.ContextFlyout>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="28" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource MetadataIndicatorBackgroundBrush}" CornerRadius="4">
+                                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Metadata, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid Padding="0,4,4,4" ColumnSpacing="10" Background="Transparent" DoubleTapped="ReferenceFolder_DoubleTapped" Visibility="{x:Bind IsFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="28" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Viewbox Width="28" Height="28" VerticalAlignment="Center"><SymbolIcon Symbol="Folder" /></Viewbox>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Metadata}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Grid>
+                                </TreeViewItem>
                             </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
 
-                    <ListView
-                        x:Name="TagsListView"
+                    <TreeView
+                        x:Name="TagsTreeView"
                         Grid.Row="3"
                         AutomationProperties.AutomationId="TagsList"
-                        ItemsSource="{x:Bind ViewModel.FilteredTags, Mode=OneWay}"
-                        SelectedItem="{x:Bind ViewModel.SelectedTag, Mode=TwoWay}"
+                        ItemsSource="{x:Bind ViewModel.TagTree, Mode=OneWay}"
                         SelectionMode="Single"
+                        CanDragItems="False" CanReorderItems="False" AllowDrop="False"
+                        SelectionChanged="TagTree_SelectionChanged"
                         Visibility="{x:Bind ViewModel.TagsModeVisibility, Mode=OneWay}">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="models:GitTag">
-                                <Grid Padding="6" ColumnSpacing="10" RightTapped="TagItem_RightTapped">
-                                    <Grid.ContextFlyout>
-                                        <MenuFlyout>
-                                            <MenuFlyoutItem x:Uid="CheckoutTagMenuFlyoutItem" Command="{Binding DataContext.CheckoutTagCommand, ElementName=TagsListView}" Icon="Forward" />
-                                            <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=BranchesListView}" CommandParameter="{x:Bind Name}" Icon="Copy" />
-                                            <MenuFlyoutItem x:Uid="FetchTagMenuFlyoutItem" Command="{Binding DataContext.FetchTagCommand, ElementName=TagsListView}" Icon="Download" Visibility="{x:Bind IsRemote, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                            <MenuFlyoutSeparator />
-                                            <MenuFlyoutItem x:Uid="DeleteTagMenuFlyoutItem" Command="{Binding DataContext.DeleteTagCommand, ElementName=TagsListView}" Icon="Delete" />
-                                        </MenuFlyout>
-                                    </Grid.ContextFlyout>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="28" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource MetadataIndicatorBackgroundBrush}" CornerRadius="4">
-                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Spacing="2">
-                                        <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind CommitMetadata, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Subject, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                </Grid>
+                        <TreeView.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:ReferenceTreeItemViewModel">
+                                <TreeViewItem ItemsSource="{x:Bind Children}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" HorizontalContentAlignment="Stretch" GlyphSize="12" Loaded="ReferenceTreeItem_Loaded" AutomationProperties.Name="{x:Bind FullName}" ToolTipService.ToolTip="{x:Bind FullName}">
+                                    <Grid>
+                                        <Grid Padding="0,4,4,4" ColumnSpacing="10" Visibility="{x:Bind IsReference, Converter={StaticResource BooleanToVisibilityConverter}}" RightTapped="TagItem_RightTapped">
+                                            <Grid.ContextFlyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem x:Uid="CheckoutTagMenuFlyoutItem" Command="{Binding DataContext.CheckoutTagCommand, ElementName=TagsTreeView}" Icon="Forward" />
+                                                    <MenuFlyoutItem x:Uid="CopyNameMenuFlyoutItem" Command="{Binding DataContext.CopyTextCommand, ElementName=TagsTreeView}" CommandParameter="{x:Bind FullName}" Icon="Copy" />
+                                                    <MenuFlyoutItem x:Uid="FetchTagMenuFlyoutItem" Command="{Binding DataContext.FetchTagCommand, ElementName=TagsTreeView}" Icon="Download" Visibility="{x:Bind Tag.IsRemote, FallbackValue=Collapsed, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem x:Uid="DeleteTagMenuFlyoutItem" Command="{Binding DataContext.DeleteTagCommand, ElementName=TagsTreeView}" Icon="Delete" />
+                                                </MenuFlyout>
+                                            </Grid.ContextFlyout>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="28" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{ThemeResource MetadataIndicatorBackgroundBrush}" CornerRadius="4">
+                                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind CurrentIndicator, Mode=OneTime}" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Metadata, Mode=OneTime}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid Padding="0,4,4,4" ColumnSpacing="10" Background="Transparent" DoubleTapped="ReferenceFolder_DoubleTapped" Visibility="{x:Bind IsFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="28" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Viewbox Width="28" Height="28" VerticalAlignment="Center"><SymbolIcon Symbol="Folder" /></Viewbox>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="{x:Bind Metadata}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Grid>
+                                </TreeViewItem>
                             </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
                 </Grid>
-            </ScrollViewer>
+            </Grid>
 
             <primitives:Thumb
                 x:Name="PaneSplitter"
