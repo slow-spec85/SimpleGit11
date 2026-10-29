@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="SimpleGit11.Controls.ChangedFilesTree"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SimpleGit11.Controls"
+    xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
+    xmlns:viewmodels="using:SimpleGit11.ViewModels">
+    <UserControl.Resources>
+        <Thickness x:Key="ListViewItemPresenterMargin">0</Thickness>
+        <x:Boolean x:Key="ListViewItemSelectionCheckMarkVisualEnabled">False</x:Boolean>
+    </UserControl.Resources>
+    <ListView
+        x:Name="FileTree"
+        ItemsSource="{x:Bind Model.VisibleItems, Mode=OneWay}"
+        Padding="{x:Bind Padding, Mode=OneWay}"
+        SelectionChanged="FileTree_SelectionChanged"
+        ContainerContentChanging="FileTree_ContainerContentChanging"
+        IsMultiSelectCheckBoxEnabled="False"
+        IsItemClickEnabled="True"
+        ItemClick="FileTree_ItemClick"
+        KeyDown="FileTree_KeyDown"
+        ContextRequested="FileTree_ContextRequested"
+        CanDragItems="False"
+        CanReorderItems="False"
+        AllowDrop="False">
+        <ListView.ItemContainerStyle>
+            <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                <Setter Property="MinHeight" Value="28" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            </Style>
+        </ListView.ItemContainerStyle>
+        <primitives:FlyoutBase.AttachedFlyout>
+            <MenuFlyout x:Name="FolderContextMenu">
+                <MenuFlyoutItem
+                    x:Uid="ShowFoldersMenuFlyoutItem"
+                    Command="{x:Bind Model.ToggleFoldersCommand, Mode=OneWay}">
+                    <MenuFlyoutItem.Icon>
+                        <SymbolIcon Symbol="{x:Bind Model.FolderViewSymbol, Mode=OneWay}" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+            </MenuFlyout>
+        </primitives:FlyoutBase.AttachedFlyout>
+        <ListView.ItemTemplate>
+            <DataTemplate x:DataType="viewmodels:ChangedFileTreeItemViewModel">
+                <Grid
+                    Tag="{x:Bind}"
+                    ContextRequested="FileItem_ContextRequested"
+                    AutomationProperties.Name="{x:Bind Tooltip}"
+                    ToolTipService.ToolTip="{x:Bind Tooltip}"
+                    Margin="{x:Bind Indentation}"
+                    Padding="0,2,0,2"
+                    ColumnSpacing="6"
+                    Height="24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="20" />
+                        <ColumnDefinition Width="18" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button
+                        Width="20"
+                        Height="20"
+                        MinWidth="0"
+                        MinHeight="0"
+                        Padding="0"
+                        IsTabStop="False"
+                        Style="{StaticResource SubtleButtonStyle}"
+                        AutomationProperties.Name="{x:Bind Path}"
+                        Command="{x:Bind ToggleFolderExpansionCommand}"
+                        Visibility="{x:Bind IsFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <FontIcon FontSize="10" Glyph="{x:Bind ExpansionGlyph, Mode=OneWay}" />
+                    </Button>
+                    <FontIcon
+                        Grid.Column="1"
+                        FontSize="14"
+                        Glyph="&#xE8B7;"
+                        Visibility="{x:Bind IsFolder, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <Border
+                        Grid.Column="1"
+                        Width="18"
+                        Height="18"
+                        CornerRadius="3"
+                        Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
+                        Visibility="{x:Bind IsFile, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock
+                            Text="{x:Bind StatusIndicator}"
+                            FontSize="10"
+                            FontWeight="SemiBold"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+                    </Border>
+                    <Border
+                        Grid.Column="1"
+                        Width="18"
+                        Height="18"
+                        CornerRadius="3"
+                        Background="{ThemeResource ConflictIndicatorBackgroundBrush}"
+                        Visibility="{x:Bind IsConflicted, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock
+                            x:Uid="ConflictStatusIndicatorTextBlock"
+                            Text="{x:Bind StatusIndicator}"
+                            FontSize="10"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource ConflictIndicatorForegroundBrush}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock
+                        Grid.Column="2"
+                        Text="{x:Bind Name}"
+                        MaxLines="1"
+                        TextWrapping="NoWrap"
+                        TextTrimming="CharacterEllipsis"
+                        VerticalAlignment="Center" />
+                    <Border
+                        Grid.Column="3"
+                        Padding="4,1"
+                        Margin="0,0,6,0"
+                        Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
+                        CornerRadius="3"
+                        VerticalAlignment="Center"
+                        Visibility="{x:Bind IsStaged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock
+                            Text="{x:Bind StateLabel}"
+                            FontSize="10"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource SuccessfulOperationColor}"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center" />
+                    </Border>
+                    <TextBlock
+                        Grid.Column="4"
+                        x:Uid="SubmoduleChangeBadgeTextBlock"
+                        FontSize="10"
+                        VerticalAlignment="Center"
+                        Visibility="{x:Bind IsSubmodule, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <controls:DiffStatPresenter
+                        Grid.Column="5"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        AddedText="{x:Bind Stat.AddedText}"
+                        RemovedText="{x:Bind Stat.RemovedText}"
+                        Visibility="{x:Bind IsFile, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Loaded="StatPresenter_Loaded" />
+                </Grid>
+            </DataTemplate>
+        </ListView.ItemTemplate>
+    </ListView>
+</UserControl>

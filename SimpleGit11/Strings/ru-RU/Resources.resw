@@ -570,8 +570,8 @@
   <data name="NoCommitsInfoBar.Message" xml:space="preserve">
     <value>Нет коммитов для текущего репозитория или поиска.</value>
   </data>
-  <data name="LoadMoreCommitsButtonText" xml:space="preserve">
-    <value>Загрузить ещё {0}</value>
+  <data name="LoadRemainingCommitsButtonText" xml:space="preserve">
+    <value>Загрузить остальные</value>
   </data>
   <data name="LoadingMoreHistoryProgress" xml:space="preserve">
     <value>Загрузка более ранних коммитов…</value>
@@ -4293,6 +4293,15 @@ only — только fast-forward; «Не задано» — наследова
   <data name="ApplicationSettingsTitleTextBlock.Text" xml:space="preserve">
     <value>Параметры приложения</value>
   </data>
+  <data name="RefreshOnWindowActivationHeaderTextBlock.Text" xml:space="preserve">
+    <value>Обновлять при возврате фокуса</value>
+  </data>
+  <data name="RefreshOnWindowActivationDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Обновлять данные текущей страницы при возврате фокуса окну</value>
+  </data>
+  <data name="RefreshOnWindowActivationToggleSwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Обновлять при возврате фокуса</value>
+  </data>
   <data name="CommitGraphMergeDescription" xml:space="preserve">
     <value>Коммит слияния, родителей: {0}.</value>
   </data>
@@ -4682,5 +4691,8 @@ only — только fast-forward; «Не задано» — наследова
   </data>
   <data name="HistoryEditInvalidMove" xml:space="preserve">
     <value>Это перемещение создаёт циклические связи между коммитами. Выберите другого родителя или измените порядок действий.</value>
+  </data>
+  <data name="ShowFoldersMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Показать папки</value>
   </data>
 </root>

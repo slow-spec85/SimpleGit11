@@ -1,3 +1,4 @@
+using SimpleGit11.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -414,7 +415,8 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
             _hasRefreshed = true;
 
             _isUpdatingRemoteSelection = true;
-            Remotes = remotes.ToList();
+            Remotes = CollectionSynchronization.ReuseItems(Remotes, remotes, remote => remote.Name,
+                (previous, current) => previous.HasSameSnapshot(current));
 
             SelectedRemote = _mainWindowViewModel.ResolveSelectedRemote(Remotes, selectedRemoteName);
             _isUpdatingRemoteSelection = false;
@@ -549,18 +551,29 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
         }
 
         _snapshotRepositoryPath = repository.Path;
-        LocalBranches = localBranches;
-        Tags = tags;
-        IncomingBranches = incomingBranches;
-        LocalSubmoduleChanges = await localSubmoduleChangesTask;
-        IncomingSubmoduleChanges = await incomingSubmoduleChangesTask;
-        SubmodulesRequiringApplication = (await applicationStatesTask)
-            .Select(state => new SubmoduleApplicationViewItem(state, _localizationService))
-            .ToList();
+        LocalBranches = CollectionSynchronization.ReuseItems(LocalBranches, localBranches, item => item.Name,
+            (previous, current) => previous.Branch.HasSameSnapshot(current.Branch) && previous.Description == current.Description);
+        Tags = CollectionSynchronization.ReuseItems(Tags, tags, item => item.Name,
+            (previous, current) => previous.Tag.LocalTag.HasSameSnapshot(current.Tag.LocalTag)
+                && previous.Tag.RemoteReferenceObjectHash == current.Tag.RemoteReferenceObjectHash
+                && previous.Tag.RemoteObjectHash == current.Tag.RemoteObjectHash && previous.Description == current.Description);
+        IncomingBranches = CollectionSynchronization.ReuseItems(IncomingBranches, incomingBranches, item => item.Name,
+            (previous, current) => previous.Branch.HasSameSnapshot(current.Branch) && previous.Description == current.Description);
+        LocalSubmoduleChanges = ReuseSubmodules(LocalSubmoduleChanges, await localSubmoduleChangesTask);
+        IncomingSubmoduleChanges = ReuseSubmodules(IncomingSubmoduleChanges, await incomingSubmoduleChangesTask);
+        SubmodulesRequiringApplication = CollectionSynchronization.ReuseItems(SubmodulesRequiringApplication,
+            (await applicationStatesTask).Select(state => new SubmoduleApplicationViewItem(state, _localizationService)),
+            item => item.Path, (previous, current) => previous.State == current.State);
         Snapshot = snapshot;
 
         NotifySynchronizationStateChanged();
     }
+
+    private static IReadOnlyList<SubmoduleSynchronizationViewItem> ReuseSubmodules(
+        IReadOnlyList<SubmoduleSynchronizationViewItem> previous, IReadOnlyList<SubmoduleSynchronizationViewItem> current) =>
+        CollectionSynchronization.ReuseItems(previous, current, item => (item.BranchName, item.Path),
+            (old, item) => old.OldCommit == item.OldCommit && old.NewCommit == item.NewCommit
+                && old.Kind == item.Kind && old.Description == item.Description);
 
     private async Task<IReadOnlyList<SubmoduleSynchronizationViewItem>> CreateSubmoduleSynchronizationItemsAsync(
         RepositoryInfo repository,

@@ -80,7 +80,7 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
     public partial bool HasNoCommits { get; private set; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(LoadMoreCommitsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadRemainingCommitsCommand))]
     public partial bool HasMoreCommits { get; private set; }
 
     public bool ShowEmptyState => !IsLoading && HasNoCommits;
@@ -107,7 +107,7 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
     {
         RaiseCommitDetailsCommandCanExecuteChanged();
         UpdateCherryPickCommandStates();
-        LoadMoreCommitsCommand.NotifyCanExecuteChanged();
+        LoadRemainingCommitsCommand.NotifyCanExecuteChanged();
         PublishCommitRangeOperationState();
     }
 
@@ -115,7 +115,7 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
     {
         RaiseCommitDetailsCommandCanExecuteChanged();
         UpdateCherryPickCommandStates();
-        LoadMoreCommitsCommand.NotifyCanExecuteChanged();
+        LoadRemainingCommitsCommand.NotifyCanExecuteChanged();
         PublishCommitRangeOperationState();
     }
 
@@ -153,11 +153,11 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
         _asyncCommandExecutor.ExecuteAsync(() => CherryPickSelectedCoreAsync(
             new GitCherryPickOptions(NoCommit: true)));
 
-    [RelayCommand(CanExecute = nameof(CanLoadMoreCommits), FlowExceptionsToTaskScheduler = true)]
-    private Task OnLoadMoreCommitsAsync() =>
-        _asyncCommandExecutor.ExecuteAsync(LoadMoreCommitsAsync);
+    [RelayCommand(CanExecute = nameof(CanLoadRemainingCommits), FlowExceptionsToTaskScheduler = true)]
+    private Task OnLoadRemainingCommitsAsync() =>
+        _asyncCommandExecutor.ExecuteAsync(LoadRemainingCommitsAsync);
 
-    private bool CanLoadMoreCommits()
+    private bool CanLoadRemainingCommits()
     {
         return HasMoreCommits
             && _loadCommitPageAsync is not null
@@ -370,7 +370,7 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
         }
     }
 
-    private async Task LoadMoreCommitsAsync()
+    private async Task LoadRemainingCommitsAsync()
     {
         RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
         if (repository is null || _loadCommitPageAsync is null || !HasMoreCommits)
@@ -383,18 +383,17 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
             ClearNotification();
             ProgressMessage = _localizationService.GetString("LoadingMoreHistoryProgress");
             IsLoadingMore = true;
-            GitCommitPage loadedPage = new([], false);
+            IReadOnlyList<GitCommit> loadedCommits = [];
             await _gitService.ExecuteAsync(async () =>
             {
-                loadedPage = await _loadCommitPageAsync(
-                    repository,
-                    _nextCommitOffset,
-                    CommitPageSize);
+                loadedCommits = await LoadRemainingCommitPagesAsync(
+                    (offset, count) => _loadCommitPageAsync(repository, offset, count),
+                    _nextCommitOffset);
             });
 
-            _nextCommitOffset += loadedPage.Commits.Count;
-            AppendCommits(loadedPage.Commits);
-            HasMoreCommits = loadedPage.HasMore;
+            _nextCommitOffset += loadedCommits.Count;
+            AppendCommits(loadedCommits);
+            HasMoreCommits = false;
         }
         catch (FileNotFoundException)
         {

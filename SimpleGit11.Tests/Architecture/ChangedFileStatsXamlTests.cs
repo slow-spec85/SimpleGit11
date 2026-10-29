@@ -1,4 +1,8 @@
+using System.Reflection;
 using System.Xml.Linq;
+using SimpleGit11.Controls;
+using SimpleGit11.Models;
+using SimpleGit11.ViewModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SimpleGit11.Tests.Architecture;
@@ -7,12 +11,14 @@ namespace SimpleGit11.Tests.Architecture;
 public sealed class ChangedFileStatsXamlTests
 {
     [TestMethod]
-    public void CommitBrowserChangedFileStats_UseSharedPresenterMetrics()
+    [DataRow("Controls", "CommitBrowserView.xaml", "HistoryDiffStatColumnMetrics")]
+    [DataRow("Pages", "ChangesPage.xaml", "ChangesDiffStatColumnMetrics")]
+    public void ChangedFileStats_UseSharedPresenterMetrics(string folder, string file, string metricsKey)
     {
-        XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
+        XDocument document = LoadApplicationXaml(folder, file);
         XElement metrics = document.Descendants().Single(element =>
             element.Name.LocalName == "DiffStatColumnMetrics");
-        Assert.AreEqual("HistoryDiffStatColumnMetrics", RequiredXamlAttribute(metrics, "Key"));
+        Assert.AreEqual(metricsKey, RequiredXamlAttribute(metrics, "Key"));
 
         XElement[] presenters = document.Descendants()
             .Where(element => element.Name.LocalName == "DiffStatPresenter")
@@ -24,8 +30,13 @@ public sealed class ChangedFileStatsXamlTests
         XElement rowPresenter = presenters.Single(element =>
             element.Attribute("IsColumnWidthSource") is null);
 
-        AssertUsesSharedMetrics(headerPresenter);
-        AssertUsesSharedMetrics(rowPresenter);
+        AssertUsesSharedMetrics(headerPresenter, metricsKey);
+        AssertUsesSharedMetrics(rowPresenter, metricsKey);
+        XElement tree = document.Descendants().Single(element => element.Name.LocalName == "ChangedFilesTree");
+        Assert.AreEqual("{StaticResource " + metricsKey + "}", RequiredAttribute(tree, "ColumnMetrics"));
+        StringAssert.Contains(RequiredAttribute(tree, "ContentPadding"), "GetContentPadding(ChangedFilesHeader.Padding");
+        string flatListName = file == "CommitBrowserView.xaml" ? "HistoryChangedFilesListView" : "ChangedFilesListView";
+        Assert.AreEqual("{x:Bind " + flatListName + ".Padding, Mode=OneWay}", RequiredAttribute(tree, "Padding"));
         StringAssert.Contains(
             RequiredAttribute(headerPresenter, "AddedText"),
             "ViewModel.ChangedFilesStat.AddedText");
@@ -66,10 +77,242 @@ public sealed class ChangedFileStatsXamlTests
         StringAssert.Contains(RequiredAttribute(textBlocks[1], "Text"), "RemovedText");
     }
 
-    private static void AssertUsesSharedMetrics(XElement presenter)
+    [TestMethod]
+    [DataRow("Controls", "CommitBrowserView.xaml", "HistoryFileContextMenu")]
+    [DataRow("Pages", "ChangesPage.xaml", "ChangesFileContextMenu")]
+    public void FileMenus_KeepViewModesTogetherBeforeCopy(string folder, string file, string menuName)
+    {
+        XDocument document = LoadApplicationXaml(folder, file);
+        XElement menu = document.Descendants().Single(element =>
+            element.Name.LocalName == "MenuFlyout"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == menuName);
+        XElement[] items = menu.Elements().ToArray();
+        int fullFileIndex = Array.FindIndex(items, item => (string?)item.Attribute("Tag") == "FileContent");
+        Assert.IsTrue(fullFileIndex > 0);
+        Assert.AreEqual("MenuFlyoutSeparator", items[fullFileIndex - 1].Name.LocalName);
+        Assert.AreEqual("MenuFlyoutItem", items[fullFileIndex + 1].Name.LocalName);
+        Assert.AreEqual("ShowFoldersMenuFlyoutItem", RequiredXamlAttribute(items[fullFileIndex + 1], "Uid"));
+        StringAssert.Contains(RequiredAttribute(items[fullFileIndex + 1], "Command"), "ToggleFoldersCommand");
+        Assert.AreEqual("MenuFlyoutSeparator", items[fullFileIndex + 2].Name.LocalName);
+        Assert.AreEqual("CopyName", RequiredAttribute(items[fullFileIndex + 3], "Tag"));
+        Assert.IsFalse(menu.Descendants().Any(element => element.Name.LocalName == "ToggleMenuFlyoutItem"));
+        XElement icon = items[fullFileIndex + 1].Descendants().Single(element => element.Name.LocalName == "SymbolIcon");
+        StringAssert.Contains(RequiredAttribute(icon, "Symbol"), "FolderViewSymbol");
+        StringAssert.Contains(RequiredAttribute(items[fullFileIndex], "Text"), "{x:Bind ViewModel.ContextMenuDisplayModeText");
+        Assert.IsTrue(menu.Descendants().Attributes("Command").All(attribute => attribute.Value.StartsWith("{x:Bind", StringComparison.Ordinal)));
+        if (menuName == "HistoryFileContextMenu")
+        {
+            Assert.AreEqual("FileFilterModeMenuFlyoutItem", RequiredXamlAttribute(items[0], "Uid"));
+        }
+    }
+
+    [TestMethod]
+    public void FileTree_UsesCompactSingleLineRowsAndKeepsFolderMenuAvailable()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "ChangedFilesTree.xaml");
+        XElement row = document.Descendants().Single(element => element.Name.LocalName == "Grid");
+        Assert.AreEqual("24", RequiredAttribute(row, "Height"));
+        Assert.IsFalse(document.Descendants().Any(element => element.Name.LocalName == "StackPanel"));
+        XElement name = document.Descendants().Single(element =>
+            element.Name.LocalName == "TextBlock" && (string?)element.Attribute("Text") == "{x:Bind Name}");
+        Assert.AreEqual("1", RequiredAttribute(name, "MaxLines"));
+        Assert.AreEqual("NoWrap", RequiredAttribute(name, "TextWrapping"));
+        Assert.IsTrue(document.Descendants().Where(element => element.Name.LocalName == "Border" && element.Attribute("Width") is not null)
+            .All(element => RequiredAttribute(element, "Width") == "18"
+                && RequiredAttribute(element, "Height") == "18"));
+        XElement folderToggle = document.Descendants().Single(element =>
+            element.Name.LocalName == "MenuFlyoutItem");
+        Assert.AreEqual("ShowFoldersMenuFlyoutItem", RequiredXamlAttribute(folderToggle, "Uid"));
+    }
+
+    [TestMethod]
+    public void FileTree_SelectionCanBeRestoredAfterNativeCollectionBecomesAvailable()
+    {
+        GitChangedFile selectedFile = new("src/nested/File.cs", "Modified", state: GitChangeState.Staged);
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([selectedFile]);
+        ChangedFileTreeItemViewModel leaf = model.Roots.Single().Children.Single().Children.Single();
+        MethodInfo restoreSelection = typeof(ChangedFilesTree).GetMethod(
+            "UpdateSelectedItems", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        // Initialization must preserve the bound selection until the list is available.
+        restoreSelection.Invoke(null, [null, model.VisibleItems, new[] { selectedFile }]);
+
+        List<object> nativeSelection = [new object()];
+        restoreSelection.Invoke(null, [nativeSelection, model.VisibleItems, new[] { selectedFile }]);
+        CollectionAssert.AreEqual(new object[] { leaf }, nativeSelection);
+
+        restoreSelection.Invoke(null, [nativeSelection, model.VisibleItems, Array.Empty<GitChangedFile>()]);
+        Assert.IsEmpty(nativeSelection);
+    }
+
+    [TestMethod]
+    public void FileTree_SelectionRestoresOnlyRequestedFileStates()
+    {
+        GitChangedFile staged = new("src/File.cs", "Modified", state: GitChangeState.Staged);
+        GitChangedFile unstaged = new("src/File.cs", "Modified", state: GitChangeState.Unstaged);
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([staged, unstaged, new("other.txt", "Modified")]);
+        List<object> nativeSelection = [];
+        MethodInfo restoreSelection = typeof(ChangedFilesTree).GetMethod(
+            "UpdateSelectedItems", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        restoreSelection.Invoke(null, [nativeSelection, model.VisibleItems, new[] { unstaged }]);
+
+        Assert.HasCount(1, nativeSelection);
+        ChangedFileTreeItemViewModel leaf = (ChangedFileTreeItemViewModel)nativeSelection.Single();
+        Assert.AreSame(unstaged, leaf.File);
+    }
+
+    [TestMethod]
+    [DataRow(16, 10, 26)]
+    [DataRow(12, 10, 22)]
+    [DataRow(32, 10, 42)]
+    public void FileTree_ContentPaddingAlignsWithHeaderInWideAndNarrowLayouts(
+        double headerRight, double statisticsRight, double expectedRight)
+    {
+        Microsoft.UI.Xaml.Thickness padding = ChangedFilesTree.GetContentPadding(
+            new Microsoft.UI.Xaml.Thickness(0, 0, headerRight, 0),
+            new Microsoft.UI.Xaml.Thickness(0, 0, statisticsRight, 0));
+
+        Assert.AreEqual(expectedRight, padding.Right);
+        Assert.AreEqual(0.0, padding.Left);
+    }
+
+    [TestMethod]
+    public void FileTree_ContextMenuIsAttachedToTheTypedRowAndStatisticsUseOwnerMetrics()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "ChangedFilesTree.xaml");
+        XElement item = document.Descendants().Single(element => element.Name.LocalName == "Grid");
+        Assert.AreEqual("{x:Bind}", RequiredAttribute(item, "Tag"));
+        Assert.AreEqual("FileItem_ContextRequested", RequiredAttribute(item, "ContextRequested"));
+        Assert.IsFalse(document.Descendants().Any(element => element.Name.LocalName == "TreeView.ContextFlyout"));
+        XElement stats = document.Descendants().Single(element => element.Name.LocalName == "DiffStatPresenter");
+        Assert.AreEqual("StatPresenter_Loaded", RequiredAttribute(stats, "Loaded"));
+    }
+
+    [TestMethod]
+    public void FileTree_UsesNativeExtendedSelectionWithoutCheckboxes()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "ChangedFilesTree.xaml");
+        XElement list = document.Descendants().Single(element => element.Name.LocalName == "ListView");
+        Assert.AreEqual("False", RequiredAttribute(list, "IsMultiSelectCheckBoxEnabled"));
+        XElement containerStyle = list.Descendants().Single(element => element.Name.LocalName == "Style"
+            && (string?)element.Attribute("TargetType") == "ListViewItem");
+        Assert.AreEqual("{StaticResource DefaultListViewItemStyle}", RequiredAttribute(containerStyle, "BasedOn"));
+        Assert.IsFalse(containerStyle.Descendants().Any(element => element.Name.LocalName == "Setter"
+            && (string?)element.Attribute("Property") == "Template"));
+        XElement checkMark = document.Descendants().Single(element =>
+            (string?)element.Attribute(XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml"))
+                == "ListViewItemSelectionCheckMarkVisualEnabled");
+        Assert.AreEqual("False", checkMark.Value);
+        StringAssert.Contains(RequiredAttribute(list, "ItemsSource"), "Model.VisibleItems");
+        XDocument changes = LoadApplicationXaml("Pages", "ChangesPage.xaml");
+        XElement tree = changes.Descendants().Single(element => element.Name.LocalName == "ChangedFilesTree");
+        Assert.AreEqual("Extended", RequiredAttribute(tree, "SelectionMode"));
+    }
+
+    [TestMethod]
+    public void FileTree_StagedBadgeMatchesTheFlatList()
+    {
+        XDocument tree = LoadApplicationXaml("Controls", "ChangedFilesTree.xaml");
+        XDocument flat = LoadApplicationXaml("Pages", "ChangesPage.xaml");
+        XElement treeText = tree.Descendants().Single(element => element.Name.LocalName == "TextBlock"
+            && ((string?)element.Attribute("Text"))?.Contains("StateLabel", StringComparison.Ordinal) == true);
+        XElement flatText = flat.Descendants().Single(element => element.Name.LocalName == "TextBlock"
+            && ((string?)element.Attribute("Text"))?.Contains("StateLabel", StringComparison.Ordinal) == true);
+        Assert.AreEqual("Border", treeText.Parent!.Name.LocalName);
+        foreach (string attribute in new[] { "Padding", "Margin", "Background", "CornerRadius" })
+        {
+            Assert.AreEqual(RequiredAttribute(flatText.Parent!, attribute), RequiredAttribute(treeText.Parent, attribute));
+        }
+        foreach (string attribute in new[] { "FontSize", "Style", "Foreground", "VerticalAlignment", "HorizontalAlignment" })
+        {
+            Assert.AreEqual(RequiredAttribute(flatText, attribute), RequiredAttribute(treeText, attribute));
+        }
+    }
+
+    [TestMethod]
+    public void FileTree_RestoringTheSameSelectionPreservesItsOrderAndDoesNotResetTheRangeAnchor()
+    {
+        GitChangedFile first = new("First.cs", "Modified");
+        GitChangedFile last = new("Last.cs", "Modified");
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([first, last]);
+        System.Collections.ObjectModel.ObservableCollection<object> selected = [model.VisibleItems[1], model.VisibleItems[0]];
+        int changes = 0;
+        selected.CollectionChanged += (_, _) => changes++;
+        MethodInfo restoreSelection = typeof(ChangedFilesTree).GetMethod(
+            "UpdateSelectedItems", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        restoreSelection.Invoke(null, [selected, model.VisibleItems, new[] { first, last }]);
+
+        Assert.AreEqual(0, changes);
+        Assert.AreSame(model.VisibleItems[1], selected[0]);
+        Assert.AreSame(model.VisibleItems[0], selected[1]);
+    }
+
+    [TestMethod]
+    public void FileTree_RestoringSelectionIgnoresFoldersAndFilesHiddenByCollapsedDirectories()
+    {
+        GitChangedFile file = new("src/File.cs", "Modified");
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([file]);
+        model.Roots.Single().IsExpanded = false;
+        List<object> selected = [new object()];
+        MethodInfo restoreSelection = typeof(ChangedFilesTree).GetMethod(
+            "UpdateSelectedItems", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        restoreSelection.Invoke(null, [selected, model.VisibleItems, new[] { file }]);
+
+        Assert.IsEmpty(selected);
+    }
+
+    [TestMethod]
+    public void FileTree_FolderExpansionUsesButtonCompatibleWithItsStyle()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "ChangedFilesTree.xaml");
+        XElement expansion = document.Descendants().Single(element =>
+            ((string?)element.Attribute("Command"))?.Contains("ToggleFolderExpansionCommand", StringComparison.Ordinal) == true);
+
+        Assert.AreEqual(nameof(Microsoft.UI.Xaml.Controls.Button), expansion.Name.LocalName);
+        Assert.AreEqual("{StaticResource SubtleButtonStyle}", RequiredAttribute(expansion, "Style"));
+        Assert.IsNull(expansion.Attribute("IsChecked"));
+        Assert.IsFalse(document.Descendants().Any(element => element.Name.LocalName is "ToggleButton" or "CheckBox"));
+    }
+
+    [TestMethod]
+    [DataRow(400, 16, 10, 10, 16)]
+    [DataRow(400, 12, 10, 10, 12)]
+    [DataRow(800, 32, 10, 30, 12)]
+    [DataRow(800, 32, 10, 28, 14)]
+    public void FileTree_SelectionFillsTheSameWidthAsFlatRowsWhileStatisticsStayAligned(
+        double paneWidth, double headerRight, double statisticsRight, double listRight, double expectedItemRight)
+    {
+        Microsoft.UI.Xaml.Thickness listPadding = new(0, 0, listRight, 0);
+        Microsoft.UI.Xaml.Thickness contentPadding = ChangedFilesTree.GetContentPadding(
+            new(0, 0, headerRight, 0), new(0, 0, statisticsRight, 0));
+        Microsoft.UI.Xaml.Thickness itemPadding = ChangedFilesTree.GetItemPadding(contentPadding, listPadding);
+
+        Assert.AreEqual(expectedItemRight, itemPadding.Right);
+        double selectionRight = paneWidth - listPadding.Right;
+        double fileStatisticsRight = selectionRight - itemPadding.Right;
+        Assert.AreEqual(paneWidth - headerRight - statisticsRight, fileStatisticsRight);
+        Assert.IsGreaterThan(fileStatisticsRight, selectionRight);
+    }
+
+    [TestMethod]
+    public void FileTree_TransitioningBetweenLayoutsDoesNotCreateNegativeItemPadding()
+    {
+        Microsoft.UI.Xaml.Thickness itemPadding = ChangedFilesTree.GetItemPadding(
+            new(0, 0, 10, 0), new(0, 0, 28, 0));
+        Assert.AreEqual(0.0, itemPadding.Right);
+    }
+
+    private static void AssertUsesSharedMetrics(XElement presenter, string metricsKey)
     {
         Assert.AreEqual(
-            "{StaticResource HistoryDiffStatColumnMetrics}",
+            "{StaticResource " + metricsKey + "}",
             RequiredAttribute(presenter, "ColumnMetrics"));
         Assert.AreEqual("Right", RequiredAttribute(presenter, "HorizontalAlignment"));
     }

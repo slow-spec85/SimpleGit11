@@ -136,6 +136,7 @@
                 DefaultLabelPosition="Right">
                 <AppBarButton
                     x:Uid="RefreshBranchesAppBarButton"
+                    AutomationProperties.AutomationId="RefreshBranchesButton"
                     Command="{x:Bind ViewModel.RefreshBranchesCommand, Mode=OneWay}"
                     Icon="Refresh" />
                 <AppBarButton
@@ -160,7 +161,7 @@
                 <RowDefinition x:Name="DetailsRow" Height="0" />
             </Grid.RowDefinitions>
 
-            <Grid x:Name="ListPane" Padding="0,0,12,0">
+            <Grid x:Name="ListPane" >
 
                 <Grid RowSpacing="10">
                     <Grid.RowDefinitions>
@@ -173,7 +174,7 @@
                         x:Uid="BranchSearchTextBox"
                         Height="32"
                         Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        Margin="0,0,2,0"/>
+                        Margin="0,0,14,0"/>
                     <SelectorBar
                         x:Name="BranchScopeSelectorBar"
                         Grid.Row="1"
@@ -181,7 +182,7 @@
                         <SelectorBarItem x:Name="LocalBranchScopeSelectorBarItem" x:Uid="LocalBranchScopeSelectorBarItem" Tag="Local" />
                         <SelectorBarItem x:Name="RemoteBranchScopeSelectorBarItem" x:Uid="RemoteBranchScopeSelectorBarItem" Tag="Remote" />
                     </SelectorBar>
-                    <StackPanel Grid.Row="2" Spacing="6">
+                    <StackPanel Grid.Row="2" Spacing="6" Padding="0,0,14,0">
                         <InfoBar x:Uid="NoBranchesInfoBar" IsOpen="{x:Bind ViewModel.HasNoBranchesNotice, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoBranchesNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                         <InfoBar x:Uid="NoTagsInfoBar" IsOpen="{x:Bind ViewModel.HasNoTagsNotice, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoTagsNotice, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                         <InfoBar x:Uid="NoFilteredBranchesInfoBar" IsOpen="{x:Bind ViewModel.HasNoFilteredBranches, Mode=OneWay}" Severity="Informational" Visibility="{x:Bind ViewModel.HasNoFilteredBranches, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />

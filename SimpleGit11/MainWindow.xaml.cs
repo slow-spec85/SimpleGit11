@@ -19,7 +19,6 @@ using SimpleGit11.ViewModels;
 using System;
 using System.ComponentModel;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -57,7 +56,7 @@ public sealed partial class MainWindow : Window
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly IDialogService _dialogService;
     private readonly ExecutionContextShellCoordinator _executionContextCoordinator;
-    private readonly IGitRepositoryChangeDetector _gitRepositoryChangeDetector;
+    private readonly ISettingsService _settingsService;
     private readonly IGitService _gitService;
     private readonly PluginMenuHost _pluginMenuHost;
     private readonly WindowActivationRefreshGate _activationRefreshGate = new(
@@ -83,7 +82,7 @@ public sealed partial class MainWindow : Window
         IAsyncCommandExecutor asyncCommandExecutor,
         IDialogService dialogService,
         IExecutionContextService executionContextService,
-        IGitRepositoryChangeDetector gitRepositoryChangeDetector,
+        ISettingsService settingsService,
         IGitService gitService,
         IMessenger messenger,
         IEnumerable<IMainMenuContribution> menuContributions,
@@ -94,7 +93,7 @@ public sealed partial class MainWindow : Window
         _executionContextService = executionContextService;
         _asyncCommandExecutor = asyncCommandExecutor;
         _dialogService = dialogService;
-        _gitRepositoryChangeDetector = gitRepositoryChangeDetector;
+        _settingsService = settingsService;
         _gitService = gitService;
         RepositoryViewModel = App.GetService<RepositoryViewModel>();
         BranchesViewModel = App.GetService<BranchesViewModel>();
@@ -194,7 +193,7 @@ public sealed partial class MainWindow : Window
     private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
     {
         bool isActive = args.WindowActivationState != WindowActivationState.Deactivated;
-        if (_activationRefreshGate.OnActivationChanged(isActive))
+        if (_activationRefreshGate.OnActivationChanged(isActive, _settingsService.Current.RefreshOnWindowActivation))
         {
             _ = _asyncCommandExecutor.ExecuteAsync(
                 RefreshCurrentPageAfterWindowActivationAsync);
@@ -216,38 +215,15 @@ public sealed partial class MainWindow : Window
         };
     }
 
-    private async Task RefreshCurrentPageAfterWindowActivationAsync()
+    private Task RefreshCurrentPageAfterWindowActivationAsync()
     {
-        RepositoryInfo? repository = ViewModel.CurrentRepository;
-        if (repository is null)
+        if (!_settingsService.Current.RefreshOnWindowActivation
+            || ViewModel.CurrentRepository is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        bool hasChanged;
-        try
-        {
-            hasChanged = await _gitRepositoryChangeDetector.HasChangedAsync(repository);
-        }
-        catch (Exception exception)
-        {
-            Debug.WriteLine(exception);
-            hasChanged = true;
-        }
-
-        if (!hasChanged
-            || !string.Equals(
-                ViewModel.CurrentRepository?.Path,
-                repository.Path,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        await RepositoryViewModel.RefreshCurrentRepositoryIdentityAsync();
-        await RefreshCurrentPageAsync(
-            refreshRepositoryIdentity: true,
-            repositoryIdentityAlreadyRefreshed: true);
+        return RefreshCurrentPageAsync(refreshRepositoryIdentity: true);
     }
 
     private async void AppWindow_Closing(
@@ -349,19 +325,6 @@ public sealed partial class MainWindow : Window
 
         if (e.PropertyName == nameof(MainWindowViewModel.CurrentRepository))
         {
-            RepositoryInfo? repository = ViewModel.CurrentRepository;
-            if (repository is not null)
-            {
-                try
-                {
-                    await _gitRepositoryChangeDetector.EnsureBaselineAsync(repository);
-                }
-                catch (Exception exception)
-                {
-                    Debug.WriteLine(exception);
-                }
-            }
-
             await ViewModel.RefreshRemotesAsync();
             await RefreshCurrentPageAsync();
         }
@@ -543,9 +506,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async Task RefreshCurrentPageAsync(
-        bool refreshRepositoryIdentity = false,
-        bool repositoryIdentityAlreadyRefreshed = false)
+    private async Task RefreshCurrentPageAsync(bool refreshRepositoryIdentity = false)
     {
         object? requestedPage = ContentFrame.Content;
         long requestId = Interlocked.Increment(ref _latestPageRefreshRequest);
@@ -561,12 +522,13 @@ public sealed partial class MainWindow : Window
 
             _isRefreshingCurrentPage = true;
             if (refreshRepositoryIdentity
-                && !repositoryIdentityAlreadyRefreshed
                 && requestedPage is not RepositoryPage)
             {
                 await RepositoryViewModel.RefreshCurrentRepositoryIdentityAsync();
             }
 
+            if (requestId != Volatile.Read(ref _latestPageRefreshRequest)
+                || !ReferenceEquals(requestedPage, ContentFrame.Content)) { return; }
             await refreshTarget.RefreshAsync();
         }
         finally

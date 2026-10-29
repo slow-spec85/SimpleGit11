@@ -118,6 +118,67 @@ public sealed class WindowActivationRefreshGateTests
         Assert.IsTrue(shouldRefresh);
     }
 
+    [TestMethod]
+    public void OnActivationChanged_RefreshDisabled_DoesNotRequestPageRefresh()
+    {
+        ManualTimeProvider timeProvider = new();
+        WindowActivationRefreshGate gate = CreateGate(timeProvider);
+
+        Assert.IsFalse(gate.OnActivationChanged(isActive: true, isRefreshEnabled: false));
+        Assert.IsFalse(gate.OnActivationChanged(isActive: false, isRefreshEnabled: false));
+        timeProvider.Advance(MinimumInactiveDuration);
+
+        Assert.IsFalse(gate.OnActivationChanged(isActive: true, isRefreshEnabled: false));
+    }
+
+    [TestMethod]
+    public void OnActivationChanged_RefreshEnabledAgain_DoesNotInheritCooldownFromDisabledActivation()
+    {
+        ManualTimeProvider timeProvider = new();
+        WindowActivationRefreshGate gate = CreateGate(timeProvider);
+
+        _ = gate.OnActivationChanged(isActive: true);
+        _ = gate.OnActivationChanged(isActive: false);
+        timeProvider.Advance(MinimumInactiveDuration);
+        Assert.IsFalse(gate.OnActivationChanged(isActive: true, isRefreshEnabled: false));
+
+        _ = gate.OnActivationChanged(isActive: false);
+        timeProvider.Advance(MinimumInactiveDuration);
+
+        Assert.IsTrue(gate.OnActivationChanged(isActive: true, isRefreshEnabled: true));
+        Assert.IsFalse(gate.OnActivationChanged(isActive: true, isRefreshEnabled: true));
+    }
+
+    [TestMethod]
+    public void OnActivationChanged_RefreshEnabledWhileActive_DoesNotReuseDisabledInactivePeriod()
+    {
+        ManualTimeProvider timeProvider = new();
+        WindowActivationRefreshGate gate = CreateGate(timeProvider);
+
+        _ = gate.OnActivationChanged(isActive: true, isRefreshEnabled: false);
+        _ = gate.OnActivationChanged(isActive: false, isRefreshEnabled: false);
+        timeProvider.Advance(MinimumInactiveDuration);
+        Assert.IsFalse(gate.OnActivationChanged(isActive: true, isRefreshEnabled: false));
+
+        Assert.IsFalse(gate.OnActivationChanged(isActive: true, isRefreshEnabled: true));
+    }
+
+    [TestMethod]
+    public void OnActivationChanged_EveryEligibleReturnRequestsRefresh()
+    {
+        ManualTimeProvider timeProvider = new();
+        WindowActivationRefreshGate gate = CreateGate(timeProvider);
+        _ = gate.OnActivationChanged(isActive: true);
+
+        for (int activation = 0; activation < 3; activation++)
+        {
+            Assert.IsFalse(gate.OnActivationChanged(isActive: false));
+            timeProvider.Advance(RefreshCooldown);
+            Assert.IsTrue(gate.OnActivationChanged(isActive: true));
+            Assert.IsFalse(gate.OnActivationChanged(isActive: true));
+        }
+    }
+
     private static WindowActivationRefreshGate CreateGate(TimeProvider timeProvider)
     {
         return new WindowActivationRefreshGate(

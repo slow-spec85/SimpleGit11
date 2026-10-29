@@ -1,8 +1,5 @@
 using System;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
@@ -17,17 +14,20 @@ public sealed class GitRepositoryOperationService : IGitRepositoryOperationServi
     private readonly IGitCommandRunner _commandRunner;
     private readonly IExecutionContextService? _executionContextService;
     private readonly IExecutionRepositoryDiscoveryService? _executionRepositoryDiscoveryService;
+    private readonly IOpenSshService? _openSshService;
 
     public GitRepositoryOperationService(
         IGitRepositoryDiscoveryService repositoryDiscoveryService,
         IGitCommandRunner? commandRunner = null,
         IExecutionContextService? executionContextService = null,
-        IExecutionRepositoryDiscoveryService? executionRepositoryDiscoveryService = null)
+        IExecutionRepositoryDiscoveryService? executionRepositoryDiscoveryService = null,
+        IOpenSshService? openSshService = null)
     {
         _repositoryDiscoveryService = repositoryDiscoveryService;
         _commandRunner = commandRunner ?? new GitCommandRunner();
         _executionContextService = executionContextService;
         _executionRepositoryDiscoveryService = executionRepositoryDiscoveryService;
+        _openSshService = openSshService;
     }
 
     public async Task<RepositoryInfo> CreateAsync(string path)
@@ -51,6 +51,11 @@ public sealed class GitRepositoryOperationService : IGitRepositoryOperationServi
         if (!await DirectoryExistsAsync(parentPath, cancellationToken))
         {
             throw new DirectoryNotFoundException(parentPath);
+        }
+
+        if (_openSshService is not null)
+        {
+            await _openSshService.EnsureTrustedAsync(remoteUrl, cancellationToken);
         }
 
         string repositoryName = GetRepositoryName(remoteUrl);

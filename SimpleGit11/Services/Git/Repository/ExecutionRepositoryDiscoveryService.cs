@@ -29,7 +29,7 @@ public sealed class ExecutionRepositoryDiscoveryService : IExecutionRepositoryDi
         IRepositoryPathService paths = _executionContextService.Current.Runtime.Paths;
         GitCommandResult rootResult = await RunAsync(
             path,
-            ["rev-parse", "--show-toplevel"],
+            ["rev-parse", "--path-format=absolute", "--show-toplevel", "--git-dir", "--git-common-dir"],
             cancellationToken);
         if (IsGitUnavailable(rootResult))
         {
@@ -41,30 +41,13 @@ public sealed class ExecutionRepositoryDiscoveryService : IExecutionRepositoryDi
             return null;
         }
 
-        string root = paths.Normalize(rootResult.StandardOutput.Trim());
-        Task<GitCommandResult> gitDirectoryTask = RunAsync(
-            root,
-            ["rev-parse", "--path-format=absolute", "--git-dir"],
-            cancellationToken);
-        Task<GitCommandResult> commonDirectoryTask = RunAsync(
-            root,
-            ["rev-parse", "--path-format=absolute", "--git-common-dir"],
-            cancellationToken);
-        Task<GitCommandResult> branchTask = RunAsync(
-            root,
-            ["symbolic-ref", "--quiet", "--short", "HEAD"],
-            cancellationToken);
-        await Task.WhenAll(gitDirectoryTask, commonDirectoryTask, branchTask);
-
-        GitCommandResult gitDirectoryResult = await gitDirectoryTask;
-        GitCommandResult commonDirectoryResult = await commonDirectoryTask;
-        if (!gitDirectoryResult.IsSuccess || !commonDirectoryResult.IsSuccess)
-        {
-            return null;
-        }
-
-        string gitDirectory = paths.Normalize(gitDirectoryResult.StandardOutput.Trim());
-        string commonDirectory = paths.Normalize(commonDirectoryResult.StandardOutput.Trim());
+        string[] identity = rootResult.StandardOutput.TrimEnd('\r', '\n').Split('\n');
+        if (identity.Length != 3) { return null; }
+        string root = paths.Normalize(identity[0].TrimEnd('\r'));
+        string gitDirectory = paths.Normalize(identity[1].TrimEnd('\r'));
+        string commonDirectory = paths.Normalize(identity[2].TrimEnd('\r'));
+        Task<GitCommandResult> branchTask = RunAsync(root,
+            ["symbolic-ref", "--quiet", "--short", "HEAD"], cancellationToken);
         GitCommandResult branchResult = await branchTask;
         string branch = branchResult.IsSuccess
             ? branchResult.StandardOutput.Trim()

@@ -1,3 +1,4 @@
+using SimpleGit11.Extensions;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
@@ -249,6 +250,8 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     public ObservableCollection<GitChangedFile> AllChanges { get; } = [];
 
     public ObservableCollection<GitChangedFile> VisibleChanges { get; } = [];
+
+    public ChangedFileTreeViewModel FileTree { get; } = new();
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsFileFilterApplied))]
@@ -574,8 +577,11 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         UpdateCommandStates();
     }
 
+    private bool _isUpdatingChanges;
+
     public void SetSelectedChanges(IEnumerable<GitChangedFile> selectedChanges, GitChangedFile? lastSelectedChange)
     {
+        if (_isUpdatingChanges) { return; }
         string searchText = FileSearchText.Trim().Replace('\\', '/');
         SelectedChanges = selectedChanges.Where(change => MatchesFileFilter(change, searchText)).ToList();
         if (lastSelectedChange is null || !SelectedChanges.Contains(lastSelectedChange))
@@ -614,10 +620,9 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
             ClearResultMessages();
         }
 
-        ClearDiff(_localizationService.GetString("SelectFileToViewDiff"));
-
         if (_mainWindowViewModel.CurrentRepository is null)
         {
+            ClearDiff(_localizationService.GetString("SelectFileToViewDiff"));
             ClearChanges();
             ShowError(_localizationService.GetString("OpenRepositoryBeforeStatus"));
             return;
@@ -626,8 +631,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         try
         {
             IsRefreshing = true;
-            HasNoChanges = false;
-
+            RepositoryInfo repository = _mainWindowViewModel.CurrentRepository;
             Task<bool> hasLocalCommitsTask =
                 _gitService.History.HasLocalCommits(_mainWindowViewModel.CurrentRepository);
             Task<GitStatusSnapshot> statusTask =
@@ -636,14 +640,43 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
                 _gitService.GetOperationStateAsync(_mainWindowViewModel.CurrentRepository);
             await Task.WhenAll(hasLocalCommitsTask, statusTask, operationStateTask);
 
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
             HasLocalCommits = await hasLocalCommitsTask;
             GitStatusSnapshot snapshot = await statusTask;
             OperationState = await operationStateTask;
-            ReplaceChanges(StagedChanges, snapshot.StagedChanges);
-            ReplaceChanges(UnstagedChanges, snapshot.UnstagedChanges);
-            ReplaceChanges(ConflictedChanges, snapshot.ConflictedChanges);
-            ReplaceAllChanges();
+            (string Path, GitChangeState? State)[] selectedKeys = SelectedChanges.Select(change => (change.Path, change.State)).ToArray();
+            GitChangedFile? selectedFile = SelectedChange;
+            bool wasSelectionLoadSuppressed = _suppressSelectionLoad;
+            _suppressSelectionLoad = true;
+            _isUpdatingChanges = true;
+            try
+            {
+                ReplaceChanges(StagedChanges, snapshot.StagedChanges);
+                ReplaceChanges(UnstagedChanges, snapshot.UnstagedChanges);
+                ReplaceChanges(ConflictedChanges, snapshot.ConflictedChanges);
+                ReplaceAllChanges();
+                SelectedChanges = AllChanges.Where(change => selectedKeys.Contains((change.Path, change.State))
+                    && MatchesFileFilter(change, FileSearchText.Trim().Replace('\\', '/'))).ToArray();
+                GitChangedFile? restored = SelectedChanges.FirstOrDefault(change => change.Path == selectedFile?.Path
+                    && change.State == selectedFile?.State) ?? SelectedChanges.LastOrDefault();
+                if (restored is null)
+                {
+                    ClearDiff(_localizationService.GetString("SelectFileToViewDiff"));
+                }
+                else if (restored.IsStaged) { SelectedStagedChange = restored; }
+                else { SelectedUnstagedChange = restored; }
+            }
+            finally
+            {
+                _suppressSelectionLoad = wasSelectionLoadSuppressed;
+                _isUpdatingChanges = false;
+            }
             await RefreshStashesCoreAsync();
+            if (!_suppressSelectionLoad && SelectedChange is GitChangedFile current && !IsEditingFile && !ConflictEditor.IsDirty)
+            {
+                // The current refresh owns the Git queue; the selected read runs after it releases it.
+                _ = LoadSelectedChangeAsync(current);
+            }
             OnPropertyChanged(nameof(HasStagedChanges));
             OnPropertyChanged(nameof(HasUnstagedChanges));
             OnPropertyChanged(nameof(HasConflictedChanges));
@@ -681,6 +714,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         ConflictedChanges.Clear();
         AllChanges.Clear();
         VisibleChanges.Clear();
+        FileTree.Refresh(VisibleChanges);
         SelectedChanges = [];
         Stashes.Clear();
         SelectedStash = null;
@@ -746,16 +780,18 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         try
         {
             IsDiffLoading = true;
-            var diff = await _gitService.Diff.GetDiffAsync(_mainWindowViewModel.CurrentRepository, statusEntry);
-            DiffLines.Clear();
-
-            foreach (var line in diff.Lines)
+            RepositoryInfo repository = _mainWindowViewModel.CurrentRepository;
+            DiffResult diff = await _gitService.Diff.GetDiffAsync(repository, statusEntry);
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)
+                || !ReferenceEquals(SelectedChange, statusEntry)) { return; }
+            string text = DiffTextFormatter.FormatText(diff.Lines);
+            if (DiffText != text)
             {
-                DiffLines.Add(line);
+                DiffLines.Clear();
+                foreach (DiffLine line in diff.Lines) { DiffLines.Add(line); }
+                DiffText = text;
             }
-
             SelectedDiffStat = diff.Stat;
-            DiffText = DiffTextFormatter.FormatText(diff.Lines);
             HasDiffEmptyState = diff.IsEmpty;
             DiffEmptyMessage = diff.IsEmpty ? LocalizeDiffEmptyMessage(diff.EmptyMessage) : "";
         }
@@ -1853,11 +1889,8 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         var selectedReference = SelectedStash?.Reference;
         IReadOnlyList<GitStash> stashes = await _gitService.Stashes.GetStashesAsync(
             _mainWindowViewModel.CurrentRepository);
-        Stashes.Clear();
-        foreach (var stash in stashes)
-        {
-            Stashes.Add(stash);
-        }
+        Stashes.SynchronizeWith(stashes, stash => stash.Reference,
+            (previous, current) => previous.ShortHash == current.ShortHash && previous.Age == current.Age && previous.Message == current.Message);
 
         SelectedStash = Stashes.FirstOrDefault(stash => stash.Reference == selectedReference) ?? Stashes.FirstOrDefault();
         StashCount = Stashes.Count;
@@ -1999,28 +2032,15 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         ObservableCollection<GitChangedFile> target,
         System.Collections.Generic.IReadOnlyList<GitChangedFile> source)
     {
-        target.Clear();
-        foreach (var item in source)
-        {
-            target.Add(item);
-        }
+        target.SynchronizeWith(source, change => (change.Path, change.State),
+            (previous, current) => previous.HasSameSnapshot(current));
     }
 
     private void ReplaceAllChanges()
     {
-        AllChanges.Clear();
-
-        var orderedChanges = StagedChanges
-            .Concat(UnstagedChanges)
-            .Concat(ConflictedChanges)
-            .OrderBy(change => change.Path, System.StringComparer.OrdinalIgnoreCase)
-            .ThenBy(change => change.State);
-
-        foreach (var item in orderedChanges)
-        {
-            AllChanges.Add(item);
-        }
-
+        AllChanges.SynchronizeWith(StagedChanges.Concat(UnstagedChanges).Concat(ConflictedChanges)
+            .OrderBy(change => change.Path, StringComparer.OrdinalIgnoreCase).ThenBy(change => change.State),
+            change => (change.Path, change.State));
         RefreshVisibleChanges();
         OnChangedFilesSummaryChanged();
     }
@@ -2033,7 +2053,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
             .ToList();
         HashSet<GitChangedFile> matchingChanges = matches.ToHashSet();
 
-        if (SelectedChanges.Any(change => !matchingChanges.Contains(change)))
+        if (!_isUpdatingChanges && SelectedChanges.Any(change => !matchingChanges.Contains(change)))
         {
             List<GitChangedFile> selectedChanges = SelectedChanges.Where(matchingChanges.Contains).ToList();
             GitChangedFile? selectedChange = SelectedChange is GitChangedFile current && matchingChanges.Contains(current)
@@ -2058,6 +2078,8 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
                 VisibleChanges.Insert(index, matches[index]);
             }
         }
+
+        FileTree.Refresh(VisibleChanges);
     }
 
     private static bool MatchesFileFilter(GitChangedFile change, string searchText)

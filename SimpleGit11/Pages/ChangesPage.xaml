@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="SimpleGit11.Pages.ChangesPage"
     x:Name="PageRoot"
@@ -9,6 +9,10 @@
     xmlns:models="using:SimpleGit11.Models"
     xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
     NavigationCacheMode="Required">
+
+    <Page.Resources>
+        <controls:DiffStatColumnMetrics x:Key="ChangesDiffStatColumnMetrics" />
+    </Page.Resources>
 
     <Grid
         x:Name="PageLayout"
@@ -328,90 +332,76 @@
                             </Flyout>
                         </primitives:FlyoutBase.AttachedFlyout>
                     </ToggleButton>
-                    <Grid
+                    <controls:DiffStatPresenter
+                        x:Name="ChangedFilesStatsPresenter"
                         Grid.Column="2"
+                        Margin="0,0,10,0"
                         HorizontalAlignment="Right"
-                        ColumnSpacing="4"
-                        Padding="0,0,10,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock
-                            x:Name="AddedLinesHeaderTextBlock"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            FontWeight="SemiBold"
-                            Foreground="{ThemeResource DiffAddedStatTextBrush}"
-                            Text="{x:Bind ViewModel.ChangedFilesStat.AddedText, Mode=OneWay, FallbackValue=''}"
-                            TextAlignment="Right" />
-                        <TextBlock
-                            x:Name="RemovedLinesHeaderTextBlock"
-                            Grid.Column="1"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            FontWeight="SemiBold"
-                            Foreground="{ThemeResource DiffRemovedStatTextBrush}"
-                            Text="{x:Bind ViewModel.ChangedFilesStat.RemovedText, Mode=OneWay, FallbackValue=''}"
-                            TextAlignment="Right" />
-                    </Grid>
+                        AddedText="{x:Bind ViewModel.ChangedFilesStat.AddedText, Mode=OneWay}"
+                        RemovedText="{x:Bind ViewModel.ChangedFilesStat.RemovedText, Mode=OneWay}"
+                        ColumnMetrics="{StaticResource ChangesDiffStatColumnMetrics}"
+                        IsColumnWidthSource="True" />
                 </Grid>
 
                 <ListView
                     x:Name="ChangedFilesListView"
+                    ContextRequested="ChangedFiles_ContextRequested"
+                    Visibility="{x:Bind ViewModel.FileTree.FlatListVisibility, Mode=OneWay}"
                     Grid.Row="1"
                     IsEnabled="{x:Bind ViewModel.IsDiffInteractionEnabled, Mode=OneWay}"
                     ItemsSource="{x:Bind ViewModel.VisibleChanges, Mode=OneWay}"
                     SelectionChanged="ChangedFilesListView_SelectionChanged"
                     SelectionMode="Extended"
                     Padding="0,0,10,0">
+                    <ListView.ContextFlyout>
+                        <MenuFlyout x:Name="ChangesFileContextMenu">
+                            <MenuFlyoutItem
+                                x:Uid="StageChangeMenuFlyoutItem"
+                                Tag="Stage"
+                                Command="{x:Bind ViewModel.StageChangeCommand, Mode=OneWay}"
+                                Icon="Add" />
+                            <MenuFlyoutItem
+                                x:Uid="UnstageChangeMenuFlyoutItem"
+                                Tag="Unstage"
+                                Command="{x:Bind ViewModel.UnstageChangeCommand, Mode=OneWay}"
+                                Icon="Remove" />
+                            <MenuFlyoutItem
+                                x:Uid="DiscardChangeMenuFlyoutItem"
+                                Tag="Discard"
+                                Command="{x:Bind ViewModel.DiscardChangeCommand, Mode=OneWay}"
+                                Icon="Undo" />
+                            <MenuFlyoutItem
+                                x:Uid="IgnoreChangeMenuFlyoutItem"
+                                Tag="Ignore"
+                                Command="{x:Bind ViewModel.IgnoreChangeCommand, Mode=OneWay}"
+                                Icon="Cancel" />
+                            <MenuFlyoutSeparator Tag="ChangeActions" />
+                            <MenuFlyoutItem
+                                Tag="FileContent"
+                                Command="{x:Bind ViewModel.ToggleChangeDisplayModeCommand, Mode=OneWay}"
+                                Icon="Document"
+                                Text="{x:Bind ViewModel.ContextMenuDisplayModeText, Mode=OneWay}" />
+                            <MenuFlyoutItem
+                                x:Uid="ShowFoldersMenuFlyoutItem"
+                                Command="{x:Bind ViewModel.FileTree.ToggleFoldersCommand, Mode=OneWay}">
+                                <MenuFlyoutItem.Icon>
+                                    <SymbolIcon Symbol="{x:Bind ViewModel.FileTree.FolderViewSymbol, Mode=OneWay}" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem
+                                x:Uid="CopyNameMenuFlyoutItem"
+                                Tag="CopyName"
+                                Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                Icon="Copy" />
+                        </MenuFlyout>
+                    </ListView.ContextFlyout>
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="models:GitChangedFile">
                             <Grid
                                 Padding="0,4"
                                 ColumnSpacing="10"
                                 ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneTime}">
-                                <Grid.ContextFlyout>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem
-                                            x:Uid="StageChangeMenuFlyoutItem"
-                                            Command="{Binding DataContext.StageChangeCommand, ElementName=ChangedFilesListView}"
-                                            CommandParameter="{x:Bind}"
-                                            Icon="Add"
-                                            Visibility="{x:Bind IsUnstaged, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutItem
-                                            x:Uid="UnstageChangeMenuFlyoutItem"
-                                            Command="{Binding DataContext.UnstageChangeCommand, ElementName=ChangedFilesListView}"
-                                            CommandParameter="{x:Bind}"
-                                            Icon="Remove"
-                                            Visibility="{x:Bind IsStaged, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutItem
-                                            x:Uid="DiscardChangeMenuFlyoutItem"
-                                            Command="{Binding DataContext.DiscardChangeCommand, ElementName=ChangedFilesListView}"
-                                            CommandParameter="{x:Bind}"
-                                            Icon="Undo"
-                                            Visibility="{x:Bind CanDiscard, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutItem
-                                            x:Uid="IgnoreChangeMenuFlyoutItem"
-                                            Command="{Binding DataContext.IgnoreChangeCommand, ElementName=ChangedFilesListView}"
-                                            CommandParameter="{x:Bind}"
-                                            Icon="Cancel"
-                                            Visibility="{x:Bind IsUntracked, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutItem
-                                            Command="{Binding DataContext.ToggleChangeDisplayModeCommand, ElementName=ChangedFilesListView}"
-                                            CommandParameter="{x:Bind}"
-                                            Icon="Document"
-                                            Text="{Binding DataContext.ContextMenuDisplayModeText, ElementName=ChangedFilesListView}"
-                                            Visibility="{x:Bind CanShowFileContent, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutSeparator
-                                            Visibility="{x:Bind CanShowFileContent, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneTime}" />
-                                        <MenuFlyoutItem
-                                            x:Uid="CopyNameMenuFlyoutItem"
-                                            Command="{Binding DataContext.CopyTextCommand, ElementName=ChangedFilesListView}"
-                                            CommandParameter="{x:Bind FileName}"
-                                            Icon="Copy" />
-                                    </MenuFlyout>
-                                </Grid.ContextFlyout>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="28" />
                                     <ColumnDefinition Width="*" />
@@ -502,37 +492,32 @@
                                     </Grid>
                                 </StackPanel>
 
-                                <Grid
+                                <controls:DiffStatPresenter
                                     Grid.Column="2"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center"
-                                    ColumnSpacing="4">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
-                                        FontWeight="SemiBold"
-                                        Foreground="{ThemeResource DiffAddedStatTextBrush}"
-                                        MinWidth="{Binding ActualWidth, ElementName=AddedLinesHeaderTextBlock}"
-                                        Text="{x:Bind Stat.AddedText, Mode=OneTime}"
-                                        TextAlignment="Right" />
-                                    <TextBlock
-                                        Grid.Column="1"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
-                                        FontWeight="SemiBold"
-                                        Foreground="{ThemeResource DiffRemovedStatTextBrush}"
-                                        MinWidth="{Binding ActualWidth, ElementName=RemovedLinesHeaderTextBlock}"
-                                        Text="{x:Bind Stat.RemovedText, Mode=OneTime}"
-                                        TextAlignment="Right" />
-                                </Grid>
+                                    AddedText="{x:Bind Stat.AddedText}"
+                                    RemovedText="{x:Bind Stat.RemovedText}"
+                                    ColumnMetrics="{StaticResource ChangesDiffStatColumnMetrics}" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
+                <controls:ChangedFilesTree
+                    x:Name="ChangedFilesTree"
+                    ColumnMetrics="{StaticResource ChangesDiffStatColumnMetrics}"
+                    Grid.Row="1"
+                    AutomationProperties.AutomationId="ChangedFilesTree"
+                    IsEnabled="{x:Bind ViewModel.IsDiffInteractionEnabled, Mode=OneWay}"
+                    Padding="{x:Bind ChangedFilesListView.Padding, Mode=OneWay}"
+                    ContentPadding="{x:Bind controls:ChangedFilesTree.GetContentPadding(ChangedFilesHeader.Padding, ChangedFilesStatsPresenter.Margin), Mode=OneWay}"
+                    Model="{x:Bind ViewModel.FileTree, Mode=OneWay}"
+                    SelectedFile="{x:Bind ViewModel.SelectedChange, Mode=OneWay}"
+                    SelectedFiles="{x:Bind ViewModel.SelectedChanges, Mode=OneWay}"
+                    SelectionMode="Extended"
+                    FileSelectionChanged="ChangedFilesTree_FileSelectionChanged"
+                    Visibility="{x:Bind ViewModel.FileTree.TreeVisibility, Mode=OneWay}" />
+
             </Grid>
 
             <primitives:Thumb

@@ -34,6 +34,23 @@ public sealed class RepositoryCloneTests
     }
 
     [TestMethod]
+    public async Task CloneAsync_DeclinedHostKey_ShowsErrorAndClosesProgress()
+    {
+        Fixture fixture = new(
+            "git@gitlab.com:owner/repository.git",
+            _ => throw new GitRemoteOperationException(
+                "Host key verification failed.", 128, GitRemoteOperationErrorKind.HostKeyVerification));
+
+        await fixture.CloneAsync();
+
+        Assert.IsFalse(fixture.Window.IsOperationRunning);
+        Assert.IsNull(fixture.Window.OperationCancelCommand);
+        Assert.AreEqual(InfoBarSeverity.Error, fixture.Window.NotificationSeverity);
+        Assert.AreEqual("GitCloneCommandFailed", fixture.Window.NotificationMessage);
+        Assert.AreEqual("Host key verification failed.", fixture.Window.NotificationDetails);
+    }
+
+    [TestMethod]
     public async Task CloneAsync_HttpsFailure_DoesNotShowSettingsAction()
     {
         Fixture fixture = new("https://gitlab.com/owner/repository.git");

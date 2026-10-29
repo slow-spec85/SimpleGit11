@@ -8,6 +8,41 @@ namespace SimpleGit11.Tests.Services;
 public sealed class SettingsServiceTests
 {
     [TestMethod]
+    [DataRow(null, false)]
+    [DataRow("invalid", false)]
+    [DataRow("True", true)]
+    [DataRow("False", false)]
+    public void RefreshOnWindowActivation_LoadsStoredValueOrDefaultsToFalse(string? storedValue, bool expected)
+    {
+        MemoryLocalSettingsStore store = new();
+        if (storedValue is not null)
+        {
+            store.SetString(nameof(AppSettings.RefreshOnWindowActivation), storedValue);
+        }
+
+        SettingsService service = CreateService(store);
+
+        Assert.AreEqual(expected, service.Current.RefreshOnWindowActivation);
+    }
+
+    [TestMethod]
+    public void RefreshOnWindowActivation_ChangesImmediatelyAndSurvivesReload()
+    {
+        MemoryLocalSettingsStore store = new();
+        SettingsService service = CreateService(store);
+
+        service.SetRefreshOnWindowActivation(true);
+
+        Assert.IsTrue(service.Current.RefreshOnWindowActivation);
+        Assert.IsTrue(CreateService(store).Current.RefreshOnWindowActivation);
+
+        service.SetRefreshOnWindowActivation(false);
+
+        Assert.IsFalse(service.Current.RefreshOnWindowActivation);
+        Assert.IsFalse(CreateService(store).Current.RefreshOnWindowActivation);
+    }
+
+    [TestMethod]
     public void RepositoryOpening_DefaultsPreserveManualFetchAndOrigin()
     {
         SettingsService service = CreateService(new MemoryLocalSettingsStore());

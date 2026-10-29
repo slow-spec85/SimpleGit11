@@ -92,4 +92,10 @@ public sealed class GitTag(
                                  $"{ShortCommitHash}" +
                                  $"   {TypeLabel}" +
                                  $"{(string.IsNullOrWhiteSpace(Subject) ? "" : $"   {Subject.Trim()}")}";
+
+    public bool HasSameSnapshot(GitTag other) =>
+        Name == other.Name && IsRemote == other.IsRemote && IsAnnotated == other.IsAnnotated
+        && ObjectHash == other.ObjectHash && ReferenceObjectHash == other.ReferenceObjectHash
+        && Subject == other.Subject && CreatedDate == other.CreatedDate && IsCurrent == other.IsCurrent
+        && RemoteName == other.RemoteName && RemoteTagName == other.RemoteTagName;
 }

@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using SimpleGit11.Extensions;
 using SimpleGit11.Messages;
 using SimpleGit11.Models;
 using SimpleGit11.Presentation.Commits;
@@ -218,9 +219,24 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         Commits.Count,
         _localizationService);
 
-    public string LoadMoreCommitsButtonText => string.Format(
-        _localizationService.GetString("LoadMoreCommitsButtonText"),
-        CommitPageSize);
+    public string LoadRemainingCommitsButtonText => _localizationService.GetString("LoadRemainingCommitsButtonText");
+
+    protected static async Task<IReadOnlyList<GitCommit>> LoadRemainingCommitPagesAsync(
+        Func<int, int, Task<GitCommitPage>> loadPageAsync,
+        int offset)
+    {
+        List<GitCommit> commits = [];
+        GitCommitPage page;
+        do
+        {
+            page = await loadPageAsync(offset, CommitPageSize);
+            commits.AddRange(page.Commits);
+            offset += page.Commits.Count;
+        }
+        while (page.HasMore && page.Commits.Count > 0);
+
+        return commits;
+    }
 
     protected IReadOnlyList<GitCommit> AllCommits => _allCommits;
 
@@ -254,8 +270,13 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
     protected void ReplaceCommits(IEnumerable<GitCommit> commits)
     {
-        _allCommits.Clear();
-        _allCommits.AddRange(commits);
+        IReadOnlyList<GitCommit> snapshot = CollectionSynchronization.ReuseItems(
+            _allCommits, commits, commit => commit.Hash, (previous, current) => previous.HasSameSnapshot(current));
+        if (!ReferenceEquals(snapshot, _allCommits))
+        {
+            _allCommits.Clear();
+            _allCommits.AddRange(snapshot);
+        }
         ApplyFilters();
     }
 
@@ -305,11 +326,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
     public void SetSelectedCommits(IEnumerable<GitCommit> commits)
     {
-        SelectedCommits.Clear();
-        foreach (GitCommit commit in commits)
-        {
-            SelectedCommits.Add(commit);
-        }
+        SelectedCommits.SynchronizeWith(commits, commit => commit.Hash);
 
         OnCommitSelectionChanged();
     }
@@ -339,11 +356,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         IsUpdatingCommitRows = true;
         try
         {
-            Commits.Clear();
-            foreach (GitCommit commit in filteredCommits)
-            {
-                Commits.Add(commit);
-            }
+            Commits.SynchronizeWith(filteredCommits, commit => commit.Hash);
 
             RebuildCommitRows(filteredCommits);
 
@@ -360,36 +373,31 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
     private void RebuildCommitRows(IReadOnlyList<GitCommit> filteredCommits)
     {
-        CommitRows.Clear();
-        if (!ShowsCommitGraph || !IsCommitGraphVisible)
-        {
-            foreach (GitCommit commit in filteredCommits)
-            {
-                CommitRows.Add(new CommitBrowserRowViewItem(commit, CommitGraphRow.Empty, false, ""));
-            }
+        if (CommitRows.Count == filteredCommits.Count
+            && CommitRows.Select(row => row.Commit).SequenceEqual(filteredCommits)) { return; }
 
-            return;
-        }
-
-        HashSet<string> visibleHashes = filteredCommits
-            .Select(commit => commit.Hash)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        CommitGraphLayout layout = CommitGraphLayoutBuilder.Build(
-            _allCommits,
-            visibleHashes,
-            IsMainlineOnly);
-
+        bool showGraph = ShowsCommitGraph && IsCommitGraphVisible;
+        CommitGraphLayout? layout = showGraph
+            ? CommitGraphLayoutBuilder.Build(_allCommits,
+                filteredCommits.Select(commit => commit.Hash).ToHashSet(StringComparer.OrdinalIgnoreCase), IsMainlineOnly)
+            : null;
+        Dictionary<string, CommitBrowserRowViewItem> existing = CommitRows
+            .Where(row => !row.HasEditIndicator).ToDictionary(row => row.Commit.Hash);
+        List<CommitBrowserRowViewItem> rows = [];
         foreach (GitCommit commit in filteredCommits)
         {
-            CommitGraphRow graph = layout.Rows.TryGetValue(commit.Hash, out CommitGraphRow? row)
-                ? row
-                : CommitGraphRow.Empty;
-            CommitRows.Add(new CommitBrowserRowViewItem(
-                commit,
-                graph,
-                true,
-                GetAccessibleGraphDescription(commit, graph)));
+            CommitGraphRow graph = layout is not null && layout.Rows.TryGetValue(commit.Hash, out CommitGraphRow? found)
+                ? found : CommitGraphRow.Empty;
+            string description = showGraph ? GetAccessibleGraphDescription(commit, graph) : "";
+            if (existing.TryGetValue(commit.Hash, out CommitBrowserRowViewItem? row)
+                && ReferenceEquals(row.Commit, commit))
+            {
+                row.UpdateGraph(graph, showGraph, description);
+            }
+            else { row = new CommitBrowserRowViewItem(commit, graph, showGraph, description); }
+            rows.Add(row);
         }
+        CommitRows.SynchronizeWith(rows, row => row.Commit.Hash);
     }
 
     private void UpdateCommitRowGraphs()

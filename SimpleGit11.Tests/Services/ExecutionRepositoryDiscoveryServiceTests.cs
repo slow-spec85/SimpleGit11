@@ -30,6 +30,8 @@ public sealed class ExecutionRepositoryDiscoveryServiceTests
         RepositoryInfo? repository = await service.TryOpenRepositoryAsync(root);
 
         Assert.IsNotNull(repository);
+        Assert.AreEqual(2, runner.Commands.Count);
+        Assert.AreEqual("rev-parse --path-format=absolute --show-toplevel --git-dir --git-common-dir", runner.Commands[0]);
         Assert.AreEqual(root.Replace('/', '\\'), repository.Path);
         Assert.AreEqual(@"D:\repos\main\.git", repository.CommonGitDirectory);
         Assert.AreEqual(@"D:\repos\main", repository.MainWorktreePath);
@@ -99,6 +101,7 @@ public sealed class ExecutionRepositoryDiscoveryServiceTests
     private sealed class ScriptedGitCommandRunner : IGitCommandRunner
     {
         private readonly IReadOnlyDictionary<string, GitCommandResult> _results;
+        public List<string> Commands { get; } = [];
 
         public ScriptedGitCommandRunner(IReadOnlyDictionary<string, GitCommandResult> results)
         {
@@ -111,6 +114,15 @@ public sealed class ExecutionRepositoryDiscoveryServiceTests
             GitCommandOptions? options = null,
             CancellationToken cancellationToken = default)
         {
+            Commands.Add(string.Join(' ', arguments));
+            if (arguments.SequenceEqual(new[] { "rev-parse", "--path-format=absolute", "--show-toplevel", "--git-dir", "--git-common-dir" }))
+            {
+                GitCommandResult root = _results["rev-parse --show-toplevel"];
+                if (!root.IsSuccess) { return Task.FromResult(root); }
+                return Task.FromResult(new GitCommandResult(0, root.StandardOutput
+                    + _results["rev-parse --path-format=absolute --git-dir"].StandardOutput
+                    + _results["rev-parse --path-format=absolute --git-common-dir"].StandardOutput, ""));
+            }
             return Task.FromResult(_results[string.Join(' ', arguments)]);
         }
     }

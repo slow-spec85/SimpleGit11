@@ -1,3 +1,4 @@
+using SimpleGit11.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,6 +33,9 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     private GitPullSettings? _savedRepositoryPullSettings;
     private string? _unmanagedRepositorySshCommand;
     private bool _isInitializing = true;
+    private readonly Dictionary<string, string> _loadedGitValues = [];
+    private Guid? _loadedContext;
+    private RepositoryInfo? _loadedRepository;
     public SettingsViewModel(
         MainWindowViewModel mainWindowViewModel,
         IThemeService themeService,
@@ -90,6 +94,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         RecentRepositoriesCount = _settingsService.Current.RecentRepositoriesCount;
         OpenLastRepositoryOnStartup = _settingsService.Current.OpenLastRepositoryOnStartup;
         FetchOnRepositoryOpen = _settingsService.Current.FetchOnRepositoryOpen;
+        RefreshOnWindowActivation = _settingsService.Current.RefreshOnWindowActivation;
         RepositoryUserName = "";
         GlobalRepositoryUserName = "";
         RepositoryEmail = "";
@@ -121,6 +126,9 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     [ObservableProperty]
     public partial bool FetchOnRepositoryOpen { get; set; }
+
+    [ObservableProperty]
+    public partial bool RefreshOnWindowActivation { get; set; }
 
     [ObservableProperty]
     public partial double RecentRepositoriesCount { get; set; }
@@ -160,6 +168,14 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
             _settingsService.SetFetchOnRepositoryOpen(value);
         }
     }
+    partial void OnRefreshOnWindowActivationChanged(bool value)
+    {
+        if (!_isInitializing)
+        {
+            _settingsService.SetRefreshOnWindowActivation(value);
+        }
+    }
+
     public ObservableCollection<DisplayOption<AppLanguage>> LanguageOptions { get; }
     public ObservableCollection<string> EditorFontFamilyOptions { get; }
     public sealed record ConfigOption(string? Value, string DisplayName);
@@ -333,43 +349,80 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     private async Task ReadGitConfig()
     {
         ClearNotification();
-        ResetPullSettings();
-
+        Guid contextId = _executionContextService.Current.Id;
+        RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
+        if (_loadedContext != contextId)
+        {
+            _loadedGitValues.Clear();
+            ResetPullSettings();
+            _loadedContext = contextId;
+            _loadedRepository = null;
+        }
+        if (!ReferenceEquals(_loadedRepository, repository))
+        {
+            foreach (string key in _loadedGitValues.Keys.Where(key => key.StartsWith("Repository", StringComparison.Ordinal)).ToArray())
+            { _loadedGitValues.Remove(key); }
+            _savedRepositoryPullSettings = null;
+            IsRepositoryPullSettingsLoaded = false;
+            _loadedRepository = repository;
+        }
         try
         {
-            GlobalRepositoryUserName = await _gitService.Configuration.GetUserNameAsync(ConfigScope.Global, null) ?? "";
-            GlobalRepositoryEmail = await _gitService.Configuration.GetUserEmailAsync(ConfigScope.Global, null) ?? "";
-            InitialBranchName = await _gitService.Configuration.GetInitialBranchNameAsync(ConfigScope.Global, null) ?? "";
-            GlobalPushDefaultRemote = await _gitService.Configuration.GetPushDefaultRemoteAsync(
-                ConfigScope.Global,
-                null) ?? "";
-            string configuredSshCommand = await _gitService.Configuration.GetGlobalSshCommandAsync();
-            UseSshCommandOverride = !string.IsNullOrWhiteSpace(configuredSshCommand);
-            SshCommand = configuredSshCommand;
-            UseCredentialHelperManager = await _gitService.Configuration.IsGlobalCredentialHelperManagerConfiguredAsync();
-            GlobalUrlRewrites = await _gitService.Configuration.GetGlobalUrlRewritesAsync();
-            await LoadPullSettingsAsync(ConfigScope.Global, null);
-
-            RepositoryInfo? currentRepository = _mainWindowViewModel.CurrentRepository;
-            if (currentRepository is not null)
+            Dictionary<string, Task<string>> values = new()
             {
-                await LoadPullSettingsAsync(ConfigScope.Local, currentRepository);
-                RepositoryUserName = await _gitService.Configuration.GetUserNameAsync(ConfigScope.Local, currentRepository) ?? "";
-                RepositoryEmail = await _gitService.Configuration.GetUserEmailAsync(ConfigScope.Local, currentRepository) ?? "";
-                RepositoryPushDefaultRemote = await _gitService.Configuration.GetPushDefaultRemoteAsync(
-                    ConfigScope.Local,
-                    currentRepository) ?? "";
-                string repositorySshCommand = await _gitService.Configuration.GetRepositorySshCommandAsync(
-                    currentRepository);
-                string? repositorySshKeyPath = GetRepositorySshIdentityPath(repositorySshCommand);
-                _unmanagedRepositorySshCommand = !string.IsNullOrWhiteSpace(repositorySshCommand)
-                    && repositorySshKeyPath is null
-                        ? repositorySshCommand
-                        : null;
-                RepositorySshKeyPath = repositorySshKeyPath ?? "";
+                [nameof(GlobalRepositoryUserName)] = _gitService.Configuration.GetUserNameAsync(ConfigScope.Global, null),
+                [nameof(GlobalRepositoryEmail)] = _gitService.Configuration.GetUserEmailAsync(ConfigScope.Global, null),
+                [nameof(InitialBranchName)] = _gitService.Configuration.GetInitialBranchNameAsync(ConfigScope.Global, null),
+                [nameof(GlobalPushDefaultRemote)] = _gitService.Configuration.GetPushDefaultRemoteAsync(ConfigScope.Global, null),
+                [nameof(SshCommand)] = _gitService.Configuration.GetGlobalSshCommandAsync()
+            };
+            Task<bool> helperTask = _gitService.Configuration.IsGlobalCredentialHelperManagerConfiguredAsync();
+            Task<IReadOnlyList<GitUrlRewrite>> rewritesTask = _gitService.Configuration.GetGlobalUrlRewritesAsync();
+            Task<GitPullSettings> globalPullTask = _gitService.Configuration.GetPullSettingsAsync(ConfigScope.Global, null);
+            Task<GitPullSettings>? localPullTask = repository is null ? null : _gitService.Configuration.GetPullSettingsAsync(ConfigScope.Local, repository);
+            if (repository is not null)
+            {
+                values[nameof(RepositoryUserName)] = _gitService.Configuration.GetUserNameAsync(ConfigScope.Local, repository);
+                values[nameof(RepositoryEmail)] = _gitService.Configuration.GetUserEmailAsync(ConfigScope.Local, repository);
+                values[nameof(RepositoryPushDefaultRemote)] = _gitService.Configuration.GetPushDefaultRemoteAsync(ConfigScope.Local, repository);
+                values[nameof(RepositorySshKeyPath)] = _gitService.Configuration.GetRepositorySshCommandAsync(repository);
+            }
+            await Task.WhenAll(values.Values.Cast<Task>().Concat(new Task[] { helperTask, rewritesTask, globalPullTask })
+                .Concat(localPullTask is null ? [] : new Task[] { localPullTask }));
+            if (_executionContextService.Current.Id != contextId
+                || !ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
+
+            Apply(nameof(GlobalRepositoryUserName), await values[nameof(GlobalRepositoryUserName)], GlobalRepositoryUserName, value => GlobalRepositoryUserName = value);
+            Apply(nameof(GlobalRepositoryEmail), await values[nameof(GlobalRepositoryEmail)], GlobalRepositoryEmail, value => GlobalRepositoryEmail = value);
+            Apply(nameof(InitialBranchName), await values[nameof(InitialBranchName)], InitialBranchName, value => InitialBranchName = value);
+            Apply(nameof(GlobalPushDefaultRemote), await values[nameof(GlobalPushDefaultRemote)], GlobalPushDefaultRemote, value => GlobalPushDefaultRemote = value);
+            string sshCommand = await values[nameof(SshCommand)];
+            Apply(nameof(SshCommand), sshCommand, SshCommand, value => SshCommand = value);
+            Apply(nameof(UseSshCommandOverride), (!string.IsNullOrWhiteSpace(sshCommand)).ToString(), UseSshCommandOverride.ToString(), value => UseSshCommandOverride = bool.Parse(value));
+            Apply(nameof(UseCredentialHelperManager), (await helperTask).ToString(), UseCredentialHelperManager.ToString(), value => UseCredentialHelperManager = bool.Parse(value));
+            IReadOnlyList<GitUrlRewrite> rewrites = await rewritesTask;
+            if (!GlobalUrlRewrites.SequenceEqual(rewrites)) { GlobalUrlRewrites = rewrites; }
+            ApplyPullSettings(ConfigScope.Global, await globalPullTask);
+            if (repository is not null)
+            {
+                ApplyPullSettings(ConfigScope.Local, await localPullTask!);
+                Apply(nameof(RepositoryUserName), await values[nameof(RepositoryUserName)], RepositoryUserName, value => RepositoryUserName = value);
+                Apply(nameof(RepositoryEmail), await values[nameof(RepositoryEmail)], RepositoryEmail, value => RepositoryEmail = value);
+                Apply(nameof(RepositoryPushDefaultRemote), await values[nameof(RepositoryPushDefaultRemote)], RepositoryPushDefaultRemote, value => RepositoryPushDefaultRemote = value);
+                string command = await values[nameof(RepositorySshKeyPath)];
+                string? keyPath = GetRepositorySshIdentityPath(command);
+                Apply(nameof(RepositorySshKeyPath), keyPath ?? "", RepositorySshKeyPath, value =>
+                {
+                    RepositorySshKeyPath = value;
+                    _unmanagedRepositorySshCommand = !string.IsNullOrWhiteSpace(command) && keyPath is null ? command : null;
+                });
             }
             else
             {
+                _savedRepositoryPullSettings = null;
+                IsRepositoryPullSettingsLoaded = false;
+                SelectedRepositoryPullRebase = RepositoryPullRebaseOptions[0];
+                SelectedRepositoryPullFastForward = RepositoryPullFastForwardOptions[0];
                 RepositoryUserName = "";
                 RepositoryEmail = "";
                 RepositoryPushDefaultRemote = "";
@@ -379,7 +432,16 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         }
         catch (Exception exception)
         {
+            if (_executionContextService.Current.Id != contextId
+                || !ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
+            ResetPullSettings();
             ShowGitConfigError(exception, "GitConfigReadFailed");
+        }
+
+        void Apply(string key, string incoming, string current, Action<string> assign)
+        {
+            if (!_loadedGitValues.TryGetValue(key, out string? saved) || current == saved) { assign(incoming); }
+            _loadedGitValues[key] = incoming;
         }
     }
 
@@ -393,8 +455,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     private async Task RefreshSettingsCoreAsync()
     {
-        await ReadGitConfig();
-        await LoadSshIdentitiesAsync();
+        await Task.WhenAll(ReadGitConfig(), LoadSshIdentitiesAsync());
     }
 
     private ObservableCollection<ConfigOption> CreatePullRebaseOptions() =>
@@ -447,20 +508,27 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         SelectedRepositoryPullFastForward = RepositoryPullFastForwardOptions[0];
     }
 
-    private async Task LoadPullSettingsAsync(ConfigScope scope, RepositoryInfo? repository)
+    private void ApplyPullSettings(ConfigScope scope, GitPullSettings settings)
     {
-        GitPullSettings settings = await _gitService.Configuration.GetPullSettingsAsync(scope, repository);
         if (scope == ConfigScope.Global)
         {
-            SelectedGlobalPullRebase = FindPullOption(GlobalPullRebaseOptions, settings.Rebase, 5);
-            SelectedGlobalPullFastForward = FindPullOption(GlobalPullFastForwardOptions, settings.FastForward, 4);
+            string? rebase = _savedGlobalPullSettings is not null && SelectedGlobalPullRebase.Value != _savedGlobalPullSettings.Rebase
+                ? SelectedGlobalPullRebase.Value : settings.Rebase;
+            string? fastForward = _savedGlobalPullSettings is not null && SelectedGlobalPullFastForward.Value != _savedGlobalPullSettings.FastForward
+                ? SelectedGlobalPullFastForward.Value : settings.FastForward;
+            SelectedGlobalPullRebase = FindPullOption(GlobalPullRebaseOptions, rebase, 5);
+            SelectedGlobalPullFastForward = FindPullOption(GlobalPullFastForwardOptions, fastForward, 4);
             _savedGlobalPullSettings = settings;
             IsGlobalPullSettingsLoaded = true;
         }
         else
         {
-            SelectedRepositoryPullRebase = FindPullOption(RepositoryPullRebaseOptions, settings.Rebase, 5);
-            SelectedRepositoryPullFastForward = FindPullOption(RepositoryPullFastForwardOptions, settings.FastForward, 4);
+            string? rebase = _savedRepositoryPullSettings is not null && SelectedRepositoryPullRebase.Value != _savedRepositoryPullSettings.Rebase
+                ? SelectedRepositoryPullRebase.Value : settings.Rebase;
+            string? fastForward = _savedRepositoryPullSettings is not null && SelectedRepositoryPullFastForward.Value != _savedRepositoryPullSettings.FastForward
+                ? SelectedRepositoryPullFastForward.Value : settings.FastForward;
+            SelectedRepositoryPullRebase = FindPullOption(RepositoryPullRebaseOptions, rebase, 5);
+            SelectedRepositoryPullFastForward = FindPullOption(RepositoryPullFastForwardOptions, fastForward, 4);
             _savedRepositoryPullSettings = settings;
             IsRepositoryPullSettingsLoaded = true;
         }
@@ -729,14 +797,16 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     private async Task LoadSshIdentitiesAsync()
     {
+        Guid contextId = _executionContextService.Current.Id;
         IReadOnlyList<SshIdentity> identities = await _openSshService.GetIdentitiesAsync();
-        SshIdentities = identities
+        if (_executionContextService.Current.Id != contextId) { return; }
+        SshIdentities = CollectionSynchronization.ReuseItems(SshIdentities, identities
             .Select(identity => new SshIdentityViewItem(
                 identity,
                 RemoveSshIdentityAsync,
                 _clipboardService.SetText,
-                _dialogService.ShowSshPublicKeyAsync))
-            .ToList();
+                _dialogService.ShowSshPublicKeyAsync)), item => item.PrivateKeyPath,
+            (previous, current) => previous.Identity == current.Identity);
     }
 
     internal static string CreateRepositorySshCommand(string privateKeyPath)
@@ -772,6 +842,17 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
             await _mainWindowViewModel.RefreshCurrentUserAsync();
             await SaveCredentialHelperSettingsAsync();
 
+            _loadedGitValues[nameof(GlobalRepositoryUserName)] = GlobalRepositoryUserName;
+            _loadedGitValues[nameof(GlobalRepositoryEmail)] = GlobalRepositoryEmail;
+            _loadedGitValues[nameof(InitialBranchName)] = InitialBranchName;
+            _loadedGitValues[nameof(GlobalPushDefaultRemote)] = GlobalPushDefaultRemote;
+            _loadedGitValues[nameof(SshCommand)] = SshCommand;
+            _loadedGitValues[nameof(UseSshCommandOverride)] = UseSshCommandOverride.ToString();
+            _loadedGitValues[nameof(UseCredentialHelperManager)] = UseCredentialHelperManager.ToString();
+            _loadedGitValues[nameof(RepositoryUserName)] = RepositoryUserName;
+            _loadedGitValues[nameof(RepositoryEmail)] = RepositoryEmail;
+            _loadedGitValues[nameof(RepositoryPushDefaultRemote)] = RepositoryPushDefaultRemote;
+            _loadedGitValues[nameof(RepositorySshKeyPath)] = RepositorySshKeyPath;
             RepositorySettingsStatus = _localizationService.GetString("RepositorySettingsSaved");
         }
         catch (Exception exception)

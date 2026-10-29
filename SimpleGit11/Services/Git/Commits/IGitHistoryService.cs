@@ -13,6 +13,8 @@ public interface IGitHistoryService
         int skip,
         int count);
 
+    Task<IReadOnlyList<GitCommit>> GetRemainingCommitsAsync(RepositoryInfo repository, int skip);
+
     Task<GitCommit> GetLastCommitAsync(RepositoryInfo repository);
 
     Task<IReadOnlyList<GitChangedFile>> GetChangedFilesAsync(RepositoryInfo repository, GitCommit commit);

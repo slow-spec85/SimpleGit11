@@ -15,6 +15,60 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class SettingsPullSettingsTests
 {
     [TestMethod]
+    public async Task Refresh_PreservesUnsavedTextAndPullOptionsButLoadsExternalChangesIntoUneditedFields()
+    {
+        Fixture fixture = new();
+        fixture.OpenRepository();
+        fixture.Runner.SetValues("--global", "false", "true");
+        await fixture.ViewModel.RefreshSettingsAsync();
+        fixture.ViewModel.GlobalRepositoryUserName = "Unsaved global name";
+        fixture.ViewModel.RepositoryEmail = "unsaved@example.test";
+        fixture.ViewModel.SelectedGlobalPullRebase = fixture.ViewModel.GlobalPullRebaseOptions[2];
+        fixture.Runner.SetValues("--global", "interactive", "only");
+
+        await fixture.ViewModel.RefreshSettingsAsync();
+
+        Assert.AreEqual("Unsaved global name", fixture.ViewModel.GlobalRepositoryUserName);
+        Assert.AreEqual("unsaved@example.test", fixture.ViewModel.RepositoryEmail);
+        Assert.AreEqual("true", fixture.ViewModel.SelectedGlobalPullRebase.Value);
+        Assert.AreEqual("only", fixture.ViewModel.SelectedGlobalPullFastForward.Value);
+        Assert.IsEmpty(fixture.Runner.PullWrites);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void RefreshOnWindowActivation_LoadsWithoutWritingAndSavesToggleImmediately(bool initialValue)
+    {
+        AppSettings settings = new() { RefreshOnWindowActivation = initialValue };
+        List<bool> writes = [];
+        ISettingsService service = ServiceStub.Create<ISettingsService>((method, args) =>
+        {
+            switch (method)
+            {
+                case "get_Current":
+                    return settings;
+                case "SetRefreshOnWindowActivation":
+                    settings.RefreshOnWindowActivation = (bool)args![0]!;
+                    writes.Add(settings.RefreshOnWindowActivation);
+                    return null;
+                default:
+                    throw new NotSupportedException(method);
+            }
+        });
+        Fixture fixture = new(service);
+
+        Assert.AreEqual(initialValue, fixture.ViewModel.RefreshOnWindowActivation);
+        Assert.IsEmpty(writes);
+
+        fixture.ViewModel.RefreshOnWindowActivation = !initialValue;
+        fixture.ViewModel.RefreshOnWindowActivation = initialValue;
+
+        Assert.AreEqual(initialValue, settings.RefreshOnWindowActivation);
+        CollectionAssert.AreEqual(new[] { !initialValue, initialValue }, writes);
+    }
+
+    [TestMethod]
     public void RepositoryOpeningSettings_LoadAndSaveImmediately()
     {
         AppSettings settings = new() { DefaultRemoteName = "upstream", FetchOnRepositoryOpen = true };

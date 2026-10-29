@@ -53,6 +53,23 @@ public sealed class SynchronizationViewModelTests
     public static void CleanupRuntime() => WinRT.ActivationFactory.ActivationHandler = _previousActivationHandler;
 
     [TestMethod]
+    public async Task UnchangedSnapshotPreservesListsAndCards()
+    {
+        await using Fixture fixture = new();
+        await fixture.InitializeAsync();
+        IReadOnlyList<BranchSynchronizationViewItem> branches = fixture.ViewModel.LocalBranches;
+        IReadOnlyList<TagSynchronizationViewItem> tags = fixture.ViewModel.Tags;
+        IReadOnlyList<GitRemote> remotes = fixture.ViewModel.Remotes;
+
+        await fixture.ViewModel.RefreshSynchronizationLocalAsync();
+
+        Assert.AreSame(branches, fixture.ViewModel.LocalBranches);
+        Assert.AreSame(branches[0], fixture.ViewModel.LocalBranches[0]);
+        Assert.AreSame(tags, fixture.ViewModel.Tags);
+        Assert.AreSame(remotes, fixture.ViewModel.Remotes);
+    }
+
+    [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
     public async Task PullIsAvailableWithoutFetchOrKnownIncomingCommits(bool hasUpstream)
@@ -157,6 +174,7 @@ public sealed class SynchronizationViewModelTests
             IGitRemoteService remotes = Stub.Create<IGitRemoteService>((method, args) => method switch
             {
                 "GetConfiguredSynchronizationSnapshotAsync" => GetSnapshotAsync(),
+                "GetLocalConfiguredSynchronizationSnapshotAsync" => GetSnapshotAsync(),
                 "PullAsync" => PullAsync(args!),
                 "PushAsync" => PushAsync((GitPushRequest)args![1]!),
                 _ => throw new NotSupportedException(method)

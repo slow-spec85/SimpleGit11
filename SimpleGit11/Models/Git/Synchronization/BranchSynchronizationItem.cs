@@ -102,4 +102,23 @@ public sealed class BranchSynchronizationItem(
     public string IncomingRevisionRange => IsPublishedToRemote
         ? $"{Name}..{RemoteTrackingBranch}"
         : "";
+    public bool HasSameSnapshot(BranchSynchronizationItem other) =>
+        Name == other.Name
+        && IsCurrent == other.IsCurrent
+        && WorktreePath == other.WorktreePath
+        && UpstreamBranch == other.UpstreamBranch
+        && UpstreamRemoteName == other.UpstreamRemoteName
+        && UpstreamTrackingState == other.UpstreamTrackingState
+        && PushRemoteName == other.PushRemoteName
+        && ExplicitPushRemoteName == other.ExplicitPushRemoteName
+        && PushTrackingBranch == other.PushTrackingBranch
+        && PushTrackingState == other.PushTrackingState
+        && PushAheadCount == other.PushAheadCount
+        && PushBehindCount == other.PushBehindCount
+        && HasPushRemoteOverride == other.HasPushRemoteOverride
+        && RemoteTrackingBranch == other.RemoteTrackingBranch
+        && TracksSelectedRemote == other.TracksSelectedRemote
+        && IsPublishedToRemote == other.IsPublishedToRemote
+        && AheadCount == other.AheadCount
+        && BehindCount == other.BehindCount;
 }

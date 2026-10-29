@@ -57,7 +57,7 @@ public sealed class OpenSshServiceTests
     }
 
     [TestMethod]
-    public async Task EnsureTrustedAsync_DoesNotWriteKeyWhenConfirmationIsDeclined()
+    public async Task EnsureTrustedAsync_DeclinedConfirmation_ThrowsAndDoesNotWriteKey()
     {
         using TemporaryDirectory directory = new();
         string knownHostsPath = directory.GetPath(".ssh/known_hosts");
@@ -65,8 +65,126 @@ public sealed class OpenSshServiceTests
             new RecordingConfirmationService(confirmed: false),
             knownHostsPath);
 
-        await service.EnsureTrustedAsync("ssh://git@example.com/team/repository.git");
+        GitRemoteOperationException exception = await Assert.ThrowsAsync<GitRemoteOperationException>(() =>
+            service.EnsureTrustedAsync("ssh://git@example.com/team/repository.git"));
 
+        Assert.AreEqual(GitRemoteOperationErrorKind.HostKeyVerification, exception.Kind);
+        Assert.IsFalse(File.Exists(knownHostsPath));
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task EnsureTrustedAsync_UnsupportedWindowsKex_RetriesWithGitKeyScan(bool fallbackSucceeds)
+    {
+        using TemporaryDirectory directory = new();
+        string knownHostsPath = directory.GetPath(".ssh/known_hosts");
+        string gitExecPath = directory.CreateDirectory("Git with spaces/mingw64/libexec/git-core");
+        string gitKeyScanPath = Path.GetFullPath(directory.CreateFile("Git with spaces/usr/bin/ssh-keyscan.exe", ""));
+        RecordingConfirmationService confirmation = new(confirmed: true);
+        List<string> commands = [];
+        using CancellationTokenSource cancellation = new();
+        OpenSshService service = new(confirmation, knownHostsPath, (command, arguments, token) =>
+        {
+            Assert.AreEqual(cancellation.Token, token);
+            commands.Add(command);
+            if (command == "git")
+            {
+                CollectionAssert.AreEqual(new[] { "--exec-path" }, arguments.ToArray());
+                return Task.FromResult(new OpenSshService.ProcessResult(0, gitExecPath + "\n", ""));
+            }
+
+            CollectionAssert.AreEqual(new[] { "-T", "10", "-p", "2222", "example.com" }, arguments.ToArray());
+            if (command == "ssh-keyscan")
+            {
+                return Task.FromResult(new OpenSshService.ProcessResult(
+                    1, "", "choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com"));
+            }
+
+            Assert.AreEqual(gitKeyScanPath, command);
+            return Task.FromResult(fallbackSucceeds
+                ? new OpenSshService.ProcessResult(0, $"[example.com]:2222 ssh-ed25519 {Ed25519Key}", "")
+                : new OpenSshService.ProcessResult(1, "", "Connection timed out"));
+        });
+
+        if (fallbackSucceeds)
+        {
+            await service.EnsureTrustedAsync("ssh://git@example.com:2222/project.git", cancellation.Token);
+            Assert.IsNotNull(confirmation.Confirmation);
+            Assert.AreEqual(2222, confirmation.Confirmation.Port);
+            StringAssert.Contains(await File.ReadAllTextAsync(knownHostsPath), Ed25519Key);
+        }
+        else
+        {
+            GitRemoteOperationException exception = await Assert.ThrowsAsync<GitRemoteOperationException>(() =>
+                service.EnsureTrustedAsync("ssh://git@example.com:2222/project.git", cancellation.Token));
+            StringAssert.Contains(exception.Message, "Connection timed out");
+            Assert.IsNull(confirmation.Confirmation);
+            Assert.IsFalse(File.Exists(knownHostsPath));
+        }
+
+        CollectionAssert.AreEqual(new[] { "ssh-keyscan", "git", gitKeyScanPath }, commands);
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(1)]
+    public async Task EnsureTrustedAsync_UnsupportedKexWithoutGitKeyScan_PreservesFailure(int gitExitCode)
+    {
+        using TemporaryDirectory directory = new();
+        RecordingConfirmationService confirmation = new(confirmed: true);
+        const string error = "choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com";
+        OpenSshService service = new(confirmation, directory.GetPath("known_hosts"), (command, _, _) =>
+            Task.FromResult(command == "git"
+                ? new OpenSshService.ProcessResult(gitExitCode, directory.GetPath("missing/mingw64/libexec/git-core"), "")
+                : new OpenSshService.ProcessResult(1, "", error)));
+
+        GitRemoteOperationException exception = await Assert.ThrowsAsync<GitRemoteOperationException>(() =>
+            service.EnsureTrustedAsync("git@example.com:project.git"));
+
+        Assert.AreEqual(GitRemoteOperationErrorKind.HostKeyVerification, exception.Kind);
+        StringAssert.Contains(exception.Message, error);
+        Assert.IsNull(confirmation.Confirmation);
+    }
+
+    [TestMethod]
+    public async Task EnsureTrustedAsync_ScanFailure_ThrowsWithDiagnosticWithoutConfirmation()
+    {
+        using TemporaryDirectory directory = new();
+        string knownHostsPath = directory.GetPath("known_hosts");
+        RecordingConfirmationService confirmation = new(confirmed: true);
+        OpenSshService service = new(confirmation, knownHostsPath, (command, _, _) =>
+        {
+            Assert.AreEqual("ssh-keyscan", command);
+            return Task.FromResult(new OpenSshService.ProcessResult(1, "", "Connection refused"));
+        });
+
+        GitRemoteOperationException exception = await Assert.ThrowsAsync<GitRemoteOperationException>(() =>
+            service.EnsureTrustedAsync("git@example.com:project.git"));
+
+        Assert.AreEqual(GitRemoteOperationErrorKind.HostKeyVerification, exception.Kind);
+        StringAssert.Contains(exception.Message, "Connection refused");
+        Assert.IsNull(confirmation.Confirmation);
+        Assert.IsFalse(File.Exists(knownHostsPath));
+    }
+
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("# Server banner without host keys")]
+    [DataRow("example.com ssh-ed25519 invalid-base64")]
+    public async Task EnsureTrustedAsync_NoValidHostKeys_ThrowsWithoutConfirmation(string output)
+    {
+        using TemporaryDirectory directory = new();
+        string knownHostsPath = directory.GetPath("known_hosts");
+        RecordingConfirmationService confirmation = new(confirmed: true);
+        OpenSshService service = new(confirmation, knownHostsPath, (_, _, _) =>
+            Task.FromResult(new OpenSshService.ProcessResult(0, output, "")));
+
+        GitRemoteOperationException exception = await Assert.ThrowsAsync<GitRemoteOperationException>(() =>
+            service.EnsureTrustedAsync("git@example.com:project.git"));
+
+        Assert.AreEqual(GitRemoteOperationErrorKind.HostKeyVerification, exception.Kind);
+        Assert.IsNull(confirmation.Confirmation);
         Assert.IsFalse(File.Exists(knownHostsPath));
     }
 

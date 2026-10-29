@@ -57,6 +57,8 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
         InitializeSyntaxHighlightingOptions();
     }
 
+    public ChangedFileTreeViewModel FileTree { get; } = new();
+
     public ObservableCollection<GitChangedFile> ChangedFiles { get; } = [];
     public ObservableCollection<DiffLine> DiffLines { get; } = [];
     public ObservableCollection<DisplayOption<SyntaxHighlightingMode>> SyntaxHighlightingOptions { get; } = [];
@@ -75,10 +77,20 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
     [NotifyPropertyChangedFor(nameof(SelectedDiffFileTooltip))]
     public partial GitChangedFile? SelectedChangedFile { get; set; }
 
+    private bool _preserveCommitContent;
+
+    partial void OnSelectedCommitChanging(GitCommit? value)
+    {
+        _preserveCommitContent = value is not null && SelectedCommit is not null
+            && !value.HasDiffBaseRevision && !SelectedCommit.HasDiffBaseRevision && value.Hash == SelectedCommit.Hash
+            && ChangedFiles.Count > 0 && !IsDiffLoading;
+    }
+
     partial void OnSelectedCommitChanged(GitCommit? value)
     {
         OnSelectedCommitChanged();
         RaiseCommitDetailsCommandCanExecuteChanged();
+        if (_preserveCommitContent) { return; }
         ClearCommitDetails(value is null
             ? _localizationService.GetString(_noCommitSelectedMessageKey)
             : _localizationService.GetString(_selectCommitFileMessageKey));
@@ -588,6 +600,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
             }
         }
 
+        FileTree.Refresh(ChangedFiles);
         SelectedChangedFile = ChangedFiles.FirstOrDefault();
         OnDiffSelectionChanged();
         OnChangedFilesSummaryChanged();
@@ -598,6 +611,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
         SelectedChangedFile = null;
         _allChangedFiles.Clear();
         ChangedFiles.Clear();
+        FileTree.Refresh(ChangedFiles);
         DiffLines.Clear();
         DiffText = "";
         SelectedDiffStat = DiffStat.Empty;

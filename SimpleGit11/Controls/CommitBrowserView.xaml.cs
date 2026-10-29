@@ -1,14 +1,19 @@
 using System;
 using System.Linq;
 using System.ComponentModel;
+using System.Numerics;
+using Microsoft.Graphics.Canvas.Geometry;
+using Microsoft.UI.Composition;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Hosting;
 using SimpleGit11.Models;
 using SimpleGit11.ViewModels;
+using Windows.Foundation;
 
 namespace SimpleGit11.Controls;
 
@@ -20,8 +25,12 @@ public sealed partial class CommitBrowserView : UserControl
 {
     private double _commitDetailsHeight = 220;
     private bool _restoringSelection;
+    private string? _viewportCommitHash;
+    private double _viewportCommitY;
+    private double? _viewportOffset;
     private CommitBrowserRowViewItem? _dragAnchor;
     private bool _dragSelecting;
+    private CompositionGeometricClip? _commitListOverlayClip;
 
     public static readonly DependencyProperty ViewModelProperty = DependencyProperty.Register(
         nameof(ViewModel),
@@ -47,8 +56,8 @@ public sealed partial class CommitBrowserView : UserControl
         typeof(CommitBrowserView),
         new PropertyMetadata(true));
 
-    public static readonly DependencyProperty CommitListFooterProperty = DependencyProperty.Register(
-        nameof(CommitListFooter),
+    public static readonly DependencyProperty CommitListOverlayProperty = DependencyProperty.Register(
+        nameof(CommitListOverlay),
         typeof(object),
         typeof(CommitBrowserView),
         new PropertyMetadata(null));
@@ -65,7 +74,12 @@ public sealed partial class CommitBrowserView : UserControl
     public CommitBrowserView()
     {
         InitializeComponent();
-        Loaded += (_, _) => RestoreSelectionMode();
+        HistoryChangedFilesTree.FileContextMenu = HistoryChangedFilesListView.ContextFlyout as MenuFlyout;
+        Loaded += (_, _) =>
+        {
+            RestoreSelectionMode();
+            UpdateCommitListOverlayClip();
+        };
         HistoryCommitsListView.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(CommitList_PointerPressed), true);
         HistoryCommitsListView.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(CommitList_PointerMoved), true);
         HistoryCommitsListView.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(CommitList_PointerEnded), true);
@@ -74,10 +88,54 @@ public sealed partial class CommitBrowserView : UserControl
         {
             if (ReferenceEquals(args.OriginalSource, HistoryCommitsListView)) { CommitList_PointerEnded(HistoryCommitsListView, args); }
         };
-        Unloaded += (_, _) => { _dragAnchor = null; _dragSelecting = false; HistoryCommitsListView.ReleasePointerCaptures(); };
+        Unloaded += (_, _) =>
+        {
+            _dragAnchor = null;
+            _dragSelecting = false;
+            HistoryCommitsListView.ReleasePointerCaptures();
+            ElementCompositionPreview.GetElementVisual(HistoryCommitsListView).Clip = null;
+            _commitListOverlayClip?.Geometry.Dispose();
+            _commitListOverlayClip?.Dispose();
+            _commitListOverlayClip = null;
+        };
     }
 
     public event ShowMergedCommitsRequestedEventHandler? ShowMergedCommitsRequested;
+
+    private void CommitListOverlayLayout_SizeChanged(object sender, SizeChangedEventArgs args)
+    {
+        UpdateCommitListOverlayClip();
+    }
+
+    private void UpdateCommitListOverlayClip()
+    {
+        if (!IsLoaded) { return; }
+        Visual listVisual = ElementCompositionPreview.GetElementVisual(HistoryCommitsListView);
+        if (CommitListOverlayPresenter.ActualWidth <= 0 || CommitListOverlayPresenter.ActualHeight <= 0
+            || HistoryCommitsListView.ActualWidth <= 0 || HistoryCommitsListView.ActualHeight <= 0)
+        {
+            listVisual.Clip = null;
+            return;
+        }
+
+        Rect overlayBounds = CommitListOverlayPresenter.TransformToVisual(HistoryCommitsListView).TransformBounds(
+            new Rect(0, 0, CommitListOverlayPresenter.ActualWidth, CommitListOverlayPresenter.ActualHeight));
+        CornerRadius cornerRadius = CommitListOverlay is Control control ? control.CornerRadius : new CornerRadius(0);
+        using CanvasGeometry geometry = CreateCommitListClipGeometry(
+            new Size(HistoryCommitsListView.ActualWidth, HistoryCommitsListView.ActualHeight),
+            overlayBounds,
+            (float)cornerRadius.TopLeft);
+        _commitListOverlayClip ??= listVisual.Compositor.CreateGeometricClip(listVisual.Compositor.CreatePathGeometry());
+        ((CompositionPathGeometry)_commitListOverlayClip.Geometry).Path = new CompositionPath(geometry);
+        listVisual.Clip = _commitListOverlayClip;
+    }
+
+    internal static CanvasGeometry CreateCommitListClipGeometry(Size listSize, Rect overlayBounds, float cornerRadius)
+    {
+        using CanvasGeometry list = CanvasGeometry.CreateRectangle(null, new Rect(0, 0, listSize.Width, listSize.Height));
+        using CanvasGeometry overlay = CanvasGeometry.CreateRoundedRectangle(null, overlayBounds, cornerRadius, cornerRadius);
+        return list.CombineWith(overlay, Matrix3x2.Identity, CanvasGeometryCombine.Exclude);
+    }
 
     public CommitBrowserViewModelBase? ViewModel
     {
@@ -103,10 +161,10 @@ public sealed partial class CommitBrowserView : UserControl
         set => SetValue(IsCommitContextFlyoutEnabledProperty, value);
     }
 
-    public object? CommitListFooter
+    public object? CommitListOverlay
     {
-        get => GetValue(CommitListFooterProperty);
-        set => SetValue(CommitListFooterProperty, value);
+        get => GetValue(CommitListOverlayProperty);
+        set => SetValue(CommitListOverlayProperty, value);
     }
 
     public void SetCommitListVisible(bool isVisible)
@@ -127,6 +185,20 @@ public sealed partial class CommitBrowserView : UserControl
         HistoryCommitsListView.SelectionMode = isEnabled
             ? ListViewSelectionMode.Extended
             : ListViewSelectionMode.Single;
+    }
+
+    private void ChangedFiles_ContextRequested(UIElement sender, ContextRequestedEventArgs args)
+    {
+        if (ChangedFilesTree.GetContextFile(args) is GitChangedFile file)
+        {
+            ChangedFilesTree.ShowFileContextMenu(HistoryFileContextMenu, file, HistoryChangedFilesListView, args);
+        }
+        else { args.Handled = true; }
+    }
+
+    private void ChangedFilesTree_FileSelectionChanged(object? sender, EventArgs args)
+    {
+        if (ViewModel is not null) { ViewModel.SelectedChangedFile = HistoryChangedFilesTree.SelectedFile; }
     }
 
     private void CommitFilterToggleButton_Click(object sender, RoutedEventArgs e)
@@ -239,13 +311,69 @@ public sealed partial class CommitBrowserView : UserControl
 
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (_restoringSelection || !IsLoaded || ViewModel?.IsUpdatingCommitRows == true) { return; }
+        if (_restoringSelection || !IsLoaded) { return; }
+        if (args.PropertyName == nameof(CommitBrowserViewModelBase.IsUpdatingCommitRows))
+        {
+            if (ViewModel?.IsUpdatingCommitRows == true) { CaptureCommitViewport(); return; }
+            RestoreSelectionMode();
+            RestoreCommitViewport();
+            return;
+        }
+        if (ViewModel?.IsUpdatingCommitRows == true) { return; }
         if (args.PropertyName == nameof(CommitBrowserViewModelBase.CommitSelectionMode)) { RestoreSelectionMode(); }
         else if (args.PropertyName is nameof(CommitBrowserViewModelBase.SelectedCommitRow)
             or nameof(CommitBrowserViewModelBase.IsUpdatingCommitRows))
         {
             RestoreSelectionMode();
         }
+    }
+
+    private void CaptureCommitViewport()
+    {
+        _viewportCommitHash = null;
+        _viewportOffset = FindCommitScrollViewer(HistoryCommitsListView)?.VerticalOffset;
+        if (HistoryCommitsListView.ItemsPanelRoot is ItemsStackPanel panel
+            && panel.FirstVisibleIndex >= 0
+            && panel.FirstVisibleIndex < HistoryCommitsListView.Items.Count
+            && HistoryCommitsListView.Items[panel.FirstVisibleIndex] is CommitBrowserRowViewItem row
+            && HistoryCommitsListView.ContainerFromIndex(panel.FirstVisibleIndex) is FrameworkElement container)
+        {
+            _viewportCommitHash = row.Commit.Hash;
+            _viewportCommitY = container.TransformToVisual(HistoryCommitsListView).TransformPoint(new Point()).Y;
+        }
+    }
+
+    private void RestoreCommitViewport()
+    {
+        string? hash = _viewportCommitHash;
+        double? offset = _viewportOffset;
+        double y = _viewportCommitY;
+        _viewportOffset = null;
+        if (offset is null) { return; }
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!IsLoaded || ViewModel?.IsUpdatingCommitRows == true) { return; }
+            ScrollViewer? viewer = FindCommitScrollViewer(HistoryCommitsListView);
+            if (viewer is null) { return; }
+            CommitBrowserRowViewItem? row = ViewModel?.CommitRows.FirstOrDefault(item => item.Commit.Hash == hash);
+            if (row is not null && HistoryCommitsListView.ContainerFromItem(row) is FrameworkElement container)
+            {
+                double currentY = container.TransformToVisual(HistoryCommitsListView).TransformPoint(new Point()).Y;
+                viewer.ChangeView(null, viewer.VerticalOffset + currentY - y, null, true);
+            }
+            else { viewer.ChangeView(null, offset, null, true); }
+        });
+    }
+
+    private static ScrollViewer? FindCommitScrollViewer(DependencyObject parent)
+    {
+        for (int index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, index);
+            if (child is ScrollViewer viewer) { return viewer; }
+            if (FindCommitScrollViewer(child) is ScrollViewer nested) { return nested; }
+        }
+        return null;
     }
 
     private void RestoreSelectionMode()
@@ -263,9 +391,15 @@ public sealed partial class CommitBrowserView : UserControl
             HistoryCommitsListView.SelectedItem = focused;
             if (HistoryCommitsListView.SelectionMode != ListViewSelectionMode.Single)
             {
-                HistoryCommitsListView.SelectedItems.Clear();
-                foreach (CommitBrowserRowViewItem row in ViewModel.CommitRows.Where(row => selected.Any(commit => commit.Hash == row.Commit.Hash)))
-                { HistoryCommitsListView.SelectedItems.Add(row); }
+                CommitBrowserRowViewItem[] rows = ViewModel.CommitRows.Where(row => selected.Any(commit => commit.Hash == row.Commit.Hash)).ToArray();
+                foreach (object item in HistoryCommitsListView.SelectedItems.ToArray())
+                {
+                    if (!rows.Contains(item) && !ReferenceEquals(item, focused)) { HistoryCommitsListView.SelectedItems.Remove(item); }
+                }
+                foreach (CommitBrowserRowViewItem row in rows)
+                {
+                    if (!HistoryCommitsListView.SelectedItems.Contains(row)) { HistoryCommitsListView.SelectedItems.Add(row); }
+                }
                 if (focused is not null && !HistoryCommitsListView.SelectedItems.Contains(focused))
                 { HistoryCommitsListView.SelectedItems.Add(focused); }
             }

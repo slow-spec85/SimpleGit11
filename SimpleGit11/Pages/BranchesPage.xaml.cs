@@ -223,11 +223,11 @@ public sealed partial class BranchesPage : Page, IPageRefreshTarget, IRemoteSele
         }
         else if (e.PropertyName == nameof(ViewModel.SelectedBranch))
         {
-            await LoadOpenBranchCardsAsync();
+            await LoadOpenBranchCardsAsync(forceRefresh: true);
         }
         else if (e.PropertyName == nameof(ViewModel.SelectedTag))
         {
-            await LoadOpenTagCardsAsync();
+            await LoadOpenTagCardsAsync(forceRefresh: true);
         }
     }
 
@@ -440,7 +440,7 @@ public sealed partial class BranchesPage : Page, IPageRefreshTarget, IRemoteSele
 
     private async void BranchSynchronizationExpander_Expanded(object sender, EventArgs e)
     {
-        await ViewModel.EnsureBranchSynchronizationLoadedAsync();
+        await ViewModel.EnsureBranchSynchronizationLoadedAsync(forceRefresh: true);
     }
 
     private async void BranchCommitExpander_Expanded(object sender, EventArgs e)
@@ -450,17 +450,17 @@ public sealed partial class BranchesPage : Page, IPageRefreshTarget, IRemoteSele
 
     private async void BranchComparisonExpander_Expanded(object sender, EventArgs e)
     {
-        await ViewModel.EnsureSelectedBranchComparisonLoadedAsync();
+        await ViewModel.EnsureSelectedBranchComparisonLoadedAsync(forceRefresh: true);
     }
 
     private async void BranchWorktreeExpander_Expanded(object sender, EventArgs e)
     {
-        await ViewModel.EnsureSelectedBranchWorktreesLoadedAsync();
+        await ViewModel.EnsureSelectedBranchWorktreesLoadedAsync(forceRefresh: true);
     }
 
     private async void BranchHistoryExpander_Expanded(object sender, EventArgs e)
     {
-        await ViewModel.EnsureSelectedBranchHistoryLoadedAsync();
+        await ViewModel.EnsureSelectedBranchHistoryLoadedAsync(forceRefresh: true);
     }
 
     private async void TagInformationExpander_Expanded(object sender, EventArgs e)
@@ -475,7 +475,7 @@ public sealed partial class BranchesPage : Page, IPageRefreshTarget, IRemoteSele
 
     private async void TagRelationExpander_Expanded(object sender, EventArgs e)
     {
-        await ViewModel.EnsureSelectedTagRelationLoadedAsync();
+        await ViewModel.EnsureSelectedTagRelationLoadedAsync(forceRefresh: true);
     }
 
     private async void TagSignatureExpander_Expanded(object sender, EventArgs e)
@@ -485,27 +485,27 @@ public sealed partial class BranchesPage : Page, IPageRefreshTarget, IRemoteSele
 
     private async void TagWorktreeExpander_Expanded(object sender, EventArgs e)
     {
-        await ViewModel.EnsureSelectedTagWorktreesLoadedAsync();
+        await ViewModel.EnsureSelectedTagWorktreesLoadedAsync(forceRefresh: true);
     }
 
-    private Task LoadOpenBranchCardsAsync()
+    private Task LoadOpenBranchCardsAsync(bool forceRefresh = false)
     {
         List<Task> tasks = [];
-        if (BranchSynchronizationExpander.IsExpanded) tasks.Add(ViewModel.EnsureBranchSynchronizationLoadedAsync());
+        if (BranchSynchronizationExpander.IsExpanded) tasks.Add(ViewModel.EnsureBranchSynchronizationLoadedAsync(forceRefresh));
         if (BranchLastCommitExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedBranchCommitLoadedAsync());
-        if (BranchComparisonExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedBranchComparisonLoadedAsync());
-        if (BranchHistoryExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedBranchHistoryLoadedAsync());
-        if (BranchWorktreeExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedBranchWorktreesLoadedAsync());
+        if (BranchComparisonExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedBranchComparisonLoadedAsync(forceRefresh));
+        if (BranchHistoryExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedBranchHistoryLoadedAsync(forceRefresh));
+        if (BranchWorktreeExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedBranchWorktreesLoadedAsync(forceRefresh));
         return Task.WhenAll(tasks);
     }
 
-    private Task LoadOpenTagCardsAsync()
+    private Task LoadOpenTagCardsAsync(bool forceRefresh = false)
     {
         List<Task> tasks = [];
         if (TagInformationExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedTagDetailsLoadedAsync());
         if (TagSignatureExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedTagSignatureLoadedAsync());
-        if (TagRelationExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedTagRelationLoadedAsync());
-        if (TagWorktreesExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedTagWorktreesLoadedAsync());
+        if (TagRelationExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedTagRelationLoadedAsync(forceRefresh));
+        if (TagWorktreesExpander.IsExpanded) tasks.Add(ViewModel.EnsureSelectedTagWorktreesLoadedAsync(forceRefresh));
         return Task.WhenAll(tasks);
     }
 

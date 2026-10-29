@@ -17,6 +17,8 @@ public interface ISettingsService
 
     void SetFetchOnRepositoryOpen(bool fetch);
 
+    void SetRefreshOnWindowActivation(bool enabled);
+
     void SetRecentRepositoriesCount(int count);
 
     void SetOpenLastRepositoryOnStartup(bool open);

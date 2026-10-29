@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections.Generic;
 
@@ -101,4 +102,16 @@ public sealed class GitCommit
         !string.Equals(AuthorEmail, CommitterEmail, StringComparison.Ordinal);
 
     public string DisplayDate => AuthoredAt?.ToString("g") ?? "";
+
+    public bool HasSameSnapshot(GitCommit other) =>
+        Hash == other.Hash && ShortHash == other.ShortHash
+        && AuthorName == other.AuthorName && AuthorEmail == other.AuthorEmail
+        && CommitterName == other.CommitterName && CommitterEmail == other.CommitterEmail
+        && AuthoredAt == other.AuthoredAt && Title == other.Title && Message == other.Message
+        && IsSynchronized == other.IsSynchronized && RangeSide == other.RangeSide
+        && RangeSideLabel == other.RangeSideLabel && DiffBaseRevision == other.DiffBaseRevision
+        && ParentHashes.SequenceEqual(other.ParentHashes)
+        && ChangedFilePaths.SequenceEqual(other.ChangedFilePaths)
+        && References.Select(reference => (reference.Kind, reference.Name))
+            .SequenceEqual(other.References.Select(reference => (reference.Kind, reference.Name)));
 }

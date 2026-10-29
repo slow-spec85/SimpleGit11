@@ -1,3 +1,4 @@
+using SimpleGit11.Extensions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -1051,10 +1052,11 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             return null;
         }
 
+        if (!ReferenceEquals(currentRepository, _mainWindowViewModel.CurrentRepository)) { return null; }
         UpdateRepositoryIdentity(refreshedRepository);
         CurrentBranch = refreshedRepository.CurrentBranch;
         _mainWindowViewModel.UpdateCurrentRepositoryInfo(refreshedRepository);
-        return refreshedRepository;
+        return currentRepository;
     }
 
     public async Task RefreshSelectedRemoteAsync()
@@ -1110,22 +1112,27 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
 
     private async Task LoadRepositoryDetailsAsync(RepositoryInfo repository)
     {
-        try
-        {
-            CurrentUser = await _gitService.Configuration.GetUserNameAsync(ConfigScope.None, repository);
-            CurrentEmail = await _gitService.Configuration.GetUserEmailAsync(ConfigScope.None, repository);
-        }
-        catch
-        {
-            CurrentUser = "";
-            CurrentEmail = "";
-        }
+        await Task.WhenAll(LoadUserAsync(), LoadStatusAsync(repository), LoadLastCommitAsync(repository),
+            LoadRemoteDetailsAsync(repository), LoadWorktreesAsync(repository), LoadSubmodulesAsync(repository));
 
-        await LoadStatusAsync(repository);
-        await LoadLastCommitAsync(repository);
-        await LoadRemoteDetailsAsync(repository);
-        await LoadWorktreesAsync(repository);
-        await LoadSubmodulesAsync(repository);
+        async Task LoadUserAsync()
+        {
+            try
+            {
+                Task<string> nameTask = _gitService.Configuration.GetUserNameAsync(ConfigScope.None, repository);
+                Task<string> emailTask = _gitService.Configuration.GetUserEmailAsync(ConfigScope.None, repository);
+                await Task.WhenAll(nameTask, emailTask);
+                if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
+                CurrentUser = await nameTask;
+                CurrentEmail = await emailTask;
+            }
+            catch
+            {
+                if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
+                CurrentUser = "";
+                CurrentEmail = "";
+            }
+        }
     }
 
     private async Task LoadSubmodulesAsync(RepositoryInfo repository)
@@ -1134,13 +1141,13 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         {
             IReadOnlyList<GitSubmodule> submodules =
                 await _gitService.Submodules.GetSubmodulesAsync(repository);
-            ReplaceSubmodules(repository.Path, submodules);
+            ReplaceSubmodules(repository, submodules);
         }
         catch (Exception exception) when (exception is GitCommandException
             or FileNotFoundException
             or DirectoryNotFoundException)
         {
-            ClearSubmodules();
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
             ShowError(_localizationService.GetString("SubmoduleListFailed"), exception.Message);
         }
     }
@@ -1166,13 +1173,11 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
     }
 
     private void ReplaceSubmodules(
-        string repositoryPath,
+        RepositoryInfo repository,
         IReadOnlyList<GitSubmodule> submodules)
     {
-        Submodules.Clear();
-        foreach (GitSubmodule submodule in submodules)
-        {
-            Submodules.Add(new SubmoduleViewItem(
+        if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
+        Submodules.SynchronizeWith(submodules.Select(submodule => new SubmoduleViewItem(
                 submodule,
                 _localizationService,
                 _asyncCommandExecutor,
@@ -1181,9 +1186,10 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
                 OpenSubmoduleFolder,
                 ExecuteSubmoduleActionAsync,
                 _clipboardService.SetText,
-                repositoryPath,
-                CanOpenLocalFolders));
-        }
+                repository.Path,
+                CanOpenLocalFolders)), item => item.Submodule.Path,
+            (previous, current) => previous.OwnerRepositoryPath == current.OwnerRepositoryPath
+                && previous.Submodule.HasSameSnapshot(current.Submodule));
 
         OnPropertyChanged(nameof(HasSubmodules));
     }
@@ -1443,29 +1449,18 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         try
         {
             IReadOnlyList<GitWorktree> worktrees = await _gitService.GetWorktreesAsync(repository);
-            Worktrees.Clear();
-            CurrentWorktreeItem = null;
-            foreach (GitWorktree worktree in worktrees.Where(item => !item.IsBare))
-            {
-                var worktreeItem = new WorktreeViewItem(worktree,
-                                                        _localizationService,
-                                                        _asyncCommandExecutor,
-                                                        OpenWorktreeFolder,
-                                                        item => OpenWorktreeAsync(item),
-                                                        item => MoveWorktreeAsync(item),
-                                                        item => RemoveWorktreeAsync(item),
-                                                        item => ToggleWorktreeLockAsync(item),
-                                                        _clipboardService.SetText,
-                                                        CanOpenLocalFolders);
-                Worktrees.Add(worktreeItem);
-                if (worktree.IsCurrent)
-                    CurrentWorktreeItem = worktreeItem;
-            }
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
+            Worktrees.SynchronizeWith(worktrees.Where(item => !item.IsBare).Select(worktree =>
+                new WorktreeViewItem(worktree, _localizationService, _asyncCommandExecutor,
+                    OpenWorktreeFolder, item => OpenWorktreeAsync(item), item => MoveWorktreeAsync(item),
+                    item => RemoveWorktreeAsync(item), item => ToggleWorktreeLockAsync(item),
+                    _clipboardService.SetText, CanOpenLocalFolders)), item => item.Path,
+                (previous, current) => previous.Worktree == current.Worktree);
+            CurrentWorktreeItem = Worktrees.FirstOrDefault(item => item.Worktree.IsCurrent);
         }
         catch (Exception exception) when (exception is GitCommandException or FileNotFoundException or DirectoryNotFoundException)
         {
-            Worktrees.Clear();
-            CurrentWorktreeItem = null;
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
             ShowError(_localizationService.GetString("WorktreeListFailed"), exception.Message);
         }
 
@@ -1773,6 +1768,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         try
         {
             GitStatusSnapshot snapshot = await _gitService.GetStatusAsync(repository);
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
             StagedCount = snapshot.StagedChanges.Count;
             UnstagedCount = snapshot.UnstagedChanges.Count;
             ConflictCount = snapshot.ConflictedChanges.Count;
@@ -1812,6 +1808,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         try
         {
             GitCommit commit = await _gitService.GetLastCommitAsync(repository);
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
             if (string.IsNullOrWhiteSpace(commit.Hash))
             {
                 LastCommitSummary = _localizationService.GetString("NoCommitsYet");
@@ -1843,12 +1840,14 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         try
         {
             IReadOnlyList<GitRemote> remotes = await _gitService.GetRemotesAsync(repository);
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
             _remotes = remotes.ToList();
             LoadRemoteViewItems(remotes);
             GitCurrentBranchRemoteStatus status =
                 await _gitService.GetCurrentBranchRemoteStatusAsync(
                     repository,
                     CurrentRemoteItem?.Remote);
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
             GitRemoteBranchStatus? trackingTarget = status.TrackingTarget;
             if (trackingTarget is null)
             {
@@ -1899,24 +1898,13 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         string? selectedRemoteName = string.IsNullOrWhiteSpace(_mainWindowViewModel.SelectedRemoteName)
             ? CurrentRemoteItem?.Name
             : _mainWindowViewModel.SelectedRemoteName;
-        RemoteViewItems.Clear();
-        CurrentRemoteItem = null;
-        foreach (GitRemote remote in remotes)
-        {
-            var remoteItem = new RemoteViewItem(remote,
-                                                _localizationService,
-                                                _asyncCommandExecutor,
-                                                item => SelectRemote(item),
-                                                item => RenameRemoteAsync(item),
-                                                item => EditRemoteUrlAsync(item),
-                                                item => CheckRemoteAccessAsync(item),
-                                                item => RemoveRemoteAsync(item),
-                                                _clipboardService.SetText,
-                                                selectedRemoteName?.Equals(remote.Name) ?? false);
-            RemoteViewItems.Add(remoteItem);
-            if (remoteItem.IsCurrent)
-                CurrentRemoteItem = remoteItem;
-        }
+        RemoteViewItems.SynchronizeWith(remotes.Select(remote => new RemoteViewItem(remote,
+            _localizationService, _asyncCommandExecutor, item => SelectRemote(item),
+            item => RenameRemoteAsync(item), item => EditRemoteUrlAsync(item), item => CheckRemoteAccessAsync(item),
+            item => RemoveRemoteAsync(item), _clipboardService.SetText, selectedRemoteName == remote.Name)),
+            item => item.Name, (previous, current) => previous.IsCurrent == current.IsCurrent
+                && previous.Remote.HasSameSnapshot(current.Remote));
+        CurrentRemoteItem = RemoteViewItems.FirstOrDefault(item => item.IsCurrent);
 
         OnPropertyChanged(nameof(HasNoRemotes));
     }

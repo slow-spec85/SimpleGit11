@@ -15,6 +15,8 @@ public sealed class AppSettings
 
     public bool FetchOnRepositoryOpen { get; set; }
 
+    public bool RefreshOnWindowActivation { get; set; }
+
     public int RecentRepositoriesCount { get; set; } = DefaultRecentRepositoriesCount;
 
     public bool OpenLastRepositoryOnStartup { get; set; }

@@ -2,7 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SimpleGit11.Models;
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 
 namespace SimpleGit11.ViewModels;
@@ -22,8 +22,19 @@ public sealed partial class ReferenceTreeItemViewModel(
     public GitTag? Tag { get; } = tag;
     public bool IsFolder => Branch is null && Tag is null;
     public bool IsReference => !IsFolder;
-    public List<ReferenceTreeItemViewModel> Children { get; } = [];
-    public DateTime? LatestDate { get; internal set; } = branch?.LastCommitDate ?? tag?.CreatedDate;
+    public ObservableCollection<ReferenceTreeItemViewModel> Children { get; } = [];
+    internal (string Name, bool Folder, bool Remote, string RemoteName) Key =>
+        (FullName, IsFolder, Branch?.IsRemote ?? Tag?.IsRemote ?? false, Tag?.RemoteName ?? "");
+    internal string ExpansionStateKey { get; init; } = "";
+    private DateTime? _latestDate = branch?.LastCommitDate ?? tag?.CreatedDate;
+    public DateTime? LatestDate
+    {
+        get => _latestDate;
+        internal set
+        {
+            if (SetProperty(ref _latestDate, value)) { OnPropertyChanged(nameof(Metadata)); }
+        }
+    }
     public string Metadata => IsFolder
         ? LatestDate?.ToString("g", CultureInfo.CurrentCulture) ?? ""
         : $"{Branch?.CommitMetadata ?? Tag?.CommitMetadata}   {Branch?.LastCommitMessage.Trim() ?? Tag?.Subject.Trim()}".Trim();

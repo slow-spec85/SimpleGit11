@@ -331,6 +331,7 @@ public sealed class DialogValidationViewModelTests
         public Task<GitOperationState> GetOperationStateAsync(RepositoryInfo repository, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IReadOnlyList<GitCommit>> GetHistoryAsync(RepositoryInfo repository, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<GitCommitPage> GetHistoryPageAsync(RepositoryInfo repository, int skip, int count, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<IReadOnlyList<GitCommit>> GetRemainingHistoryAsync(RepositoryInfo repository, int skip, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<GitCommit> GetLastCommitAsync(RepositoryInfo repository, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IReadOnlyList<GitBranch>> GetLocalBranchesAsync(RepositoryInfo repository, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IReadOnlyList<GitBranch>> GetRemoteBranchesAsync(RepositoryInfo repository, CancellationToken cancellationToken = default) => throw new NotSupportedException();

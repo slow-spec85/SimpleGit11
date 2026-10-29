@@ -8,7 +8,11 @@ param(
     [Parameter(Mandatory)][string]$OutsideRangeHash,
     [string]$MergeHash = "",
     # Optional tagged commit; OutsideRangeHash must be untagged for this check.
-    [string]$TaggedHash = ""
+    [string]$TaggedHash = "",
+    # Optional commit newer than the adjacent pair, to verify unaffected details after combining.
+    [string]$LaterEditableHash = "",
+    # Optional commit older than the first 600 commits; use a repository with unloaded history.
+    [string]$RemainingHistoryHash = ""
 )
 
 $ErrorActionPreference = 'Stop'
@@ -112,6 +116,19 @@ try {
         Assert-HistoryUi "HistoryCommit-$NewestEditableHash" 'IsEnabled' 'True'
         Assert-HistoryUi 'HistoryEditMoveDownButton' 'IsEnabled' 'False'
         Assert-HistoryUi 'HistoryEditDeleteButton' 'IsEnabled' 'False'
+        if ($LaterEditableHash) {
+            Invoke-HistoryUi @('invoke', "HistoryCommit-$LaterEditableHash")
+            Invoke-HistoryUi @('wait-for', 'HistoryDraftFilesInfoBar', '--gone')
+            Invoke-HistoryUi @('wait-for', 'HistoryDraftDiffInfoBar', '--gone')
+            Invoke-HistoryUi @('invoke', "HistoryCommit-$OldestEditableHash")
+            Invoke-HistoryUi @('invoke', 'HistoryEditDeleteButton')
+            Invoke-HistoryUi @('invoke', "HistoryCommit-$LaterEditableHash")
+            Invoke-HistoryUi @('wait-for', 'HistoryDraftFilesInfoBar')
+            Invoke-HistoryUi @('wait-for', 'HistoryDraftDiffInfoBar')
+            Invoke-HistoryUi @('invoke', 'HistoryEditUndoButton')
+            Invoke-HistoryUi @('wait-for', 'HistoryDraftFilesInfoBar', '--gone')
+            Invoke-HistoryUi @('wait-for', 'HistoryDraftDiffInfoBar', '--gone')
+        }
         Invoke-HistoryUi @('invoke', 'HistoryEditUndoButton')
         Assert-HistoryUi 'HistoryEditApplyButton' 'IsEnabled' 'False'
     }
@@ -162,6 +179,29 @@ try {
             Invoke-HistoryUi @('invoke', 'CloseButton')
             Assert-HistoryUi 'HistoryEditApplyButton' 'IsEnabled' 'False'
             Invoke-HistoryUi @('invoke', 'HistoryEditCancelButton')
+        }
+    }
+    if ($RemainingHistoryHash) {
+        Test-HistoryUi 'Load remaining stays visible over the scrolled list and loads all older commits' {
+            Invoke-HistoryUi @('invoke', 'StartHistoryEditButton')
+            Invoke-HistoryUi @('wait-for', 'LoadRemainingHistoryButton', '--gone')
+            Invoke-HistoryUi @('invoke', 'HistoryEditCancelButton')
+            Assert-HistoryUi 'LoadRemainingHistoryButton' 'IsOffscreen' 'False'
+            Invoke-HistoryUi @('scroll', 'HistoryCommitsListView', '--to', 'top')
+            Assert-HistoryUi 'LoadRemainingHistoryButton' 'IsOffscreen' 'False'
+            Invoke-HistoryUi @('scroll', 'HistoryCommitsListView', '--to', 'bottom')
+            Assert-HistoryUi 'LoadRemainingHistoryButton' 'IsOffscreen' 'False'
+            Invoke-HistoryUi @('scroll', 'HistoryCommitsListView', '--to', 'top')
+            Assert-HistoryUi 'LoadRemainingHistoryButton' 'IsOffscreen' 'False'
+            Invoke-HistoryUi @('invoke', 'LoadRemainingHistoryButton')
+            Invoke-HistoryUi @('wait-for', 'LoadRemainingHistoryButton', '--gone', '-t', '60000')
+            Invoke-HistoryUi @('invoke', 'CommitFilterToggleButton')
+            Invoke-HistoryUi @('set-value', 'HistorySearchTextBox', $RemainingHistoryHash)
+            Invoke-HistoryUi @('send-keys', 'escape')
+            Invoke-HistoryUi @('wait-for', "HistoryCommit-$RemainingHistoryHash")
+            Invoke-HistoryUi @('invoke', 'CommitFilterToggleButton')
+            Invoke-HistoryUi @('invoke', 'ResetCommitFiltersButton')
+            Invoke-HistoryUi @('send-keys', 'escape')
         }
     }
 } catch {

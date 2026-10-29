@@ -45,7 +45,7 @@ public partial class App : Application
                 GetService<IAsyncCommandExecutor>(),
                 GetService<IDialogService>(),
                 GetService<IExecutionContextService>(),
-                GetService<IGitRepositoryChangeDetector>(),
+                GetService<ISettingsService>(),
                 GetService<IGitService>(),
                 GetService<IMessenger>(),
                 GetService<IEnumerable<IMainMenuContribution>>(),
@@ -99,7 +99,6 @@ public partial class App : Application
             provider.GetRequiredService<ExecutionContextService>());
         services.AddSingleton<ILocalGitCredentialService, LocalGitCredentialService>();
         services.AddSingleton<IGitCommandRunner, ContextualGitCommandRunner>();
-        services.AddSingleton<IGitRepositoryChangeDetector, GitRepositoryChangeDetector>();
         services.AddSingleton(static _ => new HttpClient
         {
             Timeout = TimeSpan.FromSeconds(10)

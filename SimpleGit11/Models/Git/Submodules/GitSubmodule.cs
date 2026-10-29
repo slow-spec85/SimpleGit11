@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections.Generic;
 
@@ -47,4 +48,8 @@ public sealed record GitSubmodule(
     {
         return value.Length > 7 ? value[..7] : value;
     }
+    public bool HasSameSnapshot(GitSubmodule other) =>
+        this with { Children = other.Children } == other
+        && Children.Count == other.Children.Count
+        && Children.Zip(other.Children).All(pair => pair.First.HasSameSnapshot(pair.Second));
 }

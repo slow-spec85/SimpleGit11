@@ -75,6 +75,9 @@ public interface IGitService
         int count,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<GitCommit>> GetRemainingHistoryAsync(
+        RepositoryInfo repository, int skip, CancellationToken cancellationToken = default);
+
     Task<GitCommit> GetLastCommitAsync(
         RepositoryInfo repository,
         CancellationToken cancellationToken = default);

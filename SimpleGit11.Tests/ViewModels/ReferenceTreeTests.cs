@@ -13,6 +13,90 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class ReferenceTreeTests
 {
     [TestMethod]
+    public void RepositoryChangeClearsSelectionsBeforeRemovingTreeNodes()
+    {
+        BranchesViewModel model = CreateModel(out MainWindowViewModel window);
+        window.SetCurrentRepository(new("C:/first", "first", "main"), []);
+        model.Branches.Add(new("main", true, false, "hash", "", null));
+        GitTag tag = new("v1", false, false, "hash", "", null);
+        model.Tags.Add(tag);
+        model.SearchText = " ";
+        model.SelectedTag = tag;
+        Assert.IsNotNull(model.SelectedBranchTreeItem);
+        Assert.IsNotNull(model.SelectedTagTreeItem);
+        model.BranchTree.CollectionChanged += (_, _) => Assert.IsNull(model.SelectedBranchTreeItem);
+        model.TagTree.CollectionChanged += (_, _) => Assert.IsNull(model.SelectedTagTreeItem);
+
+        window.SetCurrentRepository(new("C:/second", "second", "main"), []);
+
+        Assert.IsEmpty(model.BranchTree);
+        Assert.IsEmpty(model.TagTree);
+    }
+
+    [TestMethod]
+    public void ReplacingSelectedReferenceClearsSelectionBeforeDetachingItsNode()
+    {
+        BranchesViewModel model = CreateModel();
+        model.Branches.Add(new("feature/a", true, false, "old", "A", null));
+        model.SearchText = " ";
+        ReferenceTreeItemViewModel folder = model.BranchTree.Single();
+        ReferenceTreeItemViewModel previous = folder.Children.Single();
+        bool cleared = false;
+        model.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(BranchesViewModel.SelectedBranchTreeItem)
+                && model.SelectedBranchTreeItem is null)
+            {
+                Assert.AreSame(previous, folder.Children.Single(), "Clear selection while the old node is still attached.");
+                cleared = true;
+            }
+        };
+        folder.Children.CollectionChanged += (_, _) => Assert.IsTrue(cleared);
+        model.Branches[0] = new("feature/a", true, false, "new", "A", null);
+
+        model.SearchText = "  ";
+
+        Assert.IsTrue(cleared);
+        Assert.AreEqual("new", model.SelectedBranch!.ShortCommitHash);
+        Assert.AreSame(folder.Children.Single(), model.SelectedBranchTreeItem);
+    }
+
+    [TestMethod]
+    public void UpdatingOneReferencePreservesOtherNodesAndFolderExpansion()
+    {
+        BranchesViewModel model = CreateModel();
+        model.Branches.Add(new("feature/a", false, false, "old", "A", null));
+        model.Branches.Add(new("feature/b", false, false, "same", "B", null));
+        model.SearchText = " ";
+        ReferenceTreeItemViewModel folder = model.BranchTree.Single();
+        ReferenceTreeItemViewModel unchanged = folder.Children[1];
+        folder.IsExpanded = true;
+        model.Branches[0] = new("feature/a", false, false, "new", "Updated", null);
+
+        model.SearchText = "  ";
+
+        Assert.AreSame(folder, model.BranchTree.Single());
+        Assert.AreSame(unchanged, folder.Children[1]);
+        Assert.AreEqual("new", folder.Children[0].Branch!.ShortCommitHash);
+        Assert.AreSame(folder, folder.Children[0].Parent);
+        Assert.IsTrue(folder.IsExpanded);
+    }
+
+    [TestMethod]
+    public void LocalAndRemoteReferencesWithSameFullNameRemainDistinctAcrossRefresh()
+    {
+        BranchesViewModel model = CreateModel();
+        model.Branches.Add(new("origin/main", false, false, "local", "", null));
+        model.RemoteBranches.Add(new("origin/main", false, true, "remote", "", null));
+        model.BranchScope = BranchListScope.All;
+        model.SearchText = " ";
+        model.SearchText = "  ";
+        Assert.HasCount(2, model.BranchTree.Single().Children);
+        Assert.AreNotEqual(model.BranchTree.Single().Children[0].Branch!.IsRemote,
+            model.BranchTree.Single().Children[1].Branch!.IsRemote);
+    }
+
+    [TestMethod]
     public void ToggleFolderExpansion_OpensAndClosesFolderAndPreservesStateAfterFiltering()
     {
         BranchesViewModel model = CreateModel();
@@ -225,7 +309,7 @@ public sealed class ReferenceTreeTests
     private static BranchesViewModel CreateModel() => CreateModel(out _);
 
     [TestMethod]
-    public async Task SelectReference_TagThenMainClearsOldTreeSelectionBeforeReplacingNodes()
+    public async Task SelectReference_TagThenMainPreservesTreesAndKeepsSelectionsAttached()
     {
         BranchesViewModel model = CreateModel();
         GitBranch main = new("main", true, false, "hash", "", null);
@@ -277,8 +361,10 @@ public sealed class ReferenceTreeTests
             Assert.AreSame(model.SelectedBranchTreeItem, displayedBranchSelection);
             Assert.AreSame(model.SelectedTagTreeItem, displayedTagSelection);
         }
-        Assert.IsTrue(branchReplacements >= 3);
-        Assert.IsTrue(tagReplacements >= 3);
+        Assert.AreEqual(0, branchReplacements);
+        Assert.AreEqual(0, tagReplacements);
+        Assert.AreSame(displayedBranches, model.BranchTree);
+        Assert.AreSame(displayedTags, model.TagTree);
 
         static bool Contains(IReadOnlyList<ReferenceTreeItemViewModel> tree, ReferenceTreeItemViewModel selected)
         {

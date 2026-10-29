@@ -80,4 +80,9 @@ public sealed class GitChangedFile
     };
 
     public string Tooltip => $"{Status} - {Path}";
+
+    public bool HasSameSnapshot(GitChangedFile other) =>
+        Path == other.Path && Status == other.Status && State == other.State
+        && IsSubmodule == other.IsSubmodule && Stat.AddedLines == other.Stat.AddedLines
+        && Stat.RemovedLines == other.Stat.RemovedLines;
 }

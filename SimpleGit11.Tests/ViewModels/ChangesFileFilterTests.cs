@@ -31,6 +31,9 @@ public sealed class ChangesFileFilterTests
         CollectionAssert.AreEqual(expectedPath.Length == 0 ? Array.Empty<string>() : [expectedPath],
             model.VisibleChanges.Select(change => change.Path).ToArray());
         Assert.IsTrue(model.IsFileFilterApplied);
+        GitChangedFile[] treeFiles = model.FileTree.Roots.SelectMany(folder => folder.Children)
+            .Where(item => item.File is not null).Select(item => item.File!).ToArray();
+        CollectionAssert.AreEqual(model.VisibleChanges.ToArray(), treeFiles);
         Assert.HasCount(2, model.AllChanges);
         Assert.IsTrue(model.HasChanges);
         Assert.IsTrue(model.StageAllCommand.CanExecute(null));
@@ -109,6 +112,7 @@ public sealed class ChangesFileFilterTests
         Assert.AreEqual("", model.FileSearchText);
         Assert.IsFalse(model.IsFileFilterApplied);
         Assert.IsEmpty(model.VisibleChanges);
+        Assert.IsEmpty(model.FileTree.Roots);
         Assert.IsEmpty(model.AllChanges);
     }
 

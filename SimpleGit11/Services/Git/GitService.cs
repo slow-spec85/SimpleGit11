@@ -152,6 +152,14 @@ internal sealed class GitService : IGitService
         return History.GetCommitsPageAsync(repository, skip, count);
     }
 
+    public Task<IReadOnlyList<GitCommit>> GetRemainingHistoryAsync(
+        RepositoryInfo repository, int skip, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(repository);
+        cancellationToken.ThrowIfCancellationRequested();
+        return History.GetRemainingCommitsAsync(repository, skip);
+    }
+
     public Task<GitCommit> GetLastCommitAsync(
         RepositoryInfo repository,
         CancellationToken cancellationToken = default)

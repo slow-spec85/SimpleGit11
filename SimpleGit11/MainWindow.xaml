@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Window
     x:Class="SimpleGit11.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -41,19 +41,23 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem
                     x:Uid="RepositoryNavigationItem"
+                    AutomationProperties.AutomationId="RepositoryNavigationItem"
                     Icon="Home"
                     IsSelected="True"
                     Tag="Repository" />
                 <NavigationViewItem
                     x:Uid="ChangesNavigationItem"
+                    AutomationProperties.AutomationId="ChangesNavigationItem"
                     Icon="Edit"
                     Tag="Changes" />
                 <NavigationViewItem
                     x:Uid="HistoryNavigationItem"
+                    AutomationProperties.AutomationId="HistoryNavigationItem"
                     Icon="Clock"
                     Tag="History" />
                 <NavigationViewItem
                     x:Uid="BranchesNavigationItem"
+                    AutomationProperties.AutomationId="BranchesNavigationItem"
                     Tag="Branches">
                     <NavigationViewItem.Icon>
                         <controls:BranchIcon />
@@ -61,6 +65,7 @@
                 </NavigationViewItem>
                 <NavigationViewItem
                     x:Uid="SynchronizationNavigationItem"
+                    AutomationProperties.AutomationId="SynchronizationNavigationItem"
                     Icon="Globe"
                     Tag="Synchronization" />
             </NavigationView.MenuItems>

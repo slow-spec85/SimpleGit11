@@ -9,6 +9,42 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitHistoryServiceTests
 {
     [TestMethod]
+    public async Task GetRemainingCommitsAsync_ReadsAllRemainingWithOneMetadataSnapshot()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        for (int index = 1; index <= 7; index++)
+        {
+            repository.WriteFile($"file-{index}.txt", index.ToString());
+            await repository.CommitAllAsync($"commit {index}");
+        }
+        CountingRunner runner = new();
+        GitHistoryService service = new(runner);
+
+        IReadOnlyList<GitCommit> commits = await service.GetRemainingCommitsAsync(repository.Repository, 2);
+
+        CollectionAssert.AreEqual(new[] { "commit 5", "commit 4", "commit 3", "commit 2", "commit 1" },
+            commits.Select(commit => commit.Title).ToArray());
+        Assert.IsTrue(commits[0].ChangedFilePaths.Contains("file-5.txt"));
+        Assert.AreEqual(4, runner.Commands.Count);
+        Assert.AreEqual(1, runner.Commands.Count(command => command[0] == "for-each-ref"));
+        Assert.AreEqual(1, runner.Commands.Count(command => command[0] == "rev-list"));
+        Assert.IsFalse(runner.Commands.SelectMany(command => command).Any(argument => argument.StartsWith("--max-count=")));
+    }
+
+    private sealed class CountingRunner : SimpleGit11.Services.Git.Execution.IGitCommandRunner
+    {
+        private readonly SimpleGit11.Services.Git.Execution.GitCommandRunner _runner = new();
+        public System.Collections.Concurrent.ConcurrentQueue<string[]> Commands { get; } = new();
+        public Task<SimpleGit11.Services.Git.Execution.GitCommandResult> RunAsync(string workingDirectory,
+            IReadOnlyList<string> arguments, SimpleGit11.Services.Git.Execution.GitCommandOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
+            Commands.Enqueue(arguments.ToArray());
+            return _runner.RunAsync(workingDirectory, arguments, options, cancellationToken);
+        }
+    }
+
+    [TestMethod]
     public async Task GetCommitsPageAsync_ReturnsConsecutivePagesAndHasMoreState()
     {
         await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();

@@ -126,7 +126,7 @@
                             IsEnabled="{x:Bind ViewModel.IsCommitSearchEnabled, Mode=OneWay}"
                             Click="CommitFilterToggleButton_Click"
                             IsChecked="{x:Bind ViewModel.IsCommitFilterApplied, Mode=OneWay}"
-                            Visibility="{Binding IsCommitListVisible, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Visibility="{x:Bind IsCommitListVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
                             Width="32"
                             Height="32"
                             Padding="1">
@@ -267,7 +267,7 @@
                             AutomationProperties.AutomationId="CommitDetailsToggleButton"
                             Click="CommitDetailsToggleButton_Click"
                             IsChecked="{x:Bind ViewModel.IsCommitDetailsBlockVisible, Mode=TwoWay}"
-                            Visibility="{Binding IsCommitListVisible, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Visibility="{x:Bind IsCommitListVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
                             Width="32"
                             Height="32"
                             Padding="1">
@@ -282,10 +282,12 @@
                     </Grid>
                     <ListView
                         x:Name="HistoryCommitsListView"
+                        AutomationProperties.AutomationId="HistoryCommitsListView"
                         Grid.Row="1"
                         ContextRequested="HistoryCommitsListView_ContextRequested"
                         ItemsSource="{x:Bind ViewModel.CommitRows, Mode=OneWay}"
                         SelectionChanged="HistoryCommitsListView_SelectionChanged"
+                        SizeChanged="CommitListOverlayLayout_SizeChanged"
                         SelectionMode="Single"
                         Padding="0,0,10,0">
                         <ListView.ItemContainerStyle>
@@ -299,11 +301,6 @@
                                 <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
                             </Style>
                         </ListView.ItemContainerStyle>
-                        <ListView.Footer>
-                            <ContentPresenter
-                                HorizontalAlignment="Stretch"
-                                Content="{Binding CommitListFooter, ElementName=PageRoot}" />
-                        </ListView.Footer>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="viewmodels:CommitBrowserRowViewItem">
                                 <Grid
@@ -484,6 +481,14 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
+                    <ContentPresenter
+                        x:Name="CommitListOverlayPresenter"
+                        Grid.Row="1"
+                        Margin="12,0,22,4"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        SizeChanged="CommitListOverlayLayout_SizeChanged"
+                        Content="{Binding CommitListOverlay, ElementName=PageRoot}" />
                 </Grid>
 
                 <primitives:Thumb
@@ -512,6 +517,7 @@
                             Style="{ThemeResource SubtitleTextBlockStyle}"
                             Text="{x:Bind ViewModel.ChangedFilesTitle, Mode=OneWay}" />
                         <controls:DiffStatPresenter
+                            x:Name="HistoryChangedFilesStatsPresenter"
                             Grid.Column="1"
                             Margin="0,0,10,0"
                             HorizontalAlignment="Right"
@@ -520,89 +526,110 @@
                             IsColumnWidthSource="True"
                             RemovedText="{x:Bind ViewModel.ChangedFilesStat.RemovedText, Mode=OneWay, FallbackValue=''}" />
                     </Grid>
-                    <ListView
-                        x:Name="HistoryChangedFilesListView"
-                        Grid.Row="1"
-                        Visibility="{x:Bind ViewModel.IsCommitContentAvailable, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
-                        ItemsSource="{x:Bind ViewModel.ChangedFiles, Mode=OneWay}"
-                        SelectedItem="{x:Bind ViewModel.SelectedChangedFile, Mode=TwoWay}"
-                        SelectionMode="Single"
-                        Padding="0,0,10,0">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="models:GitChangedFile">
-                                <Grid
-                                    Padding="4"
-                                    ColumnSpacing="10"
-                                    ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneTime}">
-                                    <Grid.ContextFlyout>
-                                        <MenuFlyout>
-                                            <MenuFlyoutItem
-                                                Command="{Binding DataContext.ToggleChangeDisplayModeCommand, ElementName=HistoryChangedFilesListView}"
-                                                CommandParameter="{x:Bind}"
-                                                Icon="Document"
-                                                Text="{Binding DataContext.ContextMenuDisplayModeText, ElementName=HistoryChangedFilesListView}" />
-                                            <MenuFlyoutItem
-                                                x:Uid="FileFilterModeMenuFlyoutItem"
-                                                Command="{Binding DataContext.FilterByChangedFileCommand, ElementName=HistoryChangedFilesListView}"
-                                                CommandParameter="{x:Bind}"
-                                                Icon="Find"
-                                                Visibility="{Binding IsCommitListVisible, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                            <MenuFlyoutSeparator />
-                                            <MenuFlyoutItem
-                                                x:Uid="CopyNameMenuFlyoutItem"
-                                                Command="{Binding DataContext.CopyTextCommand, ElementName=HistoryChangedFilesListView}"
-                                                CommandParameter="{x:Bind FileName}"
-                                                Icon="Copy" />
-                                        </MenuFlyout>
-                                    </Grid.ContextFlyout>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="28" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="1" Visibility="{x:Bind ViewModel.IsCommitContentAvailable, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                        <ListView
+                            x:Name="HistoryChangedFilesListView"
+                            ContextRequested="ChangedFiles_ContextRequested"
+                            Visibility="{x:Bind ViewModel.FileTree.FlatListVisibility, Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.ChangedFiles, Mode=OneWay}"
+                            SelectedItem="{x:Bind ViewModel.SelectedChangedFile, Mode=TwoWay}"
+                            SelectionMode="Single"
+                            Padding="0,0,10,0">
+                            <ListView.ContextFlyout>
+                                <MenuFlyout x:Name="HistoryFileContextMenu">
+                                    <MenuFlyoutItem
+                                        x:Uid="FileFilterModeMenuFlyoutItem"
+                                        Command="{x:Bind ViewModel.FilterByChangedFileCommand, Mode=OneWay}"
+                                        Icon="Find"
+                                        Visibility="{x:Bind IsCommitListVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                    <MenuFlyoutSeparator
+                                        Visibility="{x:Bind IsCommitListVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                    <MenuFlyoutItem
+                                        Tag="FileContent"
+                                        Command="{x:Bind ViewModel.ToggleChangeDisplayModeCommand, Mode=OneWay}"
+                                        Icon="Document"
+                                        Text="{x:Bind ViewModel.ContextMenuDisplayModeText, Mode=OneWay}" />
+                                    <MenuFlyoutItem
+                                        x:Uid="ShowFoldersMenuFlyoutItem"
+                                        Command="{x:Bind ViewModel.FileTree.ToggleFoldersCommand, Mode=OneWay}">
+                                        <MenuFlyoutItem.Icon>
+                                            <SymbolIcon Symbol="{x:Bind ViewModel.FileTree.FolderViewSymbol, Mode=OneWay}" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutSeparator />
+                                    <MenuFlyoutItem
+                                        x:Uid="CopyNameMenuFlyoutItem"
+                                        Tag="CopyName"
+                                        Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
+                                        Icon="Copy" />
+                                </MenuFlyout>
+                            </ListView.ContextFlyout>
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:GitChangedFile">
+                                    <Grid
+                                        Padding="4"
+                                        ColumnSpacing="10"
+                                        ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneTime}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="28" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-                                    <Border
-                                        Width="28"
-                                        Height="28"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
-                                        CornerRadius="4">
-                                        <TextBlock
+                                        <Border
+                                            Width="28"
+                                            Height="28"
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
-                                            FontSize="12"
-                                            FontWeight="SemiBold"
-                                            Text="{x:Bind StatusIndicator, Mode=OneTime}" />
-                                    </Border>
+                                            Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
+                                            CornerRadius="4">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontSize="12"
+                                                FontWeight="SemiBold"
+                                                Text="{x:Bind StatusIndicator, Mode=OneTime}" />
+                                        </Border>
 
-                                    <StackPanel
-                                        Grid.Column="1"
-                                        Spacing="2">
-                                        <TextBlock
-                                            FontWeight="SemiBold"
-                                            MaxLines="1"
-                                            Text="{x:Bind FileName, Mode=OneTime}"
-                                            TextTrimming="CharacterEllipsis" />
-                                        <TextBlock
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                            MaxLines="1"
-                                            Style="{ThemeResource CaptionTextBlockStyle}"
-                                            Text="{x:Bind DirectoryPath, Mode=OneTime}"
-                                            TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
+                                        <StackPanel
+                                            Grid.Column="1"
+                                            Spacing="2">
+                                            <TextBlock
+                                                FontWeight="SemiBold"
+                                                MaxLines="1"
+                                                Text="{x:Bind FileName, Mode=OneTime}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                MaxLines="1"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Text="{x:Bind DirectoryPath, Mode=OneTime}"
+                                                TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
 
-                                    <controls:DiffStatPresenter
-                                        Grid.Column="2"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
-                                        AddedText="{x:Bind Stat.AddedText, Mode=OneTime}"
-                                        ColumnMetrics="{StaticResource HistoryDiffStatColumnMetrics}"
-                                        RemovedText="{x:Bind Stat.RemovedText, Mode=OneTime}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
+                                        <controls:DiffStatPresenter
+                                            Grid.Column="2"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            AddedText="{x:Bind Stat.AddedText, Mode=OneTime}"
+                                            ColumnMetrics="{StaticResource HistoryDiffStatColumnMetrics}"
+                                            RemovedText="{x:Bind Stat.RemovedText, Mode=OneTime}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <controls:ChangedFilesTree
+                            x:Name="HistoryChangedFilesTree"
+                            ColumnMetrics="{StaticResource HistoryDiffStatColumnMetrics}"
+                            AutomationProperties.AutomationId="HistoryChangedFilesTree"
+                            Padding="{x:Bind HistoryChangedFilesListView.Padding, Mode=OneWay}"
+                            ContentPadding="{x:Bind controls:ChangedFilesTree.GetContentPadding(ChangedFilesHeader.Padding, HistoryChangedFilesStatsPresenter.Margin), Mode=OneWay}"
+                            Model="{x:Bind ViewModel.FileTree, Mode=OneWay}"
+                            SelectedFile="{x:Bind ViewModel.SelectedChangedFile, Mode=OneWay}"
+                            SelectionMode="Single"
+                            FileSelectionChanged="ChangedFilesTree_FileSelectionChanged"
+                            Visibility="{x:Bind ViewModel.FileTree.TreeVisibility, Mode=OneWay}" />
+                    </Grid>
                     <InfoBar
                         Grid.Row="1"
                         x:Uid="HistoryDraftFilesInfoBar"

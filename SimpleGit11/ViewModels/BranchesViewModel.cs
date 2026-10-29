@@ -124,7 +124,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         Branches.Clear();
         RemoteBranches.Clear();
         FilteredBranches.Clear();
-        BranchTree = [];
+        BranchTree.Clear();
         OnPropertyChanged(nameof(BranchTree));
         OnPropertyChanged(nameof(SelectedBranchTreeItem));
         SelectedBranch = null;
@@ -333,8 +333,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
 
     public ObservableCollection<GitTag> FilteredTags { get; } = [];
 
-    public IReadOnlyList<ReferenceTreeItemViewModel> BranchTree { get; private set; } = [];
-    public IReadOnlyList<ReferenceTreeItemViewModel> TagTree { get; private set; } = [];
+    public ObservableCollection<ReferenceTreeItemViewModel> BranchTree { get; } = [];
+    public ObservableCollection<ReferenceTreeItemViewModel> TagTree { get; } = [];
     public ReferenceTreeItemViewModel? SelectedBranchTreeItem => FindReferenceTreeItem(BranchTree, SelectedBranch);
     public ReferenceTreeItemViewModel? SelectedTagTreeItem => FindReferenceTreeItem(TagTree, SelectedTag);
 
@@ -1621,9 +1621,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             () => LoadSelectedBranchCommitAsync(branch));
     }
 
-    public Task EnsureSelectedBranchComparisonLoadedAsync()
+    public Task EnsureSelectedBranchComparisonLoadedAsync(bool forceRefresh = false)
     {
-        if (SelectedBranch is null || SelectedBranchDetails is not null)
+        if (SelectedBranch is null || (!forceRefresh && SelectedBranchDetails is not null))
         {
             return Task.CompletedTask;
         }
@@ -1634,9 +1634,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             () => LoadSelectedBranchComparisonAsync(branch));
     }
 
-    public Task EnsureSelectedBranchWorktreesLoadedAsync()
+    public Task EnsureSelectedBranchWorktreesLoadedAsync(bool forceRefresh = false)
     {
-        if (SelectedBranch is null || SelectedBranchWorktrees is not null)
+        if (SelectedBranch is null || (!forceRefresh && SelectedBranchWorktrees is not null))
         {
             return Task.CompletedTask;
         }
@@ -1647,9 +1647,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             () => LoadSelectedBranchWorktreesAsync(branch));
     }
 
-    public Task EnsureSelectedBranchHistoryLoadedAsync()
+    public Task EnsureSelectedBranchHistoryLoadedAsync(bool forceRefresh = false)
     {
-        if (SelectedBranch?.IsLocal != true || _isSelectedBranchHistoryLoaded)
+        if (SelectedBranch?.IsLocal != true || (!forceRefresh && _isSelectedBranchHistoryLoaded))
         {
             return Task.CompletedTask;
         }
@@ -1686,9 +1686,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             () => LoadSelectedTagSignatureAsync(tag));
     }
 
-    public Task EnsureSelectedTagRelationLoadedAsync()
+    public Task EnsureSelectedTagRelationLoadedAsync(bool forceRefresh = false)
     {
-        if (SelectedTag is null || _isSelectedTagRelationLoaded)
+        if (SelectedTag is null || (!forceRefresh && _isSelectedTagRelationLoaded))
         {
             return Task.CompletedTask;
         }
@@ -1699,9 +1699,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             () => LoadSelectedTagRelationAsync(tag));
     }
 
-    public Task EnsureSelectedTagWorktreesLoadedAsync()
+    public Task EnsureSelectedTagWorktreesLoadedAsync(bool forceRefresh = false)
     {
-        if (SelectedTag is null || SelectedTagWorktrees is not null)
+        if (SelectedTag is null || (!forceRefresh && SelectedTagWorktrees is not null))
         {
             return Task.CompletedTask;
         }
@@ -1712,7 +1712,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             () => LoadSelectedTagWorktreesAsync(tag));
     }
 
-    public Task EnsureBranchSynchronizationLoadedAsync()
+    public Task EnsureBranchSynchronizationLoadedAsync(bool forceRefresh = false)
     {
         bool branchSnapshotLoaded = SelectedBranch?.IsLocal == true
             ? SynchronizationSnapshot is not null
@@ -1722,7 +1722,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
                     _remoteBranchSynchronizationRemoteName,
                     GetRemoteNameFromReference(SelectedBranch.Name),
                     StringComparison.Ordinal);
-        if (branchSnapshotLoaded && _isLastRepositoryFetchLoaded)
+        if (!forceRefresh && branchSnapshotLoaded && _isLastRepositoryFetchLoaded)
         {
             return Task.CompletedTask;
         }
@@ -1948,6 +1948,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
     private async Task RefreshBranchesCoreAsync(bool refreshLoadedTags = true)
     {
         ClearResultMessages();
+        GitBranch? previousSelectedBranch = SelectedBranch;
+        GitTag? previousSelectedTag = SelectedTag;
         string? repositoryPath = _mainWindowViewModel.CurrentRepository?.Path;
         if (!string.Equals(_lastRepositoryPath, repositoryPath, StringComparison.OrdinalIgnoreCase))
         {
@@ -1992,7 +1994,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             }
 
             IReadOnlyList<GitRemote> remotes = await remotesTask;
-            Remotes = remotes.ToList();
+            Remotes = CollectionSynchronization.ReuseItems(Remotes, remotes, remote => remote.Name,
+                (previous, current) => previous.HasSameSnapshot(current));
             GitRemote? resolvedRemote = Remotes.FirstOrDefault(item => item.Name == selectedRemoteName)
                 ?? Remotes.FirstOrDefault(item => item.Name == "origin")
                 ?? Remotes.FirstOrDefault();
@@ -2008,28 +2011,15 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             IReadOnlyDictionary<string, string> branchDescriptions = await branchDescriptionsTask;
             IReadOnlyList<GitBranch> allRemoteBranches = await remoteBranchesTask;
             IReadOnlyList<GitBranch> remoteBranches = allRemoteBranches;
-            SynchronizationSnapshot = null;
-            RemoteBranchSynchronizationSnapshot = null;
-            _remoteBranchSynchronizationRemoteName = "";
-            _lastRepositoryFetch = null;
             _isLastRepositoryFetchLoaded = false;
-            OnPropertyChanged(nameof(LastRepositoryFetchText));
             _lastRepositoryPath = repository.Path;
             SetBranchOperationState(operationState);
 
-            Branches.Clear();
-            foreach (GitBranch branch in branches)
-            {
-                Branches.Add(branchDescriptions.TryGetValue(branch.Name, out string? description)
-                    ? branch.WithConfigDescription(description)
-                    : branch);
-            }
-
-            RemoteBranches.Clear();
-            foreach (var branch in remoteBranches)
-            {
-                RemoteBranches.Add(branch);
-            }
+            Branches.SynchronizeWith(branches.Select(branch => branchDescriptions.TryGetValue(branch.Name, out string? description)
+                ? branch.WithConfigDescription(description) : branch), branch => branch.Name,
+                (previous, current) => previous.HasSameSnapshot(current));
+            RemoteBranches.SynchronizeWith(remoteBranches, branch => branch.Name,
+                (previous, current) => previous.HasSameSnapshot(current));
 
             HasNoBranches = Branches.Count == 0 && RemoteBranches.Count == 0;
             ApplyBranchFilter(selectedBranchName);
@@ -2047,6 +2037,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
                 ReplaceRemoteTags(GetCachedRemoteTags(), _tagHeadCommitHash, selectedTagName);
             }
             NotifySelectedDetailsChanged();
+            // Let the view reload only expanded, mutable details while keeping their old contents visible.
+            if (ReferenceEquals(previousSelectedBranch, SelectedBranch)) { OnPropertyChanged(nameof(SelectedBranch)); }
+            if (ReferenceEquals(previousSelectedTag, SelectedTag)) { OnPropertyChanged(nameof(SelectedTag)); }
         }
         catch (FileNotFoundException)
         {
@@ -3707,7 +3700,11 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             IReadOnlyList<GitWorktree> worktrees = await _gitService.ReferenceDetails.GetBranchWorktreesAsync(
                 _mainWindowViewModel.CurrentRepository,
                 branch);
-            if (SelectedBranch?.Name == branchName) SelectedBranchWorktrees = worktrees;
+            if (SelectedBranch?.Name == branchName)
+            {
+                SelectedBranchWorktrees = CollectionSynchronization.ReuseItems(SelectedBranchWorktrees ?? [], worktrees,
+                    item => item.Path, (previous, current) => previous == current);
+            }
         }
         catch (Exception exception) when (exception is GitCommandException or FileNotFoundException or DirectoryNotFoundException)
         {
@@ -3806,7 +3803,6 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             {
                 _selectedBranchReflogEntries = entries;
                 _isSelectedBranchHistoryLoaded = true;
-                _showAllBranchHistory = false;
                 RebuildVisibleBranchHistory();
                 NotifySelectedDetailsChanged();
             }
@@ -3956,7 +3952,11 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             IReadOnlyList<GitWorktree> worktrees = await _gitService.ReferenceDetails.GetTagWorktreesAsync(
                 _mainWindowViewModel.CurrentRepository,
                 tag);
-            if (SelectedTag?.Name == tagName) SelectedTagWorktrees = worktrees;
+            if (SelectedTag?.Name == tagName)
+            {
+                SelectedTagWorktrees = CollectionSynchronization.ReuseItems(SelectedTagWorktrees ?? [], worktrees,
+                    item => item.Path, (previous, current) => previous == current);
+            }
         }
         catch (Exception exception) when (exception is GitCommandException or FileNotFoundException or DirectoryNotFoundException)
         {
@@ -4109,11 +4109,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
 
         IReadOnlyList<ReferenceTreeItemViewModel> tree = BuildReferenceTree(
             source.Select(branch => (branch.Name, (GitBranch?)branch, (GitTag?)null)), false);
-        // Clear the native TreeView selection while its old nodes are still attached.
-        BranchTree = [];
-        OnPropertyChanged(nameof(SelectedBranchTreeItem));
-        BranchTree = tree;
-        OnPropertyChanged(nameof(BranchTree));
+        ClearReplacedTreeSelection(BranchTree, tree, tags: false);
+        BranchTree.SynchronizeWith(tree, node => node.Key);
 
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
@@ -4121,11 +4118,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         }
 
         var filteredBranches = source.ToList();
-        FilteredBranches.Clear();
-        foreach (var branch in filteredBranches)
-        {
-            FilteredBranches.Add(branch);
-        }
+        FilteredBranches.SynchronizeWith(filteredBranches, branch => (branch.Name, branch.IsRemote));
 
         SelectedBranch = FilteredBranches.FirstOrDefault(branch => branch.Name == selectedBranchName)
             ?? FilteredBranches.FirstOrDefault(branch => branch.IsCurrent)
@@ -4162,10 +4155,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
 
         IReadOnlyList<ReferenceTreeItemViewModel> tree = BuildReferenceTree(
             source.Select(tag => (tag.Name, (GitBranch?)null, (GitTag?)tag)), true);
-        TagTree = [];
-        OnPropertyChanged(nameof(SelectedTagTreeItem));
-        TagTree = tree;
-        OnPropertyChanged(nameof(TagTree));
+        ClearReplacedTreeSelection(TagTree, tree, tags: true);
+        TagTree.SynchronizeWith(tree, node => node.Key);
 
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
@@ -4173,11 +4164,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         }
 
         var filteredTags = source.ToList();
-        FilteredTags.Clear();
-        foreach (var tag in filteredTags)
-        {
-            FilteredTags.Add(tag);
-        }
+        FilteredTags.SynchronizeWith(filteredTags, tag => (tag.Name, tag.IsRemote, tag.RemoteName));
 
         SelectedTag = FilteredTags.FirstOrDefault(tag => tag.Name == selectedTagName)
             ?? FilteredTags.FirstOrDefault();
@@ -4199,7 +4186,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         foreach ((string name, GitBranch? branch, GitTag? tag) in references)
         {
             string[] segments = name.Split('/');
-            List<ReferenceTreeItemViewModel> siblings = roots;
+            IList<ReferenceTreeItemViewModel> siblings = roots;
             ReferenceTreeItemViewModel? parent = null;
             string path = "";
             DateTime? date = branch?.LastCommitDate ?? tag?.CreatedDate;
@@ -4211,19 +4198,9 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
                     string stateKey = statePrefix + path;
                     folder = new ReferenceTreeItemViewModel(segments[index], path, parent)
                     {
+                        ExpansionStateKey = stateKey,
                         IsExpanded = searching || _referenceFolderExpansion.GetValueOrDefault(stateKey)
                     };
-                    if (!searching)
-                    {
-                        ReferenceTreeItemViewModel trackedFolder = folder;
-                        folder.PropertyChanged += (_, args) =>
-                        {
-                            if (args.PropertyName == nameof(ReferenceTreeItemViewModel.IsExpanded))
-                            {
-                                _referenceFolderExpansion[stateKey] = trackedFolder.IsExpanded;
-                            }
-                        };
-                    }
                     folders.Add(path, folder);
                     siblings.Add(folder);
                 }
@@ -4243,21 +4220,82 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         }
 
         PruneAndSort(roots);
-        return roots;
+        return ReconcileTree(tags ? TagTree : BranchTree, roots, null);
 
-        static void PruneAndSort(List<ReferenceTreeItemViewModel> items)
+        IReadOnlyList<ReferenceTreeItemViewModel> ReconcileTree(
+            IReadOnlyList<ReferenceTreeItemViewModel> previous, IEnumerable<ReferenceTreeItemViewModel> incoming,
+            ReferenceTreeItemViewModel? parent)
+        {
+            Dictionary<(string, bool, bool, string), ReferenceTreeItemViewModel> existing = previous.ToDictionary(node => node.Key);
+            List<ReferenceTreeItemViewModel> result = [];
+            foreach (ReferenceTreeItemViewModel node in incoming)
+            {
+                existing.TryGetValue(node.Key, out ReferenceTreeItemViewModel? old);
+                if (old is not null && ReferenceEquals(old.Parent, parent)
+                    && old.ExpansionStateKey == node.ExpansionStateKey
+                    && ReferenceEquals(old.Branch, node.Branch) && ReferenceEquals(old.Tag, node.Tag))
+                {
+                    old.LatestDate = node.LatestDate;
+                    if (old.IsFolder)
+                    {
+                        old.IsExpanded = searching || _referenceFolderExpansion.GetValueOrDefault(old.ExpansionStateKey);
+                    }
+                    IReadOnlyList<ReferenceTreeItemViewModel> children = ReconcileTree(old.Children, node.Children, old);
+                    ClearReplacedTreeSelection(old.Children, children, tags);
+                    old.Children.SynchronizeWith(children, child => child.Key);
+                    result.Add(old);
+                }
+                else
+                {
+                    ReferenceTreeItemViewModel replacement = ReferenceEquals(node.Parent, parent) ? node
+                        : new ReferenceTreeItemViewModel(node.Name, node.FullName, parent, node.Branch, node.Tag)
+                        { IsExpanded = node.IsExpanded, ExpansionStateKey = node.ExpansionStateKey, LatestDate = node.LatestDate };
+                    if (!ReferenceEquals(replacement, node))
+                    {
+                        foreach (ReferenceTreeItemViewModel child in ReconcileTree([], node.Children, replacement)) { replacement.Children.Add(child); }
+                    }
+                    if (replacement.IsFolder && !searching)
+                    {
+                        replacement.PropertyChanged += (_, args) =>
+                        {
+                            if (args.PropertyName == nameof(ReferenceTreeItemViewModel.IsExpanded) && string.IsNullOrWhiteSpace(SearchText))
+                            { _referenceFolderExpansion[replacement.ExpansionStateKey] = replacement.IsExpanded; }
+                        };
+                    }
+                    result.Add(replacement);
+                }
+            }
+            return result;
+        }
+
+        static void PruneAndSort(IList<ReferenceTreeItemViewModel> items)
         {
             foreach (ReferenceTreeItemViewModel item in items)
             {
                 PruneAndSort(item.Children);
             }
-            items.RemoveAll(item => item.IsFolder && item.Children.Count == 0);
-            items.Sort((left, right) =>
+            List<ReferenceTreeItemViewModel> sorted = items.Where(item => !item.IsFolder || item.Children.Count > 0).ToList();
+            sorted.Sort((left, right) =>
             {
                 int kind = right.IsFolder.CompareTo(left.IsFolder);
                 int name = StringComparer.OrdinalIgnoreCase.Compare(left.Name, right.Name);
                 return kind != 0 ? kind : name != 0 ? name : StringComparer.Ordinal.Compare(left.Name, right.Name);
             });
+            items.Clear();
+            foreach (ReferenceTreeItemViewModel item in sorted) { items.Add(item); }
+        }
+    }
+
+    private void ClearReplacedTreeSelection(IReadOnlyList<ReferenceTreeItemViewModel> previous,
+        IReadOnlyList<ReferenceTreeItemViewModel> current, bool tags)
+    {
+        object? reference = tags ? SelectedTag : SelectedBranch;
+        ReferenceTreeItemViewModel? selected = FindReferenceTreeItem(previous, reference);
+        if (selected is not null && !ReferenceEquals(selected, FindReferenceTreeItem(current, reference)))
+        {
+            // Clear the native TreeView selection while the selected old node is still attached.
+            if (tags) { SelectedTag = null; }
+            else { SelectedBranch = null; }
         }
     }
 
@@ -4302,11 +4340,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         string? headCommitHash,
         string? preferredTagName = null)
     {
-        Tags.Clear();
-        foreach (GitTag tag in tags)
-        {
-            Tags.Add(tag.WithCurrentState(IsTagAtHead(tag, headCommitHash)));
-        }
+        Tags.SynchronizeWith(tags.Select(tag => tag.WithCurrentState(IsTagAtHead(tag, headCommitHash))),
+            tag => tag.Name, (previous, current) => previous.HasSameSnapshot(current));
 
         HasNoTags = Tags.Count == 0 && RemoteTags.Count == 0;
         ApplyTagFilter(preferredTagName);
@@ -4321,13 +4356,12 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         IReadOnlyDictionary<string, GitTag> localTagsByName = Tags.ToDictionary(
             tag => tag.Name,
             StringComparer.Ordinal);
-        RemoteTags.Clear();
-        foreach (GitTag tag in tags)
+        RemoteTags.SynchronizeWith(tags.Select(tag =>
         {
             localTagsByName.TryGetValue(tag.RemoteTagName, out GitTag? localTag);
             GitTag displayTag = tag.WithListMetadataFromMatchingLocalTag(localTag);
-            RemoteTags.Add(displayTag.WithCurrentState(IsTagAtHead(displayTag, headCommitHash)));
-        }
+            return displayTag.WithCurrentState(IsTagAtHead(displayTag, headCommitHash));
+        }), tag => (tag.RemoteName, tag.Name), (previous, current) => previous.HasSameSnapshot(current));
 
         HasNoTags = Tags.Count == 0 && RemoteTags.Count == 0;
         ApplyTagFilter(selectedTagName);
@@ -4348,6 +4382,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
 
     private void ResetLazyDataState()
     {
+        SelectedBranch = null;
+        SelectedTag = null;
         _areLocalTagsLoaded = false;
         _tagHeadCommitHash = null;
         _remoteTagCache.Clear();
@@ -4375,7 +4411,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
         RemoteTags.Clear();
         FilteredTags.Clear();
         SelectedTag = null;
-        TagTree = [];
+        TagTree.Clear();
         OnPropertyChanged(nameof(TagTree));
         OnPropertyChanged(nameof(SelectedTagTreeItem));
         HasNoTags = false;

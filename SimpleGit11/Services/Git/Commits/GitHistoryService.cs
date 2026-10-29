@@ -31,43 +31,37 @@ public sealed class GitHistoryService : IGitHistoryService
         return page.Commits;
     }
 
-    public async Task<GitCommitPage> GetCommitsPageAsync(
-        RepositoryInfo repository,
-        int skip,
-        int count)
+    public Task<GitCommitPage> GetCommitsPageAsync(RepositoryInfo repository, int skip, int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(count, 0);
+        ArgumentOutOfRangeException.ThrowIfEqual(count, int.MaxValue);
+        return ReadCommitsAsync(repository, skip, count);
+    }
+
+    public async Task<IReadOnlyList<GitCommit>> GetRemainingCommitsAsync(RepositoryInfo repository, int skip)
+    {
+        return (await ReadCommitsAsync(repository, skip, null)).Commits;
+    }
+
+    private async Task<GitCommitPage> ReadCommitsAsync(RepositoryInfo repository, int skip, int? count)
     {
         ArgumentNullException.ThrowIfNull(repository);
         ArgumentOutOfRangeException.ThrowIfNegative(skip);
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(count, 0);
-        if (count == int.MaxValue)
-        {
-            throw new ArgumentOutOfRangeException(nameof(count));
-        }
-
-        int requestedCount = count + 1;
-        string output = await RunGitAsync(
-            repository,
-            "log",
-            $"--skip={skip}",
-            $"--max-count={requestedCount}",
-            "--topo-order",
-            "--date=iso-strict",
-            $"--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%ad%x1f%s%x1f%B%x1f%P%x1e");
-
+        int? requestedCount = count + 1;
+        List<string> arguments = ["log", $"--skip={skip}", "--topo-order", "--date=iso-strict",
+            "--pretty=format:%H%x1f%h%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%ad%x1f%s%x1f%B%x1f%P%x1e"];
+        if (requestedCount.HasValue) { arguments.Add($"--max-count={requestedCount.Value}"); }
+        Task<string> logTask = RunGitAsync(repository, arguments.ToArray());
         Task<IReadOnlySet<string>> synchronizedHashesTask = GetSynchronizedCommitHashesAsync(repository);
         Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> changedFilePathsTask =
             GetChangedFilePathsByCommitAsync(repository, skip, requestedCount);
-        Task<IReadOnlyDictionary<string, IReadOnlyList<GitCommitReference>>> referencesTask =
-            GetReferencesByCommitAsync(repository);
-
-        await Task.WhenAll(synchronizedHashesTask, changedFilePathsTask, referencesTask);
-        IReadOnlyList<GitCommit> commits = ParseCommits(
-            output,
-            await synchronizedHashesTask,
-            await changedFilePathsTask,
-            await referencesTask);
-        bool hasMore = commits.Count > count;
-        return new GitCommitPage(commits.Take(count).ToList(), hasMore);
+        Task<IReadOnlyDictionary<string, IReadOnlyList<GitCommitReference>>> referencesTask = GetReferencesByCommitAsync(repository);
+        await Task.WhenAll(logTask, synchronizedHashesTask, changedFilePathsTask, referencesTask);
+        IReadOnlyList<GitCommit> commits = ParseCommits(await logTask, await synchronizedHashesTask,
+            await changedFilePathsTask, await referencesTask);
+        return count.HasValue
+            ? new GitCommitPage(commits.Take(count.Value).ToList(), commits.Count > count.Value)
+            : new GitCommitPage(commits, false);
     }
 
     public async Task<GitCommit> GetLastCommitAsync(RepositoryInfo repository)
@@ -182,16 +176,11 @@ public sealed class GitHistoryService : IGitHistoryService
     private async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> GetChangedFilePathsByCommitAsync(
         RepositoryInfo repository,
         int skip,
-        int count)
+        int? count)
     {
-        string output = await RunGitAsync(
-            repository,
-            "log",
-            $"--skip={skip}",
-            $"--max-count={count}",
-            "--topo-order",
-            "--name-only",
-            $"--pretty=format:%x1e%H");
+        List<string> arguments = ["log", $"--skip={skip}", "--topo-order", "--name-only", "--pretty=format:%x1e%H"];
+        if (count.HasValue) { arguments.Add($"--max-count={count.Value}"); }
+        string output = await RunGitAsync(repository, arguments.ToArray());
 
         var changedFilePaths = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
         foreach (var record in output.Split(RecordSeparator, StringSplitOptions.RemoveEmptyEntries))

@@ -93,7 +93,7 @@ public sealed class OpenSshService : IOpenSshService
                 : await remoteStore.ScanHostKeysAsync(endpoint.Host, endpoint.Port, cancellationToken);
             if (keyLines.Count == 0)
             {
-                return;
+                throw CreateHostKeyVerificationException();
             }
 
             IReadOnlyList<string> fingerprints = keyLines
@@ -103,13 +103,18 @@ public sealed class OpenSshService : IOpenSshService
                 .ToList();
             if (fingerprints.Count == 0)
             {
-                return;
+                throw CreateHostKeyVerificationException();
             }
 
             bool confirmed = await _confirmationService.ConfirmAsync(
                 new HostKeyConfirmation(endpoint.Host, endpoint.Port, fingerprints),
                 cancellationToken);
-            if (!confirmed || await ContainsHostAsync(endpoint, remoteStore, cancellationToken))
+            if (!confirmed)
+            {
+                throw CreateHostKeyVerificationException();
+            }
+
+            if (await ContainsHostAsync(endpoint, remoteStore, cancellationToken))
             {
                 return;
             }
@@ -741,9 +746,26 @@ public sealed class OpenSshService : IOpenSshService
 
         arguments.Add(endpoint.Host);
         ProcessResult result = await _runProcessAsync("ssh-keyscan", arguments, cancellationToken);
+        if (result.ExitCode != 0
+            && result.StandardError.Contains("unsupported KEX method", StringComparison.OrdinalIgnoreCase))
+        {
+            // Some Windows OpenSSH versions advertise a KEX algorithm that ssh-keyscan cannot use.
+            // Git for Windows ships a separate OpenSSH build that supports that algorithm.
+            ProcessResult gitPath = await _runProcessAsync("git", ["--exec-path"], cancellationToken);
+            if (gitPath.ExitCode == 0 && !string.IsNullOrWhiteSpace(gitPath.StandardOutput))
+            {
+                string gitKeyScanPath = Path.GetFullPath(Path.Combine(
+                    gitPath.StandardOutput.Trim(), "..", "..", "..", "usr", "bin", "ssh-keyscan.exe"));
+                if (File.Exists(gitKeyScanPath))
+                {
+                    result = await _runProcessAsync(gitKeyScanPath, arguments, cancellationToken);
+                }
+            }
+        }
+
         if (result.ExitCode != 0)
         {
-            return [];
+            throw CreateHostKeyVerificationException(result.StandardError, result.ExitCode);
         }
 
         return result.StandardOutput
@@ -752,6 +774,20 @@ public sealed class OpenSshService : IOpenSshService
             .Where(static line => line.Length > 0 && line[0] != '#' && line.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length >= 3)
             .Distinct(StringComparer.Ordinal)
             .ToList();
+    }
+
+    private GitRemoteOperationException CreateHostKeyVerificationException(string? details = null, int exitCode = 128)
+    {
+        string message = string.IsNullOrWhiteSpace(details)
+            ? "Host key verification failed."
+            : $"Host key verification failed.{Environment.NewLine}{details.Trim()}";
+        return new GitRemoteOperationException(
+            message,
+            exitCode,
+            GitRemoteOperationErrorKind.HostKeyVerification,
+            _executionContextService is { Current.IsLocal: false }
+                ? _executionContextService.Current.DisplayMachineName
+                : null);
     }
 
     private static string CreateFingerprint(string keyLine)

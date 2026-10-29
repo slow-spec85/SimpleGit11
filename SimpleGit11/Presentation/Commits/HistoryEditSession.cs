@@ -115,17 +115,37 @@ public sealed partial class HistoryEditSession
 
     public IEnumerable<CommitBrowserRowViewItem> CreateRows(ILocalizationService strings)
     {
+        Dictionary<string, int> originalPositions = _original.Select((commit, index) => (commit.Hash, index))
+            .ToDictionary(item => item.Hash, item => item.index);
+        bool CombinedContentChanged(Group group)
+        {
+            for (int index = 1; index < group.Members.Count; index++)
+            {
+                GitCommit member = group.Members[index];
+                string previous = group.Members[index - 1].Hash;
+                int parentIndex = group.Mainlines.GetValueOrDefault(member.Hash, 1) - 1;
+                if (_hasGraph ? member.ParentHashes.ElementAtOrDefault(parentIndex) != previous
+                    : originalPositions[member.Hash] != originalPositions[previous] - 1) { return true; }
+            }
+            return false;
+        }
+        // A combined group's tree matches its last member when the original patch order is preserved.
+        // Replacing a parent with that group alone does not change the child's content base.
+        bool ContentParentsChanged(Group group) => _hasGraph && !group.Parents
+            .Select(parent => Find(parent)?.Members[^1].Hash ?? parent).SequenceEqual(group.Commit.ParentHashes);
+
         string[] activeOrder = _groups.Where(group => !group.Deleted).Select(group => group.Commit.Hash).ToArray();
         string[] originalOrder = _original.Reverse().Select(commit => commit.Hash).Where(activeOrder.Contains).ToArray();
         HashSet<string> movedHashes = activeOrder.Where((hash, index) => originalOrder[index] != hash).ToHashSet();
         foreach (Group changed in _groups.Where(group => group.MoveDirection != 0 && ParentsChanged(group))) { movedHashes.Add(changed.Commit.Hash); }
-        int firstContentChange = _groups.FindIndex(group => group.Deleted || group.Members.Count > 1 || movedHashes.Contains(group.Commit.Hash) || ParentsChanged(group));
+        int firstContentChange = _groups.FindIndex(group => group.Deleted || CombinedContentChanged(group)
+            || movedHashes.Contains(group.Commit.Hash) || ContentParentsChanged(group));
         for (int index = _groups.Count - 1; index >= 0; index--)
         {
             Group group = _groups[index];
             if (!_editable.Contains(group.Commit.Hash)) { continue; }
             bool moved = movedHashes.Contains(group.Commit.Hash);
-            bool affected = firstContentChange >= 0 && index > firstContentChange || ParentsChanged(group) && !moved;
+            bool affected = firstContentChange >= 0 && index > firstContentChange || ContentParentsChanged(group) && !moved;
             foreach (GitCommit member in group.Members.AsEnumerable().Reverse())
             {
                 bool merged = member.Hash != group.Commit.Hash;

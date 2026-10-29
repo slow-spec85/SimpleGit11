@@ -51,4 +51,9 @@ public sealed class GitBranch(
             LastCommitDate,
             description);
     }
+
+    public bool HasSameSnapshot(GitBranch other) =>
+        Name == other.Name && IsCurrent == other.IsCurrent && IsRemote == other.IsRemote
+        && ShortCommitHash == other.ShortCommitHash && LastCommitMessage == other.LastCommitMessage
+        && LastCommitDate == other.LastCommitDate && ConfigDescription == other.ConfigDescription;
 }

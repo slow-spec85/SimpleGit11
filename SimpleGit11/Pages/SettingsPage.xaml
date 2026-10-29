@@ -249,6 +249,22 @@
                             AutomationProperties.AutomationId="FetchOnRepositoryOpenToggle"
                             IsOn="{x:Bind ViewModel.FetchOnRepositoryOpen, Mode=TwoWay}" />
                     </controls:SettingsCard>
+
+                    <controls:SettingsCard>
+                        <controls:SettingsCard.HeaderIcon>
+                            <FontIcon Glyph="&#xE72C;" />
+                        </controls:SettingsCard.HeaderIcon>
+                        <controls:SettingsCard.Header>
+                            <TextBlock x:Uid="RefreshOnWindowActivationHeaderTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Header>
+                        <controls:SettingsCard.Description>
+                            <TextBlock x:Uid="RefreshOnWindowActivationDescriptionTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Description>
+                        <ToggleSwitch
+                            x:Uid="RefreshOnWindowActivationToggleSwitch"
+                            AutomationProperties.AutomationId="RefreshOnWindowActivationToggle"
+                            IsOn="{x:Bind ViewModel.RefreshOnWindowActivation, Mode=TwoWay}" />
+                    </controls:SettingsCard>
                 </StackPanel>
 
                 <StackPanel Spacing="12">

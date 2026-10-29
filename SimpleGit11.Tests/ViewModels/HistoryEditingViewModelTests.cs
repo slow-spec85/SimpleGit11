@@ -15,6 +15,92 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class HistoryEditingViewModelTests
 {
     [TestMethod]
+    public async Task RefreshHistory_UnchangedSnapshotPreservesRowsFileAndDiffWithoutCollectionEvents()
+    {
+        Fixture fixture = new() { ChangedFiles = [new("first.txt", "Modified"), new("second.txt", "Modified")] };
+        await fixture.ViewModel.RefreshHistoryAsync();
+        fixture.ViewModel.SelectedChangedFile = fixture.ChangedFiles[1];
+        await fixture.ViewModel.ShowDiffCommand.ExecuteAsync(null);
+        GitCommit commit = fixture.ViewModel.SelectedCommit!;
+        CommitBrowserRowViewItem row = fixture.ViewModel.SelectedCommitRow!;
+        GitChangedFile file = fixture.ViewModel.SelectedChangedFile!;
+        int diffLoads = fixture.DiffLoads;
+        int changes = 0;
+        fixture.ViewModel.Commits.CollectionChanged += (_, _) => changes++;
+        fixture.ViewModel.CommitRows.CollectionChanged += (_, _) => changes++;
+        fixture.ViewModel.ChangedFiles.CollectionChanged += (_, _) => changes++;
+        fixture.LoadPageAsync = (_, _) => Task.FromResult(new GitCommitPage(
+            fixture.Commits.Select(item => Commit(item.Hash, item.Title, item.ParentHashes.ToArray())).ToArray(), false));
+
+        await fixture.ViewModel.RefreshHistoryAsync();
+
+        Assert.AreSame(commit, fixture.ViewModel.SelectedCommit);
+        Assert.AreSame(row, fixture.ViewModel.SelectedCommitRow);
+        Assert.AreSame(file, fixture.ViewModel.SelectedChangedFile);
+        Assert.AreEqual(diffLoads, fixture.DiffLoads);
+        Assert.AreEqual(0, changes);
+    }
+
+    [TestMethod]
+    public async Task RefreshHistory_ChangedReferencesPreserveSelectedFileAndImmutableCommitContent()
+    {
+        Fixture fixture = new() { ChangedFiles = [new("first.txt", "Modified"), new("second.txt", "Modified")] };
+        await fixture.ViewModel.RefreshHistoryAsync();
+        fixture.ViewModel.SelectedChangedFile = fixture.ChangedFiles[1];
+        await fixture.ViewModel.ShowDiffCommand.ExecuteAsync(null);
+        GitChangedFile file = fixture.ViewModel.SelectedChangedFile!;
+        int loads = fixture.DiffLoads;
+        GitCommit old = fixture.Commits[0];
+        fixture.Commits[0] = new GitCommit(old.Hash, old.ShortHash, old.AuthorName, old.AuthorEmail,
+            old.AuthoredAt, old.Title, old.Message, references: [new("v2", GitCommitReferenceKind.Tag)], parentHashes: old.ParentHashes);
+
+        await fixture.ViewModel.RefreshHistoryAsync();
+
+        Assert.AreSame(fixture.Commits[0], fixture.ViewModel.SelectedCommit);
+        Assert.AreSame(file, fixture.ViewModel.SelectedChangedFile);
+        Assert.AreEqual(loads, fixture.DiffLoads);
+        Assert.AreEqual("v2", fixture.ViewModel.SelectedCommit!.References.Single().Name);
+    }
+
+    [TestMethod]
+    public async Task RefreshHistory_FailedReadRetainsSelectedFileAndRows()
+    {
+        Fixture fixture = new() { ChangedFiles = [new("first.txt", "Modified"), new("second.txt", "Modified")] };
+        await fixture.ViewModel.RefreshHistoryAsync();
+        fixture.ViewModel.SelectedChangedFile = fixture.ChangedFiles[1];
+        GitChangedFile file = fixture.ViewModel.SelectedChangedFile!;
+        CommitBrowserRowViewItem row = fixture.ViewModel.SelectedCommitRow!;
+        fixture.LoadPageAsync = (_, _) => throw new DirectoryNotFoundException();
+
+        await fixture.ViewModel.RefreshHistoryAsync();
+
+        Assert.AreSame(row, fixture.ViewModel.SelectedCommitRow);
+        Assert.AreSame(file, fixture.ViewModel.SelectedChangedFile);
+    }
+
+    [TestMethod]
+    public async Task ChangedFileTree_MirrorsLoadedHistoryAndClearsOnRepositoryChange()
+    {
+        GitChangedFile first = new("src/First.cs", "Modified");
+        GitChangedFile second = new("docs/Help.md", "Added");
+        Fixture fixture = new() { ChangedFiles = [first, second] };
+        await fixture.ViewModel.RefreshHistoryAsync();
+        fixture.ViewModel.SelectedCommit = fixture.Commits[0];
+        await fixture.ViewModel.ShowDiffCommand.ExecuteAsync(null);
+
+        Assert.IsFalse(fixture.ViewModel.FileTree.ShowFolders);
+        CollectionAssert.AreEqual(new[] { "docs", "src" },
+            fixture.ViewModel.FileTree.Roots.Select(item => item.Name).ToArray());
+        Assert.AreSame(first, fixture.ViewModel.FileTree.Roots[1].Children.Single().File);
+        Assert.AreSame(first, fixture.ViewModel.SelectedChangedFile);
+
+        fixture.ViewModel.FileTree.ShowFolders = true;
+        fixture.ViewModel.Receive(new RepositoryChangedMessage(null));
+        Assert.IsEmpty(fixture.ViewModel.FileTree.Roots);
+        Assert.IsTrue(fixture.ViewModel.FileTree.ShowFolders);
+    }
+
+    [TestMethod]
     public async Task SelectedCommitFile_LoadsDiffUsingTheHistoryFixture()
     {
         Fixture fixture = new();
@@ -32,31 +118,31 @@ public sealed class HistoryEditingViewModelTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task LoadMoreVisibilityTracksPaginationAndHistoryEditing(bool hasMoreCommits)
+    public async Task LoadRemainingVisibilityTracksPaginationAndHistoryEditing(bool hasMoreCommits)
     {
         Fixture fixture = new() { HasMoreCommits = hasMoreCommits };
         List<string?> changedProperties = [];
         fixture.ViewModel.PropertyChanged += (_, args) => changedProperties.Add(args.PropertyName);
 
-        Assert.IsFalse(fixture.ViewModel.IsLoadMoreHistoryVisible);
+        Assert.IsFalse(fixture.ViewModel.IsLoadRemainingHistoryVisible);
         await fixture.ViewModel.RefreshHistoryAsync();
-        Assert.AreEqual(hasMoreCommits, fixture.ViewModel.IsLoadMoreHistoryVisible);
+        Assert.AreEqual(hasMoreCommits, fixture.ViewModel.IsLoadRemainingHistoryVisible);
         if (hasMoreCommits)
         {
-            CollectionAssert.Contains(changedProperties, nameof(HistoryViewModel.IsLoadMoreHistoryVisible));
+            CollectionAssert.Contains(changedProperties, nameof(HistoryViewModel.IsLoadRemainingHistoryVisible));
         }
 
         changedProperties.Clear();
         fixture.ViewModel.SelectedCommit = fixture.Commits[1];
         await fixture.ViewModel.StartHistoryEditCommand.ExecuteAsync(null);
         Assert.IsTrue(fixture.ViewModel.IsHistoryEditing);
-        Assert.IsFalse(fixture.ViewModel.IsLoadMoreHistoryVisible);
-        CollectionAssert.Contains(changedProperties, nameof(HistoryViewModel.IsLoadMoreHistoryVisible));
+        Assert.IsFalse(fixture.ViewModel.IsLoadRemainingHistoryVisible);
+        CollectionAssert.Contains(changedProperties, nameof(HistoryViewModel.IsLoadRemainingHistoryVisible));
 
         changedProperties.Clear();
         fixture.ViewModel.CancelHistoryEditCommand.Execute(null);
-        Assert.AreEqual(hasMoreCommits, fixture.ViewModel.IsLoadMoreHistoryVisible);
-        CollectionAssert.Contains(changedProperties, nameof(HistoryViewModel.IsLoadMoreHistoryVisible));
+        Assert.AreEqual(hasMoreCommits, fixture.ViewModel.IsLoadRemainingHistoryVisible);
+        CollectionAssert.Contains(changedProperties, nameof(HistoryViewModel.IsLoadRemainingHistoryVisible));
     }
 
     [TestMethod]
@@ -253,6 +339,33 @@ public sealed class HistoryEditingViewModelTests
         Assert.IsFalse(fixture.ViewModel.ApplyHistoryEditCommand.CanExecute(null));
         Assert.IsFalse(fixture.ViewModel.UndoHistoryEditCommand.CanExecute(null));
         Assert.IsTrue(fixture.ViewModel.CommitRows.All(row => !row.HasEditIndicator));
+        Assert.AreEqual(0, fixture.Editor.RebaseCalls);
+    }
+
+    [TestMethod]
+    public async Task CombiningEarlierCommitsKeepsLaterDetailsAvailableAndDeletionHidesThem()
+    {
+        Fixture fixture = new();
+        fixture.Editor.Revisions = "ccccccc\nbbbbbbb\naaaaaaa\n";
+        await fixture.ViewModel.RefreshHistoryAsync();
+        fixture.ViewModel.SelectedCommit = fixture.Commits[2];
+        await fixture.ViewModel.StartHistoryEditCommand.ExecuteAsync(null);
+        Assert.IsTrue(fixture.ViewModel.IsHistoryEditing);
+        fixture.ViewModel.SelectedCommit = fixture.Commits[1];
+        fixture.MessageAnswer = new CommitDialogResult("Combined", false);
+        await fixture.ViewModel.MergeDraftWithMessageCommand.ExecuteAsync(null);
+        fixture.ViewModel.SelectedCommit = fixture.Commits[0];
+        Assert.IsFalse(fixture.ViewModel.SelectedCommitRow!.HasEditIndicator);
+        Assert.IsTrue(fixture.ViewModel.IsCommitContentAvailable);
+
+        fixture.ViewModel.SelectedCommit = fixture.Commits[2];
+        fixture.ViewModel.DeleteDraftCommitCommand.Execute(null);
+        fixture.ViewModel.SelectedCommit = fixture.Commits[0];
+        Assert.AreEqual("HistoryEditAffected", fixture.ViewModel.SelectedCommitRow!.EditIndicator);
+        Assert.IsTrue(fixture.ViewModel.IsCommitContentUnavailable);
+        fixture.ViewModel.UndoHistoryEditCommand.Execute(null);
+        Assert.IsTrue(fixture.ViewModel.IsCommitContentAvailable);
+        Assert.IsFalse(fixture.ViewModel.SelectedCommitRow!.HasEditIndicator);
         Assert.AreEqual(0, fixture.Editor.RebaseCalls);
     }
 
@@ -728,12 +841,183 @@ public sealed class HistoryEditingViewModelTests
         Assert.AreEqual("first.txt\nsecond.txt\nthird.txt", await repository.RunGitAsync("ls-tree", "--name-only", "HEAD"));
     }
 
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task LoadRemaining_LoadsEveryPageAndPreservesSelectionAndFilters(bool useRange)
+    {
+        Fixture fixture = new();
+        GitCommit[] commits = Enumerable.Range(0, 605)
+            .Select(index => Commit($"{index:x40}", $"Commit {index}")).ToArray();
+        List<int> offsets = [];
+        fixture.LoadPageAsync = (offset, count) =>
+        {
+            offsets.Add(offset);
+            Assert.AreEqual(300, count);
+            return Task.FromResult(new GitCommitPage(commits.Skip(offset).Take(count).ToArray(), offset + count < commits.Length));
+        };
+        CommitBrowserViewModelBase browser = useRange ? fixture.RangeViewModel : fixture.ViewModel;
+        if (useRange)
+        {
+            await fixture.RangeViewModel.InitializeAsync(new RevisionRangeNavigationArgs("Range", "", "", "main..feature"));
+        }
+        else
+        {
+            await fixture.ViewModel.RefreshHistoryAsync();
+        }
+        Assert.HasCount(300, browser.Commits);
+        browser.SelectedCommit = commits[10];
+        browser.SetSelectedCommits([commits[10], commits[11]]);
+        browser.SearchText = "Commit 1";
+        int rowUpdates = 0;
+        browser.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(browser.IsUpdatingCommitRows) && browser.IsUpdatingCommitRows) { rowUpdates++; }
+        };
+
+        if (useRange) { await fixture.RangeViewModel.LoadRemainingCommitsCommand.ExecuteAsync(null); }
+        else { await fixture.ViewModel.LoadRemainingHistoryCommand.ExecuteAsync(null); }
+
+        CollectionAssert.AreEqual(new[] { 0, 300, 600 }, offsets);
+        Assert.AreEqual("Commit 1", browser.SearchText);
+        Assert.AreSame(commits[10], browser.SelectedCommit);
+        CollectionAssert.AreEqual(new[] { commits[10], commits[11] }, browser.SelectedCommits.ToArray());
+        Assert.AreEqual(1, rowUpdates);
+        Assert.IsFalse(useRange ? fixture.RangeViewModel.HasMoreCommits : fixture.ViewModel.HasMoreCommits);
+        Assert.IsFalse(useRange ? fixture.RangeViewModel.LoadRemainingCommitsCommand.CanExecute(null) : fixture.ViewModel.LoadRemainingHistoryCommand.CanExecute(null));
+        browser.ResetCommitFiltersCommand.Execute(null);
+        CollectionAssert.AreEqual(commits, browser.Commits.ToArray());
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task LoadRemaining_FailedLaterPageCanBeRetriedWithoutSkippingCommits(bool useRange)
+    {
+        Fixture fixture = new();
+        GitCommit[] commits = Enumerable.Range(0, 605)
+            .Select(index => Commit($"{index:x40}", $"Commit {index}")).ToArray();
+        bool fail = true;
+        List<int> offsets = [];
+        fixture.LoadPageAsync = (offset, count) =>
+        {
+            offsets.Add(offset);
+            if (offset == 600 && fail) { throw new DirectoryNotFoundException(); }
+            return Task.FromResult(new GitCommitPage(commits.Skip(offset).Take(count).ToArray(), offset + count < commits.Length));
+        };
+        CommitBrowserViewModelBase browser = useRange ? fixture.RangeViewModel : fixture.ViewModel;
+        if (useRange) { await fixture.RangeViewModel.InitializeAsync(new RevisionRangeNavigationArgs("Range", "", "", "main..feature")); }
+        else { await fixture.ViewModel.RefreshHistoryAsync(); }
+
+        if (useRange) { await fixture.RangeViewModel.LoadRemainingCommitsCommand.ExecuteAsync(null); }
+        else { await fixture.ViewModel.LoadRemainingHistoryCommand.ExecuteAsync(null); }
+
+        Assert.HasCount(300, browser.Commits);
+        Assert.IsTrue(useRange ? fixture.RangeViewModel.LoadRemainingCommitsCommand.CanExecute(null) : fixture.ViewModel.LoadRemainingHistoryCommand.CanExecute(null));
+        Assert.IsNotNull(fixture.LastNotification);
+        fail = false;
+        if (useRange) { await fixture.RangeViewModel.LoadRemainingCommitsCommand.ExecuteAsync(null); }
+        else { await fixture.ViewModel.LoadRemainingHistoryCommand.ExecuteAsync(null); }
+
+        CollectionAssert.AreEqual(new[] { 0, 300, 600, 300, 600 }, offsets);
+        CollectionAssert.AreEqual(commits, browser.Commits.ToArray());
+    }
+
+    [TestMethod]
+    public async Task RefreshHistory_AfterLoadingRemaining_PreservesFullHistorySelectionAndFilters()
+    {
+        Fixture fixture = new();
+        List<GitCommit> commits = Enumerable.Range(0, 605)
+            .Select(index => Commit($"{index:x40}", $"Commit {index}")).ToList();
+        List<int> offsets = [];
+        fixture.LoadPageAsync = (offset, count) =>
+        {
+            offsets.Add(offset);
+            return Task.FromResult(new GitCommitPage(commits.Skip(offset).Take(count).ToArray(), offset + count < commits.Count));
+        };
+        await fixture.ViewModel.RefreshHistoryAsync();
+        await fixture.ViewModel.LoadRemainingHistoryCommand.ExecuteAsync(null);
+        fixture.ViewModel.SelectedCommit = commits[600];
+        fixture.ViewModel.SetSelectedCommits([commits[600], commits[601]]);
+        fixture.ViewModel.SearchText = "Commit 60";
+        commits.Insert(0, Commit("new", "New commit"));
+        offsets.Clear();
+
+        // Navigating back through the main menu invokes this same refresh entry point.
+        await fixture.ViewModel.RefreshHistoryAsync();
+
+        CollectionAssert.AreEqual(new[] { 0, 300, 600 }, offsets);
+        Assert.AreEqual("Commit 60", fixture.ViewModel.SearchText);
+        Assert.AreSame(commits[601], fixture.ViewModel.SelectedCommit);
+        CollectionAssert.AreEqual(new[] { commits[601], commits[602] }, fixture.ViewModel.SelectedCommits.ToArray());
+        Assert.IsFalse(fixture.ViewModel.HasMoreCommits);
+        Assert.IsFalse(fixture.ViewModel.IsLoadRemainingHistoryVisible);
+        fixture.ViewModel.ResetCommitFiltersCommand.Execute(null);
+        CollectionAssert.AreEqual(commits, fixture.ViewModel.Commits.ToArray());
+    }
+
+    [TestMethod]
+    public async Task RefreshHistory_AfterRepositoryChange_RestoresTheInitialPageLimit()
+    {
+        Fixture fixture = new();
+        GitCommit[] commits = Enumerable.Range(0, 605)
+            .Select(index => Commit($"{index:x40}", $"Commit {index}")).ToArray();
+        List<int> offsets = [];
+        fixture.LoadPageAsync = (offset, count) =>
+        {
+            offsets.Add(offset);
+            return Task.FromResult(new GitCommitPage(commits.Skip(offset).Take(count).ToArray(), offset + count < commits.Length));
+        };
+        await fixture.ViewModel.RefreshHistoryAsync();
+        await fixture.ViewModel.LoadRemainingHistoryCommand.ExecuteAsync(null);
+        fixture.Window.SetCurrentRepository(new RepositoryInfo(Environment.CurrentDirectory, "other", "main"), []);
+        offsets.Clear();
+
+        await fixture.ViewModel.RefreshHistoryAsync();
+
+        CollectionAssert.AreEqual(new[] { 0 }, offsets);
+        Assert.HasCount(300, fixture.ViewModel.Commits);
+        Assert.IsTrue(fixture.ViewModel.HasMoreCommits);
+        Assert.IsTrue(fixture.ViewModel.IsLoadRemainingHistoryVisible);
+    }
+
+    [TestMethod]
+    public async Task RefreshHistory_FailedFullRefresh_RetainsLoadedHistoryAndRetriesAllPages()
+    {
+        Fixture fixture = new();
+        GitCommit[] commits = Enumerable.Range(0, 605)
+            .Select(index => Commit($"{index:x40}", $"Commit {index}")).ToArray();
+        bool fail = false;
+        List<int> offsets = [];
+        fixture.LoadPageAsync = (offset, count) =>
+        {
+            offsets.Add(offset);
+            if (fail && offset == 300) { throw new DirectoryNotFoundException(); }
+            return Task.FromResult(new GitCommitPage(commits.Skip(offset).Take(count).ToArray(), offset + count < commits.Length));
+        };
+        await fixture.ViewModel.RefreshHistoryAsync();
+        await fixture.ViewModel.LoadRemainingHistoryCommand.ExecuteAsync(null);
+        fail = true;
+
+        await fixture.ViewModel.RefreshHistoryAsync();
+
+        CollectionAssert.AreEqual(commits, fixture.ViewModel.Commits.ToArray());
+        Assert.IsFalse(fixture.ViewModel.HasMoreCommits);
+        fail = false;
+        offsets.Clear();
+        await fixture.ViewModel.RefreshHistoryAsync();
+        CollectionAssert.AreEqual(new[] { 0, 300, 600 }, offsets);
+        CollectionAssert.AreEqual(commits, fixture.ViewModel.Commits.ToArray());
+    }
+
     private sealed class Fixture
     {
         public GitCommit[] Commits { get; } = [Commit("ccccccc", "C", "bbbbbbb"), Commit("bbbbbbb", "B", "aaaaaaa"), Commit("aaaaaaa", "A")];
         public GitCommit Head { get; set; }
         public EditorStub Editor { get; } = new();
         public HistoryViewModel ViewModel { get; }
+        public CommitRangeViewModel RangeViewModel { get; }
+        public Func<int, int, Task<GitCommitPage>>? LoadPageAsync { get; set; }
         public MainWindowViewModel Window { get; }
         public CommitDialogResult? MessageAnswer { get; set; }
         public Func<Task<CommitDialogResult?>>? MessageDialog { get; set; }
@@ -751,6 +1035,7 @@ public sealed class HistoryEditingViewModelTests
         public int NativePageSize { get; set; } = 300;
         public bool HasMoreCommits { get; set; }
         public int DiffLoads { get; private set; }
+        public IReadOnlyList<GitChangedFile> ChangedFiles { get; set; } = [];
 
         public Fixture(TemporaryGitRepository? nativeRepository = null)
         {
@@ -779,7 +1064,7 @@ public sealed class HistoryEditingViewModelTests
                 return Task.FromResult("");
             }) : new GitCommitService(runner);
             IGitHistoryService history = nativeHistory ?? Stub.Create<IGitHistoryService>((method, _) => method == "GetChangedFilesAsync"
-                ? Task.FromResult<IReadOnlyList<GitChangedFile>>([]) : throw new NotSupportedException(method));
+                ? Task.FromResult(ChangedFiles) : throw new NotSupportedException(method));
             ISettingsService settings = Stub.Create<ISettingsService>((_, _) => new AppSettings());
             IGitDiffService diff = Stub.Create<IGitDiffService>((method, _) =>
             {
@@ -787,8 +1072,11 @@ public sealed class HistoryEditingViewModelTests
                 DiffLoads++;
                 return Task.FromResult(new DiffResult([], false, true, ""));
             });
+            IGitRemoteService remotes = Stub.Create<IGitRemoteService>((method, args) => method == "GetCommitsPageAsync"
+                ? LoadPageAsync!((int)args![2]!, (int)args[3]!) : throw new NotSupportedException(method));
             IGitService git = Stub.Create<IGitService>((method, args) => method switch
             {
+                "get_Remotes" => remotes,
                 "get_Editor" => editor,
                 "get_Commits" => commitService,
                 "get_History" => history,
@@ -796,13 +1084,19 @@ public sealed class HistoryEditingViewModelTests
                 "ExecuteAsync" => ((Func<Task>)args![0]!)(),
                 "GetOperationStateAsync" => Task.FromResult(new GitOperationState(OperationKind)),
                 "GetLastCommitAsync" => nativeHistory?.GetLastCommitAsync(nativeRepository!.Repository) ?? Task.FromResult(Head),
-                "GetHistoryPageAsync" => nativeHistory?.GetCommitsPageAsync(nativeRepository!.Repository, 0, NativePageSize) ?? Task.FromResult(new GitCommitPage(Commits, HasMoreCommits)),
+                "GetRemainingHistoryAsync" => ReadRemainingAsync((int)args![1]!, nativeHistory, nativeRepository),
+                "GetHistoryPageAsync" => LoadPageAsync?.Invoke((int)args![1]!, (int)args[2]!)
+                    ?? nativeHistory?.GetCommitsPageAsync(nativeRepository!.Repository, 0, NativePageSize)
+                    ?? Task.FromResult(new GitCommitPage(Commits, HasMoreCommits)),
                 "GetStatusAsync" => Task.FromResult(new GitStatusSnapshot([], [], HasConflicts ? [new GitChangedFile("conflict.txt", "UU")] : [])),
                 _ => throw new NotSupportedException(method)
             });
             Window = new MainWindowViewModel(Stub.Create<IRecentRepositoriesService>((_, _) => Array.Empty<RepositoryInfo>()), strings, git,
                 Stub.Create<IClipboardService>(), new TestProductInfoService(), messenger, settings);
             Window.SetCurrentRepository(nativeRepository?.Repository ?? new RepositoryInfo(Environment.CurrentDirectory, "repo", "main"), []);
+            RangeViewModel = new CommitRangeViewModel(Window, git, strings, Stub.Create<IClipboardService>(),
+                Stub.Create<IAsyncCommandExecutor>((_, args) => ((Func<Task>)args![0]!)()),
+                Stub.Create<IDialogService>(), settings, messenger);
             ViewModel = new HistoryViewModel(Window, null!, git, strings, Stub.Create<IClipboardService>(),
                 Stub.Create<IAsyncCommandExecutor>((_, args) => ((Func<Task>)args![0]!)()),
                 Stub.Create<IDialogService>((method, _) => method switch
@@ -812,6 +1106,23 @@ public sealed class HistoryEditingViewModelTests
                     "ShowHistoryParentDialogAsync" => SelectParent(),
                     _ => throw new NotSupportedException(method)
                 }), settings, messenger);
+        }
+
+        private async Task<IReadOnlyList<GitCommit>> ReadRemainingAsync(int skip, GitHistoryService? history, TemporaryGitRepository? repository)
+        {
+            if (LoadPageAsync is null)
+            {
+                return history is null ? Commits.Skip(skip).ToArray() : await history.GetRemainingCommitsAsync(repository!.Repository, skip);
+            }
+            List<GitCommit> commits = [];
+            GitCommitPage page;
+            do
+            {
+                page = await LoadPageAsync(skip, 300);
+                commits.AddRange(page.Commits);
+                skip += page.Commits.Count;
+            } while (page.HasMore && page.Commits.Count > 0);
+            return commits;
         }
 
         private Task<int?> SelectParent() { ParentDialogs++; return ParentDialog?.Invoke() ?? Task.FromResult(ParentAnswer); }

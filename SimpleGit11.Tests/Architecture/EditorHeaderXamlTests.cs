@@ -9,6 +9,41 @@ public sealed class EditorHeaderXamlTests
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
 
     [TestMethod]
+    public void RemainingCommitsButton_OverlaysTheBottomOfTheScrollableList()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
+        XElement list = FindByXName(document, "HistoryCommitsListView");
+        XElement overlay = FindByXName(document, "CommitListOverlayPresenter");
+
+        Assert.AreSame(list.Parent, overlay.Parent);
+        Assert.AreEqual(RequiredAttribute(list, "Grid.Row"), RequiredAttribute(overlay, "Grid.Row"));
+        Assert.IsTrue(list.ElementsAfterSelf().Contains(overlay));
+        Assert.AreEqual("Center", RequiredAttribute(overlay, "HorizontalAlignment"));
+        Assert.AreEqual("Bottom", RequiredAttribute(overlay, "VerticalAlignment"));
+        Assert.IsNull(overlay.Attribute("Background"));
+        Assert.AreEqual("CommitListOverlayLayout_SizeChanged", RequiredAttribute(overlay, "SizeChanged"));
+        Assert.AreEqual("CommitListOverlayLayout_SizeChanged", RequiredAttribute(list, "SizeChanged"));
+        Assert.IsNull(list.Attribute("Margin"));
+        Assert.AreEqual("{Binding CommitListOverlay, ElementName=PageRoot}", RequiredAttribute(overlay, "Content"));
+        Assert.IsFalse(list.Descendants().Any(element => element.Name.LocalName == "ListView.Footer"));
+    }
+
+    [TestMethod]
+    [DataRow("HistoryPage.xaml", "LoadRemainingHistoryButton")]
+    [DataRow("CommitRangePage.xaml", "LoadRemainingCommitRangeButton")]
+    public void RemainingCommitsButton_UsesTheStandardButtonWithoutCustomBackground(string page, string automationId)
+    {
+        XDocument document = LoadApplicationXaml("Pages", page);
+        XElement button = document.Descendants().Single(element =>
+            (string?)element.Attribute("AutomationProperties.AutomationId") == automationId);
+
+        Assert.AreEqual("Button", button.Name.LocalName);
+        Assert.AreEqual("{StaticResource DefaultButtonStyle}", RequiredAttribute(button, "Style"));
+        Assert.IsNull(button.Attribute("Background"));
+        Assert.IsFalse(button.Descendants().Any(element => element.Name.LocalName is "Button.Resources" or "Button.Template"));
+    }
+
+    [TestMethod]
     public void ChangesFileFilter_PrecedesLineCountersAndFlyoutContainsOnlySearchInput()
     {
         XDocument document = LoadApplicationXaml("Pages", "ChangesPage.xaml");
@@ -16,7 +51,7 @@ public sealed class EditorHeaderXamlTests
         XElement filter = FindByXName(document, "ChangedFilesFilterToggleButton");
         Assert.AreEqual(header, filter.Parent);
         Assert.AreEqual("1", RequiredAttribute(filter, "Grid.Column"));
-        Assert.AreEqual("2", RequiredAttribute(FindByXName(document, "AddedLinesHeaderTextBlock").Parent!, "Grid.Column"));
+        Assert.AreEqual("2", RequiredAttribute(FindByXName(document, "ChangedFilesStatsPresenter"), "Grid.Column"));
         Assert.AreEqual("{x:Bind ViewModel.IsFileFilterApplied, Mode=OneWay}", RequiredAttribute(filter, "IsChecked"));
 
         XElement flyout = filter.Descendants().Single(element => element.Name.LocalName == "Flyout");

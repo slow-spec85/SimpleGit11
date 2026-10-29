@@ -28,6 +28,7 @@ public sealed class SettingsService : ISettingsService
             Language = LoadEnum(LanguageKey, AppLanguage.System),
             DefaultRemoteName = LoadString(nameof(AppSettings.DefaultRemoteName), "origin"),
             FetchOnRepositoryOpen = LoadBool(nameof(AppSettings.FetchOnRepositoryOpen), false),
+            RefreshOnWindowActivation = LoadBool(nameof(AppSettings.RefreshOnWindowActivation), false),
             RecentRepositoriesCount = LoadInt(nameof(AppSettings.RecentRepositoriesCount),
                 AppSettings.DefaultRecentRepositoriesCount, MinimumRecentRepositoriesCount, MaximumRecentRepositoriesCount),
             OpenLastRepositoryOnStartup = LoadBool(nameof(AppSettings.OpenLastRepositoryOnStartup), false),
@@ -80,6 +81,12 @@ public sealed class SettingsService : ISettingsService
     {
         Current.FetchOnRepositoryOpen = fetch;
         _localSettingsStore.SetString(nameof(AppSettings.FetchOnRepositoryOpen), fetch.ToString());
+    }
+
+    public void SetRefreshOnWindowActivation(bool enabled)
+    {
+        Current.RefreshOnWindowActivation = enabled;
+        _localSettingsStore.SetString(nameof(AppSettings.RefreshOnWindowActivation), enabled.ToString());
     }
 
     public void SetRecentRepositoriesCount(int count)

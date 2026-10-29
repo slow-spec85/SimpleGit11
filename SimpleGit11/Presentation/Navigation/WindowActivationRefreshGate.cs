@@ -24,7 +24,7 @@ public sealed class WindowActivationRefreshGate
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
-    public bool OnActivationChanged(bool isActive)
+    public bool OnActivationChanged(bool isActive, bool isRefreshEnabled = true)
     {
         if (!isActive)
         {
@@ -51,7 +51,8 @@ public sealed class WindowActivationRefreshGate
         long activatedTimestamp = _timeProvider.GetTimestamp();
         _deactivatedTimestamp = null;
 
-        if (_timeProvider.GetElapsedTime(deactivatedTimestamp, activatedTimestamp) < _minimumInactiveDuration)
+        if (!isRefreshEnabled
+            || _timeProvider.GetElapsedTime(deactivatedTimestamp, activatedTimestamp) < _minimumInactiveDuration)
         {
             return false;
         }

@@ -81,13 +81,13 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
         return !IsGitOperationRunning && !IsHistoryEditing;
     }
 
-    [RelayCommand(CanExecute = nameof(CanLoadMoreHistory), FlowExceptionsToTaskScheduler = true)]
-    private Task OnLoadMoreHistoryAsync()
+    [RelayCommand(CanExecute = nameof(CanLoadRemainingHistory), FlowExceptionsToTaskScheduler = true)]
+    private Task OnLoadRemainingHistoryAsync()
     {
-        return _asyncCommandExecutor.ExecuteAsync(LoadMoreHistoryAsync);
+        return _asyncCommandExecutor.ExecuteAsync(LoadRemainingHistoryAsync);
     }
 
-    private bool CanLoadMoreHistory()
+    private bool CanLoadRemainingHistory()
     {
         return HasMoreCommits && !IsGitOperationRunning && !IsHistoryEditing;
     }
@@ -169,11 +169,11 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
     public partial bool HasNoCommits { get; private set; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(LoadMoreHistoryCommand))]
-    [NotifyPropertyChangedFor(nameof(IsLoadMoreHistoryVisible))]
+    [NotifyCanExecuteChangedFor(nameof(LoadRemainingHistoryCommand))]
+    [NotifyPropertyChangedFor(nameof(IsLoadRemainingHistoryVisible))]
     public partial bool HasMoreCommits { get; private set; }
 
-    public bool IsLoadMoreHistoryVisible => HasMoreCommits && !IsHistoryEditing;
+    public bool IsLoadRemainingHistoryVisible => HasMoreCommits && !IsHistoryEditing;
 
     public Visibility HistoryVisible => AllCommits.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
@@ -202,7 +202,6 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
     {
         ClearError();
         HasNoCommits = false;
-        ClearCommitDetails();
 
         if (_mainWindowViewModel.CurrentRepository is null)
         {
@@ -218,10 +217,9 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
         {
             IsRefreshing = true;
             ProgressMessage = _localizationService.GetString("RefreshingHistoryProgress");
-            GitCommitPage page = await _gitService.GetHistoryPageAsync(
-                _mainWindowViewModel.CurrentRepository,
-                0,
-                CommitPageSize);
+            RepositoryInfo repository = _mainWindowViewModel.CurrentRepository;
+            GitCommitPage page = await LoadHistoryForRefreshAsync(repository);
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
             ReplaceHistory(page);
         }
         catch (FileNotFoundException)
@@ -244,7 +242,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
         }
     }
 
-    private async Task LoadMoreHistoryAsync()
+    private async Task LoadRemainingHistoryAsync()
     {
         if (_mainWindowViewModel.CurrentRepository is null || !HasMoreCommits)
         {
@@ -258,13 +256,11 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
             {
                 ClearError();
                 ProgressMessage = _localizationService.GetString("LoadingMoreHistoryProgress");
-                GitCommitPage page = await _gitService.GetHistoryPageAsync(
-                    repository,
-                    _nextHistoryOffset,
-                    CommitPageSize);
-                _nextHistoryOffset += page.Commits.Count;
-                AppendCommits(page.Commits);
-                HasMoreCommits = page.HasMore;
+                IReadOnlyList<GitCommit> commits = await _gitService.GetRemainingHistoryAsync(repository, _nextHistoryOffset);
+                if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
+                _nextHistoryOffset += commits.Count;
+                AppendCommits(commits);
+                HasMoreCommits = false;
             }
             catch (FileNotFoundException)
             {
@@ -292,6 +288,17 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
         HasMoreCommits = page.HasMore;
     }
 
+    private async Task<GitCommitPage> LoadHistoryForRefreshAsync(RepositoryInfo repository)
+    {
+        if (HasUnfilteredCommits && !HasMoreCommits)
+        {
+            IReadOnlyList<GitCommit> commits = await _gitService.GetRemainingHistoryAsync(repository, 0);
+            return new GitCommitPage(commits, false);
+        }
+
+        return await _gitService.GetHistoryPageAsync(repository, 0, CommitPageSize);
+    }
+
     private async Task RepairRepositoryCoreAsync()
     {
         if (_mainWindowViewModel.CurrentRepository is null)
@@ -315,10 +322,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
                     return;
                 }
 
-                GitCommitPage page = await _gitService.GetHistoryPageAsync(
-                    repository,
-                    0,
-                    CommitPageSize);
+                GitCommitPage page = await LoadHistoryForRefreshAsync(repository);
                 ReplaceHistory(page);
                 ShowSuccess(_localizationService.GetString("RepositoryRepairSucceeded"));
             }
@@ -596,7 +600,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
     private void UpdateCommandStates()
     {
         RefreshHistoryCommand.NotifyCanExecuteChanged();
-        LoadMoreHistoryCommand.NotifyCanExecuteChanged();
+        LoadRemainingHistoryCommand.NotifyCanExecuteChanged();
         CheckoutCommitCommand.NotifyCanExecuteChanged();
         RevertCommitCommand.NotifyCanExecuteChanged();
         ResetSoftCommand.NotifyCanExecuteChanged();

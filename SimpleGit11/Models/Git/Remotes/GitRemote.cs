@@ -16,4 +16,7 @@ public sealed class GitRemote
     public string PushUrl { get; }
 
     public string DisplayUrl => string.IsNullOrWhiteSpace(FetchUrl) ? PushUrl : FetchUrl;
+
+    public bool HasSameSnapshot(GitRemote other) =>
+        Name == other.Name && FetchUrl == other.FetchUrl && PushUrl == other.PushUrl;
 }

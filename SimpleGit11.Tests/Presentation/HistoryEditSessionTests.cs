@@ -78,6 +78,86 @@ public sealed class HistoryEditSessionTests
     }
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void CombiningAdjacentCommitsKeepsLaterContentAvailable(bool repeated)
+    {
+        HistoryEditSession draft = new([Commit("ddddddd", "D"), Commit("ccccccc", "C"), Commit("bbbbbbb", "B"), Commit("aaaaaaa", "A")]);
+        draft.Merge("bbbbbbb", "Combined");
+        if (repeated) { draft.Merge("ccccccc"); }
+
+        CommitBrowserRowViewItem later = draft.CreateRows(Strings).Single(row => row.Commit.Hash == "ddddddd");
+        Assert.IsFalse(later.HasEditIndicator);
+        Assert.AreEqual("", later.EditTooltip);
+        Assert.AreEqual("", later.EditGlyph);
+        Assert.IsFalse(later.IsDraftContentUnavailable);
+        Assert.IsTrue(draft.CreateRows(Strings).Where(row => row.Commit.Hash is "aaaaaaa" or "bbbbbbb")
+            .All(row => row.HasChangedIndicator && row.IsDraftContentUnavailable));
+    }
+
+    [TestMethod]
+    public void DeletingCombinedGroupAffectsLaterContentUntilRestoredOrUndone()
+    {
+        HistoryEditSession draft = Session();
+        draft.Merge("bbbbbbb");
+        draft.SetDeleted("aaaaaaa", true);
+        CommitBrowserRowViewItem later = draft.CreateRows(Strings).Single(row => row.Commit.Hash == "ccccccc");
+        Assert.AreEqual("HistoryEditAffected", later.EditIndicator);
+        Assert.IsTrue(later.IsDraftContentUnavailable);
+        draft.SetDeleted("aaaaaaa", false);
+        Assert.IsFalse(draft.CreateRows(Strings).Single(row => row.Commit.Hash == "ccccccc").IsDraftContentUnavailable);
+        draft.Undo();
+        Assert.AreEqual("HistoryEditAffected", draft.CreateRows(Strings).Single(row => row.Commit.Hash == "ccccccc").EditIndicator);
+        draft.Undo();
+        Assert.IsFalse(draft.CreateRows(Strings).Single(row => row.Commit.Hash == "ccccccc").HasEditIndicator);
+    }
+
+    [TestMethod]
+    public void CombiningReorderedCommitsStillAffectsLaterContent()
+    {
+        HistoryEditSession draft = new([Commit("ddddddd", "D"), Commit("ccccccc", "C"), Commit("bbbbbbb", "B"), Commit("aaaaaaa", "A")]);
+        draft.Move("bbbbbbb", -1);
+        draft.Merge("bbbbbbb");
+        CommitBrowserRowViewItem later = draft.CreateRows(Strings).Single(row => row.Commit.Hash == "ddddddd");
+        Assert.AreEqual("HistoryEditAffected", later.EditIndicator);
+        Assert.IsTrue(later.IsDraftContentUnavailable);
+        draft.Undo();
+        Assert.AreEqual("HistoryEditAffected", draft.CreateRows(Strings).Single(row => row.Commit.Hash == "ddddddd").EditIndicator);
+        draft.Undo();
+        Assert.IsFalse(draft.CreateRows(Strings).Single(row => row.Commit.Hash == "ddddddd").HasEditIndicator);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void CombiningInGraphKeepsDescendantContentAvailable(bool combineMerge)
+    {
+        static GitCommit Node(string hash, params string[] parents) => new(hash, hash, "", "", null, hash, hash, parentHashes: parents);
+        HistoryEditSession draft = new([Node("fffffff", "eeeeeee"), Node("eeeeeee", "ddddddd"),
+            Node("ddddddd", "bbbbbbb", "ccccccc"), Node("bbbbbbb", "aaaaaaa"), Node("ccccccc", "aaaaaaa")]);
+        draft.Merge(combineMerge ? "ddddddd" : "eeeeeee");
+        CommitBrowserRowViewItem later = draft.CreateRows(Strings).Single(row => row.Commit.Hash == "fffffff");
+        Assert.IsFalse(later.HasEditIndicator);
+        Assert.IsFalse(later.IsDraftContentUnavailable);
+        draft.Undo();
+        Assert.IsTrue(draft.CreateRows(Strings).All(row => !row.HasEditIndicator && !row.IsDraftContentUnavailable));
+    }
+
+    [TestMethod]
+    public void CombiningInGraphStillAffectsAnotherChildOfTarget()
+    {
+        static GitCommit Node(string hash, params string[] parents) => new(hash, hash, "", "", null, hash, hash, parentHashes: parents);
+        HistoryEditSession draft = new([Node("ggggggg", "eeeeeee", "fffffff"), Node("eeeeeee", "bbbbbbb"),
+            Node("fffffff", "aaaaaaa"), Node("bbbbbbb", "aaaaaaa"), Node("aaaaaaa", "zzzzzzz")]);
+        draft.Merge("bbbbbbb");
+        CommitBrowserRowViewItem sibling = draft.CreateRows(Strings).Single(row => row.Commit.Hash == "fffffff");
+        Assert.AreEqual("HistoryEditAffected", sibling.EditIndicator);
+        Assert.IsTrue(sibling.IsDraftContentUnavailable);
+        draft.Undo();
+        Assert.IsFalse(draft.CreateRows(Strings).Single(row => row.Commit.Hash == "fffffff").HasEditIndicator);
+    }
+
+    [TestMethod]
     public void DeleteKeepsRowAndRestoreAndUndoPreserveOriginalHistory()
     {
         HistoryEditSession draft = Session();
