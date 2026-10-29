@@ -530,12 +530,13 @@
                         <ListView
                             x:Name="HistoryChangedFilesListView"
                             ContextRequested="ChangedFiles_ContextRequested"
+                            ContextCanceled="ChangedFiles_ContextCanceled"
                             Visibility="{x:Bind ViewModel.FileTree.FlatListVisibility, Mode=OneWay}"
                             ItemsSource="{x:Bind ViewModel.ChangedFiles, Mode=OneWay}"
                             SelectedItem="{x:Bind ViewModel.SelectedChangedFile, Mode=TwoWay}"
                             SelectionMode="Single"
                             Padding="0,0,10,0">
-                            <ListView.ContextFlyout>
+                            <primitives:FlyoutBase.AttachedFlyout>
                                 <MenuFlyout x:Name="HistoryFileContextMenu">
                                     <MenuFlyoutItem
                                         x:Uid="FileFilterModeMenuFlyoutItem"
@@ -563,7 +564,7 @@
                                         Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                         Icon="Copy" />
                                 </MenuFlyout>
-                            </ListView.ContextFlyout>
+                            </primitives:FlyoutBase.AttachedFlyout>
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="models:GitChangedFile">
                                     <Grid

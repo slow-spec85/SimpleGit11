@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Xml.Linq;
+using Microsoft.UI.Xaml.Controls;
 using SimpleGit11.Controls;
 using SimpleGit11.Models;
 using SimpleGit11.ViewModels;
@@ -10,6 +11,87 @@ namespace SimpleGit11.Tests.Architecture;
 [TestClass]
 public sealed class ChangedFileStatsXamlTests
 {
+    [TestMethod]
+    [DataRow("Controls", "CommitBrowserView.xaml", "HistoryFileContextMenu")]
+    [DataRow("Pages", "ChangesPage.xaml", "ChangesFileContextMenu")]
+    public void FileMenus_UseManualOpeningSoContextRequestedCanSupplyCommandParameters(
+        string folder, string file, string menuName)
+    {
+        XDocument document = LoadApplicationXaml(folder, file);
+        XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+        XElement menu = document.Descendants().Single(element =>
+            (string?)element.Attribute(xaml + "Name") == menuName);
+        // ContextFlyout suppresses ContextRequested, leaving file-dependent commands disabled.
+        Assert.AreEqual("FlyoutBase.AttachedFlyout", menu.Parent!.Name.LocalName);
+        XElement list = menu.Ancestors().First(element => element.Name.LocalName == "ListView");
+        Assert.IsNull(list.Attribute("ContextFlyout"));
+        Assert.IsFalse(list.Elements().Any(element => element.Name.LocalName == "ListView.ContextFlyout"));
+        Assert.AreEqual("ChangedFiles_ContextRequested", RequiredAttribute(list, "ContextRequested"));
+        Assert.AreEqual("ChangedFiles_ContextCanceled", RequiredAttribute(list, "ContextCanceled"));
+    }
+
+    [TestMethod]
+    public void FileTree_SingleSelectionDoesNotModifyTheNativeSelectedItemsVector()
+    {
+        GitChangedFile staged = new("src/File.cs", "Modified", state: GitChangeState.Staged);
+        GitChangedFile unstaged = new("src/File.cs", "Modified", state: GitChangeState.Unstaged);
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([staged, unstaged]);
+        // Like WinUI in Single mode, this vector can be read but cannot be modified.
+        IList<object> nativeSelection = Array.AsReadOnly<object>([new object()]);
+        object? selectedItem = null;
+
+        RestoreSelection(nativeSelection, model.VisibleItems, [unstaged],
+            ListViewSelectionMode.Single, item => selectedItem = item);
+
+        Assert.AreSame(unstaged, ((ChangedFileTreeItemViewModel)selectedItem!).File);
+        Assert.HasCount(1, nativeSelection);
+
+        model.Roots.Single().IsExpanded = false;
+        RestoreSelection(nativeSelection, model.VisibleItems, [unstaged],
+            ListViewSelectionMode.Single, item => selectedItem = item);
+        Assert.IsNull(selectedItem);
+    }
+
+    [TestMethod]
+    public void FileTree_SingleSelectionCanBeClearedWithoutANativeSelectedItemsVector()
+    {
+        GitChangedFile file = new("File.cs", "Modified");
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([file]);
+        object? selectedItem = null;
+        RestoreSelection(null, model.VisibleItems, [file],
+            ListViewSelectionMode.Single, item => selectedItem = item);
+        Assert.AreSame(file, ((ChangedFileTreeItemViewModel)selectedItem!).File);
+        RestoreSelection(null, model.VisibleItems, [],
+            ListViewSelectionMode.Single, item => selectedItem = item);
+        Assert.IsNull(selectedItem);
+    }
+
+    [TestMethod]
+    public void FileTree_SelectionDisabledDoesNotWriteToEitherSelectionProperty()
+    {
+        GitChangedFile file = new("File.cs", "Modified");
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([file]);
+        IList<object> nativeSelection = Array.AsReadOnly<object>([new object()]);
+        RestoreSelection(nativeSelection, model.VisibleItems, [file], ListViewSelectionMode.None);
+        Assert.HasCount(1, nativeSelection);
+    }
+
+    private static void RestoreSelection(
+        IList<object>? selectedItems,
+        IEnumerable<ChangedFileTreeItemViewModel> visibleItems,
+        IReadOnlyCollection<GitChangedFile> selectedFiles,
+        ListViewSelectionMode selectionMode = ListViewSelectionMode.Extended,
+        Action<object?>? setSelectedItem = null)
+    {
+        MethodInfo restoreSelection = typeof(ChangedFilesTree).GetMethod(
+            "UpdateSelectedItems", BindingFlags.NonPublic | BindingFlags.Static)!;
+        restoreSelection.Invoke(null, [selectedItems, visibleItems, selectedFiles, selectionMode,
+            setSelectedItem ?? (Action<object?>)(_ => Assert.Fail("Only Single mode may set SelectedItem."))]);
+    }
+
     [TestMethod]
     [DataRow("Controls", "CommitBrowserView.xaml", "HistoryDiffStatColumnMetrics")]
     [DataRow("Pages", "ChangesPage.xaml", "ChangesDiffStatColumnMetrics")]
@@ -132,17 +214,15 @@ public sealed class ChangedFileStatsXamlTests
         ChangedFileTreeViewModel model = new();
         model.Refresh([selectedFile]);
         ChangedFileTreeItemViewModel leaf = model.Roots.Single().Children.Single().Children.Single();
-        MethodInfo restoreSelection = typeof(ChangedFilesTree).GetMethod(
-            "UpdateSelectedItems", BindingFlags.NonPublic | BindingFlags.Static)!;
 
         // Initialization must preserve the bound selection until the list is available.
-        restoreSelection.Invoke(null, [null, model.VisibleItems, new[] { selectedFile }]);
+        RestoreSelection(null, model.VisibleItems, new[] { selectedFile });
 
         List<object> nativeSelection = [new object()];
-        restoreSelection.Invoke(null, [nativeSelection, model.VisibleItems, new[] { selectedFile }]);
+        RestoreSelection(nativeSelection, model.VisibleItems, new[] { selectedFile });
         CollectionAssert.AreEqual(new object[] { leaf }, nativeSelection);
 
-        restoreSelection.Invoke(null, [nativeSelection, model.VisibleItems, Array.Empty<GitChangedFile>()]);
+        RestoreSelection(nativeSelection, model.VisibleItems, Array.Empty<GitChangedFile>());
         Assert.IsEmpty(nativeSelection);
     }
 
@@ -154,10 +234,8 @@ public sealed class ChangedFileStatsXamlTests
         ChangedFileTreeViewModel model = new();
         model.Refresh([staged, unstaged, new("other.txt", "Modified")]);
         List<object> nativeSelection = [];
-        MethodInfo restoreSelection = typeof(ChangedFilesTree).GetMethod(
-            "UpdateSelectedItems", BindingFlags.NonPublic | BindingFlags.Static)!;
 
-        restoreSelection.Invoke(null, [nativeSelection, model.VisibleItems, new[] { unstaged }]);
+        RestoreSelection(nativeSelection, model.VisibleItems, new[] { unstaged });
 
         Assert.HasCount(1, nativeSelection);
         ChangedFileTreeItemViewModel leaf = (ChangedFileTreeItemViewModel)nativeSelection.Single();
@@ -242,10 +320,8 @@ public sealed class ChangedFileStatsXamlTests
         System.Collections.ObjectModel.ObservableCollection<object> selected = [model.VisibleItems[1], model.VisibleItems[0]];
         int changes = 0;
         selected.CollectionChanged += (_, _) => changes++;
-        MethodInfo restoreSelection = typeof(ChangedFilesTree).GetMethod(
-            "UpdateSelectedItems", BindingFlags.NonPublic | BindingFlags.Static)!;
 
-        restoreSelection.Invoke(null, [selected, model.VisibleItems, new[] { first, last }]);
+        RestoreSelection(selected, model.VisibleItems, new[] { first, last });
 
         Assert.AreEqual(0, changes);
         Assert.AreSame(model.VisibleItems[1], selected[0]);
@@ -260,10 +336,8 @@ public sealed class ChangedFileStatsXamlTests
         model.Refresh([file]);
         model.Roots.Single().IsExpanded = false;
         List<object> selected = [new object()];
-        MethodInfo restoreSelection = typeof(ChangedFilesTree).GetMethod(
-            "UpdateSelectedItems", BindingFlags.NonPublic | BindingFlags.Static)!;
 
-        restoreSelection.Invoke(null, [selected, model.VisibleItems, new[] { file }]);
+        RestoreSelection(selected, model.VisibleItems, new[] { file });
 
         Assert.IsEmpty(selected);
     }

@@ -15,6 +15,18 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class HistoryEditingViewModelTests
 {
     [TestMethod]
+    public void FileContextCommands_RequireTheClickedFileInsteadOfRelyingOnSelection()
+    {
+        Fixture fixture = new();
+        GitChangedFile file = new("src/OtherFile.cs", "Modified");
+        Assert.IsNull(fixture.ViewModel.SelectedChangedFile);
+        Assert.IsFalse(fixture.ViewModel.FilterByChangedFileCommand.CanExecute(null));
+        Assert.IsFalse(fixture.ViewModel.ToggleChangeDisplayModeCommand.CanExecute(null));
+        Assert.IsTrue(fixture.ViewModel.FilterByChangedFileCommand.CanExecute(file));
+        Assert.IsTrue(fixture.ViewModel.ToggleChangeDisplayModeCommand.CanExecute(file));
+    }
+
+    [TestMethod]
     public async Task RefreshHistory_UnchangedSnapshotPreservesRowsFileAndDiffWithoutCollectionEvents()
     {
         Fixture fixture = new() { ChangedFiles = [new("first.txt", "Modified"), new("second.txt", "Modified")] };

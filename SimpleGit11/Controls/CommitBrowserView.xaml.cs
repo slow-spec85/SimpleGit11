@@ -74,7 +74,7 @@ public sealed partial class CommitBrowserView : UserControl
     public CommitBrowserView()
     {
         InitializeComponent();
-        HistoryChangedFilesTree.FileContextMenu = HistoryChangedFilesListView.ContextFlyout as MenuFlyout;
+        HistoryChangedFilesTree.FileContextMenu = HistoryFileContextMenu;
         Loaded += (_, _) =>
         {
             RestoreSelectionMode();
@@ -189,11 +189,21 @@ public sealed partial class CommitBrowserView : UserControl
 
     private void ChangedFiles_ContextRequested(UIElement sender, ContextRequestedEventArgs args)
     {
-        if (ChangedFilesTree.GetContextFile(args) is GitChangedFile file)
+        GitChangedFile? file = ChangedFilesTree.GetContextFile(args);
+        if (file is null && !args.TryGetPosition(HistoryChangedFilesListView, out _))
+        {
+            file = HistoryChangedFilesListView.SelectedItem as GitChangedFile;
+        }
+        if (file is not null)
         {
             ChangedFilesTree.ShowFileContextMenu(HistoryFileContextMenu, file, HistoryChangedFilesListView, args);
         }
         else { args.Handled = true; }
+    }
+
+    private void ChangedFiles_ContextCanceled(UIElement sender, RoutedEventArgs args)
+    {
+        HistoryFileContextMenu.Hide();
     }
 
     private void ChangedFilesTree_FileSelectionChanged(object? sender, EventArgs args)

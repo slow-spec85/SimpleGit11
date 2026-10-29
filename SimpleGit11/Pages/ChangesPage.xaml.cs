@@ -20,7 +20,7 @@ public sealed partial class ChangesPage : Page, IPageRefreshTarget
     {
         ViewModel = App.GetService<ChangesViewModel>();
         InitializeComponent();
-        ChangedFilesTree.FileContextMenu = ChangedFilesListView.ContextFlyout as MenuFlyout;
+        ChangedFilesTree.FileContextMenu = ChangesFileContextMenu;
         Loaded += (_, _) =>
         {
             ViewModel.FileTree.PropertyChanged += FileTree_PropertyChanged;
@@ -124,11 +124,21 @@ public sealed partial class ChangesPage : Page, IPageRefreshTarget
 
     private void ChangedFiles_ContextRequested(UIElement sender, ContextRequestedEventArgs args)
     {
-        if (Controls.ChangedFilesTree.GetContextFile(args) is GitChangedFile file)
+        GitChangedFile? file = Controls.ChangedFilesTree.GetContextFile(args);
+        if (file is null && !args.TryGetPosition(ChangedFilesListView, out _))
+        {
+            file = ChangedFilesListView.SelectedItem as GitChangedFile;
+        }
+        if (file is not null)
         {
             Controls.ChangedFilesTree.ShowFileContextMenu(ChangesFileContextMenu, file, ChangedFilesListView, args);
         }
         else { args.Handled = true; }
+    }
+
+    private void ChangedFiles_ContextCanceled(UIElement sender, RoutedEventArgs args)
+    {
+        ChangesFileContextMenu.Hide();
     }
 
     private void ChangedFilesTree_FileSelectionChanged(object? sender, EventArgs args)

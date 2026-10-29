@@ -193,7 +193,9 @@ public sealed partial class ChangedFilesTree : UserControl
         {
             GitChangedFile[] selected = (SelectionMode == ListViewSelectionMode.Extended ? SelectedFiles?.ToArray() : null)
                 ?? (SelectedFile is GitChangedFile file ? [file] : []);
-            UpdateSelectedItems(FileTree.SelectedItems, model.VisibleItems, selected);
+            UpdateSelectedItems(
+                FileTree.SelectedItems, model.VisibleItems, selected,
+                SelectionMode, item => FileTree.SelectedItem = item);
         }
         finally { _synchronizingSelection = false; }
     }
@@ -201,13 +203,22 @@ public sealed partial class ChangedFilesTree : UserControl
     private static void UpdateSelectedItems(
         IList<object>? selectedItems,
         IEnumerable<ChangedFileTreeItemViewModel> visibleItems,
-        IReadOnlyCollection<GitChangedFile> selectedFiles)
+        IReadOnlyCollection<GitChangedFile> selectedFiles,
+        ListViewSelectionMode selectionMode,
+        Action<object?> setSelectedItem)
     {
-        // Keep the bound selection intact while the list is being initialized.
-        if (selectedItems is null) { return; }
+        if (selectionMode == ListViewSelectionMode.None) { return; }
         HashSet<GitChangedFile> requested = selectedFiles.ToHashSet();
         ChangedFileTreeItemViewModel[] matches = visibleItems
             .Where(item => item.File is not null && requested.Contains(item.File)).ToArray();
+        // WinUI's SelectedItems vector cannot be modified in single-selection mode.
+        if (selectionMode == ListViewSelectionMode.Single)
+        {
+            setSelectedItem(matches.FirstOrDefault());
+            return;
+        }
+        // Keep the bound selection intact while the list is being initialized.
+        if (selectedItems is null) { return; }
         HashSet<ChangedFileTreeItemViewModel> remaining = matches.ToHashSet();
         // A binding echo must not clear ListView's native Ctrl/Shift selection anchor.
         for (int index = selectedItems.Count - 1; index >= 0; index--)

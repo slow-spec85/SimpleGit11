@@ -346,6 +346,7 @@
                 <ListView
                     x:Name="ChangedFilesListView"
                     ContextRequested="ChangedFiles_ContextRequested"
+                    ContextCanceled="ChangedFiles_ContextCanceled"
                     Visibility="{x:Bind ViewModel.FileTree.FlatListVisibility, Mode=OneWay}"
                     Grid.Row="1"
                     IsEnabled="{x:Bind ViewModel.IsDiffInteractionEnabled, Mode=OneWay}"
@@ -353,7 +354,7 @@
                     SelectionChanged="ChangedFilesListView_SelectionChanged"
                     SelectionMode="Extended"
                     Padding="0,0,10,0">
-                    <ListView.ContextFlyout>
+                    <primitives:FlyoutBase.AttachedFlyout>
                         <MenuFlyout x:Name="ChangesFileContextMenu">
                             <MenuFlyoutItem
                                 x:Uid="StageChangeMenuFlyoutItem"
@@ -395,7 +396,7 @@
                                 Command="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                                 Icon="Copy" />
                         </MenuFlyout>
-                    </ListView.ContextFlyout>
+                    </primitives:FlyoutBase.AttachedFlyout>
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="models:GitChangedFile">
                             <Grid
