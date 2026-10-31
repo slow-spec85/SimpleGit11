@@ -90,7 +90,11 @@ public sealed class CommitGraphVisibilityTests
                 Stub.Create<ILocalizationService>((method, args) => method == "GetString"
                     ? args![0]
                     : throw new NotSupportedException(method)),
-                null!, null!, null!, new StrongReferenceMessenger(), "none", "file", "repo")
+                null!, null!,
+                Stub.Create<ISettingsService>((method, _) => method == "get_Current"
+                    ? new AppSettings()
+                    : throw new NotSupportedException(method)),
+                new StrongReferenceMessenger(), "none", "file", "repo")
         {
             _showGraph = showGraph;
         }

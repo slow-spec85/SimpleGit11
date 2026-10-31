@@ -11,9 +11,12 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class CommitDetailsVisibilityTests
 {
     [TestMethod]
-    public void Toggle_DoesNotReplaceCommitRowsOrSelection()
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Toggle_DoesNotReplaceCommitRowsOrSelection(bool showFileFolders)
     {
-        Browser browser = new();
+        Browser browser = new(showFileFolders);
+        Assert.AreEqual(showFileFolders, browser.FileTree.ShowFolders);
         GitCommit commit = new("head", "head", "Author", "author@example.invalid", null, "Head", "Head");
         browser.Load([commit]);
 
@@ -30,7 +33,7 @@ public sealed class CommitDetailsVisibilityTests
 
     private sealed class Browser : CommitBrowserViewModelBase
     {
-        public Browser()
+        public Browser(bool showFileFolders)
             : base(
                 null!,
                 CommitGraphVisibilityTests.Stub.Create<IGitService>((method, _) => method == "ExecuteAsync"
@@ -39,7 +42,11 @@ public sealed class CommitDetailsVisibilityTests
                 CommitGraphVisibilityTests.Stub.Create<ILocalizationService>((method, args) => method == "GetString"
                     ? args![0]
                     : throw new NotSupportedException(method)),
-                null!, null!, null!, new StrongReferenceMessenger(), "none", "file", "repo")
+                null!, null!,
+                CommitGraphVisibilityTests.Stub.Create<ISettingsService>((method, _) => method == "get_Current"
+                    ? new AppSettings { ShowFileFolders = showFileFolders }
+                    : throw new NotSupportedException(method)),
+                new StrongReferenceMessenger(), "none", "file", "repo")
         {
         }
 

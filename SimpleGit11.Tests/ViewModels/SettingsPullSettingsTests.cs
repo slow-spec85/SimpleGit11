@@ -15,6 +15,41 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class SettingsPullSettingsTests
 {
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void ShowFileFolders_LoadsSavesAndUpdatesAllExistingTrees(bool initialValue)
+    {
+        AppSettings settings = new() { ShowFileFolders = initialValue };
+        StrongReferenceMessenger messenger = new();
+        List<bool> writes = [];
+        ISettingsService service = ServiceStub.Create<ISettingsService>((method, args) =>
+        {
+            if (method == "get_Current") { return settings; }
+            if (method == "SetShowFileFolders")
+            {
+                settings.ShowFileFolders = (bool)args![0]!;
+                writes.Add(settings.ShowFileFolders);
+                return null;
+            }
+            throw new NotSupportedException(method);
+        });
+        Fixture fixture = new(service, messenger);
+        ChangedFileTreeViewModel history = new(settings.ShowFileFolders, messenger);
+        ChangedFileTreeViewModel changes = new(settings.ShowFileFolders, messenger);
+        Assert.AreEqual(initialValue, fixture.ViewModel.ShowFileFolders);
+        Assert.AreEqual(initialValue, history.ShowFolders);
+        Assert.IsEmpty(writes);
+        fixture.ViewModel.ShowFileFolders = !initialValue;
+        Assert.AreEqual(!initialValue, history.ShowFolders);
+        Assert.AreEqual(!initialValue, changes.ShowFolders);
+        Assert.AreEqual(!initialValue, new ChangedFileTreeViewModel(settings.ShowFileFolders, messenger).ShowFolders);
+        fixture.ViewModel.ShowFileFolders = initialValue;
+        Assert.AreEqual(initialValue, history.ShowFolders);
+        Assert.AreEqual(initialValue, changes.ShowFolders);
+        CollectionAssert.AreEqual(new[] { !initialValue, initialValue }, writes);
+    }
+
+    [TestMethod]
     public async Task Refresh_PreservesUnsavedTextAndPullOptionsButLoadsExternalChangesIntoUneditedFields()
     {
         Fixture fixture = new();
@@ -263,13 +298,13 @@ public sealed class SettingsPullSettingsTests
         public MainWindowViewModel MainWindow { get; }
         public SettingsViewModel ViewModel { get; }
 
-        public Fixture(ISettingsService? settingsService = null)
+        public Fixture(ISettingsService? settingsService = null, IMessenger? messenger = null)
         {
             ILocalizationService localization = new TestLocalization();
             GitConfigService configuration = new(Runner);
             IGitService git = ServiceStub.Create<IGitService>((method, _) => method == "get_Configuration"
                 ? configuration : throw new NotSupportedException(method));
-            StrongReferenceMessenger messenger = new();
+            messenger ??= new StrongReferenceMessenger();
             MainWindow = new MainWindowViewModel(
                 ServiceStub.Create<IRecentRepositoriesService>((method, _) => method == "Load"
                     ? Array.Empty<RepositoryInfo>() : throw new NotSupportedException(method)),

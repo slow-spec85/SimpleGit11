@@ -220,6 +220,22 @@
 
                     <controls:SettingsCard>
                         <controls:SettingsCard.HeaderIcon>
+                            <SymbolIcon Symbol="Folder" />
+                        </controls:SettingsCard.HeaderIcon>
+                        <controls:SettingsCard.Header>
+                            <TextBlock x:Uid="ShowFileFoldersHeaderTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Header>
+                        <controls:SettingsCard.Description>
+                            <TextBlock x:Uid="ShowFileFoldersDescriptionTextBlock" TextWrapping="WrapWholeWords" />
+                        </controls:SettingsCard.Description>
+                        <ToggleSwitch
+                            x:Uid="ToggleSwitch"
+                            AutomationProperties.AutomationId="ShowFileFoldersToggle"
+                            IsOn="{x:Bind ViewModel.ShowFileFolders, Mode=TwoWay}" />
+                    </controls:SettingsCard>
+
+                    <controls:SettingsCard>
+                        <controls:SettingsCard.HeaderIcon>
                             <FontIcon Glyph="&#xE8A7;" />
                         </controls:SettingsCard.HeaderIcon>
                         <controls:SettingsCard.Header>

@@ -46,6 +46,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
         _clipboardService = clipboardService;
         _asyncCommandExecutor = asyncCommandExecutor;
         _settingsService = settingsService;
+        FileTree = new ChangedFileTreeViewModel(settingsService.Current.ShowFileFolders, messenger);
         _noCommitSelectedMessageKey = noCommitSelectedMessageKey;
         _selectCommitFileMessageKey = selectCommitFileMessageKey;
         _openRepositoryMessageKey = openRepositoryMessageKey;
@@ -57,7 +58,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
         InitializeSyntaxHighlightingOptions();
     }
 
-    public ChangedFileTreeViewModel FileTree { get; } = new();
+    public ChangedFileTreeViewModel FileTree { get; }
 
     public ObservableCollection<GitChangedFile> ChangedFiles { get; } = [];
     public ObservableCollection<DiffLine> DiffLines { get; } = [];

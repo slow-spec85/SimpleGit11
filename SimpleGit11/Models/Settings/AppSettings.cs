@@ -17,6 +17,8 @@ public sealed class AppSettings
 
     public bool RefreshOnWindowActivation { get; set; }
 
+    public bool ShowFileFolders { get; set; }
+
     public int RecentRepositoriesCount { get; set; } = DefaultRecentRepositoriesCount;
 
     public bool OpenLastRepositoryOnStartup { get; set; }

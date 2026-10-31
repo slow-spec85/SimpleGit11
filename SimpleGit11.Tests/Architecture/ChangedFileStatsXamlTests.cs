@@ -162,7 +162,7 @@ public sealed class ChangedFileStatsXamlTests
     [TestMethod]
     [DataRow("Controls", "CommitBrowserView.xaml", "HistoryFileContextMenu")]
     [DataRow("Pages", "ChangesPage.xaml", "ChangesFileContextMenu")]
-    public void FileMenus_KeepViewModesTogetherBeforeCopy(string folder, string file, string menuName)
+    public void FileMenus_KeepFullFileModeAndCopyWithoutListPreferences(string folder, string file, string menuName)
     {
         XDocument document = LoadApplicationXaml(folder, file);
         XElement menu = document.Descendants().Single(element =>
@@ -172,14 +172,10 @@ public sealed class ChangedFileStatsXamlTests
         int fullFileIndex = Array.FindIndex(items, item => (string?)item.Attribute("Tag") == "FileContent");
         Assert.IsTrue(fullFileIndex > 0);
         Assert.AreEqual("MenuFlyoutSeparator", items[fullFileIndex - 1].Name.LocalName);
-        Assert.AreEqual("MenuFlyoutItem", items[fullFileIndex + 1].Name.LocalName);
-        Assert.AreEqual("ShowFoldersMenuFlyoutItem", RequiredXamlAttribute(items[fullFileIndex + 1], "Uid"));
-        StringAssert.Contains(RequiredAttribute(items[fullFileIndex + 1], "Command"), "ToggleFoldersCommand");
-        Assert.AreEqual("MenuFlyoutSeparator", items[fullFileIndex + 2].Name.LocalName);
-        Assert.AreEqual("CopyName", RequiredAttribute(items[fullFileIndex + 3], "Tag"));
+        Assert.AreEqual("MenuFlyoutSeparator", items[fullFileIndex + 1].Name.LocalName);
+        Assert.AreEqual("CopyName", RequiredAttribute(items[fullFileIndex + 2], "Tag"));
+        Assert.IsFalse(menu.Descendants().Attributes("Command").Any(attribute => attribute.Value.Contains("ToggleFolders", StringComparison.Ordinal)));
         Assert.IsFalse(menu.Descendants().Any(element => element.Name.LocalName == "ToggleMenuFlyoutItem"));
-        XElement icon = items[fullFileIndex + 1].Descendants().Single(element => element.Name.LocalName == "SymbolIcon");
-        StringAssert.Contains(RequiredAttribute(icon, "Symbol"), "FolderViewSymbol");
         StringAssert.Contains(RequiredAttribute(items[fullFileIndex], "Text"), "{x:Bind ViewModel.ContextMenuDisplayModeText");
         Assert.IsTrue(menu.Descendants().Attributes("Command").All(attribute => attribute.Value.StartsWith("{x:Bind", StringComparison.Ordinal)));
         if (menuName == "HistoryFileContextMenu")
@@ -189,12 +185,17 @@ public sealed class ChangedFileStatsXamlTests
     }
 
     [TestMethod]
-    public void FileTree_UsesCompactSingleLineRowsAndKeepsFolderMenuAvailable()
+    public void FileTree_UsesCompactSingleLineRowsWithFolderCommands()
     {
         XDocument document = LoadApplicationXaml("Controls", "ChangedFilesTree.xaml");
         XElement row = document.Descendants().Single(element => element.Name.LocalName == "Grid");
         Assert.AreEqual("24", RequiredAttribute(row, "Height"));
-        Assert.IsFalse(document.Descendants().Any(element => element.Name.LocalName == "StackPanel"));
+        XElement metadata = document.Descendants().Single(element => element.Name.LocalName == "StackPanel");
+        Assert.AreEqual("Horizontal", RequiredAttribute(metadata, "Orientation"));
+        Assert.AreEqual("4", RequiredAttribute(metadata, "Spacing"));
+        Assert.AreEqual("3", RequiredAttribute(metadata, "Grid.Column"));
+        Assert.AreEqual(4, row.Elements().Single(element => element.Name.LocalName == "Grid.ColumnDefinitions").Elements().Count());
+        Assert.IsTrue(metadata.Elements().Any(element => element.Name.LocalName == "DiffStatPresenter"));
         XElement name = document.Descendants().Single(element =>
             element.Name.LocalName == "TextBlock" && (string?)element.Attribute("Text") == "{x:Bind Name}");
         Assert.AreEqual("1", RequiredAttribute(name, "MaxLines"));
@@ -202,9 +203,15 @@ public sealed class ChangedFileStatsXamlTests
         Assert.IsTrue(document.Descendants().Where(element => element.Name.LocalName == "Border" && element.Attribute("Width") is not null)
             .All(element => RequiredAttribute(element, "Width") == "18"
                 && RequiredAttribute(element, "Height") == "18"));
-        XElement folderToggle = document.Descendants().Single(element =>
-            element.Name.LocalName == "MenuFlyoutItem");
-        Assert.AreEqual("ShowFoldersMenuFlyoutItem", RequiredXamlAttribute(folderToggle, "Uid"));
+        XElement[] commands = document.Descendants().Where(element => element.Name.LocalName == "MenuFlyoutItem").ToArray();
+        CollectionAssert.AreEqual(new[] { "ExpandAllFoldersMenuFlyoutItem", "CollapseAllFoldersMenuFlyoutItem", "CopyNameMenuFlyoutItem" },
+            commands.Select(element => RequiredXamlAttribute(element, "Uid")).ToArray());
+        StringAssert.Contains(RequiredAttribute(commands[0], "Command"), "Model.ExpandAllFoldersCommand");
+        StringAssert.Contains(RequiredAttribute(commands[1], "Command"), "Model.CollapseAllFoldersCommand");
+        Assert.AreEqual("\uE70D", RequiredAttribute(commands[0].Descendants().Single(element => element.Name.LocalName == "FontIcon"), "Glyph"));
+        Assert.AreEqual("\uE76C", RequiredAttribute(commands[1].Descendants().Single(element => element.Name.LocalName == "FontIcon"), "Glyph"));
+        StringAssert.Contains(RequiredAttribute(commands[2], "Command"), "CopyTextCommand");
+        Assert.AreEqual("FlyoutBase.AttachedFlyout", commands[0].Parent!.Parent!.Name.LocalName);
     }
 
     [TestMethod]
@@ -300,7 +307,8 @@ public sealed class ChangedFileStatsXamlTests
         XElement flatText = flat.Descendants().Single(element => element.Name.LocalName == "TextBlock"
             && ((string?)element.Attribute("Text"))?.Contains("StateLabel", StringComparison.Ordinal) == true);
         Assert.AreEqual("Border", treeText.Parent!.Name.LocalName);
-        foreach (string attribute in new[] { "Padding", "Margin", "Background", "CornerRadius" })
+        Assert.IsNull(treeText.Parent.Attribute("Margin"));
+        foreach (string attribute in new[] { "Padding", "Background", "CornerRadius" })
         {
             Assert.AreEqual(RequiredAttribute(flatText.Parent!, attribute), RequiredAttribute(treeText.Parent, attribute));
         }

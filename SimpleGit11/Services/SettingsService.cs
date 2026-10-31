@@ -29,6 +29,7 @@ public sealed class SettingsService : ISettingsService
             DefaultRemoteName = LoadString(nameof(AppSettings.DefaultRemoteName), "origin"),
             FetchOnRepositoryOpen = LoadBool(nameof(AppSettings.FetchOnRepositoryOpen), false),
             RefreshOnWindowActivation = LoadBool(nameof(AppSettings.RefreshOnWindowActivation), false),
+            ShowFileFolders = LoadBool(nameof(AppSettings.ShowFileFolders), false),
             RecentRepositoriesCount = LoadInt(nameof(AppSettings.RecentRepositoriesCount),
                 AppSettings.DefaultRecentRepositoriesCount, MinimumRecentRepositoriesCount, MaximumRecentRepositoriesCount),
             OpenLastRepositoryOnStartup = LoadBool(nameof(AppSettings.OpenLastRepositoryOnStartup), false),
@@ -93,6 +94,12 @@ public sealed class SettingsService : ISettingsService
     {
         Current.RecentRepositoriesCount = Math.Clamp(count, MinimumRecentRepositoriesCount, MaximumRecentRepositoriesCount);
         _localSettingsStore.SetString(nameof(AppSettings.RecentRepositoriesCount), Current.RecentRepositoriesCount.ToString());
+    }
+
+    public void SetShowFileFolders(bool enabled)
+    {
+        Current.ShowFileFolders = enabled;
+        _localSettingsStore.SetString(nameof(AppSettings.ShowFileFolders), enabled.ToString());
     }
 
     public void SetOpenLastRepositoryOnStartup(bool open)

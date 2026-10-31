@@ -12,6 +12,61 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitChangeServicesIntegrationTests
 {
     [TestMethod]
+    [DataRow(false, false)]
+    [DataRow(false, true)]
+    [DataRow(true, false)]
+    [DataRow(true, true)]
+    public async Task DiscardFileAsync_UnstagedEntryPreservesStagedContent(bool newlyAdded, bool deleted)
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile("keep.txt", "original keep");
+        if (!newlyAdded) { repository.WriteFile("selected.txt", "committed content"); }
+        await repository.CommitAllAsync();
+        string selectedPath = repository.WriteFile("selected.txt", "staged content");
+        await repository.RunGitAsync("add", "--", "selected.txt");
+        string indexBefore = await repository.RunGitAsync("write-tree");
+        if (deleted) { System.IO.File.Delete(selectedPath); }
+        else { repository.WriteFile("selected.txt", "unstaged content"); }
+        repository.WriteFile("keep.txt", "unrelated edits");
+        GitStatusService statusService = new();
+        GitStatusSnapshot before = await statusService.GetStatusAsync(repository.Repository);
+        Assert.IsTrue(before.StagedChanges.Any(file => file.Path == "selected.txt"));
+        GitChangedFile selected = before.UnstagedChanges.Single(file => file.Path == "selected.txt");
+
+        await new GitChangeRecoveryService().DiscardFileAsync(repository.Repository, selected);
+
+        Assert.AreEqual("staged content", repository.ReadFile("selected.txt"));
+        Assert.AreEqual(indexBefore, await repository.RunGitAsync("write-tree"));
+        Assert.AreEqual("unrelated edits", repository.ReadFile("keep.txt"));
+        GitStatusSnapshot after = await statusService.GetStatusAsync(repository.Repository);
+        Assert.IsTrue(after.StagedChanges.Any(file => file.Path == "selected.txt"));
+        Assert.IsFalse(after.UnstagedChanges.Any(file => file.Path == "selected.txt"));
+    }
+
+    [TestMethod]
+    public async Task DiscardFilesAsync_UnstagedSelectionPreservesTheEntireIndex()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile("first.txt", "original first");
+        repository.WriteFile("second.txt", "original second");
+        await repository.CommitAllAsync();
+        repository.WriteFile("first.txt", "staged first");
+        repository.WriteFile("second.txt", "staged second");
+        await repository.RunGitAsync("add", "--all");
+        string indexBefore = await repository.RunGitAsync("write-tree");
+        repository.WriteFile("first.txt", "unstaged first");
+        repository.WriteFile("second.txt", "unstaged second");
+        GitStatusSnapshot status = await new GitStatusService().GetStatusAsync(repository.Repository);
+
+        await new GitChangeRecoveryService().DiscardFilesAsync(repository.Repository, status.UnstagedChanges);
+
+        Assert.AreEqual(indexBefore, await repository.RunGitAsync("write-tree"));
+        Assert.AreEqual("staged first", repository.ReadFile("first.txt"));
+        Assert.AreEqual("staged second", repository.ReadFile("second.txt"));
+        Assert.IsEmpty((await new GitStatusService().GetStatusAsync(repository.Repository)).UnstagedChanges);
+    }
+
+    [TestMethod]
     public async Task AddAsync_MissingGitIgnore_CreatesFileWithRootedRule()
     {
         await using TemporaryGitRepository repository =

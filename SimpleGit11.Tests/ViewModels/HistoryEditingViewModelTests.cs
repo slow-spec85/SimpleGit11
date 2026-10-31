@@ -15,6 +15,55 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class HistoryEditingViewModelTests
 {
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task NavigateToParent_ReplacesMultipleSelectionEvenWhenParentIsAlreadyFocused(bool parentFocused)
+    {
+        Fixture fixture = new();
+        await fixture.ViewModel.RefreshHistoryAsync();
+        GitCommit child = fixture.Commits[0];
+        GitCommit parent = fixture.Commits[1];
+        fixture.ViewModel.SelectedCommit = child;
+        CommitParentViewItem target = fixture.ViewModel.ParentCommits.Single();
+        if (parentFocused) { fixture.ViewModel.SelectedCommit = parent; }
+        fixture.ViewModel.SetSelectedCommits([child, parent]);
+        GitCommit[]? restoredSelection = null;
+        fixture.ViewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(fixture.ViewModel.SelectedCommitRow))
+            {
+                restoredSelection = fixture.ViewModel.SelectedCommits.ToArray();
+            }
+        };
+
+        fixture.ViewModel.NavigateToParentCommitCommand.Execute(target);
+
+        Assert.AreSame(parent, fixture.ViewModel.SelectedCommit);
+        Assert.AreSame(parent, fixture.ViewModel.SelectedCommitRow!.Commit);
+        Assert.AreSame(parent, fixture.ViewModel.SelectedCommits.Single());
+        Assert.IsNotNull(restoredSelection);
+        CollectionAssert.AreEqual(new[] { parent }, restoredSelection);
+    }
+
+    [TestMethod]
+    public async Task NavigateToParent_ClearsFiltersAndSelectsOnlyPreviouslyHiddenParent()
+    {
+        Fixture fixture = new();
+        await fixture.ViewModel.RefreshHistoryAsync();
+        fixture.ViewModel.SelectedCommit = fixture.Commits[0];
+        CommitParentViewItem target = fixture.ViewModel.ParentCommits.Single();
+        fixture.ViewModel.SearchText = fixture.Commits[0].Title;
+        fixture.ViewModel.SetSelectedCommits([fixture.Commits[0]]);
+        Assert.HasCount(1, fixture.ViewModel.Commits);
+
+        fixture.ViewModel.NavigateToParentCommitCommand.Execute(target);
+
+        Assert.IsFalse(fixture.ViewModel.IsCommitFilterApplied);
+        Assert.AreSame(fixture.Commits[1], fixture.ViewModel.SelectedCommits.Single());
+        Assert.AreSame(fixture.Commits[1], fixture.ViewModel.SelectedCommit);
+    }
+
+    [TestMethod]
     public void FileContextCommands_RequireTheClickedFileInsteadOfRelyingOnSelection()
     {
         Fixture fixture = new();

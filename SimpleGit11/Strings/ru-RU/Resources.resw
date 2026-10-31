@@ -4692,7 +4692,16 @@ only — только fast-forward; «Не задано» — наследова
   <data name="HistoryEditInvalidMove" xml:space="preserve">
     <value>Это перемещение создаёт циклические связи между коммитами. Выберите другого родителя или измените порядок действий.</value>
   </data>
-  <data name="ShowFoldersMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Показать папки</value>
+  <data name="ShowFileFoldersHeaderTextBlock.Text" xml:space="preserve">
+    <value>Показывать файлы по папкам</value>
+  </data>
+  <data name="ShowFileFoldersDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Использовать дерево папок в истории и списке изменений.</value>
+  </data>
+  <data name="ExpandAllFoldersMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Развернуть все</value>
+  </data>
+  <data name="CollapseAllFoldersMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Свернуть все</value>
   </data>
 </root>

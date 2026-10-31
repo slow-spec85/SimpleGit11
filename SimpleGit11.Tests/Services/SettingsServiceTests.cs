@@ -8,6 +8,20 @@ namespace SimpleGit11.Tests.Services;
 public sealed class SettingsServiceTests
 {
     [TestMethod]
+    public void ShowFileFolders_DefaultsToFlatAndSurvivesReload()
+    {
+        MemoryLocalSettingsStore store = new();
+        SettingsService service = CreateService(store);
+        Assert.IsFalse(service.Current.ShowFileFolders);
+        service.SetShowFileFolders(true);
+        Assert.IsTrue(CreateService(store).Current.ShowFileFolders);
+        service.SetShowFileFolders(false);
+        Assert.IsFalse(CreateService(store).Current.ShowFileFolders);
+        store.SetString(nameof(AppSettings.ShowFileFolders), "invalid");
+        Assert.IsFalse(CreateService(store).Current.ShowFileFolders);
+    }
+
+    [TestMethod]
     [DataRow(null, false)]
     [DataRow("invalid", false)]
     [DataRow("True", true)]

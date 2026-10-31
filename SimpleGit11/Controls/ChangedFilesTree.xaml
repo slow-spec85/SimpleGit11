@@ -22,6 +22,7 @@
         ItemClick="FileTree_ItemClick"
         KeyDown="FileTree_KeyDown"
         ContextRequested="FileTree_ContextRequested"
+        ContextCanceled="FileTree_ContextCanceled"
         CanDragItems="False"
         CanReorderItems="False"
         AllowDrop="False">
@@ -35,13 +36,17 @@
         </ListView.ItemContainerStyle>
         <primitives:FlyoutBase.AttachedFlyout>
             <MenuFlyout x:Name="FolderContextMenu">
-                <MenuFlyoutItem
-                    x:Uid="ShowFoldersMenuFlyoutItem"
-                    Command="{x:Bind Model.ToggleFoldersCommand, Mode=OneWay}">
-                    <MenuFlyoutItem.Icon>
-                        <SymbolIcon Symbol="{x:Bind Model.FolderViewSymbol, Mode=OneWay}" />
-                    </MenuFlyoutItem.Icon>
+                <MenuFlyoutItem x:Name="ExpandAllFoldersMenuItem" x:Uid="ExpandAllFoldersMenuFlyoutItem"
+                    Command="{x:Bind Model.ExpandAllFoldersCommand, Mode=OneWay}">
+                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE70D;" /></MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
+                <MenuFlyoutItem x:Name="CollapseAllFoldersMenuItem" x:Uid="CollapseAllFoldersMenuFlyoutItem"
+                    Command="{x:Bind Model.CollapseAllFoldersCommand, Mode=OneWay}">
+                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE76C;" /></MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem x:Name="CopyFolderNameMenuItem" x:Uid="CopyNameMenuFlyoutItem"
+                    Command="{x:Bind CopyTextCommand, Mode=OneWay}" Icon="Copy" />
             </MenuFlyout>
         </primitives:FlyoutBase.AttachedFlyout>
         <ListView.ItemTemplate>
@@ -59,8 +64,6 @@
                         <ColumnDefinition Width="20" />
                         <ColumnDefinition Width="18" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Button
@@ -118,36 +121,34 @@
                         TextWrapping="NoWrap"
                         TextTrimming="CharacterEllipsis"
                         VerticalAlignment="Center" />
-                    <Border
-                        Grid.Column="3"
-                        Padding="4,1"
-                        Margin="0,0,6,0"
-                        Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
-                        CornerRadius="3"
-                        VerticalAlignment="Center"
-                        Visibility="{x:Bind IsStaged, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <TextBlock
-                            Text="{x:Bind StateLabel}"
-                            FontSize="10"
-                            Style="{ThemeResource CaptionTextBlockStyle}"
-                            Foreground="{ThemeResource SuccessfulOperationColor}"
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Border
+                            Padding="4,1"
+                            Background="{ThemeResource MetadataIndicatorBackgroundBrush}"
+                            CornerRadius="3"
                             VerticalAlignment="Center"
-                            HorizontalAlignment="Center" />
-                    </Border>
-                    <TextBlock
-                        Grid.Column="4"
-                        x:Uid="SubmoduleChangeBadgeTextBlock"
-                        FontSize="10"
-                        VerticalAlignment="Center"
-                        Visibility="{x:Bind IsSubmodule, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                    <controls:DiffStatPresenter
-                        Grid.Column="5"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        AddedText="{x:Bind Stat.AddedText}"
-                        RemovedText="{x:Bind Stat.RemovedText}"
-                        Visibility="{x:Bind IsFile, Converter={StaticResource BooleanToVisibilityConverter}}"
-                        Loaded="StatPresenter_Loaded" />
+                            Visibility="{x:Bind IsStaged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock
+                                Text="{x:Bind StateLabel}"
+                                FontSize="10"
+                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                Foreground="{ThemeResource SuccessfulOperationColor}"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center" />
+                        </Border>
+                        <TextBlock
+                            x:Uid="SubmoduleChangeBadgeTextBlock"
+                            FontSize="10"
+                            VerticalAlignment="Center"
+                            Visibility="{x:Bind IsSubmodule, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        <controls:DiffStatPresenter
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            AddedText="{x:Bind Stat.AddedText, Mode=OneWay}"
+                            RemovedText="{x:Bind Stat.RemovedText, Mode=OneWay}"
+                            Visibility="{x:Bind IsStatVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                            Loaded="StatPresenter_Loaded" />
+                    </StackPanel>
                 </Grid>
             </DataTemplate>
         </ListView.ItemTemplate>

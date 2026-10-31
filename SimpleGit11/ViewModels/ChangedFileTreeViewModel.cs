@@ -6,8 +6,9 @@ using System.ComponentModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using CommunityToolkit.Mvvm.Messaging.Messages;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using SimpleGit11.Models;
 
 namespace SimpleGit11.ViewModels;
@@ -15,10 +16,46 @@ namespace SimpleGit11.ViewModels;
 // Shared hierarchy and view mode for the history and working tree file lists.
 public sealed partial class ChangedFileTreeViewModel : ObservableObject
 {
+    private bool _updatingExpansion;
+
+    [RelayCommand(CanExecute = nameof(CanExpandAllFolders))]
+    private void OnExpandAllFolders(ChangedFileTreeItemViewModel? folder) => SetFolderExpansion(folder, true);
+
+    [RelayCommand(CanExecute = nameof(CanCollapseAllFolders))]
+    private void OnCollapseAllFolders(ChangedFileTreeItemViewModel? folder) => SetFolderExpansion(folder, false);
+
+    private bool CanExpandAllFolders(ChangedFileTreeItemViewModel? folder) => folder is { IsFolder: true, IsExpanded: false };
+    private bool CanCollapseAllFolders(ChangedFileTreeItemViewModel? folder) => folder is { IsFolder: true, IsExpanded: true };
+
+    private void SetFolderExpansion(ChangedFileTreeItemViewModel? folder, bool expanded)
+    {
+        if (folder?.IsFolder != true) { return; }
+        _updatingExpansion = true;
+        try
+        {
+            foreach (ChangedFileTreeItemViewModel item in EnumerateFolders([folder])) { item.IsExpanded = expanded; }
+        }
+        finally
+        {
+            _updatingExpansion = false;
+            RefreshVisibleItems();
+            ExpandAllFoldersCommand.NotifyCanExecuteChanged();
+            CollapseAllFoldersCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    public ChangedFileTreeViewModel(bool showFolders = false, IMessenger? messenger = null)
+    {
+        ShowFolders = showFolders;
+        messenger?.Register<ChangedFileTreeViewModel, PropertyChangedMessage<bool>>(this, static (recipient, message) =>
+        {
+            if (message.PropertyName == nameof(AppSettings.ShowFileFolders)) { recipient.ShowFolders = message.NewValue; }
+        });
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FlatListVisibility))]
     [NotifyPropertyChangedFor(nameof(TreeVisibility))]
-    [NotifyPropertyChangedFor(nameof(FolderViewSymbol))]
     public partial bool ShowFolders { get; set; }
 
     [ObservableProperty]
@@ -55,7 +92,12 @@ public sealed partial class ChangedFileTreeViewModel : ObservableObject
 
     private void Folder_PropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName == nameof(ChangedFileTreeItemViewModel.IsExpanded)) { RefreshVisibleItems(); }
+        if (!_updatingExpansion && args.PropertyName == nameof(ChangedFileTreeItemViewModel.IsExpanded))
+        {
+            RefreshVisibleItems();
+            ExpandAllFoldersCommand.NotifyCanExecuteChanged();
+            CollapseAllFoldersCommand.NotifyCanExecuteChanged();
+        }
     }
 
     private void RefreshVisibleItems()
@@ -86,13 +128,8 @@ public sealed partial class ChangedFileTreeViewModel : ObservableObject
         }
     }
 
-    public Symbol FolderViewSymbol => ShowFolders ? Symbol.Accept : Symbol.Folder;
-
     public Visibility FlatListVisibility => ShowFolders ? Visibility.Collapsed : Visibility.Visible;
     public Visibility TreeVisibility => ShowFolders ? Visibility.Visible : Visibility.Collapsed;
-
-    [RelayCommand]
-    private void OnToggleFolders() => ShowFolders = !ShowFolders;
 
     private GitChangedFile[] _files = [];
 
@@ -156,6 +193,7 @@ public sealed partial class ChangedFileTreeViewModel : ObservableObject
                     node.Children.Clear();
                     node.Children.AddRange(children);
                 }
+                node.UpdateFolderStat();
                 result.Add(node);
             }
             return CollectionSynchronization.ReuseItems(existing, result, item => (item.Path, item.IsFolder, item.File?.State));

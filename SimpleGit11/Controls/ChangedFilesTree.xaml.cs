@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -91,6 +92,15 @@ public sealed partial class ChangedFilesTree : UserControl
     }
 
     public MenuFlyout? FileContextMenu { get; set; }
+
+    public static readonly DependencyProperty CopyTextCommandProperty = DependencyProperty.Register(
+        nameof(CopyTextCommand), typeof(ICommand), typeof(ChangedFilesTree), new PropertyMetadata(null));
+
+    public ICommand? CopyTextCommand
+    {
+        get => (ICommand?)GetValue(CopyTextCommandProperty);
+        set => SetValue(CopyTextCommandProperty, value);
+    }
 
     public event EventHandler? FileSelectionChanged;
 
@@ -325,6 +335,12 @@ public sealed partial class ChangedFilesTree : UserControl
         ShowItemContextMenu(item, target, args);
     }
 
+    private void FileTree_ContextCanceled(UIElement sender, RoutedEventArgs args)
+    {
+        FolderContextMenu.Hide();
+        FileContextMenu?.Hide();
+    }
+
     private void ShowItemContextMenu(
         ChangedFileTreeItemViewModel? item, FrameworkElement target, ContextRequestedEventArgs args)
     {
@@ -332,9 +348,15 @@ public sealed partial class ChangedFilesTree : UserControl
         {
             if (FileContextMenu is MenuFlyout menu) { ShowFileContextMenu(menu, file, target, args); }
         }
-        else
+        else if (item?.IsFolder == true)
         {
-            FolderContextMenu.ShowAt(target);
+            ExpandAllFoldersMenuItem.CommandParameter = item;
+            CollapseAllFoldersMenuItem.CommandParameter = item;
+            ExpandAllFoldersMenuItem.Visibility = Model?.ExpandAllFoldersCommand.CanExecute(item) == true ? Visibility.Visible : Visibility.Collapsed;
+            CollapseAllFoldersMenuItem.Visibility = Model?.CollapseAllFoldersCommand.CanExecute(item) == true ? Visibility.Visible : Visibility.Collapsed;
+            CopyFolderNameMenuItem.CommandParameter = item.Name;
+            if (args.TryGetPosition(target, out Windows.Foundation.Point position)) { FolderContextMenu.ShowAt(target, position); }
+            else { FolderContextMenu.ShowAt(target); }
         }
         args.Handled = true;
     }

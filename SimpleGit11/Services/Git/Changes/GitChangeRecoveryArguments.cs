@@ -16,6 +16,11 @@ internal static class GitChangeRecoveryArguments
             return [["clean", "-f", "--", statusEntry.Path]];
         }
 
+        if (statusEntry.IsUnstaged)
+        {
+            return [["restore", "--worktree", "--", statusEntry.Path]];
+        }
+
         if (statusEntry.Status == "Added")
         {
             return

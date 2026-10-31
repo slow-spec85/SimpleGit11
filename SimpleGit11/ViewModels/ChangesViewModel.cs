@@ -55,6 +55,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         _clipboardService = clipboardService;
         _dialogService = dialogService;
         _settingsService = settingsService;
+        FileTree = new ChangedFileTreeViewModel(settingsService.Current.ShowFileFolders, messenger);
         _textFileService = textFileService;
         _asyncCommandExecutor = asyncCommandExecutor
             ?? throw new System.ArgumentNullException(nameof(asyncCommandExecutor));
@@ -251,7 +252,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
 
     public ObservableCollection<GitChangedFile> VisibleChanges { get; } = [];
 
-    public ChangedFileTreeViewModel FileTree { get; } = new();
+    public ChangedFileTreeViewModel FileTree { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsFileFilterApplied))]

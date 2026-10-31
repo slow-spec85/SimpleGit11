@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using CommunityToolkit.Mvvm.Messaging.Messages;
 using SimpleGit11.Messages;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
@@ -24,6 +25,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
     private readonly ILocalizationService _localizationService;
     private readonly IGitService _gitService;
     private readonly ISettingsService _settingsService;
+    private readonly IMessenger _messenger;
     private readonly IDialogService _dialogService;
     private readonly IExecutionContextService _executionContextService;
     private readonly IOpenSshService _openSshService;
@@ -55,6 +57,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         _themeService = themeService;
         _localizationService = localizationService;
         _settingsService = settingsService;
+        _messenger = messenger;
         _gitService = gitService;
         _dialogService = dialogService;
         _executionContextService = executionContextService;
@@ -95,6 +98,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         OpenLastRepositoryOnStartup = _settingsService.Current.OpenLastRepositoryOnStartup;
         FetchOnRepositoryOpen = _settingsService.Current.FetchOnRepositoryOpen;
         RefreshOnWindowActivation = _settingsService.Current.RefreshOnWindowActivation;
+        ShowFileFolders = _settingsService.Current.ShowFileFolders;
         RepositoryUserName = "";
         GlobalRepositoryUserName = "";
         RepositoryEmail = "";
@@ -129,6 +133,16 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     [ObservableProperty]
     public partial bool RefreshOnWindowActivation { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowFileFolders { get; set; }
+
+    partial void OnShowFileFoldersChanged(bool oldValue, bool newValue)
+    {
+        if (_isInitializing) { return; }
+        _settingsService.SetShowFileFolders(newValue);
+        _messenger.Send(new PropertyChangedMessage<bool>(this, nameof(AppSettings.ShowFileFolders), oldValue, newValue));
+    }
 
     [ObservableProperty]
     public partial double RecentRepositoriesCount { get; set; }

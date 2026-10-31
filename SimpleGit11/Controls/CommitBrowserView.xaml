@@ -550,13 +550,6 @@
                                         Command="{x:Bind ViewModel.ToggleChangeDisplayModeCommand, Mode=OneWay}"
                                         Icon="Document"
                                         Text="{x:Bind ViewModel.ContextMenuDisplayModeText, Mode=OneWay}" />
-                                    <MenuFlyoutItem
-                                        x:Uid="ShowFoldersMenuFlyoutItem"
-                                        Command="{x:Bind ViewModel.FileTree.ToggleFoldersCommand, Mode=OneWay}">
-                                        <MenuFlyoutItem.Icon>
-                                            <SymbolIcon Symbol="{x:Bind ViewModel.FileTree.FolderViewSymbol, Mode=OneWay}" />
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
                                     <MenuFlyoutSeparator />
                                     <MenuFlyoutItem
                                         x:Uid="CopyNameMenuFlyoutItem"
@@ -621,6 +614,7 @@
                         </ListView>
                         <controls:ChangedFilesTree
                             x:Name="HistoryChangedFilesTree"
+                            CopyTextCommand="{x:Bind ViewModel.CopyTextCommand, Mode=OneWay}"
                             ColumnMetrics="{StaticResource HistoryDiffStatColumnMetrics}"
                             AutomationProperties.AutomationId="HistoryChangedFilesTree"
                             Padding="{x:Bind HistoryChangedFilesListView.Padding, Mode=OneWay}"

@@ -4692,7 +4692,16 @@ Continue only if these IdentityFile entries may be removed.</value>
   <data name="HistoryEditInvalidMove" xml:space="preserve">
     <value>This move creates cyclic commit relationships. Choose another parent or change the order of actions.</value>
   </data>
-  <data name="ShowFoldersMenuFlyoutItem.Text" xml:space="preserve">
-    <value>Show folders</value>
+  <data name="ShowFileFoldersHeaderTextBlock.Text" xml:space="preserve">
+    <value>Show files in folders</value>
+  </data>
+  <data name="ShowFileFoldersDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Use a folder tree in history and the changes list.</value>
+  </data>
+  <data name="ExpandAllFoldersMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Expand all</value>
+  </data>
+  <data name="CollapseAllFoldersMenuFlyoutItem.Text" xml:space="preserve">
+    <value>Collapse all</value>
   </data>
 </root>

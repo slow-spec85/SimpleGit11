@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using SimpleGit11.Models;
 using SimpleGit11.ViewModels;
 
@@ -8,6 +7,131 @@ namespace SimpleGit11.Tests.ViewModels;
 [TestClass]
 public sealed class ChangedFileTreeViewModelTests
 {
+    [TestMethod]
+    public void FolderMenu_ExpansionCommandsAreMutuallyExclusiveForFolderState()
+    {
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([new("src/nested/File.cs", "Modified")]);
+        ChangedFileTreeItemViewModel folder = model.Roots.Single();
+        int expansionNotifications = 0;
+        int collapseNotifications = 0;
+        model.ExpandAllFoldersCommand.CanExecuteChanged += (_, _) => expansionNotifications++;
+        model.CollapseAllFoldersCommand.CanExecuteChanged += (_, _) => collapseNotifications++;
+        Assert.IsFalse(model.ExpandAllFoldersCommand.CanExecute(folder));
+        Assert.IsTrue(model.CollapseAllFoldersCommand.CanExecute(folder));
+        model.CollapseAllFoldersCommand.Execute(folder);
+        Assert.AreEqual(1, expansionNotifications);
+        Assert.AreEqual(1, collapseNotifications);
+        Assert.IsTrue(model.ExpandAllFoldersCommand.CanExecute(folder));
+        Assert.IsFalse(model.CollapseAllFoldersCommand.CanExecute(folder));
+        model.ExpandAllFoldersCommand.Execute(folder);
+        Assert.IsFalse(model.ExpandAllFoldersCommand.CanExecute(folder));
+        Assert.IsTrue(model.CollapseAllFoldersCommand.CanExecute(folder));
+        ChangedFileTreeItemViewModel leaf = folder.Children.Single().Children.Single();
+        Assert.IsFalse(model.ExpandAllFoldersCommand.CanExecute(leaf));
+        Assert.IsFalse(model.CollapseAllFoldersCommand.CanExecute(leaf));
+        Assert.IsFalse(model.ExpandAllFoldersCommand.CanExecute(null));
+        Assert.IsFalse(model.CollapseAllFoldersCommand.CanExecute(null));
+    }
+
+    [TestMethod]
+    public void FolderMenu_ExpandsAndCollapsesOnlyTheChosenSubtreeIncludingHiddenFolders()
+    {
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([new("src/nested/deep/File.cs", "Modified", new DiffStat(5, 2)), new("other/Keep.cs", "Modified")]);
+        ChangedFileTreeItemViewModel folder = model.Roots.Single(item => item.Name == "src");
+        ChangedFileTreeItemViewModel nested = folder.Children.Single();
+        ChangedFileTreeItemViewModel deep = nested.Children.Single();
+        ChangedFileTreeItemViewModel leaf = deep.Children.Single();
+        ChangedFileTreeItemViewModel other = model.Roots.Single(item => item.Name == "other");
+        other.IsExpanded = false;
+        model.CollapseAllFoldersCommand.Execute(folder);
+        Assert.IsFalse(folder.IsExpanded);
+        Assert.IsFalse(nested.IsExpanded);
+        Assert.IsFalse(deep.IsExpanded);
+        Assert.IsTrue(leaf.IsExpanded);
+        Assert.IsFalse(other.IsExpanded);
+        Assert.IsTrue(folder.IsStatVisible);
+        Assert.AreEqual(5, folder.Stat.AddedLines);
+        Assert.IsFalse(model.VisibleItems.Contains(leaf));
+        model.ExpandAllFoldersCommand.Execute(folder);
+        Assert.IsFalse(other.IsExpanded);
+        Assert.IsTrue(folder.IsExpanded);
+        Assert.IsTrue(nested.IsExpanded);
+        Assert.IsTrue(deep.IsExpanded);
+        Assert.IsTrue(model.VisibleItems.Contains(leaf));
+        Assert.IsFalse(folder.IsStatVisible);
+        model.CollapseAllFoldersCommand.Execute(null);
+        model.CollapseAllFoldersCommand.Execute(leaf);
+        Assert.IsTrue(leaf.IsExpanded);
+        Assert.IsTrue(folder.IsExpanded);
+    }
+
+    [TestMethod]
+    public void FolderStats_IncludeAllDescendantsAndAppearOnlyWhenCollapsed()
+    {
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([new("src/A.cs", "Modified", new DiffStat(2, 3)),
+            new("src/nested/B.cs", "Modified", new DiffStat(5, 7)),
+            new("Other.cs", "Modified", new DiffStat(100, 200))]);
+        ChangedFileTreeItemViewModel folder = model.Roots.Single(item => item.IsFolder);
+        ChangedFileTreeItemViewModel nested = folder.Children.Single(item => item.IsFolder);
+        Assert.AreEqual(7, folder.Stat.AddedLines);
+        Assert.AreEqual(10, folder.Stat.RemovedLines);
+        Assert.AreEqual(5, nested.Stat.AddedLines);
+        Assert.IsFalse(folder.IsStatVisible);
+        Assert.IsFalse(nested.IsStatVisible);
+        Assert.IsTrue(folder.Children.Single(item => item.IsFile).IsStatVisible);
+        List<string?> changed = [];
+        folder.PropertyChanged += (_, args) => changed.Add(args.PropertyName);
+        nested.IsExpanded = false;
+        folder.IsExpanded = false;
+        Assert.IsTrue(folder.IsStatVisible);
+        Assert.IsTrue(nested.IsStatVisible);
+        Assert.AreEqual(7, folder.Stat.AddedLines);
+        Assert.Contains(nameof(ChangedFileTreeItemViewModel.IsStatVisible), changed);
+        folder.IsExpanded = true;
+        Assert.IsFalse(folder.IsStatVisible);
+        Assert.IsTrue(nested.IsStatVisible);
+    }
+
+    [TestMethod]
+    public void FolderStats_RefreshReusedCollapsedAncestorsAndNotifyBindings()
+    {
+        ChangedFileTreeViewModel model = new();
+        GitChangedFile unchanged = new("src/Keep.cs", "Modified", new DiffStat(1, 2));
+        model.Refresh([unchanged, new("src/nested/Old.cs", "Modified", new DiffStat(3, 4))]);
+        ChangedFileTreeItemViewModel folder = model.Roots.Single();
+        ChangedFileTreeItemViewModel nested = folder.Children.Single(item => item.IsFolder);
+        folder.IsExpanded = false;
+        List<string?> changed = [];
+        folder.PropertyChanged += (_, args) => changed.Add(args.PropertyName);
+        model.Refresh([unchanged, new("src/nested/New.cs", "Modified", new DiffStat(10, 20))]);
+        Assert.AreSame(folder, model.Roots.Single());
+        Assert.AreSame(nested, folder.Children.Single(item => item.IsFolder));
+        Assert.IsTrue(folder.IsStatVisible);
+        Assert.AreEqual(11, folder.Stat.AddedLines);
+        Assert.AreEqual(22, folder.Stat.RemovedLines);
+        Assert.AreEqual(10, nested.Stat.AddedLines);
+        Assert.Contains(nameof(ChangedFileTreeItemViewModel.Stat), changed);
+        model.Refresh([unchanged]);
+        Assert.AreEqual(1, folder.Stat.AddedLines);
+        Assert.AreEqual(2, folder.Stat.RemovedLines);
+    }
+
+    [TestMethod]
+    public void FolderStats_CountStagedAndUnstagedEntriesAndKeepCaseSensitiveFoldersSeparate()
+    {
+        ChangedFileTreeViewModel model = new();
+        model.Refresh([new("src/File.cs", "Modified", new DiffStat(2, 3), GitChangeState.Staged),
+            new("src/File.cs", "Modified", new DiffStat(5, 7), GitChangeState.Unstaged),
+            new("Src/File.cs", "Modified", new DiffStat(100, 200)), new("empty/Binary.dat", "Modified")]);
+        Assert.AreEqual(7, model.Roots.Single(item => item.Name == "src").Stat.AddedLines);
+        Assert.AreEqual(10, model.Roots.Single(item => item.Name == "src").Stat.RemovedLines);
+        Assert.AreEqual(100, model.Roots.Single(item => item.Name == "Src").Stat.AddedLines);
+        Assert.AreEqual(0, model.Roots.Single(item => item.Name == "empty").Stat.AddedLines);
+    }
+
     [TestMethod]
     public void Refresh_PreservesUnchangedNodesWhenAnotherFileChanges()
     {
@@ -31,19 +155,16 @@ public sealed class ChangedFileTreeViewModelTests
     {
         ChangedFileTreeViewModel model = new();
         Assert.IsFalse(model.ShowFolders);
-        Assert.AreEqual(Symbol.Folder, model.FolderViewSymbol);
         Assert.AreEqual(Visibility.Visible, model.FlatListVisibility);
         Assert.AreEqual(Visibility.Collapsed, model.TreeVisibility);
 
-        model.ToggleFoldersCommand.Execute(null);
+        model.ShowFolders = !model.ShowFolders;
         Assert.IsTrue(model.ShowFolders);
-        Assert.AreEqual(Symbol.Accept, model.FolderViewSymbol);
         Assert.AreEqual(Visibility.Collapsed, model.FlatListVisibility);
         Assert.AreEqual(Visibility.Visible, model.TreeVisibility);
 
-        model.ToggleFoldersCommand.Execute(null);
+        model.ShowFolders = !model.ShowFolders;
         Assert.IsFalse(model.ShowFolders);
-        Assert.AreEqual(Symbol.Folder, model.FolderViewSymbol);
     }
 
     [TestMethod]
@@ -96,14 +217,12 @@ public sealed class ChangedFileTreeViewModelTests
         model.Refresh([replacement]);
 
         Assert.IsTrue(model.ShowFolders);
-        Assert.AreEqual(Symbol.Accept, model.FolderViewSymbol);
         Assert.IsFalse(model.Roots.Single().IsExpanded);
         Assert.IsFalse(model.Roots.Single().Children.Single().IsExpanded);
         Assert.AreSame(replacement, model.Roots.Single().Children.Single().Children.Single().File);
         model.Refresh([]);
         Assert.IsEmpty(model.Roots);
         Assert.IsTrue(model.ShowFolders);
-        Assert.AreEqual(Symbol.Accept, model.FolderViewSymbol);
     }
     [TestMethod]
     public void VisibleItems_FollowDirectoryDepthAndRetainParentLinks()

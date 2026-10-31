@@ -10,6 +10,7 @@ namespace SimpleGit11.ViewModels;
 public sealed partial class ChangedFileTreeItemViewModel(
     string name, string path, GitChangedFile? file = null, ChangedFileTreeItemViewModel? parent = null) : ObservableObject
 {
+    private DiffStat _folderStat = DiffStat.Empty;
     public string Name { get; } = name;
     public string Path { get; } = path;
     public ChangedFileTreeItemViewModel? Parent { get; } = parent;
@@ -25,12 +26,23 @@ public sealed partial class ChangedFileTreeItemViewModel(
     public bool IsSubmodule => File?.IsSubmodule == true;
     public bool IsConflicted => File?.IsConflicted == true;
     public string Tooltip => File?.Tooltip ?? Path;
-    public DiffStat Stat => File?.Stat ?? DiffStat.Empty;
+    public DiffStat Stat => File?.Stat ?? _folderStat;
+    public bool IsStatVisible => IsFile || !IsExpanded;
     public List<ChangedFileTreeItemViewModel> Children { get; } = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ExpansionGlyph))]
+    [NotifyPropertyChangedFor(nameof(IsStatVisible))]
     public partial bool IsExpanded { get; set; } = true;
+
+    internal void UpdateFolderStat()
+    {
+        if (!IsFolder) { return; }
+        DiffStat total = DiffStat.Sum(Children.ConvertAll(child => child.Stat));
+        if (_folderStat.AddedLines == total.AddedLines && _folderStat.RemovedLines == total.RemovedLines) { return; }
+        _folderStat = total;
+        OnPropertyChanged(nameof(Stat));
+    }
 
     [RelayCommand]
     private void OnToggleFolderExpansion()

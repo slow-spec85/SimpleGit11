@@ -11,6 +11,18 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitChangeRecoveryArgumentsTests
 {
     [TestMethod]
+    [DataRow("Modified")]
+    [DataRow("Added")]
+    [DataRow("Deleted")]
+    public void CreateDiscardFileCommands_UnstagedEntry_RestoresWorktreeWithoutChangingIndex(string status)
+    {
+        GitChangedFile file = new("-selected.txt", status, state: GitChangeState.Unstaged);
+        IReadOnlyList<IReadOnlyList<string>> commands = GitChangeRecoveryArguments.CreateDiscardFileCommands(file);
+        Assert.HasCount(1, commands);
+        CollectionAssert.AreEqual(new[] { "restore", "--worktree", "--", file.Path }, commands[0].ToArray());
+    }
+
+    [TestMethod]
     public void CreateDiscardFileCommands_UntrackedPath_PlacesSeparatorBeforePath()
     {
         GitChangedFile changedFile = new("-dangerous name.txt", "Untracked");
@@ -27,7 +39,7 @@ public sealed class GitChangeRecoveryArgumentsTests
     [TestMethod]
     public void CreateDiscardFileCommands_AddedFile_UnstagesThenCleansOnlyThatPath()
     {
-        GitChangedFile changedFile = new("folder/new file.txt", "Added");
+        GitChangedFile changedFile = new("folder/new file.txt", "Added", state: GitChangeState.Staged);
 
         IReadOnlyList<IReadOnlyList<string>> commands =
             GitChangeRecoveryArguments.CreateDiscardFileCommands(changedFile);
@@ -44,7 +56,7 @@ public sealed class GitChangeRecoveryArgumentsTests
     [TestMethod]
     public void CreateDiscardFileCommands_ModifiedFile_RestoresIndexAndWorktree()
     {
-        GitChangedFile changedFile = new("tracked.txt", "Modified");
+        GitChangedFile changedFile = new("tracked.txt", "Modified", state: GitChangeState.Staged);
 
         IReadOnlyList<IReadOnlyList<string>> commands =
             GitChangeRecoveryArguments.CreateDiscardFileCommands(changedFile);

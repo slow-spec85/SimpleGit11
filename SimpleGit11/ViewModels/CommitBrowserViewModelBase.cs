@@ -520,8 +520,12 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
         ClearCommitFilters();
 
-        SelectedCommit = Commits.FirstOrDefault(commit =>
+        GitCommit? selectedParent = Commits.FirstOrDefault(commit =>
             string.Equals(commit.Hash, parent.Hash, StringComparison.OrdinalIgnoreCase));
+        SetSelectedCommits(selectedParent is null ? [] : [selectedParent]);
+        SelectedCommit = selectedParent;
+        // Restore the native selection even when the parent was already the focused row.
+        OnPropertyChanged(nameof(SelectedCommitRow));
     }
 
     private bool CanNavigateToParentCommit(CommitParentViewItem? parent) => !IsHistoryEditing && parent is not null;

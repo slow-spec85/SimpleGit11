@@ -19,6 +19,8 @@ public interface ISettingsService
 
     void SetRefreshOnWindowActivation(bool enabled);
 
+    void SetShowFileFolders(bool enabled);
+
     void SetRecentRepositoriesCount(int count);
 
     void SetOpenLastRepositoryOnStartup(bool open);
