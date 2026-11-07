@@ -111,8 +111,31 @@ public sealed class SynchronizationViewModelTests
         await fixture.ViewModel.SynchronizeCommand.ExecuteAsync(null);
 
         CollectionAssert.AreEqual(new[] { "pull", "snapshot", "push", "snapshot" }, fixture.Operations);
+        GitPushRequest request = fixture.PushRequests.Single();
+        GitPushReferenceUpdate reference = request.References.Single();
+        Assert.AreEqual(GitPushReferenceKind.Branch, reference.Kind);
+        Assert.AreEqual("main", reference.Name);
         Assert.AreEqual(hasUpstream ? 2 : 4, fixture.PullArgumentCount);
         Assert.IsTrue(fixture.ViewModel.SynchronizeCommand.CanExecute(null));
+    }
+
+    [TestMethod]
+    public async Task PushBranchUsesConfiguredRemoteWithoutConfirmationWhenAnotherRemoteIsSelected()
+    {
+        await using Fixture fixture = new();
+        await fixture.InitializeAsync();
+        BranchSynchronizationViewItem branch = fixture.ViewModel.LocalBranches.Single(item => item.Name == "feature");
+        Assert.AreEqual("origin", fixture.ViewModel.SelectedRemote?.Name);
+        Assert.IsTrue(fixture.ViewModel.PushBranchCommand.CanExecute(branch));
+
+        await fixture.ViewModel.PushBranchCommand.ExecuteAsync(branch);
+
+        CollectionAssert.AreEqual(new[] { "push", "snapshot" }, fixture.Operations);
+        GitPushRequest request = fixture.PushRequests.Single();
+        Assert.AreEqual("fork", request.RemoteName);
+        GitPushReferenceUpdate reference = request.References.Single();
+        Assert.AreEqual(GitPushReferenceKind.Branch, reference.Kind);
+        Assert.AreEqual("feature", reference.Name);
     }
 
     [TestMethod]
@@ -156,10 +179,12 @@ public sealed class SynchronizationViewModelTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly GitRemote _remote = new("origin", "https://example.test/repo", "https://example.test/repo");
+        private readonly GitRemote _fork = new("fork", "https://example.test/fork", "https://example.test/fork");
         private bool _pulled;
         private readonly DispatcherQueueController _queue = DispatcherQueueController.CreateOnDedicatedThread();
         public SynchronizationViewModel ViewModel { get; }
         public List<string> Operations { get; } = [];
+        public List<GitPushRequest> PushRequests { get; } = [];
         public bool HasUpstream { get; init; } = true;
         public bool HasOutgoingAfterPull { get; init; } = true;
         public bool HasCurrentBranch { get; set; } = true;
@@ -190,7 +215,7 @@ public sealed class SynchronizationViewModelTests
                 "get_Remotes" => remotes,
                 "get_Submodules" => submodules,
                 "ExecuteAsync" => ((Func<Task>)args![0]!)(),
-                "GetRemotesAsync" => Task.FromResult<IReadOnlyList<GitRemote>>([_remote]),
+                "GetRemotesAsync" => Task.FromResult<IReadOnlyList<GitRemote>>([_remote, _fork]),
                 "GetLastFetchTimeAsync" => Task.FromResult<DateTimeOffset?>(null),
                 _ => throw new NotSupportedException(method)
             });
@@ -226,8 +251,8 @@ public sealed class SynchronizationViewModelTests
                 HasUpstream ? "origin/main" : "", "origin", "=", "origin", "", "origin/main", ">",
                 ahead, 0, false, "origin/main", true, true, ahead, 0);
             BranchSynchronizationItem otherBranch = new("feature", false,
-                "origin/feature", "origin", "=", "origin", "", "origin/feature", ">",
-                1, 0, false, "origin/feature", true, true, 1, 0);
+                "origin/feature", "origin", "=", "fork", "fork", "fork/feature", ">",
+                1, 0, true, "origin/feature", true, true, 1, 0);
             TagSynchronizationItem tag = new(new GitTag("v1", false, false, "hash", "", null), "", "");
             return Task.FromResult(new SynchronizationSnapshot(_remote, [branch, otherBranch], [tag]));
         }
@@ -254,10 +279,7 @@ public sealed class SynchronizationViewModelTests
         private Task<GitRemoteOperationResult> PushAsync(GitPushRequest request)
         {
             Operations.Add("push");
-            Assert.IsTrue(_pulled);
-            Assert.HasCount(1, request.References);
-            Assert.AreEqual(GitPushReferenceKind.Branch, request.References[0].Kind);
-            Assert.AreEqual("main", request.References[0].Name);
+            PushRequests.Add(request);
             return Task.FromResult(new GitRemoteOperationResult("pushed"));
         }
     }

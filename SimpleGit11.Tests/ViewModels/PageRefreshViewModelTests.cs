@@ -187,7 +187,7 @@ public sealed class PageRefreshViewModelTests
                 [new("module", "module", Path.Combine(Environment.CurrentDirectory, "module"), "url", "main", "hash", "hash", "hash", true, false, false, false, "", [])]));
             IGitService git = Stub.Create<IGitService>((method, args) => method switch
             {
-                "ExecuteAsync" => Queue.EnqueueAsync((Func<Task>)args![0]!),
+                "ExecuteAsync" => Queue.EnqueueAsync((Func<Task>)args![0]!, (bool)args[1]!),
                 "get_History" => history,
                 "get_Stashes" => stashes,
                 "get_Diff" => diff,

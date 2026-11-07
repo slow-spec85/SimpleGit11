@@ -1506,7 +1506,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             async () =>
             {
                 await RefreshBranchesCoreAsync(refreshLoadedTags: true);
-            });
+            }, mayChangeWorkingTree: false);
     }
 
     public async Task RefreshSelectedRemoteAsync()
@@ -1549,7 +1549,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
                     _areLocalTagsLoaded = true;
                     _tagHeadCommitHash = await headTask;
                     ReplaceLocalTags(await tagsTask, _tagHeadCommitHash);
-                });
+                }, mayChangeWorkingTree: false);
         }
 
     }
@@ -3174,7 +3174,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             _localizationService.GetString(primaryButtonKey));
     }
 
-    private async Task RunGitOperationAsync(string progressMessage, System.Func<Task> operation)
+    private async Task RunGitOperationAsync(
+        string progressMessage, System.Func<Task> operation, bool mayChangeWorkingTree = true)
     {
         await _gitService.ExecuteAsync(async () =>
         {
@@ -3188,7 +3189,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             {
                 IsGitOperationRunning = false;
             }
-        });
+        }, mayChangeWorkingTree);
     }
 
     private async Task RunQueuedReadOperationAsync(
@@ -4640,7 +4641,7 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             {
                 ShowError(_localizationService.GetString("GitLogCommandFailed"), exception.Message);
             }
-        });
+        }, mayChangeWorkingTree: false);
 
         return commits;
     }

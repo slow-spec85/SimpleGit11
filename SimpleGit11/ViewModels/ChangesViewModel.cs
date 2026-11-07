@@ -611,7 +611,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         await RunGitOperationAsync(async () =>
         {
             await RefreshStatusCoreAsync();
-        });
+        }, mayChangeWorkingTree: false);
     }
 
     private async Task RefreshStatusCoreAsync(bool clearResultMessages = true)
@@ -953,7 +953,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     private async Task SaveEditedFileAsync(string? text)
     {
         if (_mainWindowViewModel.CurrentRepository is not RepositoryInfo repository ||
-            _editableDocument is null ||
+            _editableDocument is not { } document ||
             text is null ||
             !CanSaveEditedFile())
         {
@@ -966,7 +966,12 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         {
             ClearError();
             IsDiffLoading = true;
-            await _textFileService.WriteAsync(_editableDocument, text);
+            await _gitService.ExecuteAsync(
+                () => ReferenceEquals(_editableDocument, document)
+                    ? _textFileService.WriteAsync(document, text)
+                    : Task.CompletedTask,
+                mayChangeWorkingTree: true);
+            if (!ReferenceEquals(_editableDocument, document)) { return; }
             IsEditedFileDirty = false;
             EndEditingFile();
 
@@ -1909,7 +1914,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
             _localizationService.GetString(primaryButtonKey));
     }
 
-    private async Task RunGitOperationAsync(System.Func<Task> operation)
+    private async Task RunGitOperationAsync(System.Func<Task> operation, bool mayChangeWorkingTree = true)
     {
         await _gitService.ExecuteAsync(async () =>
         {
@@ -1922,7 +1927,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
             {
                 IsGitOperationRunning = false;
             }
-        });
+        }, mayChangeWorkingTree);
     }
 
     private Task RunQueuedReadOperationAsync(System.Func<Task> operation)

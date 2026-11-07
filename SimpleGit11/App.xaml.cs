@@ -47,6 +47,7 @@ public partial class App : Application
                 GetService<IExecutionContextService>(),
                 GetService<ISettingsService>(),
                 GetService<IGitService>(),
+                GetService<IGitOperationQueue>(),
                 GetService<IMessenger>(),
                 GetService<IEnumerable<IMainMenuContribution>>(),
                 GetService<IAsyncCommandExceptionHandler>());

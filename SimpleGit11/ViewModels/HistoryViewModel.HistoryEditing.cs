@@ -123,7 +123,7 @@ public sealed partial class HistoryViewModel
             {
                 ShowError(_localizationService.GetString("GitLogCommandFailed"), exception.Message);
             }
-        });
+        }, mayChangeWorkingTree: false);
     });
 
     [RelayCommand(CanExecute = nameof(CanMoveDraftUp))]

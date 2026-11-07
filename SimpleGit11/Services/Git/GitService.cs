@@ -108,10 +108,10 @@ internal sealed class GitService : IGitService
 
     public IGitWorktreeService Worktrees { get; }
 
-    public Task ExecuteAsync(Func<Task> operation)
+    public Task ExecuteAsync(Func<Task> operation, bool mayChangeWorkingTree = false)
     {
         ArgumentNullException.ThrowIfNull(operation);
-        return _operationQueue.EnqueueAsync(operation);
+        return _operationQueue.EnqueueAsync(operation, mayChangeWorkingTree);
     }
 
     public Task<GitStatusSnapshot> GetStatusAsync(

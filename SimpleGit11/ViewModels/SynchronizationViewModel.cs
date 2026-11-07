@@ -682,7 +682,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
                     ShowGitError(exception);
                 }
             }
-        }, canCancel: true);
+        }, canCancel: true, mayChangeWorkingTree: true);
     }
 
     private Task<bool> PullAsync()
@@ -869,30 +869,6 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
                 branch,
                 targetRemoteName,
                 branch.RequiresForcePush || untrackedBranchRequiresForce));
-        }
-
-        IReadOnlyList<BranchPushOperation> operationsUsingConfiguredRemote = branchOperations
-            .Where(operation => !string.Equals(
-                operation.RemoteName,
-                remote.Name,
-                StringComparison.Ordinal))
-            .ToList();
-        if (operationsUsingConfiguredRemote.Count > 0)
-        {
-            string destinations = string.Join(
-                Environment.NewLine,
-                operationsUsingConfiguredRemote.Select(operation => $"{operation.Branch.Name} → {operation.RemoteName}"));
-            bool confirmed = await _dialogService.ConfirmAsync(
-                _localizationService.GetString("PushUsesConfiguredRemoteDialogTitle"),
-                string.Format(
-                    _localizationService.GetString("PushUsesConfiguredRemoteDialogMessage"),
-                    remote.Name,
-                    destinations),
-                _localizationService.GetString("PushUsesConfiguredRemoteDialogPrimaryButton"));
-            if (!confirmed)
-            {
-                return;
-            }
         }
 
         IReadOnlyList<BranchPushOperation> branchesRequiringForce = branchOperations
@@ -1217,14 +1193,15 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
 
                 ShowGitError(exception, remoteUrls ?? []);
             }
-        }, canCancel: true);
+        }, canCancel: true, mayChangeWorkingTree: mayCreateConflicts);
         return succeeded;
     }
 
     private async Task RunGitOperationAsync(
         string progressMessage,
         Func<CancellationToken, Task> operation,
-        bool canCancel)
+        bool canCancel,
+        bool mayChangeWorkingTree = false)
     {
         await _gitService.ExecuteAsync(() => RunOnUiThreadAsync(async () =>
         {
@@ -1257,7 +1234,7 @@ public sealed partial class SynchronizationViewModel : AppNotificationViewModelB
                 ProgressMessage = "";
                 IsGitOperationRunning = false;
             }
-        }));
+        }), mayChangeWorkingTree);
     }
 
     private void CancelRemoteOperation()

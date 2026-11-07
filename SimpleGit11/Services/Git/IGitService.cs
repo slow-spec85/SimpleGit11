@@ -55,7 +55,7 @@ public interface IGitService
 
     IGitWorktreeService Worktrees { get; }
 
-    Task ExecuteAsync(Func<Task> operation);
+    Task ExecuteAsync(Func<Task> operation, bool mayChangeWorkingTree = false);
 
     Task<GitStatusSnapshot> GetStatusAsync(
         RepositoryInfo repository,

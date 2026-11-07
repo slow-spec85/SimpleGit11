@@ -18,6 +18,7 @@ public interface ISettingsService
     void SetFetchOnRepositoryOpen(bool fetch);
 
     void SetRefreshOnWindowActivation(bool enabled);
+    void SetChangesPollIntervalSeconds(int seconds);
 
     void SetShowFileFolders(bool enabled);
 

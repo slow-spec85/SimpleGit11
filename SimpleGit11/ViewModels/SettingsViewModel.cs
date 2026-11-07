@@ -98,6 +98,7 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
         OpenLastRepositoryOnStartup = _settingsService.Current.OpenLastRepositoryOnStartup;
         FetchOnRepositoryOpen = _settingsService.Current.FetchOnRepositoryOpen;
         RefreshOnWindowActivation = _settingsService.Current.RefreshOnWindowActivation;
+        ChangesPollIntervalSeconds = _settingsService.Current.ChangesPollIntervalSeconds;
         ShowFileFolders = _settingsService.Current.ShowFileFolders;
         RepositoryUserName = "";
         GlobalRepositoryUserName = "";
@@ -133,6 +134,29 @@ public sealed partial class SettingsViewModel : AppNotificationViewModelBase
 
     [ObservableProperty]
     public partial bool RefreshOnWindowActivation { get; set; }
+
+    [ObservableProperty]
+    public partial double ChangesPollIntervalSeconds { get; set; }
+
+    public int MinimumChangesPollIntervalSeconds => AppSettings.MinimumChangesPollIntervalSeconds;
+
+    public int MaximumChangesPollIntervalSeconds => AppSettings.MaximumChangesPollIntervalSeconds;
+
+    partial void OnChangesPollIntervalSecondsChanged(double value)
+    {
+        if (!_isInitializing && double.IsFinite(value))
+        {
+            int seconds = (int)Math.Round(Math.Clamp(
+                value, MinimumChangesPollIntervalSeconds, MaximumChangesPollIntervalSeconds));
+            if (value != seconds)
+            {
+                ChangesPollIntervalSeconds = seconds;
+                return;
+            }
+
+            _settingsService.SetChangesPollIntervalSeconds(seconds);
+        }
+    }
 
     [ObservableProperty]
     public partial bool ShowFileFolders { get; set; }

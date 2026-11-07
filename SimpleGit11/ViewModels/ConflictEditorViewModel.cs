@@ -345,7 +345,7 @@ public sealed partial class ConflictEditorViewModel : AppNotificationViewModelBa
             {
                 IsOperationRunning = false;
             }
-        });
+        }, mayChangeWorkingTree: true);
 
         if (resolved && ConflictResolvedAsync is not null)
         {
@@ -378,7 +378,7 @@ public sealed partial class ConflictEditorViewModel : AppNotificationViewModelBa
             {
                 IsOperationRunning = false;
             }
-        });
+        }, mayChangeWorkingTree: true);
     }
 
     private async Task SaveCoreAsync()

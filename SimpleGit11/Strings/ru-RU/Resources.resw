@@ -2779,19 +2779,6 @@
   <data name="BranchUpstreamSetSucceeded" xml:space="preserve">
     <value>Ветка «{0}» получает изменения из «{1}».</value>
   </data>
-  <data name="PushUsesConfiguredRemoteDialogTitle" xml:space="preserve">
-    <value>Отправить в настроенные remote?</value>
-  </data>
-  <data name="PushUsesConfiguredRemoteDialogMessage" xml:space="preserve">
-    <value>Сейчас выбран remote «{0}», но в настройках Git указаны следующие направления push:
-
-{1}
-
-Push будет выполнен в настроенные направления, а не в выбранный remote.</value>
-  </data>
-  <data name="PushUsesConfiguredRemoteDialogPrimaryButton" xml:space="preserve">
-    <value>Отправить</value>
-  </data>
   <data name="BranchPushRemoteUnavailable" xml:space="preserve">
     <value>Git не определил remote для push ветки «{0}». Настройте upstream или push remote и повторите операцию.</value>
   </data>
@@ -4703,5 +4690,17 @@ only — только fast-forward; «Не задано» — наследова
   </data>
   <data name="CollapseAllFoldersMenuFlyoutItem.Text" xml:space="preserve">
     <value>Свернуть все</value>
+  </data>
+  <data name="ChangesPollIntervalHeaderTextBlock.Text" xml:space="preserve">
+    <value>Интервал проверки изменений (секунды)</value>
+  </data>
+  <data name="ChangesPollIntervalDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Проверять изменения в открытом рабочем дереве, даже когда окно свёрнуто.</value>
+  </data>
+  <data name="ChangesPollIntervalNumberBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Интервал проверки изменений (секунды)</value>
+  </data>
+  <data name="TaskbarChangedFilesDescription" xml:space="preserve">
+    <value>Изменённые файлы: {0}</value>
   </data>
 </root>

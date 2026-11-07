@@ -1,6 +1,8 @@
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
@@ -19,6 +21,8 @@ using SimpleGit11.ViewModels;
 using System;
 using System.ComponentModel;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,7 +62,10 @@ public sealed partial class MainWindow : Window
     private readonly ExecutionContextShellCoordinator _executionContextCoordinator;
     private readonly ISettingsService _settingsService;
     private readonly IGitService _gitService;
+    private readonly IGitOperationQueue _gitOperationQueue;
     private readonly PluginMenuHost _pluginMenuHost;
+    private readonly TaskbarChangesBadge _taskbarChangesBadge;
+    private readonly DispatcherQueueTimer _changesTimer;
     private readonly WindowActivationRefreshGate _activationRefreshGate = new(
         MinimumWindowInactiveDuration,
         AutomaticRefreshCooldown);
@@ -69,6 +76,10 @@ public sealed partial class MainWindow : Window
     private bool _isChangingExecutionContext;
     private bool _isSynchronizingNavigationSelection;
     private long _latestPageRefreshRequest;
+    private long? _lastChangesPoll;
+    private CancellationTokenSource? _changesPollCancellation;
+    private int _changedFileCount;
+    private bool _isClosed;
 
     public MainWindowViewModel ViewModel { get; }
 
@@ -84,6 +95,7 @@ public sealed partial class MainWindow : Window
         IExecutionContextService executionContextService,
         ISettingsService settingsService,
         IGitService gitService,
+        IGitOperationQueue gitOperationQueue,
         IMessenger messenger,
         IEnumerable<IMainMenuContribution> menuContributions,
         IAsyncCommandExceptionHandler exceptionHandler)
@@ -95,6 +107,7 @@ public sealed partial class MainWindow : Window
         _dialogService = dialogService;
         _settingsService = settingsService;
         _gitService = gitService;
+        _gitOperationQueue = gitOperationQueue;
         RepositoryViewModel = App.GetService<RepositoryViewModel>();
         BranchesViewModel = App.GetService<BranchesViewModel>();
         InitializeComponent();
@@ -107,6 +120,13 @@ public sealed partial class MainWindow : Window
             messenger, localizationService);
         _executionContextService.CurrentChanged += ExecutionContextService_CurrentChanged;
         ConfigureTitleBar();
+        _taskbarChangesBadge = new(WinRT.Interop.WindowNative.GetWindowHandle(this),
+            count => string.Format(_localizationService.GetString("TaskbarChangedFilesDescription"), count));
+        _changesTimer = DispatcherQueue.CreateTimer();
+        _changesTimer.Interval = TimeSpan.FromSeconds(1);
+        _changesTimer.Tick += ChangesTimer_Tick;
+        _gitOperationQueue.WorkingTreeMayHaveChanged += GitOperationQueue_WorkingTreeMayHaveChanged;
+        _changesTimer.Start();
         UpdateExecutionContextChrome(_executionContextService.Current);
         AppWindow.Closing += AppWindow_Closing;
         SizeChanged += MainWindow_SizeChanged;
@@ -122,6 +142,13 @@ public sealed partial class MainWindow : Window
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
+        _isClosed = true;
+        _changesTimer.Stop();
+        _changesTimer.Tick -= ChangesTimer_Tick;
+        _gitOperationQueue.WorkingTreeMayHaveChanged -= GitOperationQueue_WorkingTreeMayHaveChanged;
+        _changesPollCancellation?.Cancel();
+        _taskbarChangesBadge.Dispose();
+        ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
         _executionContextService.CurrentChanged -= ExecutionContextService_CurrentChanged;
         _executionContextCoordinator.Dispose();
         _pluginMenuHost.Dispose();
@@ -147,7 +174,83 @@ public sealed partial class MainWindow : Window
             ViewModel.AppName,
             ViewModel.CurrentRepository?.Name);
         ExecutionHostTitleTextBlock.Text = titleBarText;
-        Title = windowTitle;
+        Title = _changedFileCount == 0 ? windowTitle : $"{windowTitle} · {_changedFileCount}";
+    }
+
+    private async void ChangesTimer_Tick(DispatcherQueueTimer sender, object args)
+    {
+        _taskbarChangesBadge.Refresh();
+        await PollChangesAsync();
+    }
+
+    private void GitOperationQueue_WorkingTreeMayHaveChanged(object? sender, EventArgs args)
+    {
+        _ = DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_isClosed) { return; }
+            _lastChangesPoll = null;
+            _changesPollCancellation?.Cancel();
+            _ = PollChangesAsync();
+        });
+    }
+
+    private async Task PollChangesAsync()
+    {
+        do
+        {
+            if (_isClosed || _changesPollCancellation is not null || ViewModel.CurrentRepository is not { } repository
+                || (_lastChangesPoll is long lastPoll && Stopwatch.GetElapsedTime(lastPoll)
+                    < TimeSpan.FromSeconds(_settingsService.Current.ChangesPollIntervalSeconds)))
+            {
+                return;
+            }
+
+            AppExecutionContext context = _executionContextService.Current;
+            using CancellationTokenSource cancellation = new(TimeSpan.FromMinutes(1));
+            _changesPollCancellation = cancellation;
+            _lastChangesPoll = Stopwatch.GetTimestamp();
+            try
+            {
+                int count = await _gitService.Status.GetChangedFileCountAsync(repository, cancellation.Token);
+                if (!cancellation.IsCancellationRequested && ReferenceEquals(ViewModel.CurrentRepository, repository)
+                    && _executionContextService.Current == context)
+                {
+                    SetChangedFileCount(count, context, repository);
+                }
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            {
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine(exception);
+            }
+            finally
+            {
+                _changesPollCancellation = null;
+            }
+        }
+        while (_lastChangesPoll is null);
+    }
+
+    private void SetChangedFileCount(int count, AppExecutionContext context, RepositoryInfo? repository)
+    {
+        if (_changedFileCount == count)
+        {
+            return;
+        }
+
+        _changedFileCount = count;
+        ChangesNavigationItem.InfoBadge = count == 0 ? null : new InfoBadge { Value = count };
+        AutomationProperties.SetName(ChangesNavigationItem, count == 0
+            ? (ChangesNavigationItem.Content?.ToString() ?? "")
+            : $"{ChangesNavigationItem.Content} · {count}");
+        UpdateExecutionContextChrome(context);
+        string? worktree = repository is null || count == 0 ? null
+            : context.IsLocal ? $"local\0{Path.TrimEndingDirectorySeparator(repository.Path).ToUpperInvariant()}"
+            : $"{context.ProviderId}\0{context.ConnectionProfileId ?? context.Id.ToString()}\0{repository.Path.TrimEnd('/')}";
+        _taskbarChangesBadge.Publish(worktree, count);
+        _taskbarChangesBadge.Refresh();
     }
 
     internal static (string TitleBarText, string WindowTitle) ResolveExecutionContextTitles(
@@ -312,6 +415,13 @@ public sealed partial class MainWindow : Window
 
     private async void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(MainWindowViewModel.CurrentRepository))
+        {
+            _changesPollCancellation?.Cancel();
+            _lastChangesPoll = null;
+            SetChangedFileCount(0, _executionContextService.Current, null);
+        }
+
         if (e.PropertyName is nameof(MainWindowViewModel.CurrentRepository)
             or nameof(MainWindowViewModel.CurrentRepositoryDisplayName))
         {

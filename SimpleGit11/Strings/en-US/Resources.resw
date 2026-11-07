@@ -2779,19 +2779,6 @@
   <data name="BranchUpstreamSetSucceeded" xml:space="preserve">
     <value>Branch “{0}” now pulls changes from “{1}”.</value>
   </data>
-  <data name="PushUsesConfiguredRemoteDialogTitle" xml:space="preserve">
-    <value>Push to the configured remotes?</value>
-  </data>
-  <data name="PushUsesConfiguredRemoteDialogMessage" xml:space="preserve">
-    <value>The selected remote is '{0}', but Git configuration assigns the following push destinations:
-
-{1}
-
-Push will use the configured destinations, not the selected remote.</value>
-  </data>
-  <data name="PushUsesConfiguredRemoteDialogPrimaryButton" xml:space="preserve">
-    <value>Push</value>
-  </data>
   <data name="BranchPushRemoteUnavailable" xml:space="preserve">
     <value>Git did not resolve a push remote for branch '{0}'. Configure its upstream or push remote and try again.</value>
   </data>
@@ -4703,5 +4690,17 @@ Continue only if these IdentityFile entries may be removed.</value>
   </data>
   <data name="CollapseAllFoldersMenuFlyoutItem.Text" xml:space="preserve">
     <value>Collapse all</value>
+  </data>
+  <data name="ChangesPollIntervalHeaderTextBlock.Text" xml:space="preserve">
+    <value>Changes refresh interval (seconds)</value>
+  </data>
+  <data name="ChangesPollIntervalDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Check the open working tree for changes even when the window is minimized.</value>
+  </data>
+  <data name="ChangesPollIntervalNumberBox.AutomationProperties.Name" xml:space="preserve">
+    <value>Changes refresh interval (seconds)</value>
+  </data>
+  <data name="TaskbarChangedFilesDescription" xml:space="preserve">
+    <value>Changed files: {0}</value>
   </data>
 </root>

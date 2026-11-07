@@ -57,6 +57,29 @@ public sealed class SettingsServiceTests
     }
 
     [TestMethod]
+    public void ChangesPollIntervalSeconds_DefaultsClampsAndSurvivesReload()
+    {
+        MemoryLocalSettingsStore store = new();
+        SettingsService service = CreateService(store);
+        Assert.AreEqual(10, service.Current.ChangesPollIntervalSeconds);
+
+        service.SetChangesPollIntervalSeconds(15);
+        Assert.AreEqual(15, service.Current.ChangesPollIntervalSeconds);
+        Assert.AreEqual(15, CreateService(store).Current.ChangesPollIntervalSeconds);
+
+        service.SetChangesPollIntervalSeconds(1);
+        Assert.AreEqual(1, service.Current.ChangesPollIntervalSeconds);
+        Assert.AreEqual(1, CreateService(store).Current.ChangesPollIntervalSeconds);
+
+        service.SetChangesPollIntervalSeconds(0);
+        Assert.AreEqual(1, CreateService(store).Current.ChangesPollIntervalSeconds);
+        store.SetString(nameof(AppSettings.ChangesPollIntervalSeconds), "301");
+        Assert.AreEqual(300, CreateService(store).Current.ChangesPollIntervalSeconds);
+        store.SetString(nameof(AppSettings.ChangesPollIntervalSeconds), "invalid");
+        Assert.AreEqual(10, CreateService(store).Current.ChangesPollIntervalSeconds);
+    }
+
+    [TestMethod]
     public void RepositoryOpening_DefaultsPreserveManualFetchAndOrigin()
     {
         SettingsService service = CreateService(new MemoryLocalSettingsStore());

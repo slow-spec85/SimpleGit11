@@ -584,7 +584,7 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
                 ProgressMessage = "";
                 IsLoading = false;
             }
-        });
+        }, mayChangeWorkingTree: true);
     }
 
     private void UpdateCherryPickCommandStates()

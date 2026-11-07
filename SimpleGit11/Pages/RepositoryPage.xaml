@@ -368,137 +368,6 @@
                                 CornerRadius="0"
                                 Padding="16,26">
                                 <toolkit:SettingsCard.HeaderIcon>
-                                    <SymbolIcon Symbol="Globe" />
-                                </toolkit:SettingsCard.HeaderIcon>
-                                <toolkit:SettingsCard.Header>
-                                    <StackPanel VerticalAlignment="Center" Spacing="4">
-                                        <TextBlock
-                                            x:Uid="RemotesCardTitleTextBlock"
-                                            MaxLines="1"
-                                            Style="{ThemeResource SubtitleTextBlockStyle}"
-                                            TextWrapping="WrapWholeWords" />
-                                        <TextBlock
-                                            x:Uid="RemotesCardDescriptionTextBlock"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                            MaxLines="1"
-                                            Style="{ThemeResource CaptionTextBlockStyle}"
-                                            TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                </toolkit:SettingsCard.Header>
-                                <toolkit:SettingsCard.Content>
-                                    <Button
-                                        x:Uid="AddRemoteButton"
-                                        Width="140"
-                                        VerticalAlignment="Center"
-                                        Command="{x:Bind ViewModel.AddRemoteCommand, Mode=OneWay}" />
-                                </toolkit:SettingsCard.Content>
-                            </toolkit:SettingsCard>
-
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.RemoteViewItems, Mode=OneWay}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="viewmodels:RemoteViewItem">
-                                        <toolkit:SettingsCard
-                                            Background="Transparent"
-                                            BorderThickness="0,1,0,0"
-                                            BorderBrush="{ThemeResource CardBorderColorDefaultBrush}"
-                                            CornerRadius="0"
-                                            Padding="60,10,16,10">
-                                            <toolkit:SettingsCard.Header>
-                                                <StackPanel Spacing="2" ToolTipService.ToolTip="{x:Bind ReferenceText, Mode=OneTime}">
-                                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                                        <TextBlock
-                                                            Text="{x:Bind Name, Mode=OneTime}"
-                                                            TextTrimming="CharacterEllipsis"
-                                                            VerticalAlignment="Center">
-                                                            <TextBlock.ContextFlyout>
-                                                                <MenuFlyout>
-                                                                    <MenuFlyoutItem
-                                                                        x:Uid="CopyTextMenuFlyoutItem"
-                                                                        Command="{x:Bind CopyTextCommand, Mode=OneTime}"
-                                                                        CommandParameter="{x:Bind Name, Mode=OneTime}"
-                                                                        Icon="Copy" />
-                                                                </MenuFlyout>
-                                                            </TextBlock.ContextFlyout>
-                                                        </TextBlock>
-                                                        <TextBlock
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="·"
-                                                            VerticalAlignment="Center"
-                                                            Visibility="{x:Bind CurrentStatusVisibility, Mode=OneTime}" />
-                                                        <TextBlock
-                                                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                                            Style="{ThemeResource CaptionTextBlockStyle}"
-                                                            Text="{x:Bind CurrentStatusText, Mode=OneTime}"
-                                                            VerticalAlignment="Center"
-                                                            Visibility="{x:Bind CurrentStatusVisibility, Mode=OneTime}" />
-                                                    </StackPanel>
-                                                    <TextBlock
-                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                        Style="{ThemeResource CaptionTextBlockStyle}"
-                                                        Text="{x:Bind ReferenceText, Mode=OneTime}"
-                                                        TextTrimming="CharacterEllipsis">
-                                                        <TextBlock.ContextFlyout>
-                                                            <MenuFlyout>
-                                                                <MenuFlyoutItem
-                                                                    x:Uid="CopyTextMenuFlyoutItem"
-                                                                    Command="{x:Bind CopyTextCommand, Mode=OneTime}"
-                                                                    CommandParameter="{x:Bind ReferenceText, Mode=OneTime}"
-                                                                    Icon="Copy" />
-                                                            </MenuFlyout>
-                                                        </TextBlock.ContextFlyout>
-                                                    </TextBlock>
-                                                </StackPanel>
-                                            </toolkit:SettingsCard.Header>
-                                            <toolkit:SettingsCard.Content>
-                                                <Button
-                                                    x:Uid="RemoteActionsButton"
-                                                    AutomationProperties.AutomationId="RemoteActionsButton"
-                                                    Background="Transparent"
-                                                    BorderThickness="0"
-                                                    VerticalAlignment="Center"
-                                                    Margin="0,0,28,0">
-                                                    <FontIcon Glyph="&#xE712;" />
-                                                    <Button.Flyout>
-                                                        <MenuFlyout>
-                                                            <MenuFlyoutItem
-                                                                x:Uid="SelectRemoteActionMenuFlyoutItem"
-                                                                Command="{x:Bind SelectCommand}" />
-                                                            <MenuFlyoutSeparator/>
-                                                            <MenuFlyoutItem
-                                                                x:Uid="RenameRemoteActionMenuFlyoutItem"
-                                                                Command="{x:Bind RenameCommand, Mode=OneWay}" />
-                                                            <MenuFlyoutItem
-                                                                x:Uid="EditRemoteUrlActionMenuFlyoutItem"
-                                                                Command="{x:Bind EditCommand, Mode=OneWay}" />
-                                                            <MenuFlyoutItem
-                                                                x:Uid="CheckRemoteAccessActionMenuFlyoutItem"
-                                                                Command="{x:Bind CheckAccessCommand, Mode=OneWay}" />
-                                                            <MenuFlyoutItem
-                                                                x:Uid="RemoveRemoteActionMenuFlyoutItem"
-                                                                Command="{x:Bind RemoveCommand, Mode=OneWay}" />
-                                                        </MenuFlyout>
-                                                    </Button.Flyout>
-                                                </Button>
-                                            </toolkit:SettingsCard.Content>
-                                        </toolkit:SettingsCard>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
-
-                    <Border
-                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="4">
-                        <StackPanel Spacing="0">
-                            <toolkit:SettingsCard
-                                Background="Transparent"
-                                BorderThickness="0"
-                                CornerRadius="0"
-                                Padding="16,26">
-                                <toolkit:SettingsCard.HeaderIcon>
                                     <SymbolIcon Symbol="SyncFolder" />
                                 </toolkit:SettingsCard.HeaderIcon>                                
                                 <toolkit:SettingsCard.Header>
@@ -771,8 +640,7 @@
                                             HorizontalContentAlignment="Stretch"
                                             ItemsSource="{x:Bind Children, Mode=OneWay}">
                                             <Grid
-                                                MinHeight="68"
-                                                Padding="16,4"
+                                                Padding="16,8"
                                                 ColumnSpacing="12"
                                                 ToolTipService.ToolTip="{x:Bind FullPath, Mode=OneTime}">
                                                 <Grid.ColumnDefinitions>
@@ -911,6 +779,137 @@
                                     </DataTemplate>
                                 </TreeView.ItemTemplate>
                             </TreeView>
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel Spacing="0">
+                            <toolkit:SettingsCard
+                                Background="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="0"
+                                Padding="16,26">
+                                <toolkit:SettingsCard.HeaderIcon>
+                                    <SymbolIcon Symbol="Globe" />
+                                </toolkit:SettingsCard.HeaderIcon>
+                                <toolkit:SettingsCard.Header>
+                                    <StackPanel VerticalAlignment="Center" Spacing="4">
+                                        <TextBlock
+                                            x:Uid="RemotesCardTitleTextBlock"
+                                            MaxLines="1"
+                                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                                            TextWrapping="WrapWholeWords" />
+                                        <TextBlock
+                                            x:Uid="RemotesCardDescriptionTextBlock"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            MaxLines="1"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </toolkit:SettingsCard.Header>
+                                <toolkit:SettingsCard.Content>
+                                    <Button
+                                        x:Uid="AddRemoteButton"
+                                        Width="140"
+                                        VerticalAlignment="Center"
+                                        Command="{x:Bind ViewModel.AddRemoteCommand, Mode=OneWay}" />
+                                </toolkit:SettingsCard.Content>
+                            </toolkit:SettingsCard>
+
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.RemoteViewItems, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:RemoteViewItem">
+                                        <toolkit:SettingsCard
+                                            Background="Transparent"
+                                            BorderThickness="0,1,0,0"
+                                            BorderBrush="{ThemeResource CardBorderColorDefaultBrush}"
+                                            CornerRadius="0"
+                                            Padding="60,10,16,10">
+                                            <toolkit:SettingsCard.Header>
+                                                <StackPanel Spacing="2" ToolTipService.ToolTip="{x:Bind ReferenceText, Mode=OneTime}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                        <TextBlock
+                                                            Text="{x:Bind Name, Mode=OneTime}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            VerticalAlignment="Center">
+                                                            <TextBlock.ContextFlyout>
+                                                                <MenuFlyout>
+                                                                    <MenuFlyoutItem
+                                                                        x:Uid="CopyTextMenuFlyoutItem"
+                                                                        Command="{x:Bind CopyTextCommand, Mode=OneTime}"
+                                                                        CommandParameter="{x:Bind Name, Mode=OneTime}"
+                                                                        Icon="Copy" />
+                                                                </MenuFlyout>
+                                                            </TextBlock.ContextFlyout>
+                                                        </TextBlock>
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="·"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{x:Bind CurrentStatusVisibility, Mode=OneTime}" />
+                                                        <TextBlock
+                                                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                                            Text="{x:Bind CurrentStatusText, Mode=OneTime}"
+                                                            VerticalAlignment="Center"
+                                                            Visibility="{x:Bind CurrentStatusVisibility, Mode=OneTime}" />
+                                                    </StackPanel>
+                                                    <TextBlock
+                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                        Style="{ThemeResource CaptionTextBlockStyle}"
+                                                        Text="{x:Bind ReferenceText, Mode=OneTime}"
+                                                        TextTrimming="CharacterEllipsis">
+                                                        <TextBlock.ContextFlyout>
+                                                            <MenuFlyout>
+                                                                <MenuFlyoutItem
+                                                                    x:Uid="CopyTextMenuFlyoutItem"
+                                                                    Command="{x:Bind CopyTextCommand, Mode=OneTime}"
+                                                                    CommandParameter="{x:Bind ReferenceText, Mode=OneTime}"
+                                                                    Icon="Copy" />
+                                                            </MenuFlyout>
+                                                        </TextBlock.ContextFlyout>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </toolkit:SettingsCard.Header>
+                                            <toolkit:SettingsCard.Content>
+                                                <Button
+                                                    x:Uid="RemoteActionsButton"
+                                                    AutomationProperties.AutomationId="RemoteActionsButton"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    VerticalAlignment="Center"
+                                                    Margin="0,0,28,0">
+                                                    <FontIcon Glyph="&#xE712;" />
+                                                    <Button.Flyout>
+                                                        <MenuFlyout>
+                                                            <MenuFlyoutItem
+                                                                x:Uid="SelectRemoteActionMenuFlyoutItem"
+                                                                Command="{x:Bind SelectCommand}" />
+                                                            <MenuFlyoutSeparator/>
+                                                            <MenuFlyoutItem
+                                                                x:Uid="RenameRemoteActionMenuFlyoutItem"
+                                                                Command="{x:Bind RenameCommand, Mode=OneWay}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="EditRemoteUrlActionMenuFlyoutItem"
+                                                                Command="{x:Bind EditCommand, Mode=OneWay}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="CheckRemoteAccessActionMenuFlyoutItem"
+                                                                Command="{x:Bind CheckAccessCommand, Mode=OneWay}" />
+                                                            <MenuFlyoutItem
+                                                                x:Uid="RemoveRemoteActionMenuFlyoutItem"
+                                                                Command="{x:Bind RemoveCommand, Mode=OneWay}" />
+                                                        </MenuFlyout>
+                                                    </Button.Flyout>
+                                                </Button>
+                                            </toolkit:SettingsCard.Content>
+                                        </toolkit:SettingsCard>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </Border>
 

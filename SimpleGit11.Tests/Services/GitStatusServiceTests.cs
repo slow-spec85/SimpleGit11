@@ -8,6 +8,37 @@ namespace SimpleGit11.Tests.Services;
 public sealed class GitStatusServiceTests
 {
     [TestMethod]
+    public async Task GetChangedFileCountAsync_MatchesDistinctStatusPathsAndReturnsZeroAfterCommit()
+    {
+        await using TemporaryGitRepository repository = await TemporaryGitRepository.CreateAsync();
+        repository.WriteFile(".gitignore", "*.ignored");
+        repository.WriteFile("staged-and-unstaged.txt", "original");
+        repository.WriteFile("old name.txt", "rename me");
+        await repository.CommitAllAsync();
+        repository.WriteFile("staged-and-unstaged.txt", "staged");
+        await repository.RunGitAsync("add", "staged-and-unstaged.txt");
+        repository.WriteFile("staged-and-unstaged.txt", "unstaged");
+        await repository.RunGitAsync("mv", "old name.txt", "new name.txt");
+        repository.WriteFile("untracked.txt", "new");
+        repository.WriteFile("local.ignored", "ignored");
+
+        GitStatusService service = new();
+        GitStatusSnapshot snapshot = await service.GetStatusAsync(repository.Repository);
+        Assert.HasCount(2, snapshot.StagedChanges);
+        Assert.HasCount(2, snapshot.UnstagedChanges);
+        int expected = snapshot.StagedChanges.Concat(snapshot.UnstagedChanges)
+            .Concat(snapshot.ConflictedChanges)
+            .Select(change => change.Path)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        Assert.AreEqual(3, expected);
+        Assert.AreEqual(expected, await service.GetChangedFileCountAsync(repository.Repository, CancellationToken.None));
+        await repository.CommitAllAsync();
+        Assert.AreEqual(0, await service.GetChangedFileCountAsync(repository.Repository, CancellationToken.None));
+    }
+
+    [TestMethod]
     public async Task GetStatusAsync_DirtySubmodule_MarksChangeAsSubmodule()
     {
         await using TemporaryGitRepository submodule = await TemporaryGitRepository.CreateAsync();

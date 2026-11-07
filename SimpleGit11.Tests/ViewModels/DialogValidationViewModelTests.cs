@@ -326,7 +326,7 @@ public sealed class DialogValidationViewModelTests
         public IGitTagService Tags => throw new NotSupportedException();
         public IGitWorktreeService Worktrees => throw new NotSupportedException();
 
-        public Task ExecuteAsync(Func<Task> operation) => throw new NotSupportedException();
+        public Task ExecuteAsync(Func<Task> operation, bool mayChangeWorkingTree = false) => throw new NotSupportedException();
         public Task<GitStatusSnapshot> GetStatusAsync(RepositoryInfo repository, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<GitOperationState> GetOperationStateAsync(RepositoryInfo repository, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IReadOnlyList<GitCommit>> GetHistoryAsync(RepositoryInfo repository, CancellationToken cancellationToken = default) => throw new NotSupportedException();

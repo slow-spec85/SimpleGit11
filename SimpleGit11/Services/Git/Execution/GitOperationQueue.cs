@@ -8,9 +8,11 @@ public sealed class GitOperationQueue : IGitOperationQueue
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
+    public event EventHandler? WorkingTreeMayHaveChanged;
+
     public bool IsRunning { get; private set; }
 
-    public async Task EnqueueAsync(Func<Task> operation)
+    public async Task EnqueueAsync(Func<Task> operation, bool mayChangeWorkingTree = false)
     {
         await _semaphore.WaitAsync();
         try
@@ -22,6 +24,10 @@ public sealed class GitOperationQueue : IGitOperationQueue
         {
             IsRunning = false;
             _semaphore.Release();
+            if (mayChangeWorkingTree)
+            {
+                WorkingTreeMayHaveChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
     }
 }

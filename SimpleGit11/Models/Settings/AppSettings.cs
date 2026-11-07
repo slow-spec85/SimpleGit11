@@ -6,6 +6,9 @@ public sealed class AppSettings
     public const int DefaultEditorFontSize = 14;
     public const int DefaultEditorLineSpacing = 2;
     public const int DefaultRecentRepositoriesCount = 8;
+    public const int DefaultChangesPollIntervalSeconds = 10;
+    public const int MinimumChangesPollIntervalSeconds = 1;
+    public const int MaximumChangesPollIntervalSeconds = 300;
 
     public AppThemeMode ThemeMode { get; set; } = AppThemeMode.System;
 
@@ -16,6 +19,7 @@ public sealed class AppSettings
     public bool FetchOnRepositoryOpen { get; set; }
 
     public bool RefreshOnWindowActivation { get; set; }
+    public int ChangesPollIntervalSeconds { get; set; } = DefaultChangesPollIntervalSeconds;
 
     public bool ShowFileFolders { get; set; }
 

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
 using SimpleGit11.Services.Git.Execution;
@@ -82,6 +83,19 @@ public sealed class GitStatusService : IGitStatusService
         return GitOperationState.None;
     }
 
+    public async Task<int> GetChangedFileCountAsync(
+        RepositoryInfo repository,
+        CancellationToken cancellationToken)
+    {
+        GitCommandResult result = await _commandRunner.RunAsync(
+            repository.Path, ["--no-optional-locks", "status", "--porcelain=v1"],
+            cancellationToken: cancellationToken);
+        return ReadStatusEntries(result.StandardOutput)
+            .Select(entry => entry.Path)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+    }
+
     private async Task<string> RunGitAsync(RepositoryInfo repository, params string[] arguments)
     {
         GitCommandResult result = await _commandRunner.RunAsync(repository.Path, arguments);
@@ -157,17 +171,8 @@ public sealed class GitStatusService : IGitStatusService
         var unstagedChanges = new List<GitChangedFile>();
         var conflictedChanges = new List<GitChangedFile>();
 
-        foreach (var rawLine in output.Split('\n'))
+        foreach ((char indexStatus, char workTreeStatus, string path) in ReadStatusEntries(output))
         {
-            var line = rawLine.TrimEnd('\r');
-            if (line.Length < 3)
-            {
-                continue;
-            }
-
-            var indexStatus = line[0];
-            var workTreeStatus = line[1];
-            var path = NormalizePath(line[3..]);
 
             if (IsConflict(indexStatus, workTreeStatus))
             {
@@ -203,6 +208,19 @@ public sealed class GitStatusService : IGitStatusService
         }
 
         return new GitStatusSnapshot(stagedChanges, unstagedChanges, conflictedChanges);
+    }
+
+    private static IEnumerable<(char IndexStatus, char WorkTreeStatus, string Path)> ReadStatusEntries(
+        string output)
+    {
+        foreach (string rawLine in output.Split('\n'))
+        {
+            string line = rawLine.TrimEnd('\r');
+            if (line.Length > 3)
+            {
+                yield return (line[0], line[1], NormalizePath(line[3..]));
+            }
+        }
     }
 
     private static IReadOnlySet<string> ParseSubmodulePaths(string output)

@@ -1441,7 +1441,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             {
                 ShowError(_localizationService.GetString("SubmoduleOperationFailed"), exception.Message);
             }
-        });
+        }, mayChangeWorkingTree: true);
     }
 
     private async Task LoadWorktreesAsync(RepositoryInfo repository)
@@ -1760,7 +1760,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
             {
                 ShowError(_localizationService.GetString("WorktreeOperationFailed"), exception.Message);
             }
-        });
+        }, mayChangeWorkingTree: true);
     }
 
     private async Task LoadStatusAsync(RepositoryInfo repository)
@@ -1909,15 +1909,16 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
         OnPropertyChanged(nameof(HasNoRemotes));
     }
 
-    private Task RunGitOperationAsync(string progressMessage, Func<Task> operation)
+    private Task RunGitOperationAsync(string progressMessage, Func<Task> operation, bool mayChangeWorkingTree = false)
     {
-        return RunGitOperationAsync(progressMessage, _ => operation(), canCancel: false);
+        return RunGitOperationAsync(progressMessage, _ => operation(), canCancel: false, mayChangeWorkingTree);
     }
 
     private async Task RunGitOperationAsync(
         string progressMessage,
         Func<CancellationToken, Task> operation,
-        bool canCancel)
+        bool canCancel,
+        bool mayChangeWorkingTree = false)
     {
         await _gitService.ExecuteAsync(async () =>
         {
@@ -1945,7 +1946,7 @@ public sealed partial class RepositoryViewModel : AppNotificationViewModelBase
                 IsGitOperationRunning = false;
                 NotifyRemoteCancellationStateChanged();
             }
-        });
+        }, mayChangeWorkingTree);
     }
 
     private void CancelRemoteOperation()

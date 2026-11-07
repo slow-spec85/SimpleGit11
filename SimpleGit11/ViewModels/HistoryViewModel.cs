@@ -195,7 +195,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
         await RunGitOperationAsync(async () =>
         {
             await RefreshHistoryCoreAsync();
-        });
+        }, mayChangeWorkingTree: false);
     }
 
     private async Task RefreshHistoryCoreAsync()
@@ -278,7 +278,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
             {
                 ProgressMessage = "";
             }
-        });
+        }, mayChangeWorkingTree: false);
     }
 
     private void ReplaceHistory(GitCommitPage page)
@@ -581,7 +581,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
         });
     }
 
-    private async Task RunGitOperationAsync(System.Func<Task> operation)
+    private async Task RunGitOperationAsync(System.Func<Task> operation, bool mayChangeWorkingTree = true)
     {
         await _gitService.ExecuteAsync(async () =>
         {
@@ -594,7 +594,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
             {
                 IsGitOperationRunning = false;
             }
-        });
+        }, mayChangeWorkingTree);
     }
 
     private void UpdateCommandStates()

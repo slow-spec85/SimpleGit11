@@ -34,6 +34,7 @@ public sealed class ChangesCommitTests
 
         CollectionAssert.AreEqual(new[] { "prepare", "dialog", "commit" }, fixture.Calls);
         CollectionAssert.AreEqual(new[] { "first.txt" }, fixture.CommittedPaths);
+        CollectionAssert.AreEqual(new[] { "commit" }, fixture.WorkingTreeUpdates);
         Assert.HasCount(2, fixture.Model.UnstagedChanges);
     }
 
@@ -89,6 +90,7 @@ public sealed class ChangesCommitTests
     {
         public ChangesViewModel Model { get; }
         public List<string> Calls { get; } = [];
+        public List<string> WorkingTreeUpdates { get; } = [];
         public string[] CommittedPaths { get; private set; } = [];
         public CommitDialogRequest? Request { get; private set; }
         public bool FailStage { get; init; }
@@ -96,6 +98,8 @@ public sealed class ChangesCommitTests
 
         public Fixture(bool hasStagedChanges = false)
         {
+            GitOperationQueue queue = new();
+            queue.WorkingTreeMayHaveChanged += (_, _) => WorkingTreeUpdates.Add(Calls[^1]);
             StrongReferenceMessenger messenger = new();
             ILocalizationService localization = Stub.Create<ILocalizationService>((method, args) => method switch
             {
@@ -140,7 +144,7 @@ public sealed class ChangesCommitTests
                 "get_CommitWorkflow" => workflow,
                 "get_History" => history,
                 "get_Stashes" => stashes,
-                "ExecuteAsync" => ((Func<Task>)args![0]!)(),
+                "ExecuteAsync" => queue.EnqueueAsync((Func<Task>)args![0]!, (bool)args[1]!),
                 "GetStatusAsync" => Task.FromResult(new GitStatusSnapshot(
                     Model!.StagedChanges.ToArray(), Model.UnstagedChanges.ToArray(), [])),
                 "GetOperationStateAsync" => Task.FromResult(GitOperationState.None),

@@ -46,6 +46,7 @@
                     IsSelected="True"
                     Tag="Repository" />
                 <NavigationViewItem
+                    x:Name="ChangesNavigationItem"
                     x:Uid="ChangesNavigationItem"
                     AutomationProperties.AutomationId="ChangesNavigationItem"
                     Icon="Edit"
