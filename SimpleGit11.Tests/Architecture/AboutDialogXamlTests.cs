@@ -8,7 +8,7 @@ public sealed class AboutDialogXamlTests
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
 
     [TestMethod]
-    public void LatestReleaseRow_ShowsUpdateActionOnSeparateLineAfterVersion()
+    public void LatestReleaseRow_ShowsUpdateButtonAndStatusOnNextRow()
     {
         XDocument document = LoadApplicationXml("Dialogs", "AboutDialog.xaml");
         XElement versionLink = FindNamedElement(document, "LatestReleaseHyperlinkButton");
@@ -16,18 +16,27 @@ public sealed class AboutDialogXamlTests
         XElement updateButton = FindNamedElement(document, "InstallUpdateButton");
         XElement updateProgressRing = FindNamedElement(document, "UpdateProgressRing");
         XElement updateStatusText = FindNamedElement(document, "UpdateStatusTextBlock");
-        XElement[] releaseElements = versionLink.Parent!.Elements().ToArray();
-        XElement[] actionElements = updateActionPanel.Elements().ToArray();
+        XElement releasePanel = versionLink.Parent!;
+        XElement layoutGrid = releasePanel.Parent!;
 
-        Assert.AreSame(versionLink.Parent, updateActionPanel.Parent);
-        Assert.IsTrue(
-            Array.IndexOf(releaseElements, versionLink) < Array.IndexOf(releaseElements, updateActionPanel));
-        Assert.AreSame(updateActionPanel, updateButton.Parent);
-        Assert.IsTrue(
-            Array.IndexOf(actionElements, updateButton) < Array.IndexOf(actionElements, updateProgressRing));
-        Assert.IsTrue(
-            Array.IndexOf(actionElements, updateProgressRing) < Array.IndexOf(actionElements, updateStatusText));
+        Assert.AreEqual("Grid", layoutGrid.Name.LocalName);
+        Assert.AreSame(layoutGrid, updateButton.Parent);
+        Assert.AreSame(layoutGrid, updateActionPanel.Parent);
+
+        int releaseRow = (int?)releasePanel.Attribute("Grid.Row") ?? 0;
+        int updateRow = (int?)updateButton.Attribute("Grid.Row") ?? 0;
+        Assert.AreEqual(releaseRow + 1, updateRow);
+        Assert.AreEqual(updateRow, (int?)updateActionPanel.Attribute("Grid.Row") ?? 0);
+        Assert.AreEqual(0, (int?)updateButton.Attribute("Grid.Column") ?? 0);
+        Assert.AreEqual(1, (int?)releasePanel.Attribute("Grid.Column") ?? 0);
+        Assert.AreEqual(1, (int?)updateActionPanel.Attribute("Grid.Column") ?? 0);
+
+        Assert.AreSame(updateActionPanel, updateProgressRing.Parent);
+        Assert.AreSame(updateActionPanel, updateStatusText.Parent);
+        Assert.AreEqual(0, (int?)updateProgressRing.Attribute("Grid.Column") ?? 0);
+        Assert.AreEqual(1, (int?)updateStatusText.Attribute("Grid.Column") ?? 0);
         StringAssert.Contains(updateButton.Attribute("Command")!.Value, "ViewModel.InstallUpdateCommand");
+        StringAssert.Contains((string?)updateButton.Attribute("Visibility"), "ViewModel.CanInstallUpdate");
         StringAssert.Contains(updateActionPanel.Attribute("Visibility")!.Value, "ViewModel.CanInstallUpdate");
         Assert.IsFalse(document.Descendants().Any(element => element.Name.LocalName == "ToggleSwitch"));
     }
@@ -48,8 +57,18 @@ public sealed class AboutDialogXamlTests
             "InstallUpdateButton.Content",
             "InstallUpdateButton.AutomationProperties.Name",
             "UpdateProgressRing.AutomationProperties.Name",
-            "AboutDownloadingUpdate",
-            "AboutUpdateFailed"
+            "AboutUpdateInProgress",
+            "AboutUpdateFailed",
+            "AboutUpdateValidateRelease",
+            "AboutUpdateDownloadChecksum",
+            "AboutUpdateDownloadChecksumViaApi",
+            "AboutUpdateValidateChecksum",
+            "AboutUpdatePrepareDownload",
+            "AboutUpdateDownloadInstaller",
+            "AboutUpdateDownloadInstallerViaApi",
+            "AboutUpdateVerifyInstaller",
+            "AboutUpdateSaveInstaller",
+            "AboutUpdateLaunchInstaller"
         })
         {
             Assert.Contains(key, keys);

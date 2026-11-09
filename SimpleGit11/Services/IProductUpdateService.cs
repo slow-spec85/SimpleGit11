@@ -9,8 +9,9 @@ public interface IProductUpdateService
 {
     bool IsUpdateAvailable(ProductReleaseInfo release, string currentVersion);
 
+    // The callback runs synchronously on the thread executing each stage.
     Task<string> DownloadInstallerAsync(
         ProductReleaseInfo release,
-        IProgress<double>? progress,
+        Action<ProductUpdateStage>? reportStage,
         CancellationToken cancellationToken);
 }

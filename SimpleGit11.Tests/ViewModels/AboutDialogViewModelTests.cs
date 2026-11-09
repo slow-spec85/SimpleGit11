@@ -73,15 +73,50 @@ public sealed class AboutDialogViewModelTests
         Assert.AreEqual(updateService.InstallerPath, launcher.InstallerPath);
         Assert.IsTrue(installerLaunched);
         Assert.IsFalse(viewModel.IsDownloadingUpdate);
+        Assert.AreEqual("AboutUpdateLaunchInstaller…", viewModel.UpdateStatusMessage);
     }
 
     [TestMethod]
-    public async Task InstallUpdateCommand_DownloadFails_ShowsLocalizedErrorAndDoesNotLaunch()
+    public async Task InstallUpdateCommand_DownloadingViaApi_ShowsFallbackStatus()
+    {
+        TaskCompletionSource<string> download = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestProductUpdateService updateService = new()
+        {
+            Available = true,
+            DownloadStage = ProductUpdateStage.DownloadChecksumViaApi,
+            DownloadTask = download.Task
+        };
+        using AboutDialogViewModel viewModel = CreateViewModel(
+            new TestProductInfoService { LatestRelease = CreateRelease("1.2.3") },
+            updateService,
+            new TestInstallerLauncher());
+        await viewModel.LoadAsync();
+
+        Task update = viewModel.InstallUpdateCommand.ExecuteAsync(null);
+        bool isDownloading = viewModel.IsDownloadingUpdate;
+        string status = viewModel.UpdateStatusMessage;
+        download.SetResult(updateService.InstallerPath);
+        await update;
+
+        Assert.IsTrue(isDownloading);
+        Assert.AreEqual("AboutUpdateDownloadChecksumViaApi…", status);
+    }
+
+    [TestMethod]
+    [DataRow(ProductUpdateStage.DownloadChecksum, "AboutUpdateDownloadChecksum")]
+    [DataRow(ProductUpdateStage.DownloadChecksumViaApi, "AboutUpdateDownloadChecksumViaApi")]
+    [DataRow(ProductUpdateStage.DownloadInstallerViaApi, "AboutUpdateDownloadInstallerViaApi")]
+    [DataRow(ProductUpdateStage.VerifyInstaller, "AboutUpdateVerifyInstaller")]
+    [DataRow(ProductUpdateStage.SaveInstaller, "AboutUpdateSaveInstaller")]
+    public async Task InstallUpdateCommand_DownloadFails_ShowsFailedStageAndDoesNotLaunch(
+        ProductUpdateStage stage,
+        string expectedStageKey)
     {
         TestProductUpdateService updateService = new()
         {
             Available = true,
-            DownloadException = new InvalidDataException("Checksum mismatch")
+            DownloadStage = stage,
+            DownloadTask = Task.FromException<string>(new IOException("Update failure"))
         };
         TestInstallerLauncher launcher = new();
         using AboutDialogViewModel viewModel = CreateViewModel(
@@ -94,7 +129,27 @@ public sealed class AboutDialogViewModelTests
 
         Assert.IsNull(launcher.InstallerPath);
         Assert.IsTrue(viewModel.HasUpdateStatus);
-        Assert.AreEqual("AboutUpdateFailed", viewModel.UpdateStatusMessage);
+        Assert.IsFalse(viewModel.IsDownloadingUpdate);
+        Assert.AreEqual($"AboutUpdateFailed ({expectedStageKey})", viewModel.UpdateStatusMessage);
+    }
+
+    [TestMethod]
+    public async Task InstallUpdateCommand_LaunchFails_ShowsLaunchStageFailure()
+    {
+        TestInstallerLauncher launcher = new() { LaunchException = new InvalidOperationException() };
+        using AboutDialogViewModel viewModel = CreateViewModel(
+            new TestProductInfoService { LatestRelease = CreateRelease("1.2.3") },
+            new TestProductUpdateService { Available = true },
+            launcher);
+        bool installerLaunched = false;
+        viewModel.InstallerLaunched += (_, _) => installerLaunched = true;
+        await viewModel.LoadAsync();
+
+        await viewModel.InstallUpdateCommand.ExecuteAsync(null);
+
+        Assert.IsFalse(installerLaunched);
+        Assert.IsTrue(viewModel.HasUpdateStatus);
+        Assert.AreEqual("AboutUpdateFailed (AboutUpdateLaunchInstaller)", viewModel.UpdateStatusMessage);
     }
 
     [TestMethod]
@@ -184,7 +239,9 @@ public sealed class AboutDialogViewModelTests
 
         public string InstallerPath { get; init; } = @"C:\Temp\SimpleGit11.Setup.exe";
 
-        public Exception? DownloadException { get; init; }
+        public ProductUpdateStage DownloadStage { get; init; }
+
+        public Task<string>? DownloadTask { get; init; }
 
         public ProductReleaseInfo? AvailabilityRelease { get; private set; }
 
@@ -201,22 +258,28 @@ public sealed class AboutDialogViewModelTests
 
         public Task<string> DownloadInstallerAsync(
             ProductReleaseInfo release,
-            IProgress<double>? progress,
+            Action<ProductUpdateStage>? reportStage,
             CancellationToken cancellationToken)
         {
             DownloadedRelease = release;
-            return DownloadException is null
-                ? Task.FromResult(InstallerPath)
-                : Task.FromException<string>(DownloadException);
+            reportStage?.Invoke(DownloadStage);
+            return DownloadTask ?? Task.FromResult(InstallerPath);
         }
     }
 
     private sealed class TestInstallerLauncher : IInstallerLauncher
     {
+        public Exception? LaunchException { get; init; }
+
         public string? InstallerPath { get; private set; }
 
         public void Launch(string installerPath)
         {
+            if (LaunchException is not null)
+            {
+                throw LaunchException;
+            }
+
             InstallerPath = installerPath;
         }
     }
@@ -225,7 +288,12 @@ public sealed class AboutDialogViewModelTests
     {
         public AppLanguage CurrentLanguage => AppLanguage.English;
 
-        public string GetString(string resourceKey) => resourceKey;
+        public string GetString(string resourceKey) => resourceKey switch
+        {
+            "AboutUpdateInProgress" => "{0}…",
+            "AboutUpdateFailed" => "AboutUpdateFailed ({0})",
+            _ => resourceKey
+        };
 
         public void ApplyLanguage()
         {

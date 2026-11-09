@@ -139,17 +139,21 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
         previousCancellation?.Cancel();
         previousCancellation?.Dispose();
         CancellationToken cancellationToken = cancellation.Token;
+        SynchronizationContext? uiContext = SynchronizationContext.Current;
+        ProductUpdateStage stage = ProductUpdateStage.ValidateRelease;
         HasUpdateStatus = true;
-        UpdateStatusMessage = _localizationService.GetString("AboutDownloadingUpdate");
         IsDownloadingUpdate = true;
 
         try
         {
+            ShowUpdateStage(stage);
             string installerPath = await _productUpdateService.DownloadInstallerAsync(
                 release,
-                null,
+                ReportDownloadStage,
                 cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
+            stage = ProductUpdateStage.LaunchInstaller;
+            ShowUpdateStage(stage);
             _installerLauncher.Launch(installerPath);
             InstallerLaunched?.Invoke(this, EventArgs.Empty);
         }
@@ -159,13 +163,56 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
         catch (Exception exception)
         {
             Debug.WriteLine(exception);
-            UpdateStatusMessage = _localizationService.GetString("AboutUpdateFailed");
-            HasUpdateStatus = true;
+            ShowUpdateStage(stage, failed: true);
         }
         finally
         {
             IsDownloadingUpdate = false;
         }
+
+        void ReportDownloadStage(ProductUpdateStage reportedStage)
+        {
+            stage = reportedStage;
+            if (uiContext is null || SynchronizationContext.Current == uiContext)
+            {
+                DisplayDownloadStage(reportedStage);
+            }
+            else
+            {
+                uiContext.Post(_ => DisplayDownloadStage(reportedStage), null);
+            }
+        }
+
+        void DisplayDownloadStage(ProductUpdateStage reportedStage)
+        {
+            if (IsDownloadingUpdate
+                && !cancellationToken.IsCancellationRequested
+                && stage != ProductUpdateStage.LaunchInstaller)
+            {
+                ShowUpdateStage(reportedStage);
+            }
+        }
+    }
+
+    private void ShowUpdateStage(ProductUpdateStage stage, bool failed = false)
+    {
+        string stageKey = stage switch
+        {
+            ProductUpdateStage.ValidateRelease => "AboutUpdateValidateRelease",
+            ProductUpdateStage.DownloadChecksum => "AboutUpdateDownloadChecksum",
+            ProductUpdateStage.DownloadChecksumViaApi => "AboutUpdateDownloadChecksumViaApi",
+            ProductUpdateStage.ValidateChecksum => "AboutUpdateValidateChecksum",
+            ProductUpdateStage.PrepareDownload => "AboutUpdatePrepareDownload",
+            ProductUpdateStage.DownloadInstaller => "AboutUpdateDownloadInstaller",
+            ProductUpdateStage.DownloadInstallerViaApi => "AboutUpdateDownloadInstallerViaApi",
+            ProductUpdateStage.VerifyInstaller => "AboutUpdateVerifyInstaller",
+            ProductUpdateStage.SaveInstaller => "AboutUpdateSaveInstaller",
+            ProductUpdateStage.LaunchInstaller => "AboutUpdateLaunchInstaller",
+            _ => throw new ArgumentOutOfRangeException(nameof(stage))
+        };
+        UpdateStatusMessage = string.Format(
+            _localizationService.GetString(failed ? "AboutUpdateFailed" : "AboutUpdateInProgress"),
+            _localizationService.GetString(stageKey));
     }
 
     private bool CanStartUpdate()

@@ -154,7 +154,11 @@ public sealed class ProductInfoService : IProductInfoService, IDisposable
             return null;
         }
 
-        return new ProductReleaseAsset(installerName, installerUri, checksumUri, installer.Size);
+        return new ProductReleaseAsset(installerName, installerUri, checksumUri, installer.Size)
+        {
+            InstallerAssetId = installer.Id,
+            ChecksumAssetId = checksum.Id
+        };
     }
 
     private static bool TryCreateDownloadUri(string value, out Uri uri)
@@ -200,6 +204,9 @@ public sealed class ProductInfoService : IProductInfoService, IDisposable
 
     private sealed class GitHubReleaseAsset
     {
+        [JsonPropertyName("id")]
+        public long Id { get; init; }
+
         [JsonPropertyName("name")]
         public string Name { get; init; } = "";
 

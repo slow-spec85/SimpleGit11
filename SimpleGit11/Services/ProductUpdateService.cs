@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,9 +34,10 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
 
     public async Task<string> DownloadInstallerAsync(
         ProductReleaseInfo release,
-        IProgress<double>? progress,
+        Action<ProductUpdateStage>? reportStage,
         CancellationToken cancellationToken)
     {
+        reportStage?.Invoke(ProductUpdateStage.ValidateRelease);
         ArgumentNullException.ThrowIfNull(release);
         ProductReleaseAsset asset = release.Installer
             ?? throw new InvalidOperationException("The release does not contain an installer.");
@@ -45,8 +47,9 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
         }
 
         ValidateAsset(asset, release.Version);
-        string expectedHash = await DownloadChecksumAsync(asset, cancellationToken)
+        string expectedHash = await DownloadChecksumAsync(asset, reportStage, cancellationToken)
             .ConfigureAwait(false);
+        reportStage?.Invoke(ProductUpdateStage.PrepareDownload);
         string releaseDirectory = Path.Combine(_updateRoot, release.Version);
         Directory.CreateDirectory(releaseDirectory);
         string destinationPath = Path.Combine(releaseDirectory, asset.FileName);
@@ -54,21 +57,6 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
 
         try
         {
-            using HttpRequestMessage request = new(HttpMethod.Get, asset.DownloadUri);
-            using HttpResponseMessage response = await _httpClient.SendAsync(
-                request,
-                HttpCompletionOption.ResponseHeadersRead,
-                cancellationToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-            if (response.Content.Headers.ContentLength is long contentLength
-                && contentLength != asset.Size)
-            {
-                throw new InvalidDataException("The installer size does not match the release metadata.");
-            }
-
-            await using Stream source = await response.Content
-                .ReadAsStreamAsync(cancellationToken)
-                .ConfigureAwait(false);
             await using FileStream destination = new(
                 temporaryPath,
                 FileMode.CreateNew,
@@ -76,6 +64,23 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
                 FileShare.None,
                 81920,
                 FileOptions.Asynchronous | FileOptions.SequentialScan);
+            reportStage?.Invoke(ProductUpdateStage.DownloadInstaller);
+            using HttpResponseMessage response = await GetAssetResponseAsync(
+                asset.DownloadUri,
+                asset.InstallerAssetId,
+                () => reportStage?.Invoke(ProductUpdateStage.DownloadInstallerViaApi),
+                cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            if (response.Content.Headers.ContentLength is long contentLength
+                && contentLength != asset.Size)
+            {
+                reportStage?.Invoke(ProductUpdateStage.VerifyInstaller);
+                throw new InvalidDataException("The installer size does not match the release metadata.");
+            }
+
+            await using Stream source = await response.Content
+                .ReadAsStreamAsync(cancellationToken)
+                .ConfigureAwait(false);
             using IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
             byte[] buffer = ArrayPool<byte>.Shared.Rent(81920);
             long bytesReceived = 0;
@@ -93,13 +98,13 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
                     bytesReceived += bytesRead;
                     if (bytesReceived > asset.Size || bytesReceived > MaximumInstallerSize)
                     {
+                        reportStage?.Invoke(ProductUpdateStage.VerifyInstaller);
                         throw new InvalidDataException("The installer is larger than expected.");
                     }
 
                     hash.AppendData(buffer, 0, bytesRead);
                     await destination.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken)
                         .ConfigureAwait(false);
-                    progress?.Report((double)bytesReceived / asset.Size);
                 }
             }
             finally
@@ -107,6 +112,7 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
                 ArrayPool<byte>.Shared.Return(buffer);
             }
 
+            reportStage?.Invoke(ProductUpdateStage.VerifyInstaller);
             if (bytesReceived != asset.Size)
             {
                 throw new InvalidDataException("The installer size does not match the release metadata.");
@@ -118,10 +124,10 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
                 throw new InvalidDataException("The installer checksum is invalid.");
             }
 
+            reportStage?.Invoke(ProductUpdateStage.SaveInstaller);
             await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
             destination.Close();
             File.Move(temporaryPath, destinationPath, overwrite: true);
-            progress?.Report(1);
             return destinationPath;
         }
         finally
@@ -140,21 +146,25 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
 
     private async Task<string> DownloadChecksumAsync(
         ProductReleaseAsset asset,
+        Action<ProductUpdateStage>? reportStage,
         CancellationToken cancellationToken)
     {
-        using HttpRequestMessage request = new(HttpMethod.Get, asset.ChecksumUri);
-        using HttpResponseMessage response = await _httpClient.SendAsync(
-            request,
-            HttpCompletionOption.ResponseHeadersRead,
+        reportStage?.Invoke(ProductUpdateStage.DownloadChecksum);
+        using HttpResponseMessage response = await GetAssetResponseAsync(
+            asset.ChecksumUri,
+            asset.ChecksumAssetId,
+            () => reportStage?.Invoke(ProductUpdateStage.DownloadChecksumViaApi),
             cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         if (response.Content.Headers.ContentLength is > MaximumChecksumLength)
         {
+            reportStage?.Invoke(ProductUpdateStage.ValidateChecksum);
             throw new InvalidDataException("The checksum file is too large.");
         }
 
         string content = await response.Content.ReadAsStringAsync(cancellationToken)
             .ConfigureAwait(false);
+        reportStage?.Invoke(ProductUpdateStage.ValidateChecksum);
         if (content.Length > MaximumChecksumLength)
         {
             throw new InvalidDataException("The checksum file is too large.");
@@ -170,6 +180,43 @@ public sealed class ProductUpdateService : IProductUpdateService, IDisposable
         }
 
         return parts[0].ToUpper(CultureInfo.InvariantCulture);
+    }
+
+    private async Task<HttpResponseMessage> GetAssetResponseAsync(
+        Uri downloadUri,
+        long assetId,
+        Action reportFallback,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            HttpResponseMessage response = await _httpClient.GetAsync(
+                downloadUri,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode || assetId <= 0)
+            {
+                return response;
+            }
+
+            response.Dispose();
+        }
+        catch (HttpRequestException) when (assetId > 0 && !cancellationToken.IsCancellationRequested)
+        {
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        reportFallback();
+        string apiUrl = FormattableString.Invariant(
+            $"https://api.github.com/repos/slow-spec85/SimpleGit11/releases/assets/{assetId}");
+        using HttpRequestMessage request = new(HttpMethod.Get, apiUrl);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
+        request.Headers.UserAgent.ParseAdd("SimpleGit11");
+        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+        return await _httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken).ConfigureAwait(false);
     }
 
     private static void ValidateAsset(ProductReleaseAsset asset, string version)

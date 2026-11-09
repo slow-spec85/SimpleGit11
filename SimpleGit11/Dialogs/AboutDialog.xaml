@@ -34,7 +34,7 @@
         <Grid
             ColumnDefinitions="Auto,*"
             ColumnSpacing="20"
-            RowDefinitions="Auto,Auto,Auto,Auto">
+            RowDefinitions="Auto,Auto,Auto,Auto,Auto">
             <TextBlock
                 x:Uid="AboutCurrentVersionLabelTextBlock"
                 VerticalAlignment="Center"
@@ -111,35 +111,6 @@
                     Content="{x:Bind ViewModel.LatestReleaseVersion, Mode=OneWay}"
                     Visibility="{x:Bind ViewModel.HasLatestRelease, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
 
-                <Grid
-                    x:Name="UpdateActionPanel"
-                    ColumnDefinitions="Auto,Auto,*"
-                    ColumnSpacing="8"
-                    Visibility="{x:Bind ViewModel.CanInstallUpdate, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                    <Button
-                        x:Name="InstallUpdateButton"
-                        x:Uid="InstallUpdateButton"
-                        AutomationProperties.AutomationId="AboutInstallUpdate"
-                        Command="{x:Bind ViewModel.InstallUpdateCommand, Mode=OneWay}" />
-                    <ProgressRing
-                        x:Name="UpdateProgressRing"
-                        x:Uid="UpdateProgressRing"
-                        Grid.Column="1"
-                        Width="16"
-                        Height="16"
-                        VerticalAlignment="Center"
-                        IsActive="{x:Bind ViewModel.IsDownloadingUpdate, Mode=OneWay}"
-                        Visibility="{x:Bind ViewModel.IsDownloadingUpdate, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
-                    <TextBlock
-                        x:Name="UpdateStatusTextBlock"
-                        Grid.Column="2"
-                        VerticalAlignment="Center"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="{x:Bind ViewModel.UpdateStatusMessage, Mode=OneWay}"
-                        TextWrapping="WrapWholeWords"
-                        Visibility="{x:Bind ViewModel.HasUpdateStatus, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
-                </Grid>
-
                 <StackPanel
                     Spacing="8"
                     Visibility="{x:Bind ViewModel.HasReleaseStatus, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
@@ -156,6 +127,37 @@
                         Visibility="{x:Bind ViewModel.HasReleaseError, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                 </StackPanel>
             </StackPanel>
+            <Button
+                x:Name="InstallUpdateButton"
+                x:Uid="InstallUpdateButton"
+                Grid.Row="4"
+                AutomationProperties.AutomationId="AboutInstallUpdate"
+                Command="{x:Bind ViewModel.InstallUpdateCommand, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.CanInstallUpdate, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+            <Grid
+                x:Name="UpdateActionPanel"
+                Grid.Row="4"
+                Grid.Column="1"
+                ColumnDefinitions="Auto,*"
+                ColumnSpacing="8"
+                Visibility="{x:Bind ViewModel.CanInstallUpdate, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                <ProgressRing
+                    x:Name="UpdateProgressRing"
+                    x:Uid="UpdateProgressRing"
+                    Width="16"
+                    Height="16"
+                    VerticalAlignment="Center"
+                    IsActive="{x:Bind ViewModel.IsDownloadingUpdate, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.IsDownloadingUpdate, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                <TextBlock
+                    x:Name="UpdateStatusTextBlock"
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{x:Bind ViewModel.UpdateStatusMessage, Mode=OneWay}"
+                    TextWrapping="WrapWholeWords"
+                    Visibility="{x:Bind ViewModel.HasUpdateStatus, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+            </Grid>
         </Grid>
     </StackPanel>
 </ContentDialog>

@@ -169,7 +169,7 @@
     <value>Скачать и установить обновление</value>
   </data>
   <data name="UpdateProgressRing.AutomationProperties.Name" xml:space="preserve">
-    <value>Скачивание и проверка обновления</value>
+    <value>Выполняется обновление</value>
   </data>
   <data name="RetryReleaseCheckButton.Content" xml:space="preserve">
     <value>Повторить</value>
@@ -180,11 +180,41 @@
   <data name="AboutReleaseCheckFailed" xml:space="preserve">
     <value>Не удалось проверить новейшую версию.</value>
   </data>
-  <data name="AboutDownloadingUpdate" xml:space="preserve">
-    <value>Скачивание и проверка обновления…</value>
+  <data name="AboutUpdateInProgress" xml:space="preserve">
+    <value>{0}…</value>
   </data>
   <data name="AboutUpdateFailed" xml:space="preserve">
-    <value>Не удалось скачать или проверить обновление.</value>
+    <value>Не удалось завершить обновление. Этап сбоя — {0}.</value>
+  </data>
+  <data name="AboutUpdateValidateRelease" xml:space="preserve">
+    <value>Проверка сведений о релизе</value>
+  </data>
+  <data name="AboutUpdateDownloadChecksum" xml:space="preserve">
+    <value>Скачивание контрольной суммы SHA-256</value>
+  </data>
+  <data name="AboutUpdateDownloadChecksumViaApi" xml:space="preserve">
+    <value>Резервное скачивание контрольной суммы через GitHub API</value>
+  </data>
+  <data name="AboutUpdateValidateChecksum" xml:space="preserve">
+    <value>Проверка формата файла SHA-256</value>
+  </data>
+  <data name="AboutUpdatePrepareDownload" xml:space="preserve">
+    <value>Подготовка временного файла для установщика</value>
+  </data>
+  <data name="AboutUpdateDownloadInstaller" xml:space="preserve">
+    <value>Скачивание установщика во временный файл</value>
+  </data>
+  <data name="AboutUpdateDownloadInstallerViaApi" xml:space="preserve">
+    <value>Резервное скачивание установщика через GitHub API</value>
+  </data>
+  <data name="AboutUpdateVerifyInstaller" xml:space="preserve">
+    <value>Проверка размера и контрольной суммы установщика</value>
+  </data>
+  <data name="AboutUpdateSaveInstaller" xml:space="preserve">
+    <value>Сохранение проверенного установщика</value>
+  </data>
+  <data name="AboutUpdateLaunchInstaller" xml:space="preserve">
+    <value>Запуск установщика</value>
   </data>
   <data name="RecentRepositoriesTextBlock.Text" xml:space="preserve">
     <value>Последние репозитории</value>

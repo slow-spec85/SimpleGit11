@@ -169,7 +169,7 @@
     <value>Download and install update</value>
   </data>
   <data name="UpdateProgressRing.AutomationProperties.Name" xml:space="preserve">
-    <value>Downloading and verifying update</value>
+    <value>Update in progress</value>
   </data>
   <data name="RetryReleaseCheckButton.Content" xml:space="preserve">
     <value>Retry</value>
@@ -180,11 +180,41 @@
   <data name="AboutReleaseCheckFailed" xml:space="preserve">
     <value>Couldn't check the latest version.</value>
   </data>
-  <data name="AboutDownloadingUpdate" xml:space="preserve">
-    <value>Downloading and verifying the update…</value>
+  <data name="AboutUpdateInProgress" xml:space="preserve">
+    <value>{0}…</value>
   </data>
   <data name="AboutUpdateFailed" xml:space="preserve">
-    <value>Couldn't download or verify the update.</value>
+    <value>The update failed during this step — {0}.</value>
+  </data>
+  <data name="AboutUpdateValidateRelease" xml:space="preserve">
+    <value>Checking release details</value>
+  </data>
+  <data name="AboutUpdateDownloadChecksum" xml:space="preserve">
+    <value>Downloading the SHA-256 checksum</value>
+  </data>
+  <data name="AboutUpdateDownloadChecksumViaApi" xml:space="preserve">
+    <value>Retrying the SHA-256 download via GitHub API</value>
+  </data>
+  <data name="AboutUpdateValidateChecksum" xml:space="preserve">
+    <value>Checking the SHA-256 file format</value>
+  </data>
+  <data name="AboutUpdatePrepareDownload" xml:space="preserve">
+    <value>Preparing a temporary file for the installer</value>
+  </data>
+  <data name="AboutUpdateDownloadInstaller" xml:space="preserve">
+    <value>Downloading the installer to a temporary file</value>
+  </data>
+  <data name="AboutUpdateDownloadInstallerViaApi" xml:space="preserve">
+    <value>Retrying the installer download via GitHub API</value>
+  </data>
+  <data name="AboutUpdateVerifyInstaller" xml:space="preserve">
+    <value>Verifying the installer size and SHA-256</value>
+  </data>
+  <data name="AboutUpdateSaveInstaller" xml:space="preserve">
+    <value>Saving the verified installer</value>
+  </data>
+  <data name="AboutUpdateLaunchInstaller" xml:space="preserve">
+    <value>Launching the installer</value>
   </data>
   <data name="RecentRepositoriesTextBlock.Text" xml:space="preserve">
     <value>Recent repositories</value>

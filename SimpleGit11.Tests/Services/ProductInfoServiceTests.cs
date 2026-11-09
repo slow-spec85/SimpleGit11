@@ -40,11 +40,13 @@ public sealed class ProductInfoServiceTests
               "published_at": "2026-08-01T11:00:00Z",
               "assets": [
                 {
+                  "id": 123,
                   "name": "SimpleGit11-1.2.3-win-x64-setup.exe",
                   "browser_download_url": "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.2.3/SimpleGit11-1.2.3-win-x64-setup.exe",
                   "size": 123456
                 },
                 {
+                  "id": 456,
                   "name": "SimpleGit11-1.2.3-win-x64-setup.exe.sha256",
                   "browser_download_url": "https://github.com/slow-spec85/SimpleGit11/releases/download/v1.2.3/SimpleGit11-1.2.3-win-x64-setup.exe.sha256",
                   "size": 96
@@ -68,6 +70,8 @@ public sealed class ProductInfoServiceTests
         Assert.IsNotNull(firstRelease.Installer);
         Assert.AreEqual("SimpleGit11-1.2.3-win-x64-setup.exe", firstRelease.Installer.FileName);
         Assert.AreEqual(123456, firstRelease.Installer.Size);
+        Assert.AreEqual(123L, firstRelease.Installer.InstallerAssetId);
+        Assert.AreEqual(456L, firstRelease.Installer.ChecksumAssetId);
         Assert.AreEqual(firstRelease, secondRelease);
         Assert.AreEqual(2, handler.Requests.Count);
         StringAssert.EndsWith(handler.Requests[0].AbsolutePath, "/releases/latest");

@@ -12,4 +12,8 @@ public sealed record ProductReleaseAsset(
     string FileName,
     Uri DownloadUri,
     Uri ChecksumUri,
-    long Size);
+    long Size)
+{
+    public long InstallerAssetId { get; init; }
+    public long ChecksumAssetId { get; init; }
+}

@@ -12,7 +12,8 @@ internal sealed class TaskbarChangesBadge : IDisposable
 {
     private const string ExplorerAdvancedKey = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
     private const int NeverCombine = 2;
-    private const int IconSize = 16;
+    private const int BaseIconSize = 16;
+    private const uint DefaultDpi = 96;
     private const int BadgeScale = 4;
     private const int BadgeBackground = 0x26252d;
     private const uint WindowNonClientDestroy = 0x0082;
@@ -33,7 +34,7 @@ internal sealed class TaskbarChangesBadge : IDisposable
     private nint _taskbarList;
     private int _localCount;
     private nint _worktree;
-    private long? _displayedCount;
+    private (long Count, int IconSize)? _displayedBadge;
 
     public TaskbarChangesBadge(nint window, Func<long, string> describeCount)
     {
@@ -85,9 +86,11 @@ internal sealed class TaskbarChangesBadge : IDisposable
         }
 
         long count = GetGroupingMode() == NeverCombine ? _localCount : GetCombinedCount();
-        if (_displayedCount != count && SetOverlay(count))
+        // Explorer can show the same overlay on the primary taskbar and on the window's monitor.
+        int iconSize = count > 0 ? GetBadgeIconSize(Math.Max(GetDpiForSystem(), GetDpiForWindow(_window))) : 0;
+        if (_displayedBadge != (count, iconSize) && SetOverlay(count, iconSize))
         {
-            _displayedCount = count;
+            _displayedBadge = (count, iconSize);
         }
     }
 
@@ -98,7 +101,7 @@ internal sealed class TaskbarChangesBadge : IDisposable
         {
             if (_taskbarButtonReady)
             {
-                SetOverlay(0);
+                SetOverlay(0, 0);
             }
 
             Marshal.Release(_taskbarList);
@@ -175,7 +178,7 @@ internal sealed class TaskbarChangesBadge : IDisposable
         else if (_taskbarButtonCreated != 0 && message == _taskbarButtonCreated)
         {
             _taskbarButtonReady = true;
-            _displayedCount = null;
+            _displayedBadge = null;
             if (_taskbarList != 0)
             {
                 Marshal.Release(_taskbarList);
@@ -186,7 +189,7 @@ internal sealed class TaskbarChangesBadge : IDisposable
         return DefSubclassProc(window, message, wParam, lParam);
     }
 
-    private unsafe bool SetOverlay(long count)
+    private unsafe bool SetOverlay(long count, int iconSize)
     {
         if (_taskbarList == 0)
         {
@@ -206,7 +209,7 @@ internal sealed class TaskbarChangesBadge : IDisposable
             _taskbarList = taskbarList;
         }
 
-        nint icon = count > 0 ? CreateBadgeIcon(count) : 0;
+        nint icon = count > 0 ? CreateBadgeIcon(count, iconSize) : 0;
         if (count > 0 && icon == 0)
         {
             return false;
@@ -232,15 +235,18 @@ internal sealed class TaskbarChangesBadge : IDisposable
         }
     }
 
-    private static unsafe nint CreateBadgeIcon(long count)
+    internal static int GetBadgeIconSize(uint dpi) =>
+        (int)((BaseIconSize * Math.Max(dpi, DefaultDpi) + DefaultDpi / 2) / DefaultDpi);
+
+    private static unsafe nint CreateBadgeIcon(long count, int iconSize)
     {
-        uint[]? badge = RenderBadgePixels(count);
+        uint[]? badge = RenderBadgePixels(count, iconSize);
         if (badge is null)
         {
             return 0;
         }
 
-        nint bitmap = CreateBitmapSurface(IconSize, out nint bits);
+        nint bitmap = CreateBitmapSurface(iconSize, out nint bits);
         if (bitmap == 0)
         {
             return 0;
@@ -250,7 +256,8 @@ internal sealed class TaskbarChangesBadge : IDisposable
         try
         {
             badge.AsSpan().CopyTo(new Span<uint>((void*)bits, badge.Length));
-            mask = CreateBitmap(IconSize, IconSize, 1, 1, new byte[IconSize * 2]);
+            int maskStride = (iconSize + 15) / 16 * 2; // A monochrome bitmap row is aligned to 16 bits.
+            mask = CreateBitmap(iconSize, iconSize, 1, 1, new byte[iconSize * maskStride]);
             return mask == 0 ? 0 : CreateIconIndirect(new IconInfo { IsIcon = 1, Mask = mask, Color = bitmap });
         }
         finally
@@ -264,17 +271,18 @@ internal sealed class TaskbarChangesBadge : IDisposable
         }
     }
 
-    internal static unsafe uint[]? RenderBadgePixels(long count)
+    internal static unsafe uint[]? RenderBadgePixels(long count, int iconSize)
     {
-        const int size = IconSize * BadgeScale;
-        const int normalWeight = 400;
+        int size = iconSize * BadgeScale;
+        const int boldWeight = 700;
         const uint grayscaleAntialiasing = 4;
         const uint centeredSingleLine = 0x0001 | 0x0004 | 0x0020; // DT_CENTER | DT_VCENTER | DT_SINGLELINE
         string label = count > 99 ? "99+" : count.ToString(CultureInfo.InvariantCulture);
         nint bitmap = CreateBitmapSurface(size, out nint bits);
         nint dc = CreateCompatibleDC(0);
-        int fontSize = label.Length switch { 1 => 14, 2 => 11, _ => 8 };
-        nint font = CreateFont(-fontSize * BadgeScale, 0, 0, 0, normalWeight,
+        int baseFontSize = label.Length switch { 1 => 14, 2 => 12, _ => 8 };
+        int fontSize = (baseFontSize * size + BaseIconSize / 2) / BaseIconSize;
+        nint font = CreateFont(-fontSize, 0, 0, 0, boldWeight,
             0, 0, 0, 1, 0, 0, grayscaleAntialiasing, 0, "Segoe UI");
         try
         {
@@ -296,7 +304,10 @@ internal sealed class TaskbarChangesBadge : IDisposable
             }
 
             GdiFlush();
-            return ComposeBadge(textMask, label.Length == 1);
+            Rect ink = MeasureTextInk(textMask, size);
+            int offsetX = (size - ink.Right + ink.Left) / 2 - ink.Left;
+            int offsetY = (size - ink.Bottom + ink.Top) / 2 - ink.Top;
+            return ComposeBadge(textMask, iconSize, label.Length == 1, offsetX, offsetY);
         }
         finally
         {
@@ -307,30 +318,57 @@ internal sealed class TaskbarChangesBadge : IDisposable
         }
     }
 
-    private static uint[] ComposeBadge(ReadOnlySpan<uint> textMask, bool circle)
+    private static Rect MeasureTextInk(ReadOnlySpan<uint> textMask, int size)
     {
-        const int size = IconSize * BadgeScale;
-        const int samplesPerPixel = BadgeScale * BadgeScale;
-        const double center = size / 2.0;
-        double radius = (circle ? 8 : 7) * BadgeScale;
-        double halfStraightSection = circle ? 0 : BadgeScale;
-        uint[] badge = new uint[IconSize * IconSize];
-        for (int y = 0; y < IconSize; y++)
+        Rect ink = new() { Left = size, Top = size };
+        for (int y = 0; y < size; y++)
         {
-            for (int x = 0; x < IconSize; x++)
+            for (int x = 0; x < size; x++)
+            {
+                if ((byte)textMask[y * size + x] == 0)
+                {
+                    continue;
+                }
+
+                ink.Left = Math.Min(ink.Left, x);
+                ink.Top = Math.Min(ink.Top, y);
+                ink.Right = Math.Max(ink.Right, x + 1);
+                ink.Bottom = y + 1;
+            }
+        }
+
+        return ink;
+    }
+
+    private static uint[] ComposeBadge(ReadOnlySpan<uint> textMask, int iconSize, bool circle, int offsetX, int offsetY)
+    {
+        int size = iconSize * BadgeScale;
+        const int samplesPerPixel = BadgeScale * BadgeScale;
+        double center = size / 2.0;
+        double halfStraightSection = circle ? 0 : (double)size / BaseIconSize;
+        double radius = center - halfStraightSection;
+        uint[] badge = new uint[iconSize * iconSize];
+        for (int y = 0; y < iconSize; y++)
+        {
+            for (int x = 0; x < iconSize; x++)
             {
                 int covered = 0;
                 int inkCoverage = 0;
                 for (int sampleY = y * BadgeScale; sampleY < (y + 1) * BadgeScale; sampleY++)
                 {
                     double dy = sampleY + 0.5 - center;
+                    int textY = sampleY - offsetY;
                     for (int sampleX = x * BadgeScale; sampleX < (x + 1) * BadgeScale; sampleX++)
                     {
                         double dx = Math.Max(0, Math.Abs(sampleX + 0.5 - center) - halfStraightSection);
                         if (dx * dx + dy * dy <= radius * radius)
                         {
                             covered++;
-                            inkCoverage += (byte)textMask[sampleY * size + sampleX];
+                            int textX = sampleX - offsetX;
+                            if ((uint)textX < (uint)size && (uint)textY < (uint)size)
+                            {
+                                inkCoverage += (byte)textMask[textY * size + textX];
+                            }
                         }
                     }
                 }
@@ -340,7 +378,7 @@ internal sealed class TaskbarChangesBadge : IDisposable
                 uint red = BlendChannel(BadgeBackground >> 16, covered, inkCoverage);
                 uint green = BlendChannel((BadgeBackground >> 8) & 0xff, covered, inkCoverage);
                 uint blue = BlendChannel(BadgeBackground & 0xff, covered, inkCoverage);
-                badge[y * IconSize + x] = (alpha << 24) | (red << 16) | (green << 8) | blue;
+                badge[y * iconSize + x] = (alpha << 24) | (red << 16) | (green << 8) | blue;
             }
         }
 
@@ -427,6 +465,12 @@ internal sealed class TaskbarChangesBadge : IDisposable
 
     [DllImport("user32.dll", ExactSpelling = true)]
     private static extern bool EnumWindows(WindowEnumerator callback, nint data);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    private static extern uint GetDpiForSystem();
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    private static extern uint GetDpiForWindow(nint window);
 
     [DllImport("ole32.dll", ExactSpelling = true)]
     private static extern int CoCreateInstance(in Guid clsid, nint outer, uint context, in Guid iid, out nint instance);

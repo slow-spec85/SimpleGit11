@@ -52,17 +52,92 @@ public sealed class ProductUpdateServiceTests
         handler.Enqueue(CreateBinaryResponse(installerBytes));
         using TemporaryDirectory directory = new();
         using ProductUpdateService service = CreateService(handler, directory.Path);
+        List<ProductUpdateStage> stages = [];
 
         string path = await service.DownloadInstallerAsync(
             CreateRelease("1.2.3", installerBytes.LongLength),
-            null,
+            stages.Add,
             CancellationToken.None);
 
         CollectionAssert.AreEqual(installerBytes, await File.ReadAllBytesAsync(path));
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                ProductUpdateStage.ValidateRelease,
+                ProductUpdateStage.DownloadChecksum,
+                ProductUpdateStage.ValidateChecksum,
+                ProductUpdateStage.PrepareDownload,
+                ProductUpdateStage.DownloadInstaller,
+                ProductUpdateStage.VerifyInstaller,
+                ProductUpdateStage.SaveInstaller
+            },
+            stages);
         Assert.AreEqual(2, handler.Requests.Count);
         StringAssert.EndsWith(handler.Requests[0].AbsolutePath, "-setup.exe.sha256");
         StringAssert.EndsWith(handler.Requests[1].AbsolutePath, ".exe");
         Assert.AreEqual(0, Directory.GetFiles(directory.Path, "*.partial", SearchOption.AllDirectories).Length);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task DownloadInstallerAsync_DirectDownloadFails_DownloadsVerifiedFilesViaGitHubApi(
+        bool connectionFailure)
+    {
+        byte[] installerBytes = Encoding.UTF8.GetBytes("fixture setup payload");
+        string checksum = Convert.ToHexString(SHA256.HashData(installerBytes));
+        ProductReleaseInfo release = CreateRelease("1.2.3", installerBytes.LongLength);
+        Assert.IsNotNull(release.Installer);
+        ProductReleaseAsset asset = release.Installer with { InstallerAssetId = 123, ChecksumAssetId = 456 };
+        QueueHttpMessageHandler handler = new();
+        if (connectionFailure)
+        {
+            handler.Enqueue(new HttpRequestException("Connection failed."));
+        }
+        else
+        {
+            handler.Enqueue(new HttpResponseMessage(HttpStatusCode.GatewayTimeout));
+        }
+
+        handler.Enqueue(CreateTextResponse($"{checksum}  {asset.FileName}"));
+        handler.Enqueue(new HttpResponseMessage(HttpStatusCode.GatewayTimeout));
+        handler.Enqueue(CreateBinaryResponse(installerBytes));
+        using TemporaryDirectory directory = new();
+        using ProductUpdateService service = CreateService(handler, directory.Path);
+        List<ProductUpdateStage> stages = [];
+
+        string path = await service.DownloadInstallerAsync(
+            release with { Installer = asset },
+            stages.Add,
+            CancellationToken.None);
+
+        CollectionAssert.AreEqual(installerBytes, await File.ReadAllBytesAsync(path));
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                ProductUpdateStage.ValidateRelease,
+                ProductUpdateStage.DownloadChecksum,
+                ProductUpdateStage.DownloadChecksumViaApi,
+                ProductUpdateStage.ValidateChecksum,
+                ProductUpdateStage.PrepareDownload,
+                ProductUpdateStage.DownloadInstaller,
+                ProductUpdateStage.DownloadInstallerViaApi,
+                ProductUpdateStage.VerifyInstaller,
+                ProductUpdateStage.SaveInstaller
+            },
+            stages);
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                asset.ChecksumUri,
+                new Uri("https://api.github.com/repos/slow-spec85/SimpleGit11/releases/assets/456"),
+                asset.DownloadUri,
+                new Uri("https://api.github.com/repos/slow-spec85/SimpleGit11/releases/assets/123")
+            },
+            handler.Requests);
+        CollectionAssert.AreEqual(
+            new[] { "", "application/octet-stream", "", "application/octet-stream" },
+            handler.AcceptHeaders);
     }
 
     [TestMethod]
@@ -75,12 +150,37 @@ public sealed class ProductUpdateServiceTests
         handler.Enqueue(CreateBinaryResponse(installerBytes));
         using TemporaryDirectory directory = new();
         using ProductUpdateService service = CreateService(handler, directory.Path);
+        List<ProductUpdateStage> stages = [];
 
         await Assert.ThrowsExactlyAsync<InvalidDataException>(() => service.DownloadInstallerAsync(
             CreateRelease("1.2.3", installerBytes.LongLength),
-            null,
+            stages.Add,
             CancellationToken.None));
 
+        Assert.AreEqual(ProductUpdateStage.VerifyInstaller, stages[^1]);
+        Assert.AreEqual(0, Directory.GetFiles(directory.Path, "*", SearchOption.AllDirectories).Length);
+    }
+
+    [TestMethod]
+    public async Task DownloadInstallerAsync_FallbackInstallerDownloadFails_ReportsFallbackAndRemovesPartialFile()
+    {
+        ProductReleaseInfo release = CreateRelease("1.2.3");
+        Assert.IsNotNull(release.Installer);
+        ProductReleaseAsset asset = release.Installer with { InstallerAssetId = 123 };
+        QueueHttpMessageHandler handler = new();
+        handler.Enqueue(CreateTextResponse($"{new string('0', 64)}  {asset.FileName}"));
+        handler.Enqueue(new HttpResponseMessage(HttpStatusCode.GatewayTimeout));
+        handler.Enqueue(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        using TemporaryDirectory directory = new();
+        using ProductUpdateService service = CreateService(handler, directory.Path);
+        List<ProductUpdateStage> stages = [];
+
+        await Assert.ThrowsExactlyAsync<HttpRequestException>(() => service.DownloadInstallerAsync(
+            release with { Installer = asset },
+            stages.Add,
+            CancellationToken.None));
+
+        Assert.AreEqual(ProductUpdateStage.DownloadInstallerViaApi, stages[^1]);
         Assert.AreEqual(0, Directory.GetFiles(directory.Path, "*", SearchOption.AllDirectories).Length);
     }
 
@@ -172,13 +272,19 @@ public sealed class ProductUpdateServiceTests
 
     private sealed class QueueHttpMessageHandler : HttpMessageHandler
     {
-        private readonly Queue<HttpResponseMessage> _responses = new();
+        private readonly Queue<Func<Task<HttpResponseMessage>>> _responses = new();
 
         public List<Uri> Requests { get; } = [];
+        public List<string> AcceptHeaders { get; } = [];
 
         public void Enqueue(HttpResponseMessage response)
         {
-            _responses.Enqueue(response);
+            _responses.Enqueue(() => Task.FromResult(response));
+        }
+
+        public void Enqueue(HttpRequestException exception)
+        {
+            _responses.Enqueue(() => Task.FromException<HttpResponseMessage>(exception));
         }
 
         protected override Task<HttpResponseMessage> SendAsync(
@@ -187,12 +293,13 @@ public sealed class ProductUpdateServiceTests
         {
             Assert.IsNotNull(request.RequestUri);
             Requests.Add(request.RequestUri);
+            AcceptHeaders.Add(request.Headers.Accept.ToString());
             if (_responses.Count == 0)
             {
                 throw new AssertFailedException("An unexpected HTTP request was sent.");
             }
 
-            return Task.FromResult(_responses.Dequeue());
+            return _responses.Dequeue()();
         }
     }
 }
