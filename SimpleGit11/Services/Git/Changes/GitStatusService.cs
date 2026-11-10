@@ -33,7 +33,7 @@ public sealed class GitStatusService : IGitStatusService
             throw new DirectoryNotFoundException(repository.Path);
         }
 
-        Task<string> statusTask = RunGitAsync(repository, "status", "--porcelain=v1");
+        Task<string> statusTask = RunGitAsync(repository, "--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all");
         Task<string> indexTask = RunGitAsync(repository, "ls-files", "--stage", "-z");
         Task<IReadOnlyDictionary<string, DiffStat>> stagedStatsTask =
             GetDiffStatsAsync(repository, true);
@@ -88,7 +88,7 @@ public sealed class GitStatusService : IGitStatusService
         CancellationToken cancellationToken)
     {
         GitCommandResult result = await _commandRunner.RunAsync(
-            repository.Path, ["--no-optional-locks", "status", "--porcelain=v1"],
+            repository.Path, ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
             cancellationToken: cancellationToken);
         return ReadStatusEntries(result.StandardOutput)
             .Select(entry => entry.Path)
@@ -108,8 +108,10 @@ public sealed class GitStatusService : IGitStatusService
     {
         var arguments = new List<string>
         {
+            "--no-optional-locks",
             "diff",
             "--numstat",
+            "-z",
             "--find-renames"
         };
 
@@ -119,7 +121,7 @@ public sealed class GitStatusService : IGitStatusService
         }
 
         var output = await RunGitAsync(repository, arguments.ToArray());
-        return ParseNumstat(output);
+        return GitDiffParser.ParseNumstat(output);
     }
 
     private async Task<string> ReadPreparedCommitMessageAsync(string gitDirectory)
@@ -171,7 +173,7 @@ public sealed class GitStatusService : IGitStatusService
         var unstagedChanges = new List<GitChangedFile>();
         var conflictedChanges = new List<GitChangedFile>();
 
-        foreach ((char indexStatus, char workTreeStatus, string path) in ReadStatusEntries(output))
+        foreach ((char indexStatus, char workTreeStatus, string path, string? previousPath) in ReadStatusEntries(output))
         {
 
             if (IsConflict(indexStatus, workTreeStatus))
@@ -192,7 +194,8 @@ public sealed class GitStatusService : IGitStatusService
                     GetStatusName(indexStatus),
                     GetStat(stagedStats, path),
                     GitChangeState.Staged,
-                    submodulePaths.Contains(path)));
+                    submodulePaths.Contains(path),
+                    indexStatus is 'R' or 'C' ? previousPath : null));
             }
 
             if (workTreeStatus != ' ' || indexStatus == '?')
@@ -203,23 +206,29 @@ public sealed class GitStatusService : IGitStatusService
                     status,
                     GetStat(unstagedStats, path),
                     GitChangeState.Unstaged,
-                    submodulePaths.Contains(path)));
+                    submodulePaths.Contains(path),
+                    workTreeStatus is 'R' or 'C' ? previousPath : null));
             }
         }
 
         return new GitStatusSnapshot(stagedChanges, unstagedChanges, conflictedChanges);
     }
 
-    private static IEnumerable<(char IndexStatus, char WorkTreeStatus, string Path)> ReadStatusEntries(
+    private static IEnumerable<(char IndexStatus, char WorkTreeStatus, string Path, string? PreviousPath)> ReadStatusEntries(
         string output)
     {
-        foreach (string rawLine in output.Split('\n'))
+        string[] fields = output.Split('\0');
+        for (int index = 0; index < fields.Length; index++)
         {
-            string line = rawLine.TrimEnd('\r');
-            if (line.Length > 3)
+            string entry = fields[index];
+            if (entry.Length <= 3) { continue; }
+            string? previousPath = null;
+            if ((entry[0] is 'R' or 'C' || entry[1] is 'R' or 'C') && index + 1 < fields.Length)
             {
-                yield return (line[0], line[1], NormalizePath(line[3..]));
+                previousPath = fields[++index];
             }
+
+            yield return (entry[0], entry[1], entry[3..], previousPath);
         }
     }
 
@@ -237,35 +246,11 @@ public sealed class GitStatusService : IGitStatusService
             string metadata = entry[..tabIndex];
             if (metadata.StartsWith("160000 ", StringComparison.Ordinal))
             {
-                paths.Add(NormalizePath(entry[(tabIndex + 1)..]));
+                paths.Add(entry[(tabIndex + 1)..]);
             }
         }
 
         return paths;
-    }
-
-    private static IReadOnlyDictionary<string, DiffStat> ParseNumstat(string output)
-    {
-        var stats = new Dictionary<string, DiffStat>(StringComparer.OrdinalIgnoreCase);
-        foreach (var rawLine in output.Split('\n'))
-        {
-            var line = rawLine.TrimEnd('\r');
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            var parts = line.Split('\t', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 3)
-            {
-                continue;
-            }
-
-            var path = NormalizePath(parts.Last());
-            stats[path] = new DiffStat(ParseCount(parts[0]), ParseCount(parts[1]));
-        }
-
-        return stats;
     }
 
     private static DiffStat GetStat(IReadOnlyDictionary<string, DiffStat> stats, string path)
@@ -281,11 +266,6 @@ public sealed class GitStatusService : IGitStatusService
         return DiffStat.Sum([GetStat(stagedStats, path), GetStat(unstagedStats, path)]);
     }
 
-    private static int ParseCount(string value)
-    {
-        return int.TryParse(value, out var count) ? count : 0;
-    }
-
     private static bool IsConflict(char indexStatus, char workTreeStatus)
     {
         if (indexStatus == 'U' || workTreeStatus == 'U')
@@ -296,46 +276,6 @@ public sealed class GitStatusService : IGitStatusService
         return (indexStatus, workTreeStatus) is
             ('A', 'A') or
             ('D', 'D');
-    }
-
-    private static string NormalizePath(string path)
-    {
-        var normalizedPath = path.Trim().Trim('"');
-        var numstatPath = NormalizeRenamePath(normalizedPath, " => ");
-        if (numstatPath != normalizedPath)
-        {
-            return numstatPath;
-        }
-
-        const string renameSeparator = " -> ";
-
-        var renameIndex = normalizedPath.IndexOf(renameSeparator, System.StringComparison.Ordinal);
-        if (renameIndex >= 0)
-        {
-            return normalizedPath[(renameIndex + renameSeparator.Length)..].Trim().Trim('"');
-        }
-
-        return normalizedPath;
-    }
-
-    private static string NormalizeRenamePath(string path, string separator)
-    {
-        var renameIndex = path.IndexOf(separator, StringComparison.Ordinal);
-        if (renameIndex < 0)
-        {
-            return path;
-        }
-
-        var openBraceIndex = path.LastIndexOf('{', renameIndex);
-        var closeBraceIndex = path.IndexOf('}', renameIndex);
-        if (openBraceIndex >= 0 && closeBraceIndex > renameIndex)
-        {
-            return (path[..openBraceIndex] + path[(renameIndex + separator.Length)..closeBraceIndex] + path[(closeBraceIndex + 1)..])
-                .Trim()
-                .Trim('"');
-        }
-
-        return path[(renameIndex + separator.Length)..].Trim().Trim('"');
     }
 
     private static string GetStatusName(char status)

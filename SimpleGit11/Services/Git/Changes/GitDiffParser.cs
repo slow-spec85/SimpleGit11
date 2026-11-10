@@ -6,6 +6,30 @@ namespace SimpleGit11.Services;
 
 internal static class GitDiffParser
 {
+    internal static IReadOnlyDictionary<string, DiffStat> ParseNumstat(string output)
+    {
+        Dictionary<string, DiffStat> stats = new(StringComparer.Ordinal);
+        string[] fields = output.Split('\0');
+        for (int index = 0; index < fields.Length; index++)
+        {
+            string[] entry = fields[index].TrimStart('\r', '\n').Split('\t', 3);
+            if (entry.Length != 3) { continue; }
+            string path = entry[2];
+            if (path.Length == 0 && index + 2 < fields.Length)
+            {
+                // With -z, a rename puts the old and new path in two extra fields.
+                index += 2;
+                path = fields[index];
+            }
+
+            int.TryParse(entry[0], out int added);
+            int.TryParse(entry[1], out int removed);
+            stats[path] = new DiffStat(added, removed);
+        }
+
+        return stats;
+    }
+
     public static IReadOnlyList<DiffLine> Parse(string output)
     {
         ArgumentNullException.ThrowIfNull(output);
@@ -17,12 +41,17 @@ internal static class GitDiffParser
         foreach (string rawLine in output.Split('\n'))
         {
             string line = rawLine.TrimEnd('\r');
-            if (line.StartsWith("@@", StringComparison.Ordinal))
+            if (line.StartsWith("diff --git ", StringComparison.Ordinal))
+            {
+                isInsideHunk = false;
+                lines.Add(new DiffLine(line, DiffLineKind.Header));
+            }
+            else if (line.StartsWith("@@", StringComparison.Ordinal))
             {
                 lines.Add(new DiffLine(line, DiffLineKind.Hunk));
                 isInsideHunk = TryReadHunkStart(line, out oldLineNumber, out newLineNumber);
             }
-            else if (IsHeader(line))
+            else if ((!isInsideHunk && IsHeader(line)) || line.StartsWith("\\ No newline ", StringComparison.Ordinal))
             {
                 lines.Add(new DiffLine(line, DiffLineKind.Header));
             }
@@ -43,7 +72,8 @@ internal static class GitDiffParser
                     line[1..],
                     DiffLineKind.Removed,
                     "-",
-                    sourceLineNumber: sourceLineNumber));
+                    sourceLineNumber: sourceLineNumber,
+                    oldLineNumber: isInsideHunk ? oldLineNumber : null));
                 oldLineNumber++;
             }
             else
@@ -91,13 +121,11 @@ internal static class GitDiffParser
 
     private static bool IsHeader(string line)
     {
-        return line.StartsWith("diff --git", StringComparison.Ordinal)
-            || line.StartsWith("index ", StringComparison.Ordinal)
+        return line.StartsWith("index ", StringComparison.Ordinal)
             || line.StartsWith("---", StringComparison.Ordinal)
             || line.StartsWith("+++", StringComparison.Ordinal)
             || line.StartsWith("new file mode", StringComparison.Ordinal)
-            || line.StartsWith("deleted file mode", StringComparison.Ordinal)
-            || line.StartsWith("\\ No newline ", StringComparison.Ordinal);
+            || line.StartsWith("deleted file mode", StringComparison.Ordinal);
     }
 
     private static void ApplyInlineChangeHighlights(IReadOnlyList<DiffLine> lines)

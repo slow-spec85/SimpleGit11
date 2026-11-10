@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleGit11.ViewModels;
@@ -45,6 +46,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
     {
         _dialogService = dialogService;
         _repositoryViewModel = repositoryViewModel;
+        SetBranchHistoryRevision("HEAD");
         messenger.RegisterAll(this);
         ProgressMessage = "";
     }
@@ -55,6 +57,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
         ClearError();
         ClearCommits();
         ClearCommitDetails();
+        DiffSearch.Query = "";
         _nextHistoryOffset = 0;
         HasNoCommits = false;
         HasMoreCommits = false;
@@ -62,6 +65,11 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
     }
 
     protected override bool ShowsCommitGraph => true;
+
+    protected override Task LoadRemainingSearchCommitsAsync(CancellationToken cancellationToken) =>
+        HasMoreCommits && _mainWindowViewModel.CurrentRepository is { } repository
+            ? _gitService.ExecuteAsync(() => LoadRemainingHistoryCoreAsync(repository, cancellationToken))
+            : Task.CompletedTask;
 
     public bool CanEditSelectedCommitMessage => IsHistoryEditing ? CanChangeDraftCommit() : CanQuickHistoryChange();
 
@@ -173,7 +181,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
     [NotifyPropertyChangedFor(nameof(IsLoadRemainingHistoryVisible))]
     public partial bool HasMoreCommits { get; private set; }
 
-    public bool IsLoadRemainingHistoryVisible => HasMoreCommits && !IsHistoryEditing;
+    protected override bool HasRemainingHistory => HasMoreCommits;
 
     public Visibility HistoryVisible => AllCommits.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
@@ -221,6 +229,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
             GitCommitPage page = await LoadHistoryForRefreshAsync(repository);
             if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
             ReplaceHistory(page);
+            if (DiffSearch.SearchHistory && DiffSearch.Query.Length > 0) { DiffSearch.Refresh(); }
         }
         catch (FileNotFoundException)
         {
@@ -256,11 +265,7 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
             {
                 ClearError();
                 ProgressMessage = _localizationService.GetString("LoadingMoreHistoryProgress");
-                IReadOnlyList<GitCommit> commits = await _gitService.GetRemainingHistoryAsync(repository, _nextHistoryOffset);
-                if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
-                _nextHistoryOffset += commits.Count;
-                AppendCommits(commits);
-                HasMoreCommits = false;
+                await LoadRemainingHistoryCoreAsync(repository, CancellationToken.None);
             }
             catch (FileNotFoundException)
             {
@@ -279,6 +284,19 @@ public sealed partial class HistoryViewModel : CommitBrowserViewModelBase,
                 ProgressMessage = "";
             }
         }, mayChangeWorkingTree: false);
+    }
+
+    private async Task LoadRemainingHistoryCoreAsync(RepositoryInfo repository, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!HasMoreCommits || !ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
+        IReadOnlyList<GitCommit> commits = await _gitService.GetRemainingHistoryAsync(
+            repository, _nextHistoryOffset, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)) { return; }
+        _nextHistoryOffset += commits.Count;
+        AppendCommits(commits);
+        HasMoreCommits = false;
     }
 
     private void ReplaceHistory(GitCommitPage page)

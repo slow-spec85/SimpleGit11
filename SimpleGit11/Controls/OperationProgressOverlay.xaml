@@ -43,7 +43,7 @@
             </StackPanel>
 
             <Button
-                x:Uid="CancelSynchronizationOperationButton"
+                x:Uid="CancelOperationProgressButton"
                 Grid.Column="2"
                 VerticalAlignment="Center"
                 Command="{x:Bind CancelCommand, Mode=OneWay}"

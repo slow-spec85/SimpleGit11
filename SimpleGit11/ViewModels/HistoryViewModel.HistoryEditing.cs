@@ -110,6 +110,7 @@ public sealed partial class HistoryViewModel
                 _historyBeforeEditing = AllCommits.ToArray();
                 _selectionBeforeEditing = selection;
                 _graphBeforeEditing = IsCommitGraphVisible;
+                DiffSearch.ResetFilters();
                 ResetCommitFiltersCommand.Execute(null);
                 _draftBasis = basis;
                 _draftHead = head.Hash;

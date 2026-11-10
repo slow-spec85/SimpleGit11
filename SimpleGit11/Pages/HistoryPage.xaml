@@ -27,10 +27,10 @@
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
                         <Setter Target="PageLayout.RowSpacing" Value="0" />
-                        <Setter Target="HeaderCommands.(Grid.Row)" Value="1" />
-                        <Setter Target="HeaderCommands.(Grid.Column)" Value="0" />
-                        <Setter Target="HeaderCommands.HorizontalAlignment" Value="Left" />
-                        <Setter Target="HeaderCommandsColumn.Width" Value="0" />
+                        <Setter Target="HeaderTitle.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="HeaderToolbar.(Grid.Row)" Value="1" />
+                        <Setter Target="HeaderToolbar.(Grid.Column)" Value="0" />
+                        <Setter Target="HeaderToolbar.(Grid.ColumnSpan)" Value="2" />
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="WideLayout">
@@ -50,16 +50,17 @@
             ColumnSpacing="16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition x:Name="HeaderCommandsColumn" Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <StackPanel Spacing="8">
+            <StackPanel x:Name="HeaderTitle" Spacing="8">
                 <TextBlock
                     x:Uid="HistoryTitleTextBlock"
+                    AutomationProperties.AutomationId="HistoryPageTitle"
                     MaxLines="1"
                     Style="{ThemeResource TitleTextBlockStyle}"
                     TextWrapping="WrapWholeWords" />
@@ -70,60 +71,70 @@
                     TextWrapping="WrapWholeWords" />
             </StackPanel>
 
-            <CommandBar
-                x:Name="HeaderCommands"
+            <controls:CommitBrowserToolbar
+                x:Name="HeaderToolbar"
                 Grid.Column="1"
-                Background="Transparent"
-                DefaultLabelPosition="Right">
-                <AppBarButton
-                    x:Uid="RefreshHistoryAppBarButton"
-                    AutomationProperties.AutomationId="RefreshHistoryButton"
-                    Width="100"
-                    Command="{x:Bind ViewModel.RefreshHistoryCommand, Mode=OneWay}"
-                    Icon="Refresh" />
-                <AppBarButton
-                    x:Uid="RevertCommitAppBarButton"
-                    Command="{x:Bind ViewModel.RevertCommitCommand, Mode=OneWay}"
-                    Icon="Undo" />
-                <AppBarElementContainer>
-                    <SplitButton
-                        x:Uid="ResetSplitButton"
-                        Command="{x:Bind ViewModel.ResetMixedCommand, Mode=OneWay}"
-                        Style="{StaticResource SplitButtonCommandBarStyle}">
-                        <SplitButton.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <SymbolIcon Symbol="Refresh" />
-                                <TextBlock
-                                    x:Uid="ResetSplitButtonTextBlock"
-                                    Margin="8,0,0,0" />
-                            </StackPanel>
-                        </SplitButton.Content>
-                        <SplitButton.Flyout>
-                            <MenuFlyout>
-                                <MenuFlyoutItem
-                                    x:Uid="ResetSoftMenuFlyoutItem"
-                                    Command="{x:Bind ViewModel.ResetSoftCommand, Mode=OneWay}"
-                                    Icon="Upload" />
-                                <MenuFlyoutItem
-                                    x:Uid="ResetMixedMenuFlyoutItem"
-                                    Command="{x:Bind ViewModel.ResetMixedCommand, Mode=OneWay}"
-                                    Icon="Refresh" />
-                                <MenuFlyoutItem
-                                    x:Uid="ResetHardMenuFlyoutItem"
-                                    Command="{x:Bind ViewModel.ResetHardCommand, Mode=OneWay}"
-                                    Icon="Delete" />
-                            </MenuFlyout>
-                        </SplitButton.Flyout>
-                    </SplitButton>
-                </AppBarElementContainer>
-                <CommandBar.SecondaryCommands>
-                    <AppBarButton
-                        x:Uid="EditHistoryAppBarButton"
-                        AutomationProperties.AutomationId="StartHistoryEditButton"
-                        Command="{x:Bind ViewModel.StartHistoryEditCommand, Mode=OneWay}"
-                        Icon="Edit" />
-                </CommandBar.SecondaryCommands>
-            </CommandBar>
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                ViewModel="{x:Bind ViewModel, Mode=OneWay}">
+                <controls:CommitBrowserToolbar.ActionCommands>
+                    <CommandBar
+                        x:Name="HeaderCommands"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="HistoryActionCommands"
+                        Background="Transparent"
+                        DefaultLabelPosition="Right">
+                        <AppBarButton
+                            x:Uid="RefreshHistoryAppBarButton"
+                            AutomationProperties.AutomationId="RefreshHistoryButton"
+                            Width="100"
+                            Command="{x:Bind ViewModel.RefreshHistoryCommand, Mode=OneWay}"
+                            Icon="Refresh" />
+                        <AppBarButton
+                            x:Uid="RevertCommitAppBarButton"
+                            Command="{x:Bind ViewModel.RevertCommitCommand, Mode=OneWay}"
+                            Icon="Undo" />
+                        <AppBarElementContainer>
+                            <SplitButton
+                                x:Uid="ResetSplitButton"
+                                Command="{x:Bind ViewModel.ResetMixedCommand, Mode=OneWay}"
+                                Style="{StaticResource SplitButtonCommandBarStyle}">
+                                <SplitButton.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <SymbolIcon Symbol="Refresh" />
+                                        <TextBlock
+                                            x:Uid="ResetSplitButtonTextBlock"
+                                            Margin="8,0,0,0" />
+                                    </StackPanel>
+                                </SplitButton.Content>
+                                <SplitButton.Flyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem
+                                            x:Uid="ResetSoftMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.ResetSoftCommand, Mode=OneWay}"
+                                            Icon="Upload" />
+                                        <MenuFlyoutItem
+                                            x:Uid="ResetMixedMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.ResetMixedCommand, Mode=OneWay}"
+                                            Icon="Refresh" />
+                                        <MenuFlyoutItem
+                                            x:Uid="ResetHardMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.ResetHardCommand, Mode=OneWay}"
+                                            Icon="Delete" />
+                                    </MenuFlyout>
+                                </SplitButton.Flyout>
+                            </SplitButton>
+                        </AppBarElementContainer>
+                        <CommandBar.SecondaryCommands>
+                            <AppBarButton
+                                x:Uid="EditHistoryAppBarButton"
+                                AutomationProperties.AutomationId="StartHistoryEditButton"
+                                Command="{x:Bind ViewModel.StartHistoryEditCommand, Mode=OneWay}"
+                                Icon="Edit" />
+                        </CommandBar.SecondaryCommands>
+                    </CommandBar>
+                </controls:CommitBrowserToolbar.ActionCommands>
+            </controls:CommitBrowserToolbar>
         </Grid>
 
         <StackPanel

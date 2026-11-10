@@ -15,6 +15,83 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class HistoryEditingViewModelTests
 {
     [TestMethod]
+    public async Task PaneVisibility_HasIndependentDefaultsAndSurvivesRefreshWithoutChangingSelection()
+    {
+        Fixture fixture = new() { ChangedFiles = [new("first.txt", "Modified"), new("second.txt", "Modified")] };
+        HistoryViewModel history = fixture.ViewModel;
+        await history.RefreshHistoryAsync();
+        history.SelectedChangedFile = fixture.ChangedFiles[1];
+        await history.ShowDiffCommand.ExecuteAsync(null);
+        GitCommit commit = history.SelectedCommit!;
+        GitChangedFile file = history.SelectedChangedFile!;
+
+        Assert.IsTrue(history.IsCommitListVisible);
+        Assert.IsTrue(history.IsFileListVisible);
+        Assert.IsTrue(history.IsDiffVisible);
+        Assert.IsFalse(history.IsCommitDetailsBlockVisible);
+
+        history.IsCommitListVisible = false;
+        Assert.IsTrue(history.IsFileListVisible);
+        Assert.IsTrue(history.IsDiffVisible);
+        Assert.IsFalse(history.IsCommitDetailsBlockVisible);
+
+        history.IsCommitDetailsBlockVisible = true;
+        history.IsFileListVisible = false;
+        history.IsDiffVisible = false;
+        await history.RefreshHistoryAsync();
+
+        Assert.IsFalse(history.IsCommitListVisible);
+        Assert.IsFalse(history.IsFileListVisible);
+        Assert.IsFalse(history.IsDiffVisible);
+        Assert.IsTrue(history.IsCommitDetailsBlockVisible);
+        Assert.AreSame(commit, history.SelectedCommit);
+        Assert.AreSame(file, history.SelectedChangedFile);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task CommitRange_PanePreferencesSurviveReloadAndOnlyHistoryModesShowCommitPanes(bool compareRevisions)
+    {
+        Fixture fixture = new();
+        fixture.LoadPageAsync = (_, _) => Task.FromResult(new GitCommitPage(fixture.Commits, false));
+        CommitRangeViewModel range = fixture.RangeViewModel;
+        RevisionRangeNavigationArgs history = new("Range", "", "", "main..topic");
+        await range.InitializeAsync(history);
+
+        Assert.IsTrue(range.IsCommitHistoryAvailable);
+        Assert.IsTrue(range.IsCommitListVisible);
+        Assert.IsTrue(range.IsFileListVisible);
+        Assert.IsTrue(range.IsDiffVisible);
+        Assert.IsFalse(range.IsCommitDetailsBlockVisible);
+
+        range.IsCommitListVisible = false;
+        range.IsFileListVisible = false;
+        range.IsDiffVisible = false;
+        range.IsCommitDetailsBlockVisible = true;
+
+        if (compareRevisions)
+        {
+            await range.InitializeAsync(new RevisionDiffNavigationArgs("Diff", "", "main", "topic"));
+        }
+        else
+        {
+            await range.InitializeAsync(new CommitDiffNavigationArgs("Diff", "", fixture.Commits[0]));
+        }
+
+        Assert.IsFalse(range.IsCommitHistoryAvailable);
+        Assert.AreEqual(Microsoft.UI.Xaml.Visibility.Collapsed, range.CommitDetailsBlockVisibility);
+
+        await range.InitializeAsync(history);
+
+        Assert.IsTrue(range.IsCommitHistoryAvailable);
+        Assert.IsFalse(range.IsCommitListVisible);
+        Assert.IsFalse(range.IsFileListVisible);
+        Assert.IsFalse(range.IsDiffVisible);
+        Assert.AreEqual(Microsoft.UI.Xaml.Visibility.Visible, range.CommitDetailsBlockVisibility);
+    }
+
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public async Task NavigateToParent_ReplacesMultipleSelectionEvenWhenParentIsAlreadyFocused(bool parentFocused)
@@ -903,6 +980,234 @@ public sealed class HistoryEditingViewModelTests
     }
 
     [TestMethod]
+    public async Task BranchHistorySearch_UsesViewedReferenceAndSelectsAnUnloadedCommit()
+    {
+        Fixture fixture = new();
+        const string reference = "refs/remotes/origin/topic";
+        List<int> offsets = [];
+        fixture.LoadPageAsync = (offset, _) =>
+        {
+            offsets.Add(offset);
+            return Task.FromResult(offset == 0
+                ? new GitCommitPage([fixture.Commits[0]], true)
+                : new GitCommitPage([fixture.Commits[1]], false));
+        };
+        GitChangedFile matchingFile = new("match.txt", "Modified");
+        fixture.ChangedFiles = [matchingFile, new("other.txt", "Modified")];
+        fixture.CommitDiff = new DiffResult([new DiffLine("needle", DiffLineKind.Added)], false, false, "");
+        string? searchedRevision = null;
+        fixture.SearchBranchHistoryAsync = revision =>
+        {
+            searchedRevision = revision;
+            return Task.FromResult<IReadOnlyList<GitFileSearchResult>>(
+                [new(fixture.Commits[1], matchingFile, [new(0, 0, 6, IsDiffRow: true)])]);
+        };
+
+        CommitRangeViewModel model = fixture.RangeViewModel;
+        await model.InitializeAsync(new RevisionRangeNavigationArgs("Topic", "", "", reference, IsFullBranchHistory: true));
+        Assert.IsTrue(model.DiffSearch.CanSearchHistory);
+        model.DiffSearch.SearchHistory = true;
+        model.DiffSearch.Query = "needle";
+        await model.DiffSearch.RefreshAsync();
+
+        Assert.AreEqual(reference, searchedRevision);
+        CollectionAssert.AreEqual(new[] { 0, 1 }, offsets);
+        Assert.AreSame(fixture.Commits[1], model.SelectedCommitRow?.Commit);
+        Assert.AreEqual("1 CommitCountOne", model.CommitsTitle);
+        Assert.AreSame(matchingFile, model.SelectedChangedFile);
+        Assert.HasCount(1, model.ChangedFiles);
+        Assert.AreEqual("1 ChangeCountOne", model.ChangedFilesTitle);
+        Assert.IsNotNull(model.DiffSearch.Selection);
+
+        await model.InitializeAsync(new RevisionRangeNavigationArgs("Range", "", "", $"HEAD..{reference}"));
+        Assert.IsFalse(model.DiffSearch.CanSearchHistory);
+        Assert.IsFalse(model.DiffSearch.SearchHistory);
+        Assert.AreEqual("", model.DiffSearch.Query);
+    }
+
+    [TestMethod]
+    [DataRow(false, true)]
+    [DataRow(false, false)]
+    [DataRow(true, false)]
+    public async Task BranchHistorySearch_CommitFiltersAlsoLimitNavigationAndUpdateTitles(
+        bool useRange, bool initiallyMatching)
+    {
+        Fixture fixture = new();
+        fixture.LoadPageAsync = (_, _) => Task.FromResult(new GitCommitPage(fixture.Commits, false));
+        GitChangedFile matchingFile = new("match.txt", "Modified");
+        fixture.ChangedFiles = [matchingFile, new("other.txt", "Modified")];
+        fixture.CommitDiff = new DiffResult([new DiffLine("needle", DiffLineKind.Added)], false, false, "");
+        fixture.SearchBranchHistoryAsync = _ => Task.FromResult<IReadOnlyList<GitFileSearchResult>>(
+        [
+            new(fixture.Commits[2], matchingFile, [new(0, 0, 6, IsDiffRow: true)]),
+            new(fixture.Commits[1], matchingFile, [new(0, 0, 6, IsDiffRow: true)])
+        ]);
+        CommitBrowserViewModelBase model = useRange ? fixture.RangeViewModel : fixture.ViewModel;
+        if (useRange)
+        {
+            await fixture.RangeViewModel.InitializeAsync(
+                new RevisionRangeNavigationArgs("Topic", "", "", "refs/heads/topic", IsFullBranchHistory: true));
+        }
+        else
+        {
+            await fixture.ViewModel.RefreshHistoryAsync();
+        }
+
+        if (initiallyMatching)
+        {
+            model.SelectedCommitRow = model.CommitRows.Single(row => row.Commit == fixture.Commits[1]);
+            model.SetSelectedCommits([fixture.Commits[1]]);
+        }
+        else
+        {
+            model.SetSelectedCommits([fixture.Commits[0], fixture.Commits[2]]);
+        }
+
+        model.DiffSearch.SearchHistory = true;
+        model.DiffSearch.Query = "needle";
+        await model.DiffSearch.RefreshAsync();
+
+        CollectionAssert.AreEqual(fixture.Commits[1..], model.Commits.ToArray());
+        Assert.AreEqual("2 CommitCountMany", model.CommitsTitle);
+        Assert.AreSame(fixture.Commits[1], model.SelectedCommit);
+        Assert.AreSame(fixture.Commits[1], model.SelectedCommits.Single());
+        Assert.AreEqual("1 ChangeCountOne", model.ChangedFilesTitle);
+        GitCommit[] selectionAtRowChange = [];
+        model.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(model.SelectedCommitRow) && model.SelectedCommitRow?.Commit == fixture.Commits[2])
+            {
+                selectionAtRowChange = model.SelectedCommits.ToArray();
+            }
+        };
+        await model.DiffSearch.MoveAsync(forward: true);
+        Assert.AreSame(fixture.Commits[2], model.SelectedCommit);
+        Assert.AreSame(fixture.Commits[2], model.SelectedCommits.Single());
+        CollectionAssert.AreEqual(new[] { fixture.Commits[2] }, selectionAtRowChange);
+
+        model.SearchText = fixture.Commits[2].Hash;
+        Assert.HasCount(1, model.Commits);
+        Assert.AreEqual("1 CommitCountOne", model.CommitsTitle);
+        await model.DiffSearch.MoveAsync(forward: false);
+        Assert.AreSame(fixture.Commits[2], model.SelectedCommit);
+
+        model.SearchText = fixture.Commits[0].Hash;
+        Assert.IsEmpty(model.Commits);
+        Assert.AreEqual("0 CommitCountMany", model.CommitsTitle);
+        Assert.AreEqual("0 ChangeCountMany", model.ChangedFilesTitle);
+        Assert.IsFalse(model.DiffSearch.CanNavigate);
+
+        model.DiffSearch.ResetFilters();
+        Assert.AreEqual(fixture.Commits[0].Hash, model.SearchText);
+        Assert.AreSame(fixture.Commits[0], model.Commits.Single());
+        Assert.AreEqual("1 CommitCountOne", model.CommitsTitle);
+        Assert.AreEqual("2 ChangeCountMany", model.ChangedFilesTitle);
+    }
+
+    [TestMethod]
+    [DataRow(false, true)]
+    [DataRow(true, true)]
+    [DataRow(true, false)]
+    public async Task BranchHistorySearch_LoadsAllCommitsBeforeSearchingAndKeepsThemAfterReset(
+        bool useRange, bool hasMatches)
+    {
+        Fixture fixture = new();
+        List<int> offsets = [];
+        fixture.LoadPageAsync = (offset, _) =>
+        {
+            offsets.Add(offset);
+            return Task.FromResult(offset == 0
+                ? new GitCommitPage([fixture.Commits[0]], true)
+                : new GitCommitPage(fixture.Commits[1..], false));
+        };
+        GitChangedFile matchingFile = new("match.txt", "Modified");
+        fixture.ChangedFiles = [matchingFile];
+        fixture.CommitDiff = new DiffResult([new DiffLine("needle", DiffLineKind.Added)], false, false, "");
+        CommitBrowserViewModelBase model = useRange ? fixture.RangeViewModel : fixture.ViewModel;
+        fixture.SearchBranchHistoryAsync = _ =>
+        {
+            CollectionAssert.AreEqual(new[] { 0, 1 }, offsets);
+            CollectionAssert.AreEqual(fixture.Commits, model.Commits.ToArray());
+            Assert.IsFalse(model.IsLoadRemainingHistoryVisible);
+            return Task.FromResult<IReadOnlyList<GitFileSearchResult>>(hasMatches
+                ? [new(fixture.Commits[0], matchingFile, [new(0, 0, 6, IsDiffRow: true)])] : []);
+        };
+        if (useRange)
+        {
+            await fixture.RangeViewModel.InitializeAsync(
+                new RevisionRangeNavigationArgs("Topic", "", "", "refs/heads/topic", IsFullBranchHistory: true));
+        }
+        else
+        {
+            await fixture.ViewModel.RefreshHistoryAsync();
+        }
+
+        List<bool> visibility = [];
+        model.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(model.IsLoadRemainingHistoryVisible))
+            {
+                visibility.Add(model.IsLoadRemainingHistoryVisible);
+            }
+        };
+
+        model.DiffSearch.SearchHistory = true;
+        Assert.IsTrue(model.IsLoadRemainingHistoryVisible);
+        model.DiffSearch.Query = "needle";
+        Assert.IsFalse(model.IsLoadRemainingHistoryVisible);
+        await model.DiffSearch.RefreshAsync();
+        Assert.IsFalse(model.IsLoadRemainingHistoryVisible);
+        CollectionAssert.AreEqual(hasMatches ? fixture.Commits[..1] : Array.Empty<GitCommit>(), model.Commits.ToArray());
+
+        model.DiffSearch.ResetFilters();
+        Assert.IsFalse(model.IsLoadRemainingHistoryVisible);
+        CollectionAssert.AreEqual(fixture.Commits, model.Commits.ToArray());
+        CollectionAssert.AreEqual(new[] { 0, 1 }, offsets);
+        Assert.AreEqual("3 CommitCountMany", model.CommitsTitle);
+        CollectionAssert.Contains(visibility, false);
+    }
+
+    [TestMethod]
+    public async Task BranchHistorySearch_CancelDuringPageLoadKeepsTheOriginalList()
+    {
+        Fixture fixture = new();
+        int searchCalls = 0;
+        fixture.SearchBranchHistoryAsync = _ =>
+        {
+            searchCalls++;
+            return Task.FromResult<IReadOnlyList<GitFileSearchResult>>([]);
+        };
+        TaskCompletionSource started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<GitCommitPage> remaining = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        fixture.LoadPageAsync = (offset, _) =>
+        {
+            if (offset == 0) { return Task.FromResult(new GitCommitPage([fixture.Commits[0]], true)); }
+            started.SetResult();
+            return remaining.Task;
+        };
+
+        CommitRangeViewModel model = fixture.RangeViewModel;
+        await model.InitializeAsync(
+            new RevisionRangeNavigationArgs("Topic", "", "", "refs/heads/topic", IsFullBranchHistory: true));
+        model.DiffSearch.SearchHistory = true;
+        model.DiffSearch.Query = "needle";
+        Task pending = model.DiffSearch.RefreshAsync();
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.IsFalse(model.IsLoadRemainingHistoryVisible);
+        Assert.IsNotNull(fixture.LastOperation?.CancelCommand);
+        fixture.LastOperation.CancelCommand.Execute(null);
+        remaining.SetResult(new GitCommitPage([fixture.Commits[1]], false));
+        await pending;
+
+        Assert.AreSame(fixture.Commits[0], model.Commits.Single());
+        Assert.IsTrue(model.HasMoreCommits);
+        Assert.IsTrue(model.IsLoadRemainingHistoryVisible);
+        Assert.IsFalse(model.DiffSearch.CanNavigate);
+        Assert.AreEqual(0, searchCalls);
+    }
+
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public async Task LoadRemaining_LoadsEveryPageAndPreservesSelectionAndFilters(bool useRange)
@@ -1096,6 +1401,8 @@ public sealed class HistoryEditingViewModelTests
         public int NativePageSize { get; set; } = 300;
         public bool HasMoreCommits { get; set; }
         public int DiffLoads { get; private set; }
+        public DiffResult CommitDiff { get; set; } = new([], false, true, "");
+        public Func<string, Task<IReadOnlyList<GitFileSearchResult>>>? SearchBranchHistoryAsync { get; set; }
         public IReadOnlyList<GitChangedFile> ChangedFiles { get; set; } = [];
 
         public Fixture(TemporaryGitRepository? nativeRepository = null)
@@ -1127,11 +1434,12 @@ public sealed class HistoryEditingViewModelTests
             IGitHistoryService history = nativeHistory ?? Stub.Create<IGitHistoryService>((method, _) => method == "GetChangedFilesAsync"
                 ? Task.FromResult(ChangedFiles) : throw new NotSupportedException(method));
             ISettingsService settings = Stub.Create<ISettingsService>((_, _) => new AppSettings());
-            IGitDiffService diff = Stub.Create<IGitDiffService>((method, _) =>
+            IGitDiffService diff = Stub.Create<IGitDiffService>((method, args) =>
             {
+                if (method == "SearchHistoryAsync") { return SearchBranchHistoryAsync!((string)args![4]!); }
                 if (method != "GetCommitDiffAsync") { throw new NotSupportedException(method); }
                 DiffLoads++;
-                return Task.FromResult(new DiffResult([], false, true, ""));
+                return Task.FromResult(CommitDiff);
             });
             IGitRemoteService remotes = Stub.Create<IGitRemoteService>((method, args) => method == "GetCommitsPageAsync"
                 ? LoadPageAsync!((int)args![2]!, (int)args[3]!) : throw new NotSupportedException(method));

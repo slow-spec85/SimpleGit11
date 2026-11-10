@@ -21,6 +21,13 @@ public sealed partial class ChangesPage : Page, IPageRefreshTarget
         ViewModel = App.GetService<ChangesViewModel>();
         InitializeComponent();
         ChangedFilesTree.FileContextMenu = ChangesFileContextMenu;
+        ConflictPane.OpenFileSearch = () =>
+        {
+            if (!ViewModel.BeginConflictSearch()) { return false; }
+            DispatcherQueue.TryEnqueue(DiffPane.OpenSearchFlyout);
+            return true;
+        };
+        DiffPane.SearchFlyoutClosed += (_, _) => ViewModel.EndConflictSearch();
         Loaded += (_, _) =>
         {
             ViewModel.FileTree.PropertyChanged += FileTree_PropertyChanged;
@@ -102,6 +109,15 @@ public sealed partial class ChangesPage : Page, IPageRefreshTarget
     {
         if (args.PropertyName == nameof(ChangesViewModel.IsRefreshing) && !ViewModel.IsRefreshing)
         { RestoreFileSelection(); }
+        else if (args.PropertyName == nameof(ChangesViewModel.SelectedChange) && ViewModel.DiffSearch.IsFiltering)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!IsLoaded || ViewModel.FileTree.ShowFolders) { return; }
+                RestoreFileSelection();
+                if (ViewModel.SelectedChange is GitChangedFile file) { ChangedFilesListView.ScrollIntoView(file); }
+            });
+        }
     }
 
     private void FileTree_PropertyChanged(object? sender, PropertyChangedEventArgs args)
@@ -113,6 +129,7 @@ public sealed partial class ChangesPage : Page, IPageRefreshTarget
     private void RestoreFileSelection()
     {
         GitChangedFile[] selected = ViewModel.SelectedChanges.ToArray();
+        if (selected.SequenceEqual(ChangedFilesListView.SelectedItems.OfType<GitChangedFile>())) { return; }
         _synchronizingFileSelection = true;
         try
         {

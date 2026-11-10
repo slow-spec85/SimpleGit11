@@ -309,8 +309,8 @@
                         x:Name="ChangedFilesFilterToggleButton"
                         x:Uid="ChangedFilesFilterToggleButton"
                         AutomationProperties.AutomationId="ChangedFilesFilterToggleButton"
-                        IsEnabled="{x:Bind ViewModel.IsDiffInteractionEnabled, Mode=OneWay}"
                         IsChecked="{x:Bind ViewModel.IsFileFilterApplied, Mode=OneWay}"
+                        IsEnabled="{x:Bind ViewModel.IsFilePathFilterEnabled, Mode=OneWay}"
                         Click="ChangedFilesFilterToggleButton_Click"
                         Width="32"
                         Height="32"
@@ -542,6 +542,8 @@
                 RevertActionVisibility="{x:Bind ViewModel.CanRevertSelectedChange, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
                 RevertLineCommand="{x:Bind ViewModel.RevertDiffLineCommand, Mode=OneWay}"
                 SaveEditCommand="{x:Bind ViewModel.SaveEditedFileCommand, Mode=OneWay}"
+                SearchSession="{x:Bind ViewModel.DiffSearch}"
+                IsFileSearchAvailable="{x:Bind ViewModel.IsRepositoryOpen, Mode=OneWay}"
                 SyntaxHighlightingMode="{x:Bind ViewModel.SelectedSyntaxHighlightingMode, Mode=OneWay}"
                 ToggleFullFileCommand="{x:Bind ViewModel.ToggleFullFileCommand, Mode=OneWay}"
                 Visibility="{x:Bind ViewModel.DiffViewerVisibility, Mode=OneWay}" />

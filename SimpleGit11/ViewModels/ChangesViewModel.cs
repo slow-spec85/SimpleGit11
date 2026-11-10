@@ -62,6 +62,8 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         messenger.RegisterAll(this);
         ConflictEditor = conflictEditor;
         ConflictEditor.ConflictResolvedAsync = OnConflictResolvedAsync;
+        DiffSearch = new DiffSearchViewModel(localizationService, messenger, false, SearchChangedFilesAsync,
+            () => (null, SelectedChange), ShowSearchMatchAsync, FilterSearchResults, FileTree);
         DiffEmptyMessage = _localizationService.GetString("SelectFileToViewDiff");
         DiffText = "";
         HasNoChanges = true;
@@ -74,9 +76,12 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     public void Receive(RepositoryChangedMessage message)
     {
         ClearNotification();
+        OnPropertyChanged(nameof(IsRepositoryOpen));
         ClearChanges();
         FileSearchText = "";
+        _conflictSearchOpened = false;
         ClearDiff(_localizationService.GetString("SelectFileToViewDiff"));
+        DiffSearch.Query = "";
         ConflictEditor.Clear();
     }
 
@@ -258,7 +263,9 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     [NotifyPropertyChangedFor(nameof(IsFileFilterApplied))]
     public partial string FileSearchText { get; set; } = "";
 
-    public bool IsFileFilterApplied => !string.IsNullOrWhiteSpace(FileSearchText);
+    public bool IsFilePathFilterEnabled => IsDiffInteractionEnabled && !DiffSearch.IsFiltering;
+
+    public bool IsFileFilterApplied => !DiffSearch.IsFiltering && !string.IsNullOrWhiteSpace(FileSearchText);
 
     partial void OnFileSearchTextChanged(string value)
     {
@@ -292,7 +299,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     public DiffStat ChangedFilesStat => DiffStat.Sum(AllChanges.Select(change => change.Stat));
 
     public string ChangedFilesTitle => PluralizationService.FormatChangeCount(
-        AllChanges.Select(change => change.Path).Distinct(System.StringComparer.OrdinalIgnoreCase).Count(),
+        VisibleChanges.Count,
         _localizationService);
 
     [ObservableProperty]
@@ -409,11 +416,13 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDiffInteractionEnabled))]
+    [NotifyPropertyChangedFor(nameof(IsFilePathFilterEnabled))]
     [NotifyPropertyChangedFor(nameof(CanEditSelectedFile))]
     public partial bool IsEditingFile { get; private set; }
 
     partial void OnIsEditingFileChanged(bool value)
     {
+        if (value) { DiffSearch.Query = ""; }
         SaveEditedFileCommand.NotifyCanExecuteChanged();
         UpdateCommandStates();
     }
@@ -493,11 +502,11 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     private bool CanSaveEditedFile() =>
         IsEditingFile && IsEditedFileDirty && !IsDiffLoading && _editableDocument is not null;
 
-    public Visibility ConflictEditorVisibility => SelectedChange?.IsConflicted == true
+    public Visibility ConflictEditorVisibility => SelectedChange?.IsConflicted == true && !ShowConflictSearchPreview
         ? Visibility.Visible
         : Visibility.Collapsed;
 
-    public Visibility DiffViewerVisibility => SelectedChange?.IsConflicted == true
+    public Visibility DiffViewerVisibility => SelectedChange?.IsConflicted == true && !ShowConflictSearchPreview
         ? Visibility.Collapsed
         : Visibility.Visible;
 
@@ -584,7 +593,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     {
         if (_isUpdatingChanges) { return; }
         string searchText = FileSearchText.Trim().Replace('\\', '/');
-        SelectedChanges = selectedChanges.Where(change => MatchesFileFilter(change, searchText)).ToList();
+        SelectedChanges = selectedChanges.Where(change => MatchesChangeFilter(change, searchText)).ToList();
         if (lastSelectedChange is null || !SelectedChanges.Contains(lastSelectedChange))
         {
             lastSelectedChange = SelectedChanges.LastOrDefault();
@@ -657,7 +666,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
                 ReplaceChanges(ConflictedChanges, snapshot.ConflictedChanges);
                 ReplaceAllChanges();
                 SelectedChanges = AllChanges.Where(change => selectedKeys.Contains((change.Path, change.State))
-                    && MatchesFileFilter(change, FileSearchText.Trim().Replace('\\', '/'))).ToArray();
+                    && MatchesChangeFilter(change, FileSearchText.Trim().Replace('\\', '/'))).ToArray();
                 GitChangedFile? restored = SelectedChanges.FirstOrDefault(change => change.Path == selectedFile?.Path
                     && change.State == selectedFile?.State) ?? SelectedChanges.LastOrDefault();
                 if (restored is null)
@@ -684,6 +693,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
             OnPropertyChanged(nameof(CanOpenCommitDialog));
             OnPropertyChanged(nameof(SelectedChange));
             HasNoChanges = !(HasStagedChanges || HasUnstagedChanges || HasConflictedChanges);
+            if (DiffSearch.Query.Length > 0 && !IsEditingFile && !ConflictEditor.IsDirty) { DiffSearch.Refresh(); }
             if (_mainWindowViewModel.TryConsumeChangesNotice(out string message, out string? details))
             {
                 ShowNotification(AppNotificationSeverity.Warning, message, details);
@@ -727,10 +737,11 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         OnPropertyChanged(nameof(HasConflictedChanges));
         OnPropertyChanged(nameof(CanOpenCommitDialog));
         OnPropertyChanged(nameof(SelectedChange));
+        OnPropertyChanged(nameof(ChangedFilesTitle));
         OnChangedFilesSummaryChanged();
     }
 
-    private async Task LoadDiffAsync(GitChangedFile statusEntry)
+    private async Task LoadDiffAsync(GitChangedFile statusEntry, bool compareConflictToHead = false)
     {
         await RunQueuedReadOperationAsync(async () =>
         {
@@ -739,13 +750,13 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
                 return;
             }
 
-            await LoadDiffCoreAsync(statusEntry);
+            await LoadDiffCoreAsync(statusEntry, compareConflictToHead);
         });
     }
 
     private async Task LoadSelectedChangeAsync(GitChangedFile statusEntry)
     {
-        if (statusEntry.IsConflicted)
+        if (statusEntry.IsConflicted && !ShowConflictSearchPreview)
         {
             if (_mainWindowViewModel.CurrentRepository is RepositoryInfo repository)
             {
@@ -768,7 +779,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         }
     }
 
-    private async Task LoadDiffCoreAsync(GitChangedFile statusEntry)
+    private async Task LoadDiffCoreAsync(GitChangedFile statusEntry, bool compareConflictToHead)
     {
         ClearError();
 
@@ -782,7 +793,8 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
         {
             IsDiffLoading = true;
             RepositoryInfo repository = _mainWindowViewModel.CurrentRepository;
-            DiffResult diff = await _gitService.Diff.GetDiffAsync(repository, statusEntry);
+            DiffResult diff = await _gitService.Diff.GetDiffAsync(
+                repository, statusEntry, compareConflictToHead || (ShowConflictSearchPreview && DiffSearch.ChangedLinesOnly));
             if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)
                 || !ReferenceEquals(SelectedChange, statusEntry)) { return; }
             string text = DiffTextFormatter.FormatText(diff.Lines);
@@ -843,10 +855,12 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
                 Task<DiffResult> diffTask = _gitService.Diff.GetDiffAsync(repository, change);
                 Task<string> textTask = _gitService.Diff.GetFullFileTextAsync(repository, change);
                 await Task.WhenAll(diffTask, textTask);
+                if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)
+                    || !ReferenceEquals(SelectedChange, change)) { return; }
 
                 DiffResult diff = await diffTask;
                 string text = await textTask;
-                var fullFileLines = DiffTextFormatter.FormatFullFile(text, diff.Lines, false);
+                var fullFileLines = DiffTextFormatter.FormatFullFile(text, diff.Lines, change.Status == "Deleted");
                 DiffLines.Clear();
                 foreach (var line in fullFileLines)
                 {
@@ -2055,7 +2069,7 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     {
         string searchText = FileSearchText.Trim().Replace('\\', '/');
         List<GitChangedFile> matches = AllChanges
-            .Where(change => MatchesFileFilter(change, searchText))
+            .Where(change => MatchesChangeFilter(change, searchText))
             .ToList();
         HashSet<GitChangedFile> matchingChanges = matches.ToHashSet();
 
@@ -2068,24 +2082,31 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
             SetSelectedChanges(selectedChanges, selectedChange);
         }
 
-        // Keep matching rows in place so filtering does not deselect them.
-        for (int index = VisibleChanges.Count - 1; index >= 0; index--)
+        // Keep matching rows in place and ignore selection events during collection updates.
+        bool wasUpdating = _isUpdatingChanges;
+        _isUpdatingChanges = true;
+        try
         {
-            if (!matchingChanges.Contains(VisibleChanges[index]))
+            for (int index = VisibleChanges.Count - 1; index >= 0; index--)
             {
-                VisibleChanges.RemoveAt(index);
+                if (!matchingChanges.Contains(VisibleChanges[index]))
+                {
+                    VisibleChanges.RemoveAt(index);
+                }
             }
-        }
 
-        for (int index = 0; index < matches.Count; index++)
-        {
-            if (index >= VisibleChanges.Count || !ReferenceEquals(VisibleChanges[index], matches[index]))
+            for (int index = 0; index < matches.Count; index++)
             {
-                VisibleChanges.Insert(index, matches[index]);
+                if (index >= VisibleChanges.Count || !ReferenceEquals(VisibleChanges[index], matches[index]))
+                {
+                    VisibleChanges.Insert(index, matches[index]);
+                }
             }
-        }
 
-        FileTree.Refresh(VisibleChanges);
+            FileTree.Refresh(VisibleChanges);
+        }
+        finally { _isUpdatingChanges = wasUpdating; }
+        OnPropertyChanged(nameof(ChangedFilesTitle));
     }
 
     private static bool MatchesFileFilter(GitChangedFile change, string searchText)
@@ -2149,7 +2170,6 @@ public sealed partial class ChangesViewModel : AppNotificationViewModelBase,
     private void OnChangedFilesSummaryChanged()
     {
         OnPropertyChanged(nameof(HasChanges));
-        OnPropertyChanged(nameof(ChangedFilesTitle));
         OnPropertyChanged(nameof(ChangedFilesStat));
     }
 

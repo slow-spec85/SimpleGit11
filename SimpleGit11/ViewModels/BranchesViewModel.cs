@@ -3497,7 +3497,8 @@ public sealed partial class BranchesViewModel : AppNotificationViewModelBase,
             string.Format(_localizationService.GetString("BranchFullHistoryTitle"), branch.Name),
             string.Format(_localizationService.GetString("BranchFullHistoryDescription"), branch.Name),
             _localizationService.GetString("NoBranchHistoryCommits"),
-            reference);
+            reference,
+            IsFullBranchHistory: true);
         _mainWindowViewModel.RequestNavigation(AppNavigationTarget.CommitRange, arguments);
     }
 

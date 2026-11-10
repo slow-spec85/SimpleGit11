@@ -15,12 +15,14 @@ public sealed class DiffLine : INotifyPropertyChanged
         string marker = "",
         int? sourceLineNumber = null,
         int? displayLineNumber = null,
-        IReadOnlyList<DiffLineSegment>? inlineSegments = null)
+        IReadOnlyList<DiffLineSegment>? inlineSegments = null,
+        int? oldLineNumber = null)
     {
         Text = text;
         Kind = kind;
         Marker = marker;
         SourceLineNumber = sourceLineNumber;
+        OldLineNumber = oldLineNumber;
         LineNumberText = displayLineNumber.HasValue ? displayLineNumber.Value.ToString() : "";
         InlineSegments = inlineSegments ?? [];
     }
@@ -38,6 +40,8 @@ public sealed class DiffLine : INotifyPropertyChanged
     public IReadOnlyList<DiffLineSegment> InlineSegments { get; private set; }
 
     public int? SourceLineNumber { get; }
+
+    public int? OldLineNumber { get; }
 
     public double DisplayWidth
     {

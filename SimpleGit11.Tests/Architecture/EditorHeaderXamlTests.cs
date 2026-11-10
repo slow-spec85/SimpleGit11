@@ -39,6 +39,9 @@ public sealed class EditorHeaderXamlTests
 
         Assert.AreEqual("Button", button.Name.LocalName);
         Assert.AreEqual("{StaticResource DefaultButtonStyle}", RequiredAttribute(button, "Style"));
+        Assert.AreEqual(
+            "{x:Bind ViewModel.IsLoadRemainingHistoryVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}",
+            RequiredAttribute(button, "Visibility"));
         Assert.IsNull(button.Attribute("Background"));
         Assert.IsFalse(button.Descendants().Any(element => element.Name.LocalName is "Button.Resources" or "Button.Template"));
     }
@@ -63,6 +66,27 @@ public sealed class EditorHeaderXamlTests
             RequiredAttribute(content[0], "Text"));
         Assert.AreEqual("{x:Bind ViewModel.VisibleChanges, Mode=OneWay}",
             RequiredAttribute(FindByXName(document, "ChangedFilesListView"), "ItemsSource"));
+    }
+
+    [TestMethod]
+    public void DiffSearchScopeOptions_AreInsideTheExistingSearchFlyout()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "DiffViewer.xaml");
+        XElement button = FindByXName(document, "DiffSearchToggleButton");
+        XElement flyout = button.Descendants().Single(element => element.Name.LocalName == "Flyout");
+
+        Assert.IsTrue(flyout.Descendants().Contains(FindByXName(document, "DiffSearchTextBox")));
+        XElement changedLines = FindByXName(document, "DiffSearchChangedLinesSwitch");
+        XElement history = FindByXName(document, "DiffSearchHistorySwitch");
+        Assert.IsTrue(flyout.Descendants().Contains(changedLines));
+        Assert.IsTrue(changedLines.ElementsAfterSelf().Contains(history));
+
+        XElement reset = FindByXName(document, "ResetDiffSearchFiltersButton");
+        Assert.IsTrue(history.ElementsAfterSelf().Contains(reset));
+        Assert.AreEqual("ResetCommitFiltersButton", RequiredXamlAttribute(reset, "Uid"));
+        Assert.AreEqual("Stretch", RequiredAttribute(reset, "HorizontalAlignment"));
+        Assert.IsFalse(flyout.Descendants().Any(element =>
+            element.Name.LocalName is "TextBlock" or "ProgressBar" or "ProgressRing" or "InfoBar"));
     }
 
     [TestMethod]
@@ -190,15 +214,17 @@ public sealed class EditorHeaderXamlTests
     public void CommitDetailsToggle_PlacesDetailsAboveDiffWithoutReplacingChangedFiles()
     {
         XDocument document = LoadApplicationXaml("Controls", "CommitBrowserView.xaml");
-        XElement filterToggle = FindByXName(document, "CommitFilterToggleButton");
-        XElement detailsToggle = FindByXName(document, "CommitDetailsToggleButton");
+        XDocument toolbar = LoadApplicationXaml("Controls", "CommitBrowserToolbar.xaml");
+        XElement detailsToggle = FindByXName(toolbar, "CommitDetailsToggleButton");
         XElement rightPane = FindByXName(document, "HistoryRightPane");
         XElement details = FindByXName(document, "CommitDetailsHeader").Parent!;
         XElement splitter = FindByXName(document, "CommitDetailsSplitter");
         XElement diff = FindByXName(document, "HistoryDiffPane");
         XElement metadata = FindByXName(document, "CommitMetadataTextBlock");
 
-        Assert.AreSame(detailsToggle, filterToggle.ElementsAfterSelf().First());
+        Assert.IsFalse(FindByXName(document, "CommitListHeader").Descendants().Any(element =>
+            (string?)element.Attribute(XamlNamespace + "Uid") == "CommitDetailsToggleButton"));
+        Assert.AreSame(FindByXName(toolbar, "ViewCommands"), detailsToggle.Parent);
         StringAssert.Contains(RequiredAttribute(detailsToggle, "IsChecked"), "ViewModel.IsCommitDetailsBlockVisible");
         Assert.AreSame(rightPane, details.Parent);
         Assert.AreSame(rightPane, splitter.Parent);

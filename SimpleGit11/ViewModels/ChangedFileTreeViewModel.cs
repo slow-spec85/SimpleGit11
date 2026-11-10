@@ -131,6 +131,48 @@ public sealed partial class ChangedFileTreeViewModel : ObservableObject
     public Visibility FlatListVisibility => ShowFolders ? Visibility.Collapsed : Visibility.Visible;
     public Visibility TreeVisibility => ShowFolders ? Visibility.Visible : Visibility.Collapsed;
 
+    internal IReadOnlyList<GitFileSearchResult> OrderSearchResults(IReadOnlyList<GitFileSearchResult> results)
+    {
+        if (!ShowFolders) { return results; }
+        return results.GroupBy(result => result.Commit?.Hash)
+            .SelectMany(group => group
+                .Select(result => (Result: result, Segments: result.File.Path.Replace('\\', '/').Split('/')))
+                .OrderBy(item => item.Segments, Comparer<string[]>.Create(ComparePaths))
+                .Select(item => item.Result))
+            .ToArray();
+
+        static int ComparePaths(string[] left, string[] right)
+        {
+            for (int index = 0; index < Math.Min(left.Length, right.Length); index++)
+            {
+                int byType = (index == left.Length - 1).CompareTo(index == right.Length - 1);
+                if (byType != 0) { return byType; }
+                int byName = StringComparer.OrdinalIgnoreCase.Compare(left[index], right[index]);
+                if (byName == 0) { byName = StringComparer.Ordinal.Compare(left[index], right[index]); }
+                if (byName != 0) { return byName; }
+            }
+
+            return 0;
+        }
+    }
+
+    internal void RevealSearchFile(GitChangedFile file)
+    {
+        if (!ShowFolders) { return; }
+        string path = file.Path.Replace('\\', '/');
+        ChangedFileTreeItemViewModel[] collapsedParents = EnumerateFolders(Roots)
+            .Where(folder => !folder.IsExpanded && path.StartsWith(folder.Path + "/", StringComparison.Ordinal)).ToArray();
+        if (collapsedParents.Length == 0) { return; }
+
+        _updatingExpansion = true;
+        try
+        {
+            foreach (ChangedFileTreeItemViewModel folder in collapsedParents) { folder.IsExpanded = true; }
+        }
+        finally { _updatingExpansion = false; }
+        RefreshVisibleItems();
+    }
+
     private GitChangedFile[] _files = [];
 
     public void Refresh(IEnumerable<GitChangedFile> files)

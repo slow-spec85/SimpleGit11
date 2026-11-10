@@ -47,6 +47,25 @@ public sealed partial class LocalizationResourceFormattingTests
         CollectionAssert.AreEquivalent(englishKeys.ToArray(), russianKeys.ToArray());
     }
 
+    [TestMethod]
+    [DataRow("en-US")]
+    [DataRow("ru-RU")]
+    public void DiffSearchSwitches_ShowModeNamesInBothPositions(string locale)
+    {
+        string path = Path.Combine(FindRepositoryRoot(), "SimpleGit11", "Strings", locale, "Resources.resw");
+        Dictionary<string, string> resources = XDocument.Load(path).Root!.Elements("data")
+            .ToDictionary(element => element.Attribute("name")!.Value, element => element.Element("value")!.Value);
+
+        foreach (string switchName in new[] { "DiffSearchChangedLinesSwitch", "DiffSearchHistorySwitch" })
+        {
+            Assert.IsFalse(resources.ContainsKey($"{switchName}.Header"));
+            string label = resources[$"{switchName}.OnContent"];
+            Assert.IsFalse(string.IsNullOrWhiteSpace(label));
+            Assert.AreEqual(label, resources[$"{switchName}.OffContent"]);
+            Assert.IsTrue(resources[$"{switchName}.AutomationProperties.Name"].StartsWith(label, StringComparison.Ordinal));
+        }
+    }
+
     private static HashSet<string> ReadResourceKeys(string path)
     {
         return XDocument.Load(path).Root!

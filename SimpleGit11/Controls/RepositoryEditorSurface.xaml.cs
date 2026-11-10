@@ -305,6 +305,20 @@ public sealed partial class RepositoryEditorSurface : UserControl
         Editor.EndSearch();
     }
 
+    public void ClearSelection() => Editor.ClearSelection();
+
+    public void SelectSearchMatch(int line, int column, int length)
+    {
+        int offset = column;
+        for (int index = 0; index < line; index++)
+        {
+            offset += Editor.GetLineText(index).Length + 1;
+        }
+
+        Editor.SetCursorPosition(line, column);
+        Editor.SetSelection(offset, length);
+    }
+
     public void ScrollLineToCenter(int line)
     {
         Editor.ScrollLineToCenter(line);

@@ -39,6 +39,8 @@ public sealed partial class ConflictEditor : UserControl
     private bool _isOverviewDragging;
     private bool _hasSearchMatches;
 
+    internal Func<bool>? OpenFileSearch { get; set; }
+
     public ConflictEditor()
     {
         InitializeComponent();
@@ -301,6 +303,7 @@ public sealed partial class ConflictEditor : UserControl
     private void ConflictSearchToggleButton_Click(object sender, RoutedEventArgs args)
     {
         ConflictSearchToggleButton.IsChecked = !string.IsNullOrEmpty(ConflictSearchTextBox.Text);
+        if (OpenFileSearch?.Invoke() == true) { return; }
         FlyoutBase.ShowAttachedFlyout(ConflictSearchToggleButton);
     }
 

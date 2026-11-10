@@ -23,6 +23,12 @@ public delegate void ShowMergedCommitsRequestedEventHandler(
 
 public sealed partial class CommitBrowserView : UserControl
 {
+    private static readonly GridLength Fill = new(1, GridUnitType.Star);
+
+    private (GridLength Lists, GridLength Right) _widePaneWidths = (new GridLength(400), Fill);
+    private (GridLength Lists, GridLength Right) _narrowPaneHeights =
+        (new GridLength(2, GridUnitType.Star), new GridLength(3, GridUnitType.Star));
+    private (GridLength Commits, GridLength Files) _listHeights = (Fill, Fill);
     private double _commitDetailsHeight = 220;
     private bool _restoringSelection;
     private string? _viewportCommitHash;
@@ -37,12 +43,6 @@ public sealed partial class CommitBrowserView : UserControl
         typeof(CommitBrowserViewModelBase),
         typeof(CommitBrowserView),
         new PropertyMetadata(null, OnViewModelChanged));
-
-    public static readonly DependencyProperty IsCommitListVisibleProperty = DependencyProperty.Register(
-        nameof(IsCommitListVisible),
-        typeof(bool),
-        typeof(CommitBrowserView),
-        new PropertyMetadata(true));
 
     public static readonly DependencyProperty CommitContextFlyoutProperty = DependencyProperty.Register(
         nameof(CommitContextFlyout),
@@ -77,6 +77,7 @@ public sealed partial class CommitBrowserView : UserControl
         HistoryChangedFilesTree.FileContextMenu = HistoryFileContextMenu;
         Loaded += (_, _) =>
         {
+            UpdatePaneLayout();
             RestoreSelectionMode();
             UpdateCommitListOverlayClip();
         };
@@ -143,12 +144,6 @@ public sealed partial class CommitBrowserView : UserControl
         set => SetValue(ViewModelProperty, value);
     }
 
-    public bool IsCommitListVisible
-    {
-        get => (bool)GetValue(IsCommitListVisibleProperty);
-        set => SetValue(IsCommitListVisibleProperty, value);
-    }
-
     public MenuFlyout? CommitContextFlyout
     {
         get => (MenuFlyout?)GetValue(CommitContextFlyoutProperty);
@@ -167,17 +162,47 @@ public sealed partial class CommitBrowserView : UserControl
         set => SetValue(CommitListOverlayProperty, value);
     }
 
-    public void SetCommitListVisible(bool isVisible)
+    private void LayoutStates_CurrentStateChanged(object sender, VisualStateChangedEventArgs e)
     {
-        IsCommitListVisible = isVisible;
-        CommitListGrid.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
-        CommitsListsRow.Height = isVisible
-            ? new GridLength(1, GridUnitType.Star)
-            : new GridLength(0);
-        FilesListsRow.Height = new GridLength(1, GridUnitType.Star);
-        CommitListSplitterRow.Height = isVisible
-            ? new GridLength(12)
-            : new GridLength(0);
+        UpdatePaneLayout();
+    }
+
+    private void UpdatePaneLayout()
+    {
+        bool showCommits = ViewModel is { IsCommitHistoryAvailable: true, IsCommitListVisible: true };
+        bool showFiles = ViewModel?.IsFileListVisible != false;
+        bool showDiff = ViewModel?.IsDiffVisible != false;
+        bool showLists = showCommits || showFiles;
+        bool showRight = showDiff || ViewModel?.CommitDetailsBlockVisibility == Visibility.Visible;
+        bool splitLists = showCommits && showFiles;
+        bool narrow = LayoutStates.CurrentState?.Name == "NarrowLayout";
+        bool splitPanes = showLists && showRight;
+        bool splitWide = !narrow && splitPanes;
+        bool splitNarrow = narrow && splitPanes;
+        GridLength zero = new(0);
+
+        CommitListGrid.Visibility = showCommits ? Visibility.Visible : Visibility.Collapsed;
+        ChangedFilesGrid.Visibility = showFiles ? Visibility.Visible : Visibility.Collapsed;
+        CommitListSplitter.Visibility = splitLists ? Visibility.Visible : Visibility.Collapsed;
+        CommitsListsRow.Height = showCommits ? (splitLists ? _listHeights.Commits : Fill) : zero;
+        FilesListsRow.Height = showFiles ? (splitLists ? _listHeights.Files : Fill) : zero;
+        CommitListSplitterRow.Height = new GridLength(splitLists ? 8 : 0);
+
+        HistoryListsPane.Visibility = showLists ? Visibility.Visible : Visibility.Collapsed;
+        HistoryRightPane.Visibility = showRight ? Visibility.Visible : Visibility.Collapsed;
+        HistoryDiffPane.Visibility = showDiff ? Visibility.Visible : Visibility.Collapsed;
+        HistoryDiffSplitter.Visibility = splitPanes ? Visibility.Visible : Visibility.Collapsed;
+
+        HistoryListsColumn.Width = splitWide ? _widePaneWidths.Lists : (narrow || showLists ? Fill : zero);
+        HistoryDiffSplitterColumn.Width = new GridLength(splitWide ? 8 : 0);
+        HistoryDiffColumn.MinWidth = splitWide ? 360 : 0;
+        HistoryDiffColumn.Width = splitWide ? _widePaneWidths.Right : (!narrow && showRight ? Fill : zero);
+
+        HistoryListsRow.Height = splitNarrow ? _narrowPaneHeights.Lists : (!narrow || showLists ? Fill : zero);
+        HistoryDiffSplitterRow.Height = new GridLength(splitNarrow ? 8 : 0);
+        HistoryDiffRow.Height = splitNarrow ? _narrowPaneHeights.Right : (narrow && showRight ? Fill : zero);
+
+        UpdateCommitDetailsRows();
     }
 
     public void SetMultipleCommitSelectionEnabled(bool isEnabled)
@@ -228,30 +253,30 @@ public sealed partial class CommitBrowserView : UserControl
         }
     }
 
-    private void CommitDetailsToggleButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is ToggleButton button)
-        {
-            UpdateCommitDetailsRows(button.IsChecked == true);
-        }
-    }
-
     private void HistoryRightPane_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (CommitDetailsToggleButton.IsChecked == true)
-        {
-            UpdateCommitDetailsRows(true);
-        }
+        UpdateCommitDetailsRows();
     }
 
-    private void UpdateCommitDetailsRows(bool visible)
+    private void UpdateCommitDetailsRows()
     {
-        CommitDetailsSplitterRow.Height = new GridLength(visible ? 20 : 0);
+        bool showDetails = ViewModel?.CommitDetailsBlockVisibility == Visibility.Visible;
+        bool showDiff = ViewModel?.IsDiffVisible != false;
+        bool splitDetails = showDetails && showDiff;
+        CommitDetailsSplitter.Visibility = splitDetails ? Visibility.Visible : Visibility.Collapsed;
+        CommitDetailsSplitterRow.Height = new GridLength(splitDetails ? 20 : 0);
+        DiffContentRow.Height = showDiff ? Fill : new GridLength(0);
+        if (!splitDetails)
+        {
+            CommitDetailsRow.Height = showDetails ? Fill : new GridLength(0);
+            return;
+        }
+
         double availableHeight = HistoryRightPane.ActualHeight;
         double detailsHeight = availableHeight > 0
             ? Math.Min(_commitDetailsHeight, Math.Max(0, availableHeight - 20 - 120))
             : _commitDetailsHeight;
-        CommitDetailsRow.Height = new GridLength(visible ? detailsHeight : 0);
+        CommitDetailsRow.Height = new GridLength(detailsHeight);
     }
 
     private void CommitDetailsSplitter_DragDelta(object sender, DragDeltaEventArgs e)
@@ -316,11 +341,22 @@ public sealed partial class CommitBrowserView : UserControl
         CommitBrowserView view = (CommitBrowserView)sender;
         if (args.OldValue is CommitBrowserViewModelBase previous) { previous.PropertyChanged -= view.ViewModel_PropertyChanged; }
         if (args.NewValue is CommitBrowserViewModelBase current) { current.PropertyChanged += view.ViewModel_PropertyChanged; }
+        view.UpdatePaneLayout();
         view.RestoreSelectionMode();
     }
 
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
+        if (args.PropertyName is nameof(CommitBrowserViewModelBase.IsCommitHistoryAvailable)
+            or nameof(CommitBrowserViewModelBase.IsCommitListVisible)
+            or nameof(CommitBrowserViewModelBase.IsFileListVisible)
+            or nameof(CommitBrowserViewModelBase.IsDiffVisible)
+            or nameof(CommitBrowserViewModelBase.CommitDetailsBlockVisibility))
+        {
+            UpdatePaneLayout();
+            return;
+        }
+
         if (_restoringSelection || !IsLoaded) { return; }
         if (args.PropertyName == nameof(CommitBrowserViewModelBase.IsUpdatingCommitRows))
         {
@@ -335,6 +371,17 @@ public sealed partial class CommitBrowserView : UserControl
             or nameof(CommitBrowserViewModelBase.IsUpdatingCommitRows))
         {
             RestoreSelectionMode();
+            if (ViewModel?.DiffSearch is { SearchHistory: true, IsFiltering: true }
+                && ViewModel.SelectedCommitRow is { } row)
+            {
+                HistoryCommitsListView.ScrollIntoView(row);
+            }
+        }
+        else if (args.PropertyName == nameof(CommitBrowserViewModelBase.SelectedChangedFile)
+            && ViewModel?.DiffSearch.IsFiltering == true && !ViewModel.FileTree.ShowFolders
+            && ViewModel.SelectedChangedFile is { } file)
+        {
+            HistoryChangedFilesListView.ScrollIntoView(file);
         }
     }
 
@@ -568,8 +615,10 @@ public sealed partial class CommitBrowserView : UserControl
         }
 
         double listsHeight = Math.Clamp(requestedHeight, 0, availableHeight);
-        HistoryListsRow.Height = new GridLength(listsHeight, GridUnitType.Star);
-        HistoryDiffRow.Height = new GridLength(availableHeight - listsHeight, GridUnitType.Star);
+        _narrowPaneHeights = (new GridLength(listsHeight, GridUnitType.Star),
+            new GridLength(availableHeight - listsHeight, GridUnitType.Star));
+        HistoryListsRow.Height = _narrowPaneHeights.Lists;
+        HistoryDiffRow.Height = _narrowPaneHeights.Right;
     }
 
     private void ResizeWideDiffPanels(double horizontalChange)
@@ -584,8 +633,10 @@ public sealed partial class CommitBrowserView : UserControl
         }
 
         double listsWidth = Math.Clamp(requestedWidth, 0, maxListsWidth);
-        HistoryListsColumn.Width = new GridLength(listsWidth, GridUnitType.Star);
-        HistoryDiffColumn.Width = new GridLength(availableWidth - listsWidth, GridUnitType.Star);
+        _widePaneWidths = (new GridLength(listsWidth, GridUnitType.Star),
+            new GridLength(availableWidth - listsWidth, GridUnitType.Star));
+        HistoryListsColumn.Width = _widePaneWidths.Lists;
+        HistoryDiffColumn.Width = _widePaneWidths.Right;
     }
 
     private void FilesSplitter_DragDelta(object sender, DragDeltaEventArgs e)
@@ -599,7 +650,9 @@ public sealed partial class CommitBrowserView : UserControl
         }
 
         double commitsListHeight = Math.Clamp(requestedHeight, 0, availableHeight);
-        CommitsListsRow.Height = new GridLength(commitsListHeight, GridUnitType.Star);
-        FilesListsRow.Height = new GridLength(availableHeight - commitsListHeight, GridUnitType.Star);
+        _listHeights = (new GridLength(commitsListHeight, GridUnitType.Star),
+            new GridLength(availableHeight - commitsListHeight, GridUnitType.Star));
+        CommitsListsRow.Height = _listHeights.Commits;
+        FilesListsRow.Height = _listHeights.Files;
     }
 }

@@ -41,7 +41,7 @@ public sealed class ChangesFileFilterTests
     }
 
     [TestMethod]
-    public void ClearingSearch_RestoresAllStatesAndPreservesSummaryAndCollection()
+    public void ClearingSearch_RestoresVisibleEntryCountAndPreservesLineStatsAndCollection()
     {
         ChangesViewModel model = CreateModel();
         LoadChanges(model,
@@ -49,17 +49,21 @@ public sealed class ChangesFileFilterTests
             new("src/Home.cs", "Modified", new DiffStat(3, 2), GitChangeState.Unstaged),
             new("docs/Readme.md", "Conflict", state: GitChangeState.Conflicted));
         object collection = model.VisibleChanges;
-        string title = model.ChangedFilesTitle;
+        Assert.AreEqual("3 ChangeCountMany", model.ChangedFilesTitle);
+        List<string?> notifications = [];
+        model.PropertyChanged += (_, args) => notifications.Add(args.PropertyName);
 
         model.FileSearchText = "home";
         Assert.HasCount(2, model.VisibleChanges);
-        Assert.AreEqual(title, model.ChangedFilesTitle);
+        Assert.AreEqual("2 ChangeCountMany", model.ChangedFilesTitle);
+        CollectionAssert.Contains(notifications, nameof(model.ChangedFilesTitle));
         Assert.AreEqual(5, model.ChangedFilesStat.AddedLines);
         Assert.AreEqual(3, model.ChangedFilesStat.RemovedLines);
 
         model.FileSearchText = "   ";
 
         Assert.IsFalse(model.IsFileFilterApplied);
+        Assert.AreEqual("3 ChangeCountMany", model.ChangedFilesTitle);
         Assert.AreSame(collection, model.VisibleChanges);
         CollectionAssert.AreEqual(model.AllChanges.ToArray(), model.VisibleChanges.ToArray());
     }

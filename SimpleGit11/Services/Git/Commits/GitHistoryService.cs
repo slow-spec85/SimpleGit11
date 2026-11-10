@@ -80,13 +80,15 @@ public sealed class GitHistoryService : IGitHistoryService
 
     public async Task<IReadOnlyList<GitChangedFile>> GetChangedFilesAsync(RepositoryInfo repository, GitCommit commit)
     {
-        string command = commit.HasDiffBaseRevision ? "diff" : "show";
-        string[] revisionArguments = commit.HasDiffBaseRevision
-            ? [commit.DiffBaseRevision, commit.Hash]
-            : ["--format=", commit.Hash];
-        string[] nameStatusArguments = [command, "--name-status", "--find-renames", .. revisionArguments];
-        string[] numstatArguments = [command, "--numstat", "--find-renames", .. revisionArguments];
-        string[] rawArguments = [command, "--raw", "--find-renames", .. revisionArguments];
+        string? diffBase = commit.HasDiffBaseRevision ? commit.DiffBaseRevision
+            : commit.IsMerge ? commit.ParentHashes[0] : null;
+        string command = diffBase is null ? "show" : "diff";
+        string[] revisionArguments = diffBase is null
+            ? ["--format=", commit.Hash]
+            : [diffBase, commit.Hash];
+        string[] nameStatusArguments = [command, "--name-status", "-z", "--find-renames", .. revisionArguments];
+        string[] numstatArguments = [command, "--numstat", "-z", "--find-renames", .. revisionArguments];
+        string[] rawArguments = [command, "--raw", "-z", "--find-renames", .. revisionArguments];
         Task<string> nameStatusTask = RunGitAsync(repository, nameStatusArguments);
         Task<string> numstatTask = RunGitAsync(repository, numstatArguments);
         Task<string> rawTask = RunGitAsync(repository, rawArguments);
@@ -94,7 +96,7 @@ public sealed class GitHistoryService : IGitHistoryService
 
         return ParseChangedFiles(
             await nameStatusTask,
-            ParseNumstat(await numstatTask),
+            GitDiffParser.ParseNumstat(await numstatTask),
             ParseSubmodulePaths(await rawTask));
     }
 
@@ -314,32 +316,26 @@ public sealed class GitHistoryService : IGitHistoryService
         IReadOnlyDictionary<string, DiffStat> stats,
         IReadOnlySet<string> submodulePaths)
     {
-        var files = new List<GitChangedFile>();
-        foreach (var rawLine in output.Split('\n'))
+        List<GitChangedFile> files = [];
+        string[] fields = output.Split('\0');
+        for (int index = 0; index + 1 < fields.Length; index++)
         {
-            var line = rawLine.TrimEnd('\r');
-            if (string.IsNullOrWhiteSpace(line))
+            string status = fields[index].TrimStart('\r', '\n');
+            if (status.Length == 0) { continue; }
+            string path = fields[++index];
+            string? previousPath = null;
+            if (status[0] is 'R' or 'C' && index + 1 < fields.Length)
             {
-                continue;
+                previousPath = path;
+                path = fields[++index];
             }
 
-            var parts = line.Split('\t', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 2)
-            {
-                continue;
-            }
-
-            var status = GetStatusName(parts[0][0]);
-            var path = parts[0][0] is 'R' or 'C' && parts.Length >= 3
-                ? parts[2]
-                : parts[1];
-
-            path = path.Trim().Trim('"');
             files.Add(new GitChangedFile(
                 path,
-                status,
+                GetStatusName(status[0]),
                 GetStat(stats, path),
-                isSubmodule: submodulePaths.Contains(path)));
+                isSubmodule: submodulePaths.Contains(path),
+                previousPath: previousPath));
         }
 
         return files;
@@ -348,85 +344,28 @@ public sealed class GitHistoryService : IGitHistoryService
     private static IReadOnlySet<string> ParseSubmodulePaths(string output)
     {
         HashSet<string> paths = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string rawLine in output.Split('\n'))
+        string[] fields = output.Split('\0');
+        for (int index = 0; index + 1 < fields.Length; index++)
         {
-            string line = rawLine.TrimEnd('\r');
-            int tabIndex = line.IndexOf('\t');
-            if (tabIndex <= 1 || line[0] != ':')
+            string line = fields[index].TrimStart('\r', '\n');
+            if (!line.StartsWith(':')) { continue; }
+            string[] metadata = line[1..].Split(' ');
+            if (metadata.Length != 5) { continue; }
+            string path = fields[++index];
+            if (metadata[4].Length > 0 && (metadata[4][0] is 'R' or 'C') && index + 1 < fields.Length)
             {
-                continue;
+                path = fields[++index];
             }
 
-            string[] metadata = line[1..tabIndex]
-                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (metadata.Length < 5
-                || (metadata[0] != "160000" && metadata[1] != "160000"))
-            {
-                continue;
-            }
-
-            string[] pathFields = line[(tabIndex + 1)..].Split('\t');
-            paths.Add(NormalizePath(pathFields[^1]));
+            if (metadata[0] == "160000" || metadata[1] == "160000") { paths.Add(path); }
         }
 
         return paths;
     }
 
-    private static IReadOnlyDictionary<string, DiffStat> ParseNumstat(string output)
-    {
-        var stats = new Dictionary<string, DiffStat>(StringComparer.OrdinalIgnoreCase);
-        foreach (var rawLine in output.Split('\n'))
-        {
-            var line = rawLine.TrimEnd('\r');
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            var parts = line.Split('\t', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 3)
-            {
-                continue;
-            }
-
-            var path = NormalizePath(parts.Last());
-            stats[path] = new DiffStat(ParseCount(parts[0]), ParseCount(parts[1]));
-        }
-
-        return stats;
-    }
-
     private static DiffStat GetStat(IReadOnlyDictionary<string, DiffStat> stats, string path)
     {
         return stats.TryGetValue(path, out var stat) ? stat : DiffStat.Empty;
-    }
-
-    private static int ParseCount(string value)
-    {
-        return int.TryParse(value, out var count) ? count : 0;
-    }
-
-    private static string NormalizePath(string path)
-    {
-        var normalizedPath = path.Trim().Trim('"');
-        const string renameSeparator = " => ";
-
-        var renameIndex = normalizedPath.IndexOf(renameSeparator, StringComparison.Ordinal);
-        if (renameIndex >= 0)
-        {
-            var openBraceIndex = normalizedPath.LastIndexOf('{', renameIndex);
-            var closeBraceIndex = normalizedPath.IndexOf('}', renameIndex);
-            if (openBraceIndex >= 0 && closeBraceIndex > renameIndex)
-            {
-                return (normalizedPath[..openBraceIndex] + normalizedPath[(renameIndex + renameSeparator.Length)..closeBraceIndex] + normalizedPath[(closeBraceIndex + 1)..])
-                    .Trim()
-                    .Trim('"');
-            }
-
-            return normalizedPath[(renameIndex + renameSeparator.Length)..].Trim().Trim('"');
-        }
-
-        return normalizedPath;
     }
 
     private static string GetStatusName(char status)

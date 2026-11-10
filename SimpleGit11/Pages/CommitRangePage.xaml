@@ -17,9 +17,10 @@
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
                         <Setter Target="PageLayout.RowSpacing" Value="0" />
-                        <Setter Target="HeaderCommands.(Grid.Row)" Value="1" />
-                        <Setter Target="HeaderCommands.(Grid.Column)" Value="0" />
-                        <Setter Target="HeaderCommands.HorizontalAlignment" Value="Left" />
+                        <Setter Target="HeaderTitle.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="HeaderToolbar.(Grid.Row)" Value="1" />
+                        <Setter Target="HeaderToolbar.(Grid.Column)" Value="0" />
+                        <Setter Target="HeaderToolbar.(Grid.ColumnSpan)" Value="2" />
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="WideLayout">
@@ -46,8 +47,9 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <StackPanel Spacing="6">
+            <StackPanel x:Name="HeaderTitle" Spacing="6">
                 <TextBlock
+                    AutomationProperties.AutomationId="CommitRangePageTitle"
                     Style="{ThemeResource TitleTextBlockStyle}"
                     Text="{x:Bind ViewModel.Title, Mode=OneWay}"
                     TextWrapping="WrapWholeWords" />
@@ -57,47 +59,55 @@
                     TextWrapping="WrapWholeWords" />
             </StackPanel>
 
-            <CommandBar
-                x:Name="HeaderCommands"
+            <controls:CommitBrowserToolbar
+                x:Name="HeaderToolbar"
                 Grid.Column="1"
-                Padding="0"
+                HorizontalAlignment="Right"
                 VerticalAlignment="Center"
-                Background="Transparent"
-                DefaultLabelPosition="Right"
-                Visibility="{x:Bind ViewModel.ShowCherryPickCommands, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                <AppBarElementContainer>
-                    <SplitButton
-                        x:Uid="CherryPickSplitButton"
-                        Command="{x:Bind ViewModel.CherryPickSelectedCommand, Mode=OneWay}"
-                        Style="{StaticResource SplitButtonCommandBarStyle}">
-                        <SplitButton.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <SymbolIcon Symbol="Forward" />
-                                <TextBlock
-                                    Margin="8,0,0,0"
-                                    Text="{x:Bind ViewModel.CherryPickButtonText, Mode=OneWay}" />
-                            </StackPanel>
-                        </SplitButton.Content>
-                        <SplitButton.Flyout>
-                            <MenuFlyout>
-                                <MenuFlyoutItem
-                                    x:Uid="CherryPickWithSourceMenuFlyoutItem"
-                                    Command="{x:Bind ViewModel.CherryPickWithSourceCommand, Mode=OneWay}"
-                                    Icon="Link" />
-                                <MenuFlyoutItem
-                                    x:Uid="CherryPickWithSignOffMenuFlyoutItem"
-                                    Command="{x:Bind ViewModel.CherryPickWithSignOffCommand, Mode=OneWay}"
-                                    Icon="Contact" />
-                                <MenuFlyoutSeparator />
-                                <MenuFlyoutItem
-                                    x:Uid="CherryPickWithoutCommitMenuFlyoutItem"
-                                    Command="{x:Bind ViewModel.CherryPickWithoutCommitCommand, Mode=OneWay}"
-                                    Icon="Edit" />
-                            </MenuFlyout>
-                        </SplitButton.Flyout>
-                    </SplitButton>
-                </AppBarElementContainer>
-            </CommandBar>
+                ViewModel="{x:Bind ViewModel, Mode=OneWay}">
+                <controls:CommitBrowserToolbar.ActionCommands>
+                    <CommandBar
+                        AutomationProperties.AutomationId="CommitRangeActionCommands"
+                        Padding="0"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        DefaultLabelPosition="Right"
+                        Visibility="{x:Bind ViewModel.ShowCherryPickCommands, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                        <AppBarElementContainer>
+                            <SplitButton
+                                x:Uid="CherryPickSplitButton"
+                                Command="{x:Bind ViewModel.CherryPickSelectedCommand, Mode=OneWay}"
+                                Style="{StaticResource SplitButtonCommandBarStyle}">
+                                <SplitButton.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <SymbolIcon Symbol="Forward" />
+                                        <TextBlock
+                                            Margin="8,0,0,0"
+                                            Text="{x:Bind ViewModel.CherryPickButtonText, Mode=OneWay}" />
+                                    </StackPanel>
+                                </SplitButton.Content>
+                                <SplitButton.Flyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem
+                                            x:Uid="CherryPickWithSourceMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.CherryPickWithSourceCommand, Mode=OneWay}"
+                                            Icon="Link" />
+                                        <MenuFlyoutItem
+                                            x:Uid="CherryPickWithSignOffMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.CherryPickWithSignOffCommand, Mode=OneWay}"
+                                            Icon="Contact" />
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem
+                                            x:Uid="CherryPickWithoutCommitMenuFlyoutItem"
+                                            Command="{x:Bind ViewModel.CherryPickWithoutCommitCommand, Mode=OneWay}"
+                                            Icon="Edit" />
+                                    </MenuFlyout>
+                                </SplitButton.Flyout>
+                            </SplitButton>
+                        </AppBarElementContainer>
+                    </CommandBar>
+                </controls:CommitBrowserToolbar.ActionCommands>
+            </controls:CommitBrowserToolbar>
         </Grid>
 
         <InfoBar
@@ -125,7 +135,7 @@
                     AutomationProperties.AutomationId="LoadRemainingCommitRangeButton"
                     Command="{x:Bind ViewModel.LoadRemainingCommitsCommand, Mode=OneWay}"
                     Content="{x:Bind ViewModel.LoadRemainingCommitsButtonText, Mode=OneWay}"
-                    Visibility="{x:Bind ViewModel.HasMoreCommits, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                    Visibility="{x:Bind ViewModel.IsLoadRemainingHistoryVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
             </controls:CommitBrowserView.CommitListOverlay>
             <controls:CommitBrowserView.CommitContextFlyout>
                 <MenuFlyout>

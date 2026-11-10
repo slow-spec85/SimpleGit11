@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows.Input;
 using Microsoft.UI.Xaml;
@@ -13,6 +14,7 @@ using SimpleGit11.Extensions;
 using SimpleGit11.Models;
 using SimpleGit11.Presentation.Editor;
 using SimpleGit11.Presentation.Theming;
+using SimpleGit11.ViewModels;
 using TextControlBoxNS.Models;
 using Windows.UI;
 
@@ -27,6 +29,36 @@ public sealed partial class DiffViewer : UserControl
     private const float InlineDiffCornerRadius = 2;
     private const float InlineDiffHorizontalPadding = 1;
     private bool _hasSearchMatches;
+    private bool _updatingSearchFlyout;
+    private bool _hasSearchSelection;
+
+    public static readonly DependencyProperty SearchSessionProperty = DependencyProperty.Register(
+        nameof(SearchSession),
+        typeof(DiffSearchViewModel),
+        typeof(DiffViewer),
+        new PropertyMetadata(null, OnSearchSessionChanged));
+
+    public DiffSearchViewModel? SearchSession
+    {
+        get => (DiffSearchViewModel?)GetValue(SearchSessionProperty);
+        set => SetValue(SearchSessionProperty, value);
+    }
+
+    public static readonly DependencyProperty IsFileSearchAvailableProperty = DependencyProperty.Register(
+        nameof(IsFileSearchAvailable),
+        typeof(bool),
+        typeof(DiffViewer),
+        new PropertyMetadata(true, OnChromePropertyChanged));
+
+    public bool IsFileSearchAvailable
+    {
+        get => (bool)GetValue(IsFileSearchAvailableProperty);
+        set => SetValue(IsFileSearchAvailableProperty, value);
+    }
+
+    private DiffSearchViewModel? ActiveSearchSession => IsEditing ? null : SearchSession;
+
+    internal event EventHandler? SearchFlyoutClosed;
 
     public static readonly DependencyProperty CopyTextCommandProperty = RegisterCommand(
         nameof(CopyTextCommand));
@@ -310,6 +342,12 @@ public sealed partial class DiffViewer : UserControl
 
     private void DiffViewer_Loaded(object sender, RoutedEventArgs args)
     {
+        if (SearchSession is { } session)
+        {
+            session.PropertyChanged -= SearchSession_PropertyChanged;
+            session.PropertyChanged += SearchSession_PropertyChanged;
+        }
+        UpdateSearchFlyout();
         ActualThemeChanged -= DiffViewer_ActualThemeChanged;
         ActualThemeChanged += DiffViewer_ActualThemeChanged;
         ObserveDiffLines(DiffLinesSource as INotifyCollectionChanged);
@@ -319,6 +357,7 @@ public sealed partial class DiffViewer : UserControl
 
     private void DiffViewer_Unloaded(object sender, RoutedEventArgs args)
     {
+        if (SearchSession is { } session) { session.PropertyChanged -= SearchSession_PropertyChanged; }
         ActualThemeChanged -= DiffViewer_ActualThemeChanged;
         ObserveDiffLines(null);
         ObserveEditableDiffLines(null);
@@ -625,21 +664,31 @@ public sealed partial class DiffViewer : UserControl
         UpdateRevertActionVisibility();
 
         bool showEmptyState = HasEmptyState && !IsEditing;
-        DiffSearchToggleButton.IsEnabled = !showEmptyState;
+        DiffSearchToggleButton.IsEnabled = ActiveSearchSession is null ? !showEmptyState : IsFileSearchAvailable;
         DiffEmptyInfoBar.Message = EmptyMessage;
         DiffEmptyInfoBar.IsOpen = showEmptyState;
         DiffEmptyInfoBar.Visibility = showEmptyState ? Visibility.Visible : Visibility.Collapsed;
         EditorHostGrid.Visibility = showEmptyState ? Visibility.Collapsed : Visibility.Visible;
+        UpdateSearchFlyout();
     }
 
     private void DiffSearchToggleButton_Click(object sender, RoutedEventArgs args)
+    {
+        OpenSearchFlyout();
+    }
+
+    internal void OpenSearchFlyout()
     {
         DiffSearchToggleButton.IsChecked = !string.IsNullOrEmpty(DiffSearchTextBox.Text);
         FlyoutBase.ShowAttachedFlyout(DiffSearchToggleButton);
     }
 
+    private void DiffSearchFlyout_Closed(object sender, object args) =>
+        SearchFlyoutClosed?.Invoke(this, EventArgs.Empty);
+
     private void DiffSearchFlyout_Opening(object sender, object args)
     {
+        UpdateSearchFlyout();
         DispatcherQueue.TryEnqueue(() =>
         {
             DiffSearchTextBox.Focus(FocusState.Programmatic);
@@ -649,23 +698,120 @@ public sealed partial class DiffViewer : UserControl
 
     private void DiffSearchTextBox_TextChanged(object sender, TextChangedEventArgs args)
     {
-        ApplyCurrentSearch();
+        if (_updatingSearchFlyout) { return; }
+        if (ActiveSearchSession is { } session)
+        {
+            session.Query = DiffSearchTextBox.Text;
+        }
+        else
+        {
+            ApplyCurrentSearch();
+        }
     }
 
-    private void PreviousDiffSearchMatchButton_Click(object sender, RoutedEventArgs args)
+    private void DiffSearchTextBox_KeyDown(object sender, KeyRoutedEventArgs args)
     {
-        EditorSurface.SelectPreviousSearchMatch();
+        if (args.Key == Windows.System.VirtualKey.Enter && ActiveSearchSession?.RetryCanceledSearch() == true)
+        {
+            args.Handled = true;
+        }
     }
 
-    private void NextDiffSearchMatchButton_Click(object sender, RoutedEventArgs args)
+    private async void PreviousDiffSearchMatchButton_Click(object sender, RoutedEventArgs args)
     {
-        EditorSurface.SelectNextSearchMatch();
+        if (ActiveSearchSession is { } session) { await session.MoveAsync(forward: false); }
+        else { EditorSurface.SelectPreviousSearchMatch(); }
+    }
+
+    private async void NextDiffSearchMatchButton_Click(object sender, RoutedEventArgs args)
+    {
+        if (ActiveSearchSession is { } session) { await session.MoveAsync(forward: true); }
+        else { EditorSurface.SelectNextSearchMatch(); }
+    }
+
+    private void DiffSearchOptions_Toggled(object sender, RoutedEventArgs args)
+    {
+        if (_updatingSearchFlyout || ActiveSearchSession is not { } session) { return; }
+        if (ReferenceEquals(sender, DiffSearchHistorySwitch)) { session.SearchHistory = DiffSearchHistorySwitch.IsOn; }
+        else { session.ChangedLinesOnly = DiffSearchChangedLinesSwitch.IsOn; }
+    }
+
+    private void ResetDiffSearchFiltersButton_Click(object sender, RoutedEventArgs args)
+    {
+        DiffSearchTextBox.Focus(FocusState.Programmatic);
+        ActiveSearchSession?.ResetFilters();
+    }
+
+    private static void OnSearchSessionChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+    {
+        DiffViewer viewer = (DiffViewer)sender;
+        if (viewer.IsLoaded)
+        {
+            if (args.OldValue is DiffSearchViewModel previous) { previous.PropertyChanged -= viewer.SearchSession_PropertyChanged; }
+            if (args.NewValue is DiffSearchViewModel current) { current.PropertyChanged += viewer.SearchSession_PropertyChanged; }
+        }
+        viewer.UpdateModeChrome();
+    }
+
+    private void SearchSession_PropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(DiffSearchViewModel.Selection)) { ApplySearchSelection(); }
+        else { UpdateSearchFlyout(); }
+    }
+
+    private void UpdateSearchFlyout()
+    {
+        if (DiffSearchOptionsPanel is null) { return; }
+        DiffSearchViewModel? session = ActiveSearchSession;
+        DiffSearchOptionsPanel.Visibility = session is null ? Visibility.Collapsed : Visibility.Visible;
+        if (session is null) { return; }
+
+        _updatingSearchFlyout = true;
+        try
+        {
+            DiffSearchTextBox.Text = session.Query;
+            DiffSearchToggleButton.IsChecked = session.Query.Length > 0;
+            DiffSearchHistorySwitch.Visibility = session.CanSearchHistory ? Visibility.Visible : Visibility.Collapsed;
+            DiffSearchHistorySwitch.IsOn = session.SearchHistory;
+            DiffSearchChangedLinesSwitch.IsOn = session.ChangedLinesOnly;
+            ResetDiffSearchFiltersButton.IsEnabled = session.HasFilters;
+            UpdateSearchNavigationState();
+        }
+        finally { _updatingSearchFlyout = false; }
+    }
+
+    private void ApplySearchSelection()
+    {
+        if (ActiveSearchSession?.Selection is { } selection)
+        {
+            for (int row = 0; row < _projection.SourceLines.Count; row++)
+            {
+                if (ReferenceEquals(_projection.SourceLines[row], selection.Line))
+                {
+                    EditorSurface.SelectSearchMatch(row, selection.Column, selection.Length);
+                    _hasSearchSelection = true;
+                    return;
+                }
+            }
+        }
+
+        if (_hasSearchSelection)
+        {
+            EditorSurface.ClearSelection();
+            _hasSearchSelection = false;
+        }
     }
 
     private void ApplyCurrentSearch()
     {
         if (EditorSurface is null || DiffSearchTextBox is null || DiffSearchToggleButton is null)
         {
+            return;
+        }
+
+        if (ActiveSearchSession is not null)
+        {
+            ApplySearchSelection();
             return;
         }
 
@@ -690,8 +836,9 @@ public sealed partial class DiffViewer : UserControl
             return;
         }
 
-        PreviousDiffSearchMatchButton.IsEnabled = _hasSearchMatches;
-        NextDiffSearchMatchButton.IsEnabled = _hasSearchMatches;
+        bool canNavigate = ActiveSearchSession?.CanNavigate ?? _hasSearchMatches;
+        PreviousDiffSearchMatchButton.IsEnabled = canNavigate;
+        NextDiffSearchMatchButton.IsEnabled = canNavigate;
     }
 
     private void EditorSurface_DocumentChanged(object? sender, DocumentChangedEventArgs args)

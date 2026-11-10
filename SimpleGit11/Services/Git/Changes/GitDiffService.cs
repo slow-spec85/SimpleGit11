@@ -4,13 +4,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using SimpleGit11.Models;
 using SimpleGit11.Services.Git.Execution;
 
 namespace SimpleGit11.Services;
 
-public sealed class GitDiffService : IGitDiffService
+public sealed partial class GitDiffService : IGitDiffService
 {
     private readonly ISettingsService _settingsService;
     private readonly IGitCommandRunner _commandRunner;
@@ -26,9 +27,15 @@ public sealed class GitDiffService : IGitDiffService
         _textFileService = textFileService;
     }
 
-    public async Task<DiffResult> GetDiffAsync(RepositoryInfo repository, GitChangedFile statusEntry)
+    public Task<DiffResult> GetDiffAsync(
+        RepositoryInfo repository, GitChangedFile statusEntry, bool compareConflictToHead = false) =>
+        GetDiffAsync(repository, statusEntry, compareConflictToHead, CancellationToken.None);
+
+    private async Task<DiffResult> GetDiffAsync(
+        RepositoryInfo repository, GitChangedFile statusEntry, bool compareConflictToHead,
+        CancellationToken cancellationToken)
     {
-        if (statusEntry.State == GitChangeState.Conflicted)
+        if (statusEntry.IsConflicted && !compareConflictToHead)
         {
             return await GetConflictFileAsync(repository, statusEntry);
         }
@@ -38,13 +45,13 @@ public sealed class GitDiffService : IGitDiffService
             return new DiffResult([], false, true, "Diff is not available until the new file is staged.");
         }
 
-        var output = await RunGitDiffAsync(repository, statusEntry);
+        var output = await RunGitDiffAsync(repository, statusEntry, cancellationToken, compareConflictToHead);
         if (string.IsNullOrWhiteSpace(output))
         {
             return new DiffResult([], false, true, "No textual diff is available for this file.");
         }
 
-        if (output.Contains("Binary files ") || output.Contains("GIT binary patch"))
+        if (IsBinaryPatch(output))
         {
             return new DiffResult([], true, true, "Binary file diff cannot be displayed.");
         }
@@ -52,8 +59,18 @@ public sealed class GitDiffService : IGitDiffService
         return new DiffResult(GitDiffParser.Parse(output), false, false, "");
     }
 
-    public async Task<string> GetFullFileTextAsync(RepositoryInfo repository, GitChangedFile statusEntry)
+    public Task<string> GetFullFileTextAsync(RepositoryInfo repository, GitChangedFile statusEntry) =>
+        GetFullFileTextAsync(repository, statusEntry, CancellationToken.None);
+
+    private async Task<string> GetFullFileTextAsync(
+        RepositoryInfo repository, GitChangedFile statusEntry, CancellationToken cancellationToken)
     {
+        if (statusEntry.IsStaged || statusEntry.Status == "Deleted")
+        {
+            string prefix = statusEntry.IsStaged && statusEntry.Status == "Deleted" ? "HEAD:" : ":";
+            return await RunGitAsync(repository, ["show", prefix + statusEntry.Path], cancellationToken);
+        }
+
         if (_textFileService is not null)
         {
             try
@@ -72,40 +89,50 @@ public sealed class GitDiffService : IGitDiffService
             return "";
         }
 
-        return await File.ReadAllTextAsync(filePath, Encoding.UTF8);
+        return await File.ReadAllTextAsync(filePath, Encoding.UTF8, cancellationToken);
     }
 
-    public async Task<DiffResult> GetCommitDiffAsync(
+    public Task<DiffResult> GetCommitDiffAsync(RepositoryInfo repository, GitCommit commit, GitChangedFile changedFile) =>
+        GetCommitDiffAsync(repository, commit, changedFile, CancellationToken.None);
+
+    private async Task<DiffResult> GetCommitDiffAsync(
         RepositoryInfo repository,
         GitCommit commit,
-        GitChangedFile changedFile)
+        GitChangedFile changedFile,
+        CancellationToken cancellationToken)
     {
-        var arguments = new List<string>
+        string? diffBase = commit.HasDiffBaseRevision ? commit.DiffBaseRevision
+            : commit.IsMerge ? commit.ParentHashes[0] : null;
+        List<string> arguments = new()
         {
-            commit.HasDiffBaseRevision ? "diff" : "show"
+            diffBase is null ? "show" : "diff",
+            "--no-color", "--no-ext-diff", "--no-textconv", "--find-renames"
         };
-        if (!commit.HasDiffBaseRevision)
+        if (diffBase is null)
         {
             arguments.Add("--format=");
         }
-        arguments.Add("--find-renames");
 
         AddWhitespaceOption(arguments);
-        if (commit.HasDiffBaseRevision)
+        if (diffBase is not null)
         {
-            arguments.Add(commit.DiffBaseRevision);
+            arguments.Add(diffBase);
         }
         arguments.Add(commit.Hash);
         arguments.Add("--");
-        arguments.Add(changedFile.Path);
+        arguments.Add(":(top,literal)" + changedFile.Path);
+        if (changedFile.PreviousPath is string previousPath)
+        {
+            arguments.Add(":(top,literal)" + previousPath);
+        }
 
-        var output = await RunGitAsync(repository, arguments);
+        var output = await RunGitAsync(repository, arguments, cancellationToken);
         if (string.IsNullOrWhiteSpace(output))
         {
             return new DiffResult([], false, true, "No textual diff is available for this commit.");
         }
 
-        if (output.Contains("Binary files ") || output.Contains("GIT binary patch"))
+        if (IsBinaryPatch(output))
         {
             return new DiffResult([], true, true, "Binary file diff cannot be displayed.");
         }
@@ -113,10 +140,14 @@ public sealed class GitDiffService : IGitDiffService
         return new DiffResult(GitDiffParser.Parse(output), false, false, "");
     }
 
-    public async Task<string> GetCommitFileTextAsync(
+    public Task<string> GetCommitFileTextAsync(RepositoryInfo repository, GitCommit commit, GitChangedFile changedFile) =>
+        GetCommitFileTextAsync(repository, commit, changedFile, CancellationToken.None);
+
+    private async Task<string> GetCommitFileTextAsync(
         RepositoryInfo repository,
         GitCommit commit,
-        GitChangedFile changedFile)
+        GitChangedFile changedFile,
+        CancellationToken cancellationToken)
     {
         if (!changedFile.CanShowFileContent)
         {
@@ -129,7 +160,7 @@ public sealed class GitDiffService : IGitDiffService
 
         try
         {
-            return await RunGitAsync(repository, ["show", revision]);
+            return await RunGitAsync(repository, ["show", revision], cancellationToken);
         }
         catch (GitCommandException exception)
         {
@@ -372,11 +403,13 @@ public sealed class GitDiffService : IGitDiffService
         return new DiffResult(ParseConflictFile(text), false, false, "");
     }
 
-    private async Task<string> RunGitDiffAsync(RepositoryInfo repository, GitChangedFile statusEntry)
+    private async Task<string> RunGitDiffAsync(
+        RepositoryInfo repository, GitChangedFile statusEntry, CancellationToken cancellationToken = default,
+        bool compareConflictToHead = false)
     {
         var arguments = new List<string>
         {
-            "diff"
+            "--no-optional-locks", "diff", "--no-color", "--no-ext-diff", "--no-textconv"
         };
 
         if (statusEntry.State == GitChangeState.Staged)
@@ -385,10 +418,15 @@ public sealed class GitDiffService : IGitDiffService
         }
 
         AddWhitespaceOption(arguments);
+        if (statusEntry.IsConflicted && compareConflictToHead) { arguments.Add("HEAD"); }
         arguments.Add("--");
-        arguments.Add(statusEntry.Path);
+        arguments.Add(":(top,literal)" + statusEntry.Path);
+        if (statusEntry.PreviousPath is string previousPath)
+        {
+            arguments.Add(":(top,literal)" + previousPath);
+        }
 
-        return await RunGitAsync(repository, arguments);
+        return await RunGitAsync(repository, arguments, cancellationToken);
     }
 
     private void AddWhitespaceOption(ICollection<string> arguments)
@@ -399,9 +437,14 @@ public sealed class GitDiffService : IGitDiffService
         }
     }
 
-    private async Task<string> RunGitAsync(RepositoryInfo repository, IReadOnlyList<string> arguments)
+    private static bool IsBinaryPatch(string output) =>
+        output.Contains("\nBinary files ", System.StringComparison.Ordinal)
+        || output.Contains("\nGIT binary patch", System.StringComparison.Ordinal);
+
+    private async Task<string> RunGitAsync(
+        RepositoryInfo repository, IReadOnlyList<string> arguments, CancellationToken cancellationToken = default)
     {
-        GitCommandResult result = await _commandRunner.RunAsync(repository.Path, arguments);
+        GitCommandResult result = await _commandRunner.RunAsync(repository.Path, arguments, cancellationToken: cancellationToken);
         return result.StandardOutput;
     }
 

@@ -484,7 +484,7 @@
     <value>История</value>
   </data>
   <data name="HistoryDescriptionTextBlock.Text" xml:space="preserve">
-    <value>Просматривайте коммиты, файлы и изменения. Для редактирования выберите начальный коммит или диапазон с помощью Shift.</value>
+    <value>Просматривайте коммиты, файлы и изменения.</value>
   </data>
   <data name="HistorySearchTextBox.PlaceholderText" xml:space="preserve">
     <value>Поиск</value>
@@ -518,6 +518,24 @@
   </data>
   <data name="CommitDetailsToggleButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Показать сведения о коммите</value>
+  </data>
+  <data name="HistoryCommitListToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Показать список коммитов</value>
+  </data>
+  <data name="HistoryCommitListToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Показать список коммитов</value>
+  </data>
+  <data name="HistoryFileListToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Показать список файлов</value>
+  </data>
+  <data name="HistoryFileListToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Показать список файлов</value>
+  </data>
+  <data name="HistoryDiffToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Показать изменения</value>
+  </data>
+  <data name="HistoryDiffToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Показать изменения</value>
   </data>
   <data name="MainlineOnlyToggleSwitch.OnContent" xml:space="preserve">
     <value>Только основная линия</value>
@@ -568,16 +586,52 @@
     <value>Сбросить все фильтры</value>
   </data>
   <data name="DiffSearchToggleButton.AutomationProperties.Name" xml:space="preserve">
-    <value>Поиск в различиях</value>
+    <value>Найти текст</value>
   </data>
   <data name="DiffSearchToggleButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Поиск в различиях</value>
+    <value>Найти текст</value>
   </data>
   <data name="DiffSearchTextBox.PlaceholderText" xml:space="preserve">
     <value>Поиск</value>
   </data>
   <data name="DiffSearchTextBox.AutomationProperties.Name" xml:space="preserve">
-    <value>Поиск в различиях</value>
+    <value>Найти текст</value>
+  </data>
+  <data name="DiffSearchHistorySwitch.OnContent" xml:space="preserve">
+    <value>По всей истории</value>
+  </data>
+  <data name="DiffSearchHistorySwitch.OffContent" xml:space="preserve">
+    <value>По всей истории</value>
+  </data>
+  <data name="DiffSearchHistorySwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>По всей истории ветки</value>
+  </data>
+  <data name="DiffSearchChangedLinesSwitch.OnContent" xml:space="preserve">
+    <value>Только изменённые строки</value>
+  </data>
+  <data name="DiffSearchChangedLinesSwitch.OffContent" xml:space="preserve">
+    <value>Только изменённые строки</value>
+  </data>
+  <data name="DiffSearchChangedLinesSwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Только изменённые строки</value>
+  </data>
+  <data name="DiffFileSearchRunning" xml:space="preserve">
+    <value>Идёт поиск по изменённым файлам…</value>
+  </data>
+  <data name="DiffHistorySearchRunning" xml:space="preserve">
+    <value>Идёт поиск по истории ветки…</value>
+  </data>
+  <data name="DiffFileSearchCanceled" xml:space="preserve">
+    <value>Поиск отменён. Нажмите Enter, чтобы повторить.</value>
+  </data>
+  <data name="DiffFileSearchNoMatches" xml:space="preserve">
+    <value>Совпадений не найдено.</value>
+  </data>
+  <data name="DiffFileSearchMatchesFound" xml:space="preserve">
+    <value>Найдено совпадений — {0:N0}</value>
+  </data>
+  <data name="DiffFileSearchFailed" xml:space="preserve">
+    <value>Не удалось завершить поиск.</value>
   </data>
   <data name="PreviousDiffSearchMatchButton.AutomationProperties.Name" xml:space="preserve">
     <value>Предыдущее совпадение</value>
@@ -1198,11 +1252,11 @@
   <data name="PullSynchronizationTooltip.Content" xml:space="preserve">
     <value>Вытянуть входящие изменения в текущую ветку</value>
   </data>
-  <data name="CancelSynchronizationOperationButton.Content" xml:space="preserve">
+  <data name="CancelOperationProgressButton.Content" xml:space="preserve">
     <value>Отменить</value>
   </data>
-  <data name="CancelSynchronizationOperationButton.AutomationProperties.Name" xml:space="preserve">
-    <value>Отменить удаленную операцию</value>
+  <data name="CancelOperationProgressButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Отменить операцию</value>
   </data>
   <data name="SynchronizationOperationCanceled" xml:space="preserve">
     <value>Удаленная операция отменена.</value>

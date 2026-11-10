@@ -23,20 +23,12 @@
         DataContext="{x:Bind ViewModel, Mode=OneWay}"
         RowSpacing="20">
         <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup x:Name="LayoutStates">
+            <VisualStateGroup x:Name="LayoutStates" CurrentStateChanged="LayoutStates_CurrentStateChanged">
                 <VisualState x:Name="NarrowLayout">
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="0" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="HistorySearchColumn.Width" Value="*" />
-                        <Setter Target="HistoryListsColumn.Width" Value="*" />
-                        <Setter Target="HistoryDiffSplitterColumn.Width" Value="0" />
-                        <Setter Target="HistoryDiffColumn.Width" Value="0" />
-                        <Setter Target="HistoryDiffColumn.MinWidth" Value="0" />
-                        <Setter Target="HistoryListsRow.Height" Value="2*" />
-                        <Setter Target="HistoryDiffSplitterRow.Height" Value="8" />
-                        <Setter Target="HistoryDiffRow.Height" Value="3*" />
                         <Setter Target="HistoryDiffSplitter.(Grid.Row)" Value="1" />
                         <Setter Target="HistoryDiffSplitter.(Grid.Column)" Value="0" />
                         <Setter Target="HistoryDiffSplitter.(Grid.ColumnSpan)" Value="3" />
@@ -59,12 +51,6 @@
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="1060" />
                     </VisualState.StateTriggers>
-                    <VisualState.Setters>
-                        <Setter Target="HistoryListsColumn.Width" Value="400" />
-                        <Setter Target="HistoryDiffColumn.Width" Value="*" />
-                        <Setter Target="HistoryListsRow.Height" Value="*" />
-                        <Setter Target="HistoryDiffRow.Height" Value="0" />
-                    </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
@@ -102,11 +88,9 @@
                     </Grid.RowDefinitions>
                     <Grid
                         x:Name="CommitListHeader"
-                        ColumnSpacing="4"
                         Padding="0,0,14,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -123,10 +107,10 @@
                             x:Name="CommitFilterToggleButton"
                             x:Uid="CommitFilterToggleButton"
                             AutomationProperties.AutomationId="CommitFilterToggleButton"
+                            Margin="4,0,0,0"
                             IsEnabled="{x:Bind ViewModel.IsCommitSearchEnabled, Mode=OneWay}"
                             Click="CommitFilterToggleButton_Click"
                             IsChecked="{x:Bind ViewModel.IsCommitFilterApplied, Mode=OneWay}"
-                            Visibility="{x:Bind IsCommitListVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
                             Width="32"
                             Height="32"
                             Padding="1">
@@ -260,22 +244,9 @@
                                 </Flyout>
                             </primitives:FlyoutBase.AttachedFlyout>
                         </ToggleButton>
-                        <ToggleButton
-                            Grid.Column="2"
-                            x:Name="CommitDetailsToggleButton"
-                            x:Uid="CommitDetailsToggleButton"
-                            AutomationProperties.AutomationId="CommitDetailsToggleButton"
-                            Click="CommitDetailsToggleButton_Click"
-                            IsChecked="{x:Bind ViewModel.IsCommitDetailsBlockVisible, Mode=TwoWay}"
-                            Visibility="{x:Bind IsCommitListVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
-                            Width="32"
-                            Height="32"
-                            Padding="1">
-                            <SymbolIcon Symbol="List" />
-                        </ToggleButton>
                         <ContentPresenter
                             Grid.Row="1"
-                            Grid.ColumnSpan="3"
+                            Grid.ColumnSpan="2"
                             Margin="0,8,0,0"
                             Content="{Binding CommitListCommands, ElementName=PageRoot}"
                             Visibility="{x:Bind ViewModel.IsHistoryEditing, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
@@ -498,6 +469,7 @@
                     Style="{StaticResource HorizontalSplitterStyle}" />
 
                 <Grid
+                    x:Name="ChangedFilesGrid"
                     Grid.Row="2"
                     RowSpacing="12">
                     <Grid.RowDefinitions>
@@ -512,6 +484,7 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock
+                            AutomationProperties.AutomationId="HistoryChangedFilesTitle"
                             VerticalAlignment="Center"
                             MaxLines="1" TextWrapping="WrapWholeWords"
                             Style="{ThemeResource SubtitleTextBlockStyle}"
@@ -542,9 +515,9 @@
                                         x:Uid="FileFilterModeMenuFlyoutItem"
                                         Command="{x:Bind ViewModel.FilterByChangedFileCommand, Mode=OneWay}"
                                         Icon="Find"
-                                        Visibility="{x:Bind IsCommitListVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                        Visibility="{x:Bind CommitListGrid.Visibility, Mode=OneWay}" />
                                     <MenuFlyoutSeparator
-                                        Visibility="{x:Bind IsCommitListVisible, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                        Visibility="{x:Bind CommitListGrid.Visibility, Mode=OneWay}" />
                                     <MenuFlyoutItem
                                         Tag="FileContent"
                                         Command="{x:Bind ViewModel.ToggleChangeDisplayModeCommand, Mode=OneWay}"
@@ -652,7 +625,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition x:Name="CommitDetailsRow" Height="0" />
                     <RowDefinition x:Name="CommitDetailsSplitterRow" Height="0" />
-                    <RowDefinition Height="*" />
+                    <RowDefinition x:Name="DiffContentRow" Height="*" />
                 </Grid.RowDefinitions>
 
                 <Grid
@@ -672,6 +645,7 @@
                         Spacing="4">
                         <TextBlock
                             x:Uid="CommitDetailsTitleTextBlock"
+                            AutomationProperties.AutomationId="HistoryCommitDetailsTitle"
                             MaxLines="1" TextWrapping="WrapWholeWords"
                             VerticalAlignment="Center"
                             Style="{ThemeResource SubtitleTextBlockStyle}" />
@@ -856,7 +830,6 @@
                     Grid.Row="1"
                     DragDelta="CommitDetailsSplitter_DragDelta"
                     Style="{StaticResource HorizontalSplitterStyle}"
-                    Visibility="{x:Bind ViewModel.CommitDetailsBlockVisibility, Mode=OneWay}"
                     Margin="0,4,30,8"/>
 
                 <Grid
@@ -880,6 +853,7 @@
                         FilePath="{x:Bind ViewModel.SelectedDiffFileTooltip, Mode=OneWay}"
                         HasEmptyState="{x:Bind ViewModel.HasDiffEmptyState, Mode=OneWay}"
                         IsFullFileMode="{x:Bind ViewModel.IsFullFileMode, Mode=OneWay}"
+                        SearchSession="{x:Bind ViewModel.DiffSearch, Mode=OneWay}"
                         SyntaxHighlightingMode="{x:Bind ViewModel.SelectedSyntaxHighlightingMode, Mode=OneWay}"
                         ToggleFullFileCommand="{x:Bind ViewModel.ToggleFullFileCommand, Mode=OneWay}" />
                 </Grid>

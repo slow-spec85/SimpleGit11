@@ -7,16 +7,20 @@ public sealed class GitChangedFile
         string status,
         DiffStat? stat = null,
         GitChangeState? state = null,
-        bool isSubmodule = false)
+        bool isSubmodule = false,
+        string? previousPath = null)
     {
         Path = path;
         Status = status;
         Stat = stat ?? DiffStat.Empty;
         State = state;
         IsSubmodule = isSubmodule;
+        PreviousPath = previousPath;
     }
 
     public string Path { get; }
+
+    public string? PreviousPath { get; }
 
     public string FileName
     {
@@ -82,7 +86,7 @@ public sealed class GitChangedFile
     public string Tooltip => $"{Status} - {Path}";
 
     public bool HasSameSnapshot(GitChangedFile other) =>
-        Path == other.Path && Status == other.Status && State == other.State
+        Path == other.Path && PreviousPath == other.PreviousPath && Status == other.Status && State == other.State
         && IsSubmodule == other.IsSubmodule && Stat.AddedLines == other.Stat.AddedLines
         && Stat.RemovedLines == other.Stat.RemovedLines;
 }

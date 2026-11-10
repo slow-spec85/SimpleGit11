@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -81,7 +82,10 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadRemainingCommitsCommand))]
+    [NotifyPropertyChangedFor(nameof(IsLoadRemainingHistoryVisible))]
     public partial bool HasMoreCommits { get; private set; }
+
+    protected override bool HasRemainingHistory => HasMoreCommits;
 
     public bool ShowEmptyState => !IsLoading && HasNoCommits;
 
@@ -96,7 +100,11 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
         : _localizationService.GetString("CherryPickAppBarButtonLabel");
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCommitHistoryAvailable))]
+    [NotifyPropertyChangedFor(nameof(CommitDetailsBlockVisibility))]
     public partial bool IsRevisionDiffMode { get; private set; }
+
+    public override bool IsCommitHistoryAvailable => !IsRevisionDiffMode;
 
     partial void OnProgressMessageChanged(string value)
     {
@@ -221,7 +229,8 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
                 repository,
                 arguments.RevisionRange,
                 skip,
-                count));
+                count),
+            branchHistoryRevision: arguments.IsFullBranchHistory ? arguments.RevisionRange : null);
     }
 
     public async Task InitializeAsync(RevisionDiffNavigationArgs arguments)
@@ -266,13 +275,22 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
         Description = "";
         EmptyMessage = _localizationService.GetString("CommitRangeNavigationError");
         _loadCommitPageAsync = null;
+        DiffSearch.ResetFilters();
+        SetBranchHistoryRevision(null);
         _nextCommitOffset = 0;
         HasMoreCommits = false;
+        IsLoadingMore = false;
         HasNoCommits = true;
         ShowError(EmptyMessage);
     }
 
     protected override bool IsCommitDetailsOperationRunning => IsLoading || IsLoadingMore;
+
+    protected override Task LoadRemainingSearchCommitsAsync(CancellationToken cancellationToken) =>
+        HasMoreCommits && _mainWindowViewModel.CurrentRepository is { } repository
+            && _loadCommitPageAsync is { } loadCommitPageAsync
+            ? _gitService.ExecuteAsync(() => LoadRemainingCommitsCoreAsync(repository, loadCommitPageAsync, cancellationToken))
+            : Task.CompletedTask;
 
     protected override void ShowCommitDetailsError(string message, string? details = null)
     {
@@ -313,15 +331,19 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
     }
 
     private async Task LoadCommitsAsync(
-        System.Func<RepositoryInfo, int, int, Task<GitCommitPage>> loadCommitPageAsync)
+        System.Func<RepositoryInfo, int, int, Task<GitCommitPage>> loadCommitPageAsync,
+        string? branchHistoryRevision = null)
     {
         _loadCommitPageAsync = loadCommitPageAsync;
         _nextCommitOffset = 0;
         ClearNotification();
         SelectedCommit = null;
         ClearCommits();
+        DiffSearch.ResetFilters();
+        SetBranchHistoryRevision(branchHistoryRevision);
         HasNoCommits = false;
         HasMoreCommits = false;
+        IsLoadingMore = false;
         ProgressMessage = _localizationService.GetString("LoadingCommitRange");
         IsLoading = true;
 
@@ -373,7 +395,7 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
     private async Task LoadRemainingCommitsAsync()
     {
         RepositoryInfo? repository = _mainWindowViewModel.CurrentRepository;
-        if (repository is null || _loadCommitPageAsync is null || !HasMoreCommits)
+        if (repository is null || !CanLoadRemainingCommits() || _loadCommitPageAsync is not { } loadCommitPageAsync)
         {
             return;
         }
@@ -383,17 +405,8 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
             ClearNotification();
             ProgressMessage = _localizationService.GetString("LoadingMoreHistoryProgress");
             IsLoadingMore = true;
-            IReadOnlyList<GitCommit> loadedCommits = [];
-            await _gitService.ExecuteAsync(async () =>
-            {
-                loadedCommits = await LoadRemainingCommitPagesAsync(
-                    (offset, count) => _loadCommitPageAsync(repository, offset, count),
-                    _nextCommitOffset);
-            });
-
-            _nextCommitOffset += loadedCommits.Count;
-            AppendCommits(loadedCommits);
-            HasMoreCommits = false;
+            await _gitService.ExecuteAsync(() =>
+                LoadRemainingCommitsCoreAsync(repository, loadCommitPageAsync, CancellationToken.None));
         }
         catch (FileNotFoundException)
         {
@@ -413,9 +426,30 @@ public sealed partial class CommitRangeViewModel : CommitBrowserViewModelBase
         }
         finally
         {
-            ProgressMessage = "";
-            IsLoadingMore = false;
+            if (ReferenceEquals(_loadCommitPageAsync, loadCommitPageAsync))
+            {
+                ProgressMessage = "";
+                IsLoadingMore = false;
+            }
         }
+    }
+
+    private async Task LoadRemainingCommitsCoreAsync(
+        RepositoryInfo repository,
+        System.Func<RepositoryInfo, int, int, Task<GitCommitPage>> loadCommitPageAsync,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!HasMoreCommits || !ReferenceEquals(_loadCommitPageAsync, loadCommitPageAsync)
+            || !ReferenceEquals(_mainWindowViewModel.CurrentRepository, repository)) { return; }
+        IReadOnlyList<GitCommit> commits = await LoadRemainingCommitPagesAsync(
+            (offset, count) => loadCommitPageAsync(repository, offset, count), _nextCommitOffset, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!ReferenceEquals(_loadCommitPageAsync, loadCommitPageAsync)
+            || !ReferenceEquals(_mainWindowViewModel.CurrentRepository, repository)) { return; }
+        _nextCommitOffset += commits.Count;
+        AppendCommits(commits);
+        HasMoreCommits = false;
     }
 
     private void ReplaceCommitPage(GitCommitPage page)

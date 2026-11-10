@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl
     x:Class="SimpleGit11.Controls.DiffViewer"
     x:Name="Root"
@@ -102,52 +102,76 @@
                         <SymbolIcon Symbol="Find" />
                         <primitives:FlyoutBase.AttachedFlyout>
                             <Flyout
+                                Closed="DiffSearchFlyout_Closed"
                                 Placement="BottomEdgeAlignedRight"
                                 Opening="DiffSearchFlyout_Opening">
-                                <Grid
-                                    Width="332"
-                                    ColumnSpacing="4">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox
-                                        x:Name="DiffSearchTextBox"
-                                        x:Uid="DiffSearchTextBox"
-                                        AutomationProperties.AutomationId="DiffViewerSearchTextBox"
-                                        TextChanged="DiffSearchTextBox_TextChanged" />
-                                    <Button
-                                        Grid.Column="1"
-                                        x:Name="PreviousDiffSearchMatchButton"
-                                        x:Uid="PreviousDiffSearchMatchButton"
-                                        Width="32"
-                                        Height="32"
-                                        MinWidth="0"
-                                        AutomationProperties.AutomationId="DiffViewerPreviousSearchMatchButton"
-                                        Click="PreviousDiffSearchMatchButton_Click"
-                                        IsEnabled="False"
-                                        Padding="0">
-                                        <FontIcon
-                                            FontSize="12"
-                                            Glyph="&#xE70E;" />
-                                    </Button>
-                                    <Button
-                                        Grid.Column="2"
-                                        x:Name="NextDiffSearchMatchButton"
-                                        x:Uid="NextDiffSearchMatchButton"
-                                        Width="32"
-                                        Height="32"
-                                        MinWidth="0"
-                                        AutomationProperties.AutomationId="DiffViewerNextSearchMatchButton"
-                                        Click="NextDiffSearchMatchButton_Click"
-                                        IsEnabled="False"
-                                        Padding="0">
-                                        <FontIcon
-                                            FontSize="12"
-                                            Glyph="&#xE70D;" />
-                                    </Button>
-                                </Grid>
+                                <StackPanel Width="332" Spacing="8">
+                                    <Grid ColumnSpacing="4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox
+                                            x:Name="DiffSearchTextBox"
+                                            x:Uid="DiffSearchTextBox"
+                                            AutomationProperties.AutomationId="DiffViewerSearchTextBox"
+                                            KeyDown="DiffSearchTextBox_KeyDown"
+                                            TextChanged="DiffSearchTextBox_TextChanged" />
+                                        <Button
+                                            Grid.Column="1"
+                                            x:Name="PreviousDiffSearchMatchButton"
+                                            x:Uid="PreviousDiffSearchMatchButton"
+                                            Width="32"
+                                            Height="32"
+                                            MinWidth="0"
+                                            AutomationProperties.AutomationId="DiffViewerPreviousSearchMatchButton"
+                                            Click="PreviousDiffSearchMatchButton_Click"
+                                            IsEnabled="False"
+                                            VerticalAlignment="Bottom"
+                                            Padding="0">
+                                            <FontIcon
+                                                FontSize="12"
+                                                Glyph="&#xE70E;" />
+                                        </Button>
+                                        <Button
+                                            Grid.Column="2"
+                                            x:Name="NextDiffSearchMatchButton"
+                                            x:Uid="NextDiffSearchMatchButton"
+                                            Width="32"
+                                            Height="32"
+                                            MinWidth="0"
+                                            AutomationProperties.AutomationId="DiffViewerNextSearchMatchButton"
+                                            Click="NextDiffSearchMatchButton_Click"
+                                            IsEnabled="False"
+                                            VerticalAlignment="Bottom"
+                                            Padding="0">
+                                            <FontIcon
+                                                FontSize="12"
+                                                Glyph="&#xE70D;" />
+                                        </Button>
+                                    </Grid>
+                                    <StackPanel x:Name="DiffSearchOptionsPanel" Spacing="4" Visibility="Collapsed">
+                                        <ToggleSwitch
+                                            x:Name="DiffSearchChangedLinesSwitch"
+                                            x:Uid="DiffSearchChangedLinesSwitch"
+                                            AutomationProperties.AutomationId="DiffSearchChangedLinesSwitch"
+                                            Toggled="DiffSearchOptions_Toggled" />
+                                        <ToggleSwitch
+                                            x:Name="DiffSearchHistorySwitch"
+                                            x:Uid="DiffSearchHistorySwitch"
+                                            AutomationProperties.AutomationId="DiffSearchHistorySwitch"
+                                            Toggled="DiffSearchOptions_Toggled" />
+                                        <Button
+                                            x:Name="ResetDiffSearchFiltersButton"
+                                            x:Uid="ResetCommitFiltersButton"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            AutomationProperties.AutomationId="ResetDiffSearchFiltersButton"
+                                            Click="ResetDiffSearchFiltersButton_Click"
+                                            IsEnabled="False" />
+                                    </StackPanel>
+                                </StackPanel>
                             </Flyout>
                         </primitives:FlyoutBase.AttachedFlyout>
                     </ToggleButton>

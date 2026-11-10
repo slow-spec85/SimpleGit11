@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
+using SimpleGit11.Extensions;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
 using SimpleGit11.Services.Git;
@@ -47,6 +48,8 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
         _asyncCommandExecutor = asyncCommandExecutor;
         _settingsService = settingsService;
         FileTree = new ChangedFileTreeViewModel(settingsService.Current.ShowFileFolders, messenger);
+        DiffSearch = new DiffSearchViewModel(localizationService, messenger, false, SearchChangedFilesAsync,
+            () => (SelectedCommit, SelectedChangedFile), ShowSearchMatchAsync, FilterSearchResults, FileTree);
         _noCommitSelectedMessageKey = noCommitSelectedMessageKey;
         _selectCommitFileMessageKey = selectCommitFileMessageKey;
         _openRepositoryMessageKey = openRepositoryMessageKey;
@@ -96,7 +99,12 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
             ? _localizationService.GetString(_noCommitSelectedMessageKey)
             : _localizationService.GetString(_selectCommitFileMessageKey));
 
-        if (value is not null && CanLoadCommitContent)
+        if (!_navigatingSearchResult && !DiffSearch.SearchHistory && DiffSearch.Query.Length > 0)
+        {
+            DiffSearch.Invalidate();
+        }
+
+        if (!_navigatingSearchResult && value is not null && CanLoadCommitContent)
         {
             _ = LoadCommitDetailsAsync(value);
         }
@@ -105,7 +113,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
     partial void OnSelectedChangedFileChanged(GitChangedFile? value)
     {
         RaiseCommitDetailsCommandCanExecuteChanged();
-        if (value is not null && CanLoadCommitContent && SelectedCommit is GitCommit commit)
+        if (!_navigatingSearchResult && value is not null && CanLoadCommitContent && SelectedCommit is GitCommit commit)
         {
             _ = LoadSelectedFileAsync(commit, value);
         }
@@ -152,14 +160,6 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
         ClearCommitDetails();
         if (CanLoadCommitContent && SelectedCommit is GitCommit commit) { _ = LoadCommitDetailsAsync(commit); }
     }
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CommitDetailsBlockVisibility))]
-    public partial bool IsCommitDetailsBlockVisible { get; set; }
-
-    public Visibility CommitDetailsBlockVisibility => IsCommitDetailsBlockVisible
-        ? Visibility.Visible
-        : Visibility.Collapsed;
 
     [ObservableProperty]
     public partial bool IsDiffLoading { get; private set; }
@@ -276,6 +276,10 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
                 }
 
                 ReplaceChangedFiles(files);
+                if (!_navigatingSearchResult && !DiffSearch.SearchHistory && DiffSearch.Query.Length > 0)
+                {
+                    DiffSearch.Refresh();
+                }
             }
             catch (FileNotFoundException)
             {
@@ -342,7 +346,7 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
 
     private async Task LoadDiffCoreAsync(GitCommit commit, GitChangedFile changedFile)
     {
-        if (_mainWindowViewModel.CurrentRepository is null)
+        if (_mainWindowViewModel.CurrentRepository is not RepositoryInfo repository)
         {
             return;
         }
@@ -351,9 +355,15 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
         try
         {
             DiffResult diff = await _gitService.Diff.GetCommitDiffAsync(
-                _mainWindowViewModel.CurrentRepository,
+                repository,
                 commit,
                 changedFile);
+
+            if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)
+                || !ReferenceEquals(SelectedCommit, commit) || !ReferenceEquals(SelectedChangedFile, changedFile))
+            {
+                return;
+            }
 
             DiffLines.Clear();
             foreach (DiffLine line in diff.Lines)
@@ -426,6 +436,11 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
                 Task<DiffResult> diffTask = _gitService.Diff.GetCommitDiffAsync(repository, commit, changedFile);
                 Task<string> textTask = _gitService.Diff.GetCommitFileTextAsync(repository, commit, changedFile);
                 await Task.WhenAll(diffTask, textTask);
+                if (!ReferenceEquals(repository, _mainWindowViewModel.CurrentRepository)
+                    || !ReferenceEquals(SelectedCommit, commit) || !ReferenceEquals(SelectedChangedFile, changedFile))
+                {
+                    return;
+                }
 
                 DiffResult diff = await diffTask;
                 string text = await textTask;
@@ -592,17 +607,21 @@ public abstract partial class CommitDetailsViewModel : AppNotificationViewModelB
 
     private void ApplyChangedFilesFilter()
     {
-        ChangedFiles.Clear();
-        foreach (GitChangedFile file in _allChangedFiles)
-        {
-            if (ShouldIncludeChangedFile(file))
-            {
-                ChangedFiles.Add(file);
-            }
-        }
-
+        GitChangedFile? selected = SelectedChangedFile;
+        ChangedFiles.SynchronizeWith(_allChangedFiles.Where(file => DiffSearch.IsFiltering
+            ? DiffSearch.Includes(SelectedCommit, file) : ShouldIncludeChangedFile(file)), file => file.Path);
         FileTree.Refresh(ChangedFiles);
-        SelectedChangedFile = ChangedFiles.FirstOrDefault();
+        SelectedChangedFile = selected is not null && ChangedFiles.Contains(selected)
+            ? selected : ChangedFiles.FirstOrDefault();
+        if (DiffSearch.IsFiltering && SelectedChangedFile is null)
+        {
+            DiffLines.Clear();
+            DiffText = "";
+            SelectedDiffStat = DiffStat.Empty;
+            HasDiffEmptyState = true;
+            DiffEmptyMessage = _localizationService.GetString(SelectedCommit is null
+                ? _noCommitSelectedMessageKey : _selectCommitFileMessageKey);
+        }
         OnDiffSelectionChanged();
         OnChangedFilesSummaryChanged();
     }

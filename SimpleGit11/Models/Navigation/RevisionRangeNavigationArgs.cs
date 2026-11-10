@@ -9,7 +9,8 @@ public sealed record RevisionRangeNavigationArgs(
     string RightRevision = "",
     string LeftLabel = "",
     string RightLabel = "",
-    CommitRangeCherryPickScope CherryPickScope = CommitRangeCherryPickScope.None)
+    CommitRangeCherryPickScope CherryPickScope = CommitRangeCherryPickScope.None,
+    bool IsFullBranchHistory = false)
 {
     public bool IsTwoSidedComparison =>
         !string.IsNullOrWhiteSpace(LeftRevision) &&

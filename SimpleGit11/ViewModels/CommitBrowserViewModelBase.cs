@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -21,6 +22,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 {
     protected const int CommitPageSize = 300;
     private readonly List<GitCommit> _allCommits = [];
+    private IReadOnlySet<string>? _matchingCommitHashes;
     private string _exactFilePathSearchText = "";
     private bool _isCommitGraphVisible = true;
     private CommitBrowserRowViewItem? _selectedCommitRow;
@@ -51,9 +53,35 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         SearchText = "";
         FilterFromTime = TimeSpan.Zero;
         FilterToTime = new TimeSpan(23, 59, 0);
+        DiffSearch.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName is nameof(DiffSearchViewModel.IsBusy) or nameof(DiffSearchViewModel.SearchHistory))
+            {
+                OnPropertyChanged(nameof(IsLoadRemainingHistoryVisible));
+            }
+        };
     }
 
     public ObservableCollection<GitCommit> Commits { get; } = [];
+
+    public virtual bool IsCommitHistoryAvailable => true;
+
+    [ObservableProperty]
+    public partial bool IsCommitListVisible { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool IsFileListVisible { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool IsDiffVisible { get; set; } = true;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CommitDetailsBlockVisibility))]
+    public partial bool IsCommitDetailsBlockVisible { get; set; }
+
+    public Visibility CommitDetailsBlockVisibility => IsCommitHistoryAvailable && IsCommitDetailsBlockVisible
+        ? Visibility.Visible
+        : Visibility.Collapsed;
 
     [RelayCommand]
     private void OnOpenReference(GitCommitReference? reference)
@@ -221,14 +249,23 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
     public string LoadRemainingCommitsButtonText => _localizationService.GetString("LoadRemainingCommitsButtonText");
 
+    public bool IsLoadRemainingHistoryVisible => HasRemainingHistory
+        && !IsHistoryEditing
+        && _matchingCommitHashes is null
+        && !(DiffSearch.SearchHistory && DiffSearch.IsBusy);
+
+    protected virtual bool HasRemainingHistory => false;
+
     protected static async Task<IReadOnlyList<GitCommit>> LoadRemainingCommitPagesAsync(
         Func<int, int, Task<GitCommitPage>> loadPageAsync,
-        int offset)
+        int offset,
+        CancellationToken cancellationToken)
     {
         List<GitCommit> commits = [];
         GitCommitPage page;
         do
         {
+            cancellationToken.ThrowIfCancellationRequested();
             page = await loadPageAsync(offset, CommitPageSize);
             commits.AddRange(page.Commits);
             offset += page.Commits.Count;
@@ -312,6 +349,31 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         ApplyFilters();
     }
 
+    protected override async Task<GitCommit> ResolveSearchCommitAsync(
+        GitCommit commit, CancellationToken cancellationToken)
+    {
+        GitCommit? loaded = FindLoadedCommit(commit.Hash);
+        if (loaded is not null) { return loaded; }
+
+        await LoadRemainingSearchCommitsAsync(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        return FindLoadedCommit(commit.Hash) ?? commit;
+    }
+
+    protected override void SelectSearchCommit(GitCommit commit) => SelectSingleCommit(commit);
+
+    protected override void ApplyCommitSearchFilter()
+    {
+        IReadOnlySet<string>? hashes = DiffSearch.MatchingCommitHashes;
+        if (ReferenceEquals(_matchingCommitHashes, hashes)) { return; }
+        _matchingCommitHashes = hashes;
+        OnPropertyChanged(nameof(IsLoadRemainingHistoryVisible));
+        if (!IsHistoryEditing) { ApplyFilters(); }
+    }
+
+    private GitCommit? FindLoadedCommit(string hash) =>
+        _allCommits.FirstOrDefault(commit => commit.Hash == hash);
+
     protected virtual void OnCommitFilterChanged()
     {
     }
@@ -329,6 +391,18 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         SelectedCommits.SynchronizeWith(commits, commit => commit.Hash);
 
         OnCommitSelectionChanged();
+    }
+
+    private void SelectSingleCommit(GitCommit? commit)
+    {
+        CommitBrowserRowViewItem? previousRow = SelectedCommitRow;
+        // The view restores the selection when SelectedCommitRow changes.
+        SetSelectedCommits(commit is null ? [] : [commit]);
+        SelectedCommit = commit;
+        if (ReferenceEquals(previousRow, SelectedCommitRow))
+        {
+            OnPropertyChanged(nameof(SelectedCommitRow));
+        }
     }
 
     protected sealed override void OnSelectedCommitChanged()
@@ -352,19 +426,33 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
         IReadOnlyList<GitCommit> filteredCommits = CommitBrowserFilter.Apply(
             _allCommits,
             CreateFilterCriteria());
+        if (_matchingCommitHashes is not null)
+        {
+            filteredCommits = filteredCommits.Where(commit => _matchingCommitHashes.Contains(commit.Hash)).ToArray();
+        }
 
         IsUpdatingCommitRows = true;
         try
         {
             Commits.SynchronizeWith(filteredCommits, commit => commit.Hash);
+            DiffSearch.SetVisibleCommits(filteredCommits);
 
             RebuildCommitRows(filteredCommits);
 
-            SelectedCommit = Commits.FirstOrDefault(commit =>
+            GitCommit? selectedCommit = Commits.FirstOrDefault(commit =>
                 string.Equals(commit.Hash, selectedHash, StringComparison.OrdinalIgnoreCase))
                 ?? Commits.FirstOrDefault();
-            SynchronizeSelectedCommitRow();
-            SetSelectedCommits(Commits.Where(commit => selectedHashes.Contains(commit.Hash)));
+            if (_matchingCommitHashes is not null
+                && !string.Equals(selectedCommit?.Hash, selectedHash, StringComparison.OrdinalIgnoreCase))
+            {
+                SelectSingleCommit(selectedCommit);
+            }
+            else
+            {
+                SelectedCommit = selectedCommit;
+                SynchronizeSelectedCommitRow();
+                SetSelectedCommits(Commits.Where(commit => selectedHashes.Contains(commit.Hash)));
+            }
             OnPropertyChanged(nameof(CommitsTitle));
             OnCommitFilterChanged();
         }
@@ -522,10 +610,7 @@ public abstract partial class CommitBrowserViewModelBase : CommitDetailsViewMode
 
         GitCommit? selectedParent = Commits.FirstOrDefault(commit =>
             string.Equals(commit.Hash, parent.Hash, StringComparison.OrdinalIgnoreCase));
-        SetSelectedCommits(selectedParent is null ? [] : [selectedParent]);
-        SelectedCommit = selectedParent;
-        // Restore the native selection even when the parent was already the focused row.
-        OnPropertyChanged(nameof(SelectedCommitRow));
+        SelectSingleCommit(selectedParent);
     }
 
     private bool CanNavigateToParentCommit(CommitParentViewItem? parent) => !IsHistoryEditing && parent is not null;

@@ -484,7 +484,7 @@
     <value>History</value>
   </data>
   <data name="HistoryDescriptionTextBlock.Text" xml:space="preserve">
-    <value>Browse commits, files and changes. To edit history, select a starting commit or a range using Shift.</value>
+    <value>Browse commits, files and changes.</value>
   </data>
   <data name="HistorySearchTextBox.PlaceholderText" xml:space="preserve">
     <value>Search</value>
@@ -518,6 +518,24 @@
   </data>
   <data name="CommitDetailsToggleButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Show commit details</value>
+  </data>
+  <data name="HistoryCommitListToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Show commit list</value>
+  </data>
+  <data name="HistoryCommitListToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Show commit list</value>
+  </data>
+  <data name="HistoryFileListToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Show file list</value>
+  </data>
+  <data name="HistoryFileListToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Show file list</value>
+  </data>
+  <data name="HistoryDiffToggleButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Show diff</value>
+  </data>
+  <data name="HistoryDiffToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Show diff</value>
   </data>
   <data name="MainlineOnlyToggleSwitch.OnContent" xml:space="preserve">
     <value>Mainline only</value>
@@ -568,16 +586,52 @@
     <value>Reset all filters</value>
   </data>
   <data name="DiffSearchToggleButton.AutomationProperties.Name" xml:space="preserve">
-    <value>Search in diff</value>
+    <value>Find text</value>
   </data>
   <data name="DiffSearchToggleButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Search in diff</value>
+    <value>Find text</value>
   </data>
   <data name="DiffSearchTextBox.PlaceholderText" xml:space="preserve">
     <value>Search</value>
   </data>
   <data name="DiffSearchTextBox.AutomationProperties.Name" xml:space="preserve">
-    <value>Search in diff</value>
+    <value>Find text</value>
+  </data>
+  <data name="DiffSearchHistorySwitch.OnContent" xml:space="preserve">
+    <value>Search branch history</value>
+  </data>
+  <data name="DiffSearchHistorySwitch.OffContent" xml:space="preserve">
+    <value>Search branch history</value>
+  </data>
+  <data name="DiffSearchHistorySwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Search branch history</value>
+  </data>
+  <data name="DiffSearchChangedLinesSwitch.OnContent" xml:space="preserve">
+    <value>Changed lines only</value>
+  </data>
+  <data name="DiffSearchChangedLinesSwitch.OffContent" xml:space="preserve">
+    <value>Changed lines only</value>
+  </data>
+  <data name="DiffSearchChangedLinesSwitch.AutomationProperties.Name" xml:space="preserve">
+    <value>Changed lines only</value>
+  </data>
+  <data name="DiffFileSearchRunning" xml:space="preserve">
+    <value>Searching changed files…</value>
+  </data>
+  <data name="DiffHistorySearchRunning" xml:space="preserve">
+    <value>Searching branch history…</value>
+  </data>
+  <data name="DiffFileSearchCanceled" xml:space="preserve">
+    <value>Search canceled. Press Enter to search again.</value>
+  </data>
+  <data name="DiffFileSearchNoMatches" xml:space="preserve">
+    <value>No matches found.</value>
+  </data>
+  <data name="DiffFileSearchMatchesFound" xml:space="preserve">
+    <value>Matches found — {0:N0}</value>
+  </data>
+  <data name="DiffFileSearchFailed" xml:space="preserve">
+    <value>Could not complete the search.</value>
   </data>
   <data name="PreviousDiffSearchMatchButton.AutomationProperties.Name" xml:space="preserve">
     <value>Previous match</value>
@@ -1198,11 +1252,11 @@
   <data name="PullSynchronizationTooltip.Content" xml:space="preserve">
     <value>Pull incoming changes into the current branch</value>
   </data>
-  <data name="CancelSynchronizationOperationButton.Content" xml:space="preserve">
+  <data name="CancelOperationProgressButton.Content" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="CancelSynchronizationOperationButton.AutomationProperties.Name" xml:space="preserve">
-    <value>Cancel remote operation</value>
+  <data name="CancelOperationProgressButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Cancel operation</value>
   </data>
   <data name="SynchronizationOperationCanceled" xml:space="preserve">
     <value>The remote operation was canceled.</value>
