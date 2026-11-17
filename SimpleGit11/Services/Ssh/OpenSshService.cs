@@ -88,12 +88,55 @@ public sealed class OpenSshService : IOpenSshService
                 return;
             }
 
-            IReadOnlyList<string> keyLines = remoteStore is null
-                ? await ScanHostKeysAsync(endpoint, cancellationToken)
-                : await remoteStore.ScanHostKeysAsync(endpoint.Host, endpoint.Port, cancellationToken);
+            IReadOnlyList<string> keyLines;
+            if (remoteStore is not null)
+            {
+                keyLines = await remoteStore.ScanHostKeysAsync(endpoint.Host, endpoint.Port, cancellationToken);
+            }
+            else
+            {
+                try
+                {
+                    keyLines = await ScanHostKeysAsync(endpoint, cancellationToken);
+                }
+                catch (GitRemoteOperationException initialFailure)
+                {
+                    HostEndpoint configuredEndpoint;
+                    try
+                    {
+                        configuredEndpoint = await ResolveLocalEndpointAsync(endpoint, cancellationToken);
+                    }
+                    catch (GitRemoteOperationException configurationFailure)
+                    {
+                        throw CreateHostKeyVerificationException(
+                            endpoint, $"{initialFailure.Message}{Environment.NewLine}{configurationFailure.Message}", configurationFailure.ExitCode);
+                    }
+
+                    if (configuredEndpoint == endpoint)
+                    {
+                        throw;
+                    }
+
+                    endpoint = configuredEndpoint;
+                    if (await ContainsHostAsync(endpoint, remoteStore: null, cancellationToken))
+                    {
+                        return;
+                    }
+
+                    try
+                    {
+                        keyLines = await ScanHostKeysAsync(endpoint, cancellationToken);
+                    }
+                    catch (GitRemoteOperationException fallbackFailure)
+                    {
+                        throw CreateHostKeyVerificationException(
+                            endpoint, $"{initialFailure.Message}{Environment.NewLine}{fallbackFailure.Message}", fallbackFailure.ExitCode);
+                    }
+                }
+            }
             if (keyLines.Count == 0)
             {
-                throw CreateHostKeyVerificationException();
+                throw CreateHostKeyVerificationException(endpoint, "ssh-keyscan: no host keys returned.");
             }
 
             IReadOnlyList<string> fingerprints = keyLines
@@ -103,7 +146,7 @@ public sealed class OpenSshService : IOpenSshService
                 .ToList();
             if (fingerprints.Count == 0)
             {
-                throw CreateHostKeyVerificationException();
+                throw CreateHostKeyVerificationException(endpoint, "ssh-keyscan: no valid host key fingerprints returned.");
             }
 
             bool confirmed = await _confirmationService.ConfirmAsync(
@@ -111,7 +154,7 @@ public sealed class OpenSshService : IOpenSshService
                 cancellationToken);
             if (!confirmed)
             {
-                throw CreateHostKeyVerificationException();
+                throw CreateHostKeyVerificationException(endpoint);
             }
 
             if (await ContainsHostAsync(endpoint, remoteStore, cancellationToken))
@@ -733,6 +776,59 @@ public sealed class OpenSshService : IOpenSshService
             : null;
     }
 
+    private async Task<HostEndpoint> ResolveLocalEndpointAsync(
+        HostEndpoint endpoint,
+        CancellationToken cancellationToken)
+    {
+        // ssh-keyscan does not read SSH configuration. Resolve aliases and port overrides first.
+        List<string> arguments = ["-G"];
+        if (endpoint.User is not null)
+        {
+            arguments.Add("-l");
+            arguments.Add(endpoint.User);
+        }
+
+        if (endpoint.Port != DefaultSshPort)
+        {
+            arguments.Add("-p");
+            arguments.Add(endpoint.Port.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        arguments.Add(endpoint.Host);
+        ProcessResult result = await _runProcessAsync("ssh", arguments, cancellationToken);
+        if (result.ExitCode != 0)
+        {
+            throw CreateHostKeyVerificationException(endpoint, result.StandardError, result.ExitCode);
+        }
+
+        string? host = null;
+        int port = 0;
+        foreach (string line in result.StandardOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
+        {
+            string[] fields = line.Split([' ', '\t'], 2, StringSplitOptions.RemoveEmptyEntries);
+            if (fields.Length != 2)
+            {
+                continue;
+            }
+
+            if (string.Equals(fields[0], "hostname", StringComparison.OrdinalIgnoreCase))
+            {
+                host = fields[1].Trim();
+            }
+            else if (string.Equals(fields[0], "port", StringComparison.OrdinalIgnoreCase))
+            {
+                _ = int.TryParse(fields[1].Trim(), out port);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(host) || host.Any(char.IsWhiteSpace) || port is < 1 or > 65535)
+        {
+            throw CreateHostKeyVerificationException(endpoint, "OpenSSH did not return a valid hostname and port.");
+        }
+
+        return new HostEndpoint(host.ToLowerInvariant(), port, endpoint.User);
+    }
+
     private async Task<IReadOnlyList<string>> ScanHostKeysAsync(
         HostEndpoint endpoint,
         CancellationToken cancellationToken)
@@ -765,22 +861,34 @@ public sealed class OpenSshService : IOpenSshService
 
         if (result.ExitCode != 0)
         {
-            throw CreateHostKeyVerificationException(result.StandardError, result.ExitCode);
+            string command = $"ssh-keyscan -T 10 -p {endpoint.Port} {endpoint.Host}";
+            throw CreateHostKeyVerificationException(
+                endpoint, $"{command} ({result.ExitCode}){Environment.NewLine}{result.StandardError}".Trim(), result.ExitCode);
         }
 
-        return result.StandardOutput
+        List<string> keyLines = result.StandardOutput
             .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
             .Select(static line => line.Trim())
             .Where(static line => line.Length > 0 && line[0] != '#' && line.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length >= 3)
             .Distinct(StringComparer.Ordinal)
             .ToList();
+        if (!keyLines.Any(line => CreateFingerprint(line).Length > 0))
+        {
+            throw CreateHostKeyVerificationException(endpoint, "ssh-keyscan: no valid host keys returned.");
+        }
+
+        return keyLines;
     }
 
-    private GitRemoteOperationException CreateHostKeyVerificationException(string? details = null, int exitCode = 128)
+    private GitRemoteOperationException CreateHostKeyVerificationException(
+        HostEndpoint endpoint,
+        string? details = null,
+        int exitCode = 128)
     {
+        string failure = $"Host key verification failed. ({endpoint.Host}:{endpoint.Port})";
         string message = string.IsNullOrWhiteSpace(details)
-            ? "Host key verification failed."
-            : $"Host key verification failed.{Environment.NewLine}{details.Trim()}";
+            ? failure
+            : $"{failure}{Environment.NewLine}{details.Trim()}";
         return new GitRemoteOperationException(
             message,
             exitCode,

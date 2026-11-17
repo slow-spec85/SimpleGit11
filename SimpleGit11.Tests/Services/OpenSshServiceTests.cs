@@ -40,6 +40,155 @@ public sealed class OpenSshServiceTests
     }
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task EnsureTrustedAsync_ConfiguredAlias_UsesResolvedHostAndPort(bool alreadyTrusted)
+    {
+        using TemporaryDirectory directory = new();
+        string knownHostsPath = directory.GetPath("known_hosts");
+        string keyLine = $"[ssh.github.com]:443 ssh-ed25519 {Ed25519Key}";
+        if (alreadyTrusted)
+        {
+            await File.WriteAllTextAsync(knownHostsPath, keyLine + "\n");
+        }
+
+        RecordingConfirmationService confirmation = new(confirmed: true);
+        int scanCount = 0;
+        List<string> commands = [];
+        using CancellationTokenSource cancellation = new();
+        OpenSshService service = new(confirmation, knownHostsPath, (command, arguments, token) =>
+        {
+            Assert.AreEqual(cancellation.Token, token);
+            commands.Add(command);
+            if (command == "ssh-keyscan" && arguments[^1] == "github.com")
+            {
+                CollectionAssert.AreEqual(new[] { "-T", "10", "github.com" }, arguments.ToArray());
+                return Task.FromResult(new OpenSshService.ProcessResult(1, "", "Connection timed out"));
+            }
+
+            if (command == "ssh")
+            {
+                CollectionAssert.AreEqual(new[] { "-G", "-l", "git", "github.com" }, arguments.ToArray());
+                return Task.FromResult(new OpenSshService.ProcessResult(
+                    0, "user git\nhostname ssh.github.com\nport 443\n", ""));
+            }
+
+            Assert.AreEqual("ssh-keyscan", command);
+            CollectionAssert.AreEqual(new[] { "-T", "10", "-p", "443", "ssh.github.com" }, arguments.ToArray());
+            scanCount++;
+            return Task.FromResult(new OpenSshService.ProcessResult(0, keyLine, ""));
+        });
+
+        await service.EnsureTrustedAsync("git@github.com:slow-spec85/Divanix.git", cancellation.Token);
+
+        Assert.AreEqual(alreadyTrusted ? 0 : 1, scanCount);
+        CollectionAssert.AreEqual(
+            alreadyTrusted ? new[] { "ssh-keyscan", "ssh" } : new[] { "ssh-keyscan", "ssh", "ssh-keyscan" },
+            commands);
+        if (alreadyTrusted)
+        {
+            Assert.IsNull(confirmation.Confirmation);
+        }
+        else
+        {
+            Assert.IsNotNull(confirmation.Confirmation);
+            Assert.AreEqual("ssh.github.com", confirmation.Confirmation.Host);
+            Assert.AreEqual(443, confirmation.Confirmation.Port);
+        }
+
+        Assert.AreEqual(keyLine, (await File.ReadAllTextAsync(knownHostsPath)).Trim());
+    }
+
+    [TestMethod]
+    [DataRow(1, "", "Bad configuration option: invalid", "Bad configuration option: invalid")]
+    [DataRow(0, "hostname ssh.github.com\nport invalid\n", "", "valid hostname and port")]
+    [DataRow(0, "hostname ssh.github.com\nport 65536\n", "", "valid hostname and port")]
+    [DataRow(0, "port 443\n", "", "valid hostname and port")]
+    public async Task EnsureTrustedAsync_InvalidConfiguration_StopsBeforeFallbackScan(
+        int exitCode, string output, string error, string expectedDetails)
+    {
+        using TemporaryDirectory directory = new();
+        string knownHostsPath = directory.GetPath("known_hosts");
+        RecordingConfirmationService confirmation = new(confirmed: true);
+        int scanCount = 0;
+        OpenSshService service = new(confirmation, knownHostsPath, (command, _, _) =>
+        {
+            if (command == "ssh-keyscan")
+            {
+                scanCount++;
+                return Task.FromResult(new OpenSshService.ProcessResult(1, "", "Connection timed out"));
+            }
+
+            Assert.AreEqual("ssh", command);
+            return Task.FromResult(new OpenSshService.ProcessResult(exitCode, output, error));
+        });
+
+        GitRemoteOperationException exception = await Assert.ThrowsAsync<GitRemoteOperationException>(() =>
+            service.EnsureTrustedAsync("git@github.com:slow-spec85/Divanix.git"));
+
+        Assert.AreEqual(GitRemoteOperationErrorKind.HostKeyVerification, exception.Kind);
+        StringAssert.Contains(exception.Message, expectedDetails);
+        Assert.AreEqual(1, scanCount);
+        Assert.IsNull(confirmation.Confirmation);
+        Assert.IsFalse(File.Exists(knownHostsPath));
+    }
+
+    [TestMethod]
+    [DataRow(1, "", "Connection timed out")]
+    [DataRow(1, "", "")]
+    [DataRow(0, "", "")]
+    public async Task EnsureTrustedAsync_ResolvedHostScanFailure_IncludesAddressAndPort(
+        int exitCode, string output, string error)
+    {
+        using TemporaryDirectory directory = new();
+        RecordingConfirmationService confirmation = new(confirmed: true);
+        OpenSshService service = new(confirmation, directory.GetPath("known_hosts"), (command, _, _) =>
+            Task.FromResult(command == "ssh"
+                ? new OpenSshService.ProcessResult(0, "hostname ssh.github.com\nport 443\n", "")
+                : new OpenSshService.ProcessResult(exitCode, output, error)));
+
+        GitRemoteOperationException exception = await Assert.ThrowsAsync<GitRemoteOperationException>(() =>
+            service.EnsureTrustedAsync("git@github.com:slow-spec85/Divanix.git"));
+
+        StringAssert.Contains(exception.Message, "ssh.github.com:443");
+        StringAssert.Contains(exception.Message, "github.com:22");
+        StringAssert.Contains(exception.Message, "ssh-keyscan");
+        if (error.Length > 0)
+        {
+            StringAssert.Contains(exception.Message, error);
+        }
+
+        Assert.IsNull(confirmation.Confirmation);
+    }
+
+    [TestMethod]
+    public async Task EnsureTrustedAsync_CanceledFallback_DoesNotConfirmOrWriteKey()
+    {
+        using TemporaryDirectory directory = new();
+        string knownHostsPath = directory.GetPath("known_hosts");
+        RecordingConfirmationService confirmation = new(confirmed: true);
+        using CancellationTokenSource cancellation = new();
+        OpenSshService service = new(confirmation, knownHostsPath, (command, _, token) =>
+        {
+            Assert.AreEqual(cancellation.Token, token);
+            if (command == "ssh-keyscan")
+            {
+                return Task.FromResult(new OpenSshService.ProcessResult(1, "", "Connection timed out"));
+            }
+
+            Assert.AreEqual("ssh", command);
+            cancellation.Cancel();
+            return Task.FromCanceled<OpenSshService.ProcessResult>(token);
+        });
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            service.EnsureTrustedAsync("git@github.com:slow-spec85/Divanix.git", cancellation.Token));
+
+        Assert.IsNull(confirmation.Confirmation);
+        Assert.IsFalse(File.Exists(knownHostsPath));
+    }
+
+    [TestMethod]
     public async Task EnsureTrustedAsync_ConfirmsFingerprintAndAppendsScannedKey()
     {
         using TemporaryDirectory directory = new();
@@ -87,6 +236,12 @@ public sealed class OpenSshServiceTests
         OpenSshService service = new(confirmation, knownHostsPath, (command, arguments, token) =>
         {
             Assert.AreEqual(cancellation.Token, token);
+            if (command == "ssh")
+            {
+                CollectionAssert.AreEqual(new[] { "-G", "-l", "git", "-p", "2222", "example.com" }, arguments.ToArray());
+                return Task.FromResult(new OpenSshService.ProcessResult(0, "hostname example.com\nport 2222\n", ""));
+            }
+
             commands.Add(command);
             if (command == "git")
             {
@@ -135,7 +290,9 @@ public sealed class OpenSshServiceTests
         RecordingConfirmationService confirmation = new(confirmed: true);
         const string error = "choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com";
         OpenSshService service = new(confirmation, directory.GetPath("known_hosts"), (command, _, _) =>
-            Task.FromResult(command == "git"
+            Task.FromResult(command == "ssh"
+                ? new OpenSshService.ProcessResult(0, "hostname example.com\nport 22\n", "")
+                : command == "git"
                 ? new OpenSshService.ProcessResult(gitExitCode, directory.GetPath("missing/mingw64/libexec/git-core"), "")
                 : new OpenSshService.ProcessResult(1, "", error)));
 
@@ -155,6 +312,11 @@ public sealed class OpenSshServiceTests
         RecordingConfirmationService confirmation = new(confirmed: true);
         OpenSshService service = new(confirmation, knownHostsPath, (command, _, _) =>
         {
+            if (command == "ssh")
+            {
+                return Task.FromResult(new OpenSshService.ProcessResult(0, "hostname example.com\nport 22\n", ""));
+            }
+
             Assert.AreEqual("ssh-keyscan", command);
             return Task.FromResult(new OpenSshService.ProcessResult(1, "", "Connection refused"));
         });
@@ -177,8 +339,9 @@ public sealed class OpenSshServiceTests
         using TemporaryDirectory directory = new();
         string knownHostsPath = directory.GetPath("known_hosts");
         RecordingConfirmationService confirmation = new(confirmed: true);
-        OpenSshService service = new(confirmation, knownHostsPath, (_, _, _) =>
-            Task.FromResult(new OpenSshService.ProcessResult(0, output, "")));
+        OpenSshService service = new(confirmation, knownHostsPath, (command, _, _) =>
+            Task.FromResult(new OpenSshService.ProcessResult(
+                0, command == "ssh" ? "hostname example.com\nport 22\n" : output, "")));
 
         GitRemoteOperationException exception = await Assert.ThrowsAsync<GitRemoteOperationException>(() =>
             service.EnsureTrustedAsync("git@example.com:project.git"));
@@ -541,8 +704,9 @@ public sealed class OpenSshServiceTests
         return new OpenSshService(
             confirmationService,
             knownHostsPath,
-            (_, arguments, _) =>
+            (command, arguments, _) =>
             {
+                Assert.AreEqual("ssh-keyscan", command);
                 CollectionAssert.Contains(arguments.ToList(), "example.com");
                 string output = $"example.com ssh-ed25519 {Ed25519Key}{Environment.NewLine}";
                 return Task.FromResult(new OpenSshService.ProcessResult(0, output, ""));
