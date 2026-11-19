@@ -1,4 +1,6 @@
+using CommunityToolkit.Mvvm.Messaging;
 using SimpleGit11.Extensibility.Plugins;
+using SimpleGit11.Messages;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
 using SimpleGit11.Tests.TestInfrastructure;
@@ -10,7 +12,7 @@ namespace SimpleGit11.Tests.ViewModels;
 public sealed class AboutDialogViewModelTests
 {
     [TestMethod]
-    public async Task LoadAsync_NewerStableRelease_ExposesUpdateCommand()
+    public async Task LoadAsync_NewerStableRelease_AllowsUpdate()
     {
         ProductReleaseInfo release = CreateRelease("1.2.3");
         TestProductInfoService productInfoService = new() { LatestRelease = release };
@@ -19,6 +21,14 @@ public sealed class AboutDialogViewModelTests
             productInfoService,
             updateService,
             new TestInstallerLauncher());
+        List<string> updateButtonLabels = [];
+        viewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(viewModel.InstallUpdateButtonText))
+            {
+                updateButtonLabels.Add(viewModel.InstallUpdateButtonText);
+            }
+        };
 
         await viewModel.LoadAsync();
 
@@ -26,6 +36,7 @@ public sealed class AboutDialogViewModelTests
         Assert.AreEqual("1.2.3", viewModel.LatestReleaseVersion);
         Assert.IsNotNull(viewModel.LatestReleaseUri);
         Assert.IsTrue(viewModel.CanInstallUpdate);
+        CollectionAssert.AreEqual(new[] { "AboutInstallUpdateButtonText" }, updateButtonLabels);
         Assert.IsFalse(viewModel.HasReleaseStatus);
         Assert.AreEqual(1, productInfoService.ReleaseRequests);
         Assert.AreEqual(release, updateService.AvailabilityRelease);
@@ -35,7 +46,7 @@ public sealed class AboutDialogViewModelTests
     }
 
     [TestMethod]
-    public async Task LoadAsync_CurrentRelease_HidesUpdateCommand()
+    public async Task LoadAsync_CurrentRelease_DisallowsUpdate()
     {
         TestProductUpdateService updateService = new() { Available = false };
         using AboutDialogViewModel viewModel = CreateViewModel(
@@ -47,10 +58,11 @@ public sealed class AboutDialogViewModelTests
 
         Assert.IsTrue(viewModel.HasLatestRelease);
         Assert.IsFalse(viewModel.CanInstallUpdate);
+        Assert.AreEqual("", viewModel.InstallUpdateButtonText);
     }
 
     [TestMethod]
-    public async Task InstallUpdateCommand_DownloadsLaunchesAndRequestsApplicationExit()
+    public async Task InstallUpdateAsync_DownloadsAndLaunchesInstaller()
     {
         ProductReleaseInfo release = CreateRelease("1.2.3");
         TestProductUpdateService updateService = new()
@@ -59,25 +71,33 @@ public sealed class AboutDialogViewModelTests
             InstallerPath = @"C:\Temp\SimpleGit11-1.2.3-win-x64-setup.exe"
         };
         TestInstallerLauncher launcher = new();
+        StrongReferenceMessenger messenger = new();
+        List<AppOperationMessage> operations = [];
+        messenger.Register<AppOperationMessage>(operations, static (recipient, message) =>
+            ((List<AppOperationMessage>)recipient).Add(message));
         using AboutDialogViewModel viewModel = CreateViewModel(
             new TestProductInfoService { LatestRelease = release },
             updateService,
-            launcher);
-        bool installerLaunched = false;
-        viewModel.InstallerLaunched += (_, _) => installerLaunched = true;
+            launcher,
+            messenger: messenger);
         await viewModel.LoadAsync();
 
-        await viewModel.InstallUpdateCommand.ExecuteAsync(null);
+        bool installerLaunched = await viewModel.InstallUpdateAsync();
 
         Assert.AreEqual(release, updateService.DownloadedRelease);
         Assert.AreEqual(updateService.InstallerPath, launcher.InstallerPath);
         Assert.IsTrue(installerLaunched);
         Assert.IsFalse(viewModel.IsDownloadingUpdate);
-        Assert.AreEqual("AboutUpdateLaunchInstaller…", viewModel.UpdateStatusMessage);
+        Assert.IsTrue(operations[0].IsRunning);
+        Assert.AreEqual("AboutUpdateValidateRelease…", operations[0].Message);
+        Assert.IsTrue(operations[^2].IsRunning);
+        Assert.AreEqual("AboutUpdateLaunchInstaller…", operations[^2].Message);
+        Assert.IsFalse(operations[^1].IsRunning);
+        Assert.IsTrue(operations.All(operation => ReferenceEquals(viewModel, operation.Source)));
     }
 
     [TestMethod]
-    public async Task InstallUpdateCommand_DownloadingViaApi_ShowsFallbackStatus()
+    public async Task InstallUpdateAsync_DownloadingViaApi_ReportsFallbackToGlobalProgress()
     {
         TaskCompletionSource<string> download = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestProductUpdateService updateService = new()
@@ -86,20 +106,26 @@ public sealed class AboutDialogViewModelTests
             DownloadStage = ProductUpdateStage.DownloadChecksumViaApi,
             DownloadTask = download.Task
         };
+        StrongReferenceMessenger messenger = new();
+        List<AppOperationMessage> operations = [];
+        messenger.Register<AppOperationMessage>(operations, static (recipient, message) =>
+            ((List<AppOperationMessage>)recipient).Add(message));
         using AboutDialogViewModel viewModel = CreateViewModel(
             new TestProductInfoService { LatestRelease = CreateRelease("1.2.3") },
             updateService,
-            new TestInstallerLauncher());
+            new TestInstallerLauncher(),
+            messenger: messenger);
         await viewModel.LoadAsync();
 
-        Task update = viewModel.InstallUpdateCommand.ExecuteAsync(null);
+        Task<bool> update = viewModel.InstallUpdateAsync();
         bool isDownloading = viewModel.IsDownloadingUpdate;
-        string status = viewModel.UpdateStatusMessage;
+        AppOperationMessage progress = operations[^1];
         download.SetResult(updateService.InstallerPath);
         await update;
 
         Assert.IsTrue(isDownloading);
-        Assert.AreEqual("AboutUpdateDownloadChecksumViaApi…", status);
+        Assert.IsTrue(progress.IsRunning);
+        Assert.AreEqual("AboutUpdateDownloadChecksumViaApi…", progress.Message);
     }
 
     [TestMethod]
@@ -108,7 +134,7 @@ public sealed class AboutDialogViewModelTests
     [DataRow(ProductUpdateStage.DownloadInstallerViaApi, "AboutUpdateDownloadInstallerViaApi")]
     [DataRow(ProductUpdateStage.VerifyInstaller, "AboutUpdateVerifyInstaller")]
     [DataRow(ProductUpdateStage.SaveInstaller, "AboutUpdateSaveInstaller")]
-    public async Task InstallUpdateCommand_DownloadFails_ShowsFailedStageAndDoesNotLaunch(
+    public async Task InstallUpdateAsync_DownloadFails_ShowsFailedStageAndDoesNotLaunch(
         ProductUpdateStage stage,
         string expectedStageKey)
     {
@@ -119,37 +145,52 @@ public sealed class AboutDialogViewModelTests
             DownloadTask = Task.FromException<string>(new IOException("Update failure"))
         };
         TestInstallerLauncher launcher = new();
+        StrongReferenceMessenger messenger = new();
+        List<AppOperationMessage> operations = [];
+        messenger.Register<AppOperationMessage>(operations, static (recipient, message) =>
+            ((List<AppOperationMessage>)recipient).Add(message));
+        List<AppNotificationMessage> notifications = [];
+        messenger.Register<AppNotificationMessage>(notifications, static (recipient, message) =>
+            ((List<AppNotificationMessage>)recipient).Add(message));
         using AboutDialogViewModel viewModel = CreateViewModel(
             new TestProductInfoService { LatestRelease = CreateRelease("1.2.3") },
             updateService,
-            launcher);
+            launcher,
+            messenger: messenger);
         await viewModel.LoadAsync();
 
-        await viewModel.InstallUpdateCommand.ExecuteAsync(null);
+        bool installerLaunched = await viewModel.InstallUpdateAsync();
 
+        Assert.IsFalse(installerLaunched);
         Assert.IsNull(launcher.InstallerPath);
-        Assert.IsTrue(viewModel.HasUpdateStatus);
         Assert.IsFalse(viewModel.IsDownloadingUpdate);
-        Assert.AreEqual($"AboutUpdateFailed ({expectedStageKey})", viewModel.UpdateStatusMessage);
+        Assert.IsFalse(operations[^1].IsRunning);
+        AppNotificationMessage notification = notifications.Single();
+        Assert.AreEqual(AppNotificationSeverity.Error, notification.Severity);
+        Assert.AreEqual($"AboutUpdateFailed ({expectedStageKey})", notification.Message);
     }
 
     [TestMethod]
-    public async Task InstallUpdateCommand_LaunchFails_ShowsLaunchStageFailure()
+    public async Task InstallUpdateAsync_LaunchFails_ShowsLaunchStageFailure()
     {
         TestInstallerLauncher launcher = new() { LaunchException = new InvalidOperationException() };
+        StrongReferenceMessenger messenger = new();
+        List<AppNotificationMessage> notifications = [];
+        messenger.Register<AppNotificationMessage>(notifications, static (recipient, message) =>
+            ((List<AppNotificationMessage>)recipient).Add(message));
         using AboutDialogViewModel viewModel = CreateViewModel(
             new TestProductInfoService { LatestRelease = CreateRelease("1.2.3") },
             new TestProductUpdateService { Available = true },
-            launcher);
-        bool installerLaunched = false;
-        viewModel.InstallerLaunched += (_, _) => installerLaunched = true;
+            launcher,
+            messenger: messenger);
         await viewModel.LoadAsync();
 
-        await viewModel.InstallUpdateCommand.ExecuteAsync(null);
+        bool installerLaunched = await viewModel.InstallUpdateAsync();
 
         Assert.IsFalse(installerLaunched);
-        Assert.IsTrue(viewModel.HasUpdateStatus);
-        Assert.AreEqual("AboutUpdateFailed (AboutUpdateLaunchInstaller)", viewModel.UpdateStatusMessage);
+        AppNotificationMessage notification = notifications.Single();
+        Assert.AreEqual(AppNotificationSeverity.Error, notification.Severity);
+        Assert.AreEqual("AboutUpdateFailed (AboutUpdateLaunchInstaller)", notification.Message);
     }
 
     [TestMethod]
@@ -208,14 +249,16 @@ public sealed class AboutDialogViewModelTests
         TestProductInfoService productInfoService,
         TestProductUpdateService updateService,
         TestInstallerLauncher launcher,
-        IPluginCatalog? plugins = null)
+        IPluginCatalog? plugins = null,
+        IMessenger? messenger = null)
     {
         return new AboutDialogViewModel(
             productInfoService,
             updateService,
             launcher,
             new TestLocalizationService(),
-            plugins ?? new TestPluginCatalog());
+            plugins ?? new TestPluginCatalog(),
+            messenger ?? new StrongReferenceMessenger());
     }
 
     private static ProductReleaseInfo CreateRelease(string version)

@@ -20,7 +20,7 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
     private readonly IServiceProvider _serviceProvider;
     private readonly ILocalizationService _localizationService;
     private readonly IClipboardService _clipboardService;
-    private bool _isAboutDialogOpen;
+    private bool _isAboutDialogActive;
     private Window? _window;
 
     public DialogService(
@@ -41,25 +41,25 @@ public sealed class DialogService : IDialogService, IPluginDialogHost
     public async Task ShowAboutAsync()
     {
         EnsureWindowRegistered();
-        if (_isAboutDialogOpen)
+        if (_isAboutDialogActive)
         {
             return;
         }
 
-        _isAboutDialogOpen = true;
+        _isAboutDialogActive = true;
         try
         {
-            AboutDialogViewModel viewModel = _serviceProvider.GetRequiredService<AboutDialogViewModel>();
-            AboutDialog dialog = new(viewModel)
+            using AboutDialogViewModel viewModel = _serviceProvider.GetRequiredService<AboutDialogViewModel>();
+            AboutDialog dialog = new(viewModel);
+            ContentDialogResult result = await ShowAsync(dialog);
+            if (result == ContentDialogResult.Secondary && await viewModel.InstallUpdateAsync())
             {
-                XamlRoot = _window!.Content.XamlRoot
-            };
-            ApplyTheme(dialog);
-            await dialog.ShowAsync();
+                Application.Current.Exit();
+            }
         }
         finally
         {
-            _isAboutDialogOpen = false;
+            _isAboutDialogActive = false;
         }
     }
 

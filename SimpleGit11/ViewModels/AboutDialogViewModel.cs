@@ -5,20 +5,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using SimpleGit11.Extensibility.Plugins;
+using SimpleGit11.Messages;
 using SimpleGit11.Models;
 using SimpleGit11.Services;
 
 namespace SimpleGit11.ViewModels;
 
-public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
+public sealed partial class AboutDialogViewModel : AppNotificationViewModelBase, IDisposable
 {
     private readonly IProductInfoService _productInfoService;
     private readonly IProductUpdateService _productUpdateService;
     private readonly IInstallerLauncher _installerLauncher;
     private readonly ILocalizationService _localizationService;
     private CancellationTokenSource? _releaseRequestCancellation;
-    private CancellationTokenSource? _updateCancellation;
     private ProductReleaseInfo? _latestRelease;
     private long _releaseRequestSequence;
 
@@ -27,7 +28,9 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
         IProductUpdateService productUpdateService,
         IInstallerLauncher installerLauncher,
         ILocalizationService localizationService,
-        IPluginCatalog pluginCatalog)
+        IPluginCatalog pluginCatalog,
+        IMessenger messenger)
+        : base(messenger)
     {
         _productInfoService = productInfoService;
         _productUpdateService = productUpdateService;
@@ -43,10 +46,7 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
         SshPluginVersion = sshPlugin?.Version ?? "";
         LatestReleaseVersion = "";
         ReleaseStatusMessage = "";
-        UpdateStatusMessage = "";
     }
-
-    public event EventHandler? InstallerLaunched;
 
     public string ProductName { get; }
 
@@ -83,19 +83,15 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
     public partial string ReleaseStatusMessage { get; private set; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
+    [NotifyPropertyChangedFor(nameof(InstallUpdateButtonText))]
     public partial bool CanInstallUpdate { get; private set; }
 
+    public string InstallUpdateButtonText =>
+        CanInstallUpdate ? _localizationService.GetString("AboutInstallUpdateButtonText") : "";
+
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
     [NotifyCanExecuteChangedFor(nameof(RefreshLatestReleaseCommand))]
     public partial bool IsDownloadingUpdate { get; private set; }
-
-    [ObservableProperty]
-    public partial bool HasUpdateStatus { get; private set; }
-
-    [ObservableProperty]
-    public partial string UpdateStatusMessage { get; private set; }
 
     public Task LoadAsync()
     {
@@ -104,8 +100,9 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
-        CancelAndDispose(ref _releaseRequestCancellation);
-        CancelAndDispose(ref _updateCancellation);
+        CancellationTokenSource? cancellation = Interlocked.Exchange(ref _releaseRequestCancellation, null);
+        cancellation?.Cancel();
+        cancellation?.Dispose();
     }
 
     [RelayCommand(
@@ -121,53 +118,42 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
         return !IsLoadingLatestRelease && !IsDownloadingUpdate;
     }
 
-    [RelayCommand(
-        CanExecute = nameof(CanStartUpdate),
-        FlowExceptionsToTaskScheduler = true)]
-    private async Task OnInstallUpdateAsync()
+    public async Task<bool> InstallUpdateAsync()
     {
         ProductReleaseInfo? release = _latestRelease;
-        if (release is null || !CanStartUpdate())
+        if (release is null || !CanInstallUpdate || IsDownloadingUpdate)
         {
-            return;
+            return false;
         }
 
-        CancellationTokenSource cancellation = new();
-        CancellationTokenSource? previousCancellation = Interlocked.Exchange(
-            ref _updateCancellation,
-            cancellation);
-        previousCancellation?.Cancel();
-        previousCancellation?.Dispose();
-        CancellationToken cancellationToken = cancellation.Token;
         SynchronizationContext? uiContext = SynchronizationContext.Current;
         ProductUpdateStage stage = ProductUpdateStage.ValidateRelease;
-        HasUpdateStatus = true;
         IsDownloadingUpdate = true;
 
         try
         {
-            ShowUpdateStage(stage);
+            PublishOperationState(true, GetUpdateStageMessage(stage, "AboutUpdateInProgress"));
             string installerPath = await _productUpdateService.DownloadInstallerAsync(
                 release,
                 ReportDownloadStage,
-                cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
+                CancellationToken.None);
             stage = ProductUpdateStage.LaunchInstaller;
-            ShowUpdateStage(stage);
+            PublishOperationState(true, GetUpdateStageMessage(stage, "AboutUpdateInProgress"));
             _installerLauncher.Launch(installerPath);
-            InstallerLaunched?.Invoke(this, EventArgs.Empty);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
+            return true;
         }
         catch (Exception exception)
         {
             Debug.WriteLine(exception);
-            ShowUpdateStage(stage, failed: true);
+            ShowNotification(
+                AppNotificationSeverity.Error,
+                GetUpdateStageMessage(stage, "AboutUpdateFailed"));
+            return false;
         }
         finally
         {
             IsDownloadingUpdate = false;
+            PublishOperationState(false);
         }
 
         void ReportDownloadStage(ProductUpdateStage reportedStage)
@@ -185,16 +171,14 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
 
         void DisplayDownloadStage(ProductUpdateStage reportedStage)
         {
-            if (IsDownloadingUpdate
-                && !cancellationToken.IsCancellationRequested
-                && stage != ProductUpdateStage.LaunchInstaller)
+            if (IsDownloadingUpdate && stage != ProductUpdateStage.LaunchInstaller)
             {
-                ShowUpdateStage(reportedStage);
+                PublishOperationState(true, GetUpdateStageMessage(reportedStage, "AboutUpdateInProgress"));
             }
         }
     }
 
-    private void ShowUpdateStage(ProductUpdateStage stage, bool failed = false)
+    private string GetUpdateStageMessage(ProductUpdateStage stage, string formatKey)
     {
         string stageKey = stage switch
         {
@@ -210,14 +194,9 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
             ProductUpdateStage.LaunchInstaller => "AboutUpdateLaunchInstaller",
             _ => throw new ArgumentOutOfRangeException(nameof(stage))
         };
-        UpdateStatusMessage = string.Format(
-            _localizationService.GetString(failed ? "AboutUpdateFailed" : "AboutUpdateInProgress"),
+        return string.Format(
+            _localizationService.GetString(formatKey),
             _localizationService.GetString(stageKey));
-    }
-
-    private bool CanStartUpdate()
-    {
-        return CanInstallUpdate && !IsDownloadingUpdate;
     }
 
     private async Task LoadLatestReleaseAsync()
@@ -288,14 +267,5 @@ public sealed partial class AboutDialogViewModel : ViewModelBase, IDisposable
         HasReleaseStatus = false;
         HasReleaseError = false;
         ReleaseStatusMessage = "";
-        HasUpdateStatus = false;
-        UpdateStatusMessage = "";
-    }
-
-    private static void CancelAndDispose(ref CancellationTokenSource? source)
-    {
-        CancellationTokenSource? cancellation = Interlocked.Exchange(ref source, null);
-        cancellation?.Cancel();
-        cancellation?.Dispose();
     }
 }

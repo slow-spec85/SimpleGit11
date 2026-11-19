@@ -11,6 +11,7 @@ using SimpleGit11.Presentation.Editor;
 using SimpleGit11.Services;
 using TextControlBoxNS;
 using TextControlBoxNS.Models;
+using Windows.UI;
 
 namespace SimpleGit11.Controls;
 
@@ -27,6 +28,9 @@ public sealed partial class RepositoryEditorSurface : UserControl
     private readonly ILocalizationService _localizationService;
     private readonly IMessenger _messenger;
     private bool _isObservingSettings;
+    private SolidColorBrush? _observedCurrentLineHighlightBrush;
+    private long _highlightColorCallback;
+    private long _highlightOpacityCallback;
 
     public static readonly DependencyProperty IsReadOnlyProperty = DependencyProperty.Register(
         nameof(IsReadOnly),
@@ -45,6 +49,12 @@ public sealed partial class RepositoryEditorSurface : UserControl
         typeof(bool),
         typeof(RepositoryEditorSurface),
         new PropertyMetadata(true, OnEditorOptionChanged));
+
+    public static readonly DependencyProperty CurrentLineHighlightBrushProperty = DependencyProperty.Register(
+        nameof(CurrentLineHighlightBrush),
+        typeof(SolidColorBrush),
+        typeof(RepositoryEditorSurface),
+        new PropertyMetadata(null, OnCurrentLineHighlightBrushChanged));
 
     public static readonly DependencyProperty EnableSyntaxHighlightingProperty = DependencyProperty.Register(
         nameof(EnableSyntaxHighlighting),
@@ -124,6 +134,12 @@ public sealed partial class RepositoryEditorSurface : UserControl
         set => SetValue(ShowCurrentLineProperty, value);
     }
 
+    public SolidColorBrush? CurrentLineHighlightBrush
+    {
+        get => (SolidColorBrush?)GetValue(CurrentLineHighlightBrushProperty);
+        set => SetValue(CurrentLineHighlightBrushProperty, value);
+    }
+
     public bool EnableSyntaxHighlighting
     {
         get => (bool)GetValue(EnableSyntaxHighlightingProperty);
@@ -170,17 +186,13 @@ public sealed partial class RepositoryEditorSurface : UserControl
 
     public int CurrentLineIndex => Editor.CurrentLineIndex;
 
-    public int GetLineIndexAt(double viewportY)
+    public bool IsWordWrapEnabled
     {
-        double lineHeight = Editor.ActualLineHeight;
-        if (NumberOfLines == 0 || lineHeight <= 0 || viewportY < 0)
-        {
-            return -1;
-        }
-
-        double documentY = viewportY + Editor.VerticalScroll;
-        return Math.Clamp((int)(documentY / lineHeight), 0, NumberOfLines - 1);
+        get => Editor.IsWordWrapEnabled;
+        set => Editor.IsWordWrapEnabled = value;
     }
+
+    public int GetLineIndexAt(double viewportY) => Editor.GetLineIndexAt(viewportY);
 
     public bool CanUndo => Editor.CanUndo;
 
@@ -354,6 +366,52 @@ public sealed partial class RepositoryEditorSurface : UserControl
         surface.ApplyEditorOptions();
     }
 
+    private static void OnCurrentLineHighlightBrushChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
+    {
+        RepositoryEditorSurface surface = (RepositoryEditorSurface)dependencyObject;
+        surface.ObserveCurrentLineHighlightBrush(surface.IsLoaded ? surface.CurrentLineHighlightBrush : null);
+        surface.ApplyCurrentLineHighlightBrush();
+    }
+
+    private void ObserveCurrentLineHighlightBrush(SolidColorBrush? brush)
+    {
+        if (ReferenceEquals(_observedCurrentLineHighlightBrush, brush))
+            return;
+
+        if (_observedCurrentLineHighlightBrush is { } previousBrush)
+        {
+            previousBrush.UnregisterPropertyChangedCallback(SolidColorBrush.ColorProperty, _highlightColorCallback);
+            previousBrush.UnregisterPropertyChangedCallback(Brush.OpacityProperty, _highlightOpacityCallback);
+        }
+
+        _observedCurrentLineHighlightBrush = brush;
+        if (brush is not null)
+        {
+            _highlightColorCallback = brush.RegisterPropertyChangedCallback(
+                SolidColorBrush.ColorProperty, CurrentLineHighlightBrush_ValueChanged);
+            _highlightOpacityCallback = brush.RegisterPropertyChangedCallback(
+                Brush.OpacityProperty, CurrentLineHighlightBrush_ValueChanged);
+        }
+    }
+
+    private void CurrentLineHighlightBrush_ValueChanged(DependencyObject sender, DependencyProperty property)
+    {
+        ApplyCurrentLineHighlightBrush();
+    }
+
+    private void ApplyCurrentLineHighlightBrush()
+    {
+        if (CurrentLineHighlightBrush is not { } brush)
+        {
+            Editor.LineHighlighterColorOverride = null;
+            return;
+        }
+
+        Color color = brush.Color;
+        color.A = (byte)Math.Round(color.A * brush.Opacity);
+        Editor.LineHighlighterColorOverride = color;
+    }
+
     private static void OnZoomFactorChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
     {
         RepositoryEditorSurface surface = (RepositoryEditorSurface)dependencyObject;
@@ -435,10 +493,14 @@ public sealed partial class RepositoryEditorSurface : UserControl
 
         ApplyEditorTheme();
         ApplyEditorAppearance();
+        ObserveCurrentLineHighlightBrush(CurrentLineHighlightBrush);
+        ApplyCurrentLineHighlightBrush();
     }
 
     private void RepositoryEditorSurface_Unloaded(object sender, RoutedEventArgs args)
     {
+        ObserveCurrentLineHighlightBrush(null);
+
         if (_isObservingSettings)
         {
             _settingsService.EditorAppearanceChanged -= SettingsService_EditorAppearanceChanged;

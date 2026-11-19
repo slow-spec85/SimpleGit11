@@ -5,39 +5,35 @@ namespace SimpleGit11.Tests.Architecture;
 [TestClass]
 public sealed class AboutDialogXamlTests
 {
-    private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
-
     [TestMethod]
-    public void LatestReleaseRow_ShowsUpdateButtonAndStatusOnNextRow()
+    public void RepositoryLink_UsesRegularTextColorAndKeepsNavigation()
     {
         XDocument document = LoadApplicationXml("Dialogs", "AboutDialog.xaml");
-        XElement versionLink = FindNamedElement(document, "LatestReleaseHyperlinkButton");
-        XElement updateActionPanel = FindNamedElement(document, "UpdateActionPanel");
-        XElement updateButton = FindNamedElement(document, "InstallUpdateButton");
-        XElement updateProgressRing = FindNamedElement(document, "UpdateProgressRing");
-        XElement updateStatusText = FindNamedElement(document, "UpdateStatusTextBlock");
-        XElement releasePanel = versionLink.Parent!;
-        XElement layoutGrid = releasePanel.Parent!;
+        XElement link = document.Descendants().Single(element =>
+            (string?)element.Attribute("AutomationProperties.AutomationId") == "AboutRepositoryLink");
 
-        Assert.AreEqual("Grid", layoutGrid.Name.LocalName);
-        Assert.AreSame(layoutGrid, updateButton.Parent);
-        Assert.AreSame(layoutGrid, updateActionPanel.Parent);
+        Assert.AreEqual("HyperlinkButton", link.Name.LocalName);
+        Assert.AreEqual("{ThemeResource TextFillColorPrimaryBrush}", (string?)link.Attribute("Foreground"));
+        StringAssert.Contains((string?)link.Attribute("NavigateUri"), "ViewModel.RepositoryUri");
+    }
 
-        int releaseRow = (int?)releasePanel.Attribute("Grid.Row") ?? 0;
-        int updateRow = (int?)updateButton.Attribute("Grid.Row") ?? 0;
-        Assert.AreEqual(releaseRow + 1, updateRow);
-        Assert.AreEqual(updateRow, (int?)updateActionPanel.Attribute("Grid.Row") ?? 0);
-        Assert.AreEqual(0, (int?)updateButton.Attribute("Grid.Column") ?? 0);
-        Assert.AreEqual(1, (int?)releasePanel.Attribute("Grid.Column") ?? 0);
-        Assert.AreEqual(1, (int?)updateActionPanel.Attribute("Grid.Column") ?? 0);
-
-        Assert.AreSame(updateActionPanel, updateProgressRing.Parent);
-        Assert.AreSame(updateActionPanel, updateStatusText.Parent);
-        Assert.AreEqual(0, (int?)updateProgressRing.Attribute("Grid.Column") ?? 0);
-        Assert.AreEqual(1, (int?)updateStatusText.Attribute("Grid.Column") ?? 0);
-        StringAssert.Contains(updateButton.Attribute("Command")!.Value, "ViewModel.InstallUpdateCommand");
-        StringAssert.Contains((string?)updateButton.Attribute("Visibility"), "ViewModel.CanInstallUpdate");
-        StringAssert.Contains(updateActionPanel.Attribute("Visibility")!.Value, "ViewModel.CanInstallUpdate");
+    [TestMethod]
+    public void DialogFooter_ShowsNeutralCloseBeforeAccentUpdate()
+    {
+        XDocument document = LoadApplicationXml("Dialogs", "AboutDialog.xaml");
+        XElement dialog = document.Root!;
+        Assert.AreEqual("None", (string?)dialog.Attribute("DefaultButton"));
+        Assert.IsNull(dialog.Attribute("PrimaryButtonStyle"));
+        Assert.AreEqual("{ThemeResource AccentButtonStyle}", (string?)dialog.Attribute("SecondaryButtonStyle"));
+        Assert.AreEqual("{x:Bind ViewModel.InstallUpdateButtonText, Mode=OneWay}",
+            (string?)dialog.Attribute("SecondaryButtonText"));
+        XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+        Assert.IsFalse(document.Descendants().Any(element =>
+            (string?)element.Attribute(xaml + "Name") == "InstallUpdateButton"));
+        Assert.IsFalse(document.Descendants().Any(element => element.Name.LocalName == "ProgressBar"));
+        XElement releaseCheckProgress = document.Descendants().Single(element =>
+            element.Name.LocalName == "ProgressRing");
+        StringAssert.Contains((string?)releaseCheckProgress.Attribute("IsActive"), "ViewModel.IsLoadingLatestRelease");
         Assert.IsFalse(document.Descendants().Any(element => element.Name.LocalName == "ToggleSwitch"));
     }
 
@@ -54,9 +50,8 @@ public sealed class AboutDialogXamlTests
 
         foreach (string key in new[]
         {
-            "InstallUpdateButton.Content",
-            "InstallUpdateButton.AutomationProperties.Name",
-            "UpdateProgressRing.AutomationProperties.Name",
+            "AboutDialog.PrimaryButtonText",
+            "AboutInstallUpdateButtonText",
             "AboutUpdateInProgress",
             "AboutUpdateFailed",
             "AboutUpdateValidateRelease",
@@ -77,12 +72,7 @@ public sealed class AboutDialogXamlTests
         Assert.IsFalse(keys.Any(key => key.StartsWith(
             "IncludePrereleaseVersionsToggleSwitch.",
             StringComparison.Ordinal)));
-    }
-
-    private static XElement FindNamedElement(XDocument document, string name)
-    {
-        return document.Descendants().Single(element =>
-            (string?)element.Attribute(XamlNamespace + "Name") == name);
+        Assert.DoesNotContain("UpdateProgressRing.AutomationProperties.Name", keys);
     }
 
     private static XDocument LoadApplicationXml(params string[] relativeSegments)

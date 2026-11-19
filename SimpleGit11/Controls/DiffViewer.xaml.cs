@@ -438,7 +438,7 @@ public sealed partial class DiffViewer : UserControl
         _overviewKinds.AddRange(_projection.SourceLines.Select(line => line.Kind));
 
         EditorSurface.IsReadOnly = !IsEditing;
-        EditorSurface.ShowCurrentLine = IsEditing;
+        ApplyWordWrap();
 
         bool documentLoaded = false;
         _isApplyingDocument = true;
@@ -543,6 +543,20 @@ public sealed partial class DiffViewer : UserControl
         }
 
         FullFileModeToggleSwitch.IsOn = IsFullFileMode;
+    }
+
+    private void WordWrapToggleSwitch_Toggled(object sender, RoutedEventArgs e)
+    {
+        ApplyWordWrap();
+    }
+
+    private void ApplyWordWrap()
+    {
+        if (EditorSurface is not null && WordWrapToggleSwitch is not null)
+        {
+            WordWrapToggleSwitch.IsEnabled = !IsEditing;
+            EditorSurface.IsWordWrapEnabled = !IsEditing && WordWrapToggleSwitch.IsOn;
+        }
     }
 
     private void ApplyDecorations()

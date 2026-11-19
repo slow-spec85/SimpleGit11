@@ -201,6 +201,11 @@
                                         AutomationProperties.AutomationId="DiffViewerFullFileToggle"
                                         IsOn="{Binding IsFullFileMode, ElementName=Root, Mode=OneWay}"
                                         Toggled="FullFileModeToggleSwitch_Toggled" />
+                                    <ToggleSwitch
+                                        x:Name="WordWrapToggleSwitch"
+                                        x:Uid="DiffViewerWordWrapToggleSwitch"
+                                        AutomationProperties.AutomationId="DiffViewerWordWrapToggle"
+                                        Toggled="WordWrapToggleSwitch_Toggled" />
                                     <ComboBox
                                         x:Name="DiffViewerSyntaxHighlightingComboBox"
                                         x:Uid="DiffViewerSyntaxHighlightingComboBox"
@@ -279,7 +284,8 @@
                     ContextRequested="EditorSurface_ContextRequested"
                     IsReadOnly="True"
                     LineGutterWidth="24"
-                    ShowCurrentLine="False"
+                    ShowCurrentLine="True"
+                    CurrentLineHighlightBrush="{ThemeResource ListViewItemBackgroundSelected}"
                     ShowLineGutter="True"
                     ShowLineNumbers="False"
                     SpaceBetweenLineNumberAndText="16">

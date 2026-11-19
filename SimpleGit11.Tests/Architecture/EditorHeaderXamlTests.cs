@@ -312,6 +312,20 @@ public sealed class EditorHeaderXamlTests
     }
 
     [TestMethod]
+    public void DiffViewerHeader_WordWrapUsesLocalizedToggleInViewOptions()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "DiffViewer.xaml");
+        XElement viewOptions = FindByXName(document, "DiffViewOptionsButton");
+        XElement toggle = FindByXName(document, "WordWrapToggleSwitch");
+
+        Assert.IsTrue(viewOptions.Descendants().Contains(toggle));
+        Assert.AreEqual("ToggleSwitch", toggle.Name.LocalName);
+        Assert.AreEqual("DiffViewerWordWrapToggleSwitch", (string?)toggle.Attribute(XamlNamespace + "Uid"));
+        Assert.AreEqual("DiffViewerWordWrapToggle", RequiredAttribute(toggle, "AutomationProperties.AutomationId"));
+        Assert.AreEqual("WordWrapToggleSwitch_Toggled", RequiredAttribute(toggle, "Toggled"));
+    }
+
+    [TestMethod]
     public void DiffViewerHeader_CopyMenuUsesCurrentUntrimmedFileNameAndSharedCommand()
     {
         XDocument document = LoadApplicationXaml("Controls", "DiffViewer.xaml");
@@ -338,6 +352,25 @@ public sealed class EditorHeaderXamlTests
         XElement editor = FindByXName(document, "EditorSurface");
 
         Assert.AreEqual("16", RequiredAttribute(editor, "SpaceBetweenLineNumberAndText"));
+    }
+
+    [TestMethod]
+    public void DiffViewerEditor_HighlightsCurrentLineDuringReadOnlyViewing()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "DiffViewer.xaml");
+        XElement editor = FindByXName(document, "EditorSurface");
+
+        Assert.AreEqual("True", RequiredAttribute(editor, "IsReadOnly"));
+        Assert.AreEqual("True", RequiredAttribute(editor, "ShowCurrentLine"));
+    }
+
+    [TestMethod]
+    public void DiffViewerEditor_UsesTheSelectedFileBackgroundResource()
+    {
+        XDocument document = LoadApplicationXaml("Controls", "DiffViewer.xaml");
+        XElement editor = FindByXName(document, "EditorSurface");
+
+        Assert.AreEqual("{ThemeResource ListViewItemBackgroundSelected}", RequiredAttribute(editor, "CurrentLineHighlightBrush"));
     }
 
     [TestMethod]
